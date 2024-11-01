@@ -1,0 +1,392 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+  background-color: #f5f5f5;
+}
+
+.home-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  color: #f5f5f5;
+  background-color: #0f0f0f;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2.25rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #f5f5f5;
+}
+
+.nav-links a:hover {
+  border-bottom: 5px solid #ff0000;
+  transition: border-bottom 0.3s ease-in-out;
+}
+
+.nav-links li {
+  list-style: none;
+}
+
+.home-signIn {
+  background-color: rgba(0, 0, 0, 0);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 18px;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #f5f5f5;
+}
+
+.home-signIn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+}
+
+.home-sectionDivider {
+  margin: auto;
+  width: 90%;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.home-header {
+  display: flex;
+  top: 60px;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url(./img/header.jpg);
+}
+
+.home-main {
+  width: 100%;
+  margin: auto;
+}
+
+.S-Welcome {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  height: 40vh;
+  text-align: center;
+  align-items: center;
+}
+
+.S-Welcome h1 {
+  width: 50%;
+  font-size: 2.5rem;
+  color: #0f0f0f;
+}
+
+.S-Welcome p {
+  width: 50%;
+  font-size: 1.25rem;
+  color: #0f0f0f;
+}
+
+.joinButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-color: #ff3333;
+  color: #f5f5f5;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.joinButton:hover {
+  background-color: #ff0000;
+}
+
+.joinButton img {
+  width: 1.25rem;
+  margin-left: 0.5rem;
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(107%)
+    contrast(101%);
+}
+
+.S-Offers {
+  display: flex;
+  flex-direction: row;
+  margin: auto;
+  gap: 1.5rem;
+  width: 90%;
+  height: auto;
+}
+
+.offers-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  width: 50%;
+  text-align: left;
+  align-items: left;
+}
+
+.S-Offers h1 {
+  font-size: 2.5rem;
+  color: #0f0f0f;
+}
+
+.S-Offers p {
+  font-size: 1.25rem;
+  color: #0f0f0f;
+}
+
+.offers-image {
+  width: 50%;
+  background-image: url(./img/3months\ Promo.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  height: 60vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leftButton img,
+.rightButton img {
+  width: 1.5rem;
+  filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(107%)
+    contrast(101%);
+}
+
+.S-Products {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: auto;
+  width: 90%;
+  height: auto;
+  margin-bottom: 50px;
+}
+
+.product-container {
+  display: flex;
+  flex-direction: row;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.product-box {
+  width: 250px;
+  height: 250px;
+  text-align: center;
+  align-items: center;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.product-image {
+  width: 100%;
+  height: 80%;
+  background-color: #513333;
+}
+
+.S-AboutUs {
+  width: 100%;
+  min-height: 500px;
+  display: flex;
+  background-color: #ff0000;
+  justify-self: center;
+  flex-direction: row;
+  gap: 1.5rem;
+  color: #f5f5f5;
+}
+
+.S-AboutUs h1 {
+  font-size: 40px;
+}
+
+.aboutUs-text {
+  display: flex;
+  flex-direction: column;
+  justify-self: center;
+  gap: 0.75rem;
+  width: 50%;
+  text-align: left;
+  align-items: left;
+  padding: 40px;
+}
+
+.image-container {
+  width: 50%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  padding: 40px;
+}
+
+.image-container img {
+  width: 100%; /* Makes the image fill the column */
+  aspect-ratio: 5 / 4; /* Ensures a 1:1 aspect ratio */
+  object-fit: cover; /* Ensures the image covers the entire area */
+  background-color: #f5f5f5;
+}
+
+.S-Tagline {
+  display: flex;
+  flex-direction: column;
+  font-size: 40px;
+  width: 100%;
+  height: 40vh;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden; /* Ensures the blurred background doesn't exceed the container */
+
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* Adds a soft shadow */
+  /* Text and other content styling */
+  color: white;
+  z-index: 1;
+}
+
+.S-Tagline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(./img/members.jpg);
+  background-position: center;
+  background-size: cover;
+  filter: blur(2px); /* Adjust the blur intensity */
+  z-index: -1; /* Places the blurred background behind the content */
+}
+
+.S-Staffs {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  margin: auto;
+  align-items: center;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.S-Staffs h1 {
+  font-size: 40px;
+}
+
+.staff-container {
+  display: flex;
+  gap: 20px;
+}
+
+.image-staff {
+  display: flex;
+  flex-direction: column;
+  height: 350px;
+  width: 300px;
+  background-color: #ffffff;
+  align-items: center;
+  font-size: 24px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.image-staff img {
+  height: 80%;
+  width: 100%;
+  background-color: #0f0f0f;
+}
+
+.S-ContactUs {
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  background-color: #ffffff;
+  justify-content: center; /* Use justify-content instead of justify-self */
+  flex-direction: row;
+  gap: 1.5rem;
+  color: #f5f5f5;
+}
+
+.image-location {
+  max-height: 100%; /* Ensures the container does not exceed parent height */
+  width: 50%;
+  background-color: #ffffff;
+  overflow: hidden; /* Hides any overflow of the image */
+}
+
+.image-location img {
+  width: 100%; /* Make the image fill the container width */
+  max-height: 400px; /* Ensure the image does not exceed the container height */
+  object-fit: cover; /* Crop the image if necessary to fill the space */
+}
+
+.ContactUs-text {
+  display: flex;
+  flex-direction: column;
+  color: #0f0f0f;
+  padding: 10px;
+  width: 50%;
+  justify-content: center;
+}
+
+.ContactUs-text h1 {
+  font-size: 40px;
+  padding-bottom: 20px;
+}
+
+.ContactUs-text p {
+  padding: 10px 0;
+  font-size: 24px;
+  gap: 10px;
+}
+
+footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 2rem;
+  color: #f5f5f5;
+  background-color: #0f0f0f;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2.25rem;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: #f5f5f5;
+}
+
+.footer-links a:hover {
+  border-bottom: 5px solid #ff0000;
+  transition: border-bottom 0.3s ease-in-out;
+}
+
+.footer-links li {
+  list-style: none;
+}
