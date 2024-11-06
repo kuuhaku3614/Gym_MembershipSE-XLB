@@ -21,24 +21,24 @@ svg {
 }
 
 .sidebar::-webkit-scrollbar-track {
-  background: #495057; /* Track color */
+  background: #ff0000; /* Track color */
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background-color: #6c757d; /* Thumb (scroll handle) color */
+  background-color: #ff0000; /* Thumb (scroll handle) color */
   border-radius: 4px; /* Rounded edges */
   border: 2px solid transparent; /* Optional border for separation */
   background-clip: content-box; /* Ensures border doesn't affect scrollbar size */
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-  background-color: #868e96; /* Hover color */
+  background-color: #ff0000; /* Hover color */
 }
 
 /* Firefox Styling */
 .sidebar {
   scrollbar-width: thin; /* Thin scrollbar */
-  scrollbar-color: #6c757d #495057; /* Thumb and track colors */
+  scrollbar-color: #fff #ff0000; /* Thumb and track colors */
 }
 
 .sidebar .menu > li {
