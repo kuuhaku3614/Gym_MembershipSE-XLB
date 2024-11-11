@@ -288,12 +288,12 @@
         </ul>
       </nav>
 
-      <!-- Main content area -->
-      <main class="p-4 flex-grow-1">
-        <h1>Dashboard</h1>
-        <p>Welcome to the admin dashboard</p>
-      </main>
-    </div>
+        <!-- Main content area -->
+        <main class="p-4 flex-grow-1">
+          <h1>Dashboard</h1>
+          <p>Welcome to the admin dashboard</p>
+        </main>
+      </div>
 
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>

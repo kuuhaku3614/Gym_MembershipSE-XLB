@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle verification code generation
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['action'] === 'generate_code') {
-    // In a real application, you would:
+    // In a real application:
     // 1. Generate a random verification code
     // 2. Send it via SMS to the provided phone number
     // 3. Store it securely (e.g., in a temporary table with expiration)

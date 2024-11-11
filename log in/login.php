@@ -62,12 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="username" name="username" 
-                        placeholder="Username" value="<?php echo htmlspecialchars($username); ?>">
+                         value="<?php echo htmlspecialchars($username); ?>">
                     <label for="username">Username</label>
                 </div>
                 <div class="form-floating mb-3">
-                    <input type="password" class="form-control" id="password" name="password" 
-                        placeholder="Password">
+                    <input type="password" class="form-control" id="password" name="password" >
                     <label for="password">Password</label>
                 </div>
                 <div class="form-row justify-content-between align-items-center mb-3">
