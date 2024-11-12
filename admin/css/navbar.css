@@ -1,3 +1,10 @@
+.main-content {
+    margin-left: 335px;
+    padding: 20px;
+    min-height: 100vh;
+    background: #f5f5f5;
+}
+
 .sidebar {
     width: 335px;
     height: 100vh;
@@ -70,24 +77,6 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
-    .burger-menu {
-        display: block;
-    }
-
-    .sidebar-overlay.active {
-        display: block;
-    }
 }
 
 /* Keep your existing styles below and adjust as needed */
@@ -195,4 +184,27 @@
 
 .logout-btn i {
     margin-right: 15px;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+    }
+}
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .burger-menu {
+        display: block;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
 }
