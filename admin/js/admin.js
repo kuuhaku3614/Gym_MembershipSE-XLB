@@ -1,11 +1,10 @@
 $(document).ready(function () {
   // Handle navigation item clicks
-  $(".nav-item").on("click", function (e) {
+  $(".nav-item, .nav-item.has-subnav, .sub-nav-item").on("click", function (e) {
     e.preventDefault();
 
     let url = $(this).attr("href");
     window.history.pushState({ path: url }, "", url);
-    loadPageContent(url);
   });
 
   $("#dashboard-link").on("click", function (e) {
@@ -38,9 +37,19 @@ $(document).ready(function () {
     viewWalkIn();
   });
 
+  $("#gym_rates-link").on("click", function (e) {
+    e.preventDefault();
+    viewGymRates();
+  });
+
   $("#payment_records-link").on("click", function (e) {
     e.preventDefault();
     viewPaymentRecords();
+  });
+
+  $("#notification-link").on("click", function (e) {
+    e.preventDefault();
+    viewNotification();
   });
 
   $("#website_settings-link").on("click", function (e) {
@@ -51,6 +60,11 @@ $(document).ready(function () {
   $("#report-link").on("click", function (e) {
     e.preventDefault();
     getReport();
+  });
+
+  $("#staff_management-link").on("click", function (e) {
+    e.preventDefault();
+    viewStaff();
   });
 
   let url = window.location.href;
@@ -65,16 +79,22 @@ $(document).ready(function () {
     $("#attendance_history-link").trigger("click");
   } else if (url.endsWith("member_status")) {
     $("#member_status-link").trigger("click");
-  } else if (url.endsWith("walkIn")) {
+  } else if (url.endsWith("walk_in")) {
     $("#walk_in-link").trigger("click");
+  } else if (url.endsWith("gym_rates")) {
+    $("#gym_rates-link").trigger("click");
   } else if (url.endsWith("payment_records")) {
     $("#payment_records-link").trigger("click");
+  } else if (url.endsWith("notification")) {
+    $("#notification-link").trigger("click");
   } else if (url.endsWith("website_settings")) {
     $("#website_settings-link").trigger("click");
   } else if (url.endsWith("report")) {
     $("#report-link").trigger("click");
   } else if (url.endsWith("members")) {
     $("#members-link").trigger("click");
+  } else if (url.endsWith("staff_management")) {
+    $("#staff_management-link").trigger("click");
   } else {
     $("#dashboard-link").trigger("click");
   }
@@ -94,21 +114,10 @@ $(document).ready(function () {
     });
   }
 
-  function viewWalkIn() {
-    $.ajax({
-      type: "GET",
-      url: "../admin/walk_in.php",
-      dataType: "html",
-      success: function (response) {
-        $(".main-content").html(response);
-      },
-    });
-  }
-
   function viewMembers() {
     $.ajax({
       type: "GET",
-      url: "../admin/members/members.php",
+      url: "pages/members/members.php",
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
@@ -149,10 +158,51 @@ $(document).ready(function () {
     });
   }
 
+  function viewWalkIn() {
+    $.ajax({
+      type: "GET",
+      url: "pages/walk in/walk_in.php",
+      dataType: "html",
+      success: function (response) {
+        $(".main-content").html(response);
+      },
+      error: function () {
+        $(".main-content").html("<p>Error loading the page content.</p>");
+        alert("Error loading the page content.");
+      },
+    });
+  }
+
+  function viewGymRates() {
+    $.ajax({
+      type: "GET",
+      url: "pages/gym rates/gym_rates.php",
+      dataType: "html",
+      success: function (response) {
+        $(".main-content").html(response);
+      },
+      error: function () {
+        $(".main-content").html("<p>Error loading the page content.</p>");
+        alert("Error loading the page content.");
+      },
+    });
+  }
+
   function viewPaymentRecords() {
     $.ajax({
       type: "GET",
-      url: "../admin/payment_record.php",
+      url: "pages/payment records/payment_records.php",
+      dataType: "html",
+      success: function (response) {
+        $(".main-content").html(response);
+      },
+    });
+  }
+
+  function viewNotification() {
+    $.ajax({
+      type: "GET",
+      url: "pages/notification/notification.php",
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
@@ -163,7 +213,7 @@ $(document).ready(function () {
   function websiteSettings() {
     $.ajax({
       type: "GET",
-      url: "../admin/website_setting.php",
+      url: "pages/website settings/website_settings.php",
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
@@ -174,7 +224,18 @@ $(document).ready(function () {
   function getReport() {
     $.ajax({
       type: "GET",
-      url: "../admin/report.php",
+      url: "pages/report/report.php",
+      dataType: "html",
+      success: function (response) {
+        $(".main-content").html(response);
+      },
+    });
+  }
+
+  function viewStaff() {
+    $.ajax({
+      type: "GET",
+      url: "pages/staff management/staff_management.php",
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);

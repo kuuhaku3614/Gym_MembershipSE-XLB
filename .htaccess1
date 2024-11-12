@@ -1,0 +1,30 @@
+#RewriteEngine On
+#RewriteCond %{HTTP_HOST} ^([^\.]*)\.([^\.]*)$
+#RewriteRule (.*) http://www.%1.%2/$1 [L,R=301]
+
+#RewriteCond %{HTTP_HOST} ^www\.([^.]+)\.([^.]+)\.([^\.]*)$ [NC]
+#RewriteRule ^(.*)$ http://%1.%2.%3/$1 [L,R=301]
+
+#RewriteCond %{REQUEST_URI} !^projects/
+#RewriteCond %{REQUEST_URI} !^/projects/
+#RewriteCond %{HTTP_HOST} ^(www\.)?(.*)\.([^\.]*)\.([^\.]*)$
+#RewriteRule (.*) %3/$1 [DPI] 
+
+RewriteEngine On
+RewriteRule ^admin/dashboard$ admin/pages/dashboard/dashboard.php
+RewriteRule ^admin/members$ admin/pages/members/members.php
+RewriteRule ^admin/attendance$ admin/pages/members/attendance.php
+RewriteRule ^admin/attendance_history$ admin/pages/members/attendance_history.php
+RewriteRule ^admin/member_status$ admin/pages/members/member_status.php
+RewriteRule ^admin/walk_in$ admin/pages/walk_in/walk_in.php
+RewriteRule ^admin/gym_rates$ admin/pages/gym rates/gym_rates.php
+RewriteRule ^admin/programs$ admin/pages/gym rates/programs.php
+RewriteRule ^admin/rentals$ admin/pages/gym rates/rentals.php
+RewriteRule ^admin/payment_records$ admin/pages/payment_records/payment_records.php
+RewriteRule ^admin/notification$ admin/pages/notification/notification.php
+RewriteRule ^admin/announcement$ admin/pages/notification/announcement.php
+RewriteRule ^admin/website_settings$ admin/pages/website settings/website_settings.php
+RewriteRule ^admin/report$ admin/pages/report/report.php
+RewriteRule ^admin/staff_management$ admin/pages/staff management/staff_management.php
+RewriteRule ^admin/staff_activity_log$ admin/pages/staff management/staff_log.php
+RewriteRule ^admin/coach_log$ admin/pages/staff management/coach_log.php
