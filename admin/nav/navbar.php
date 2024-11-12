@@ -1,7 +1,7 @@
 <div class="sidebar" id="sidebar">
         <!-- Logo and Admin Container -->
         <div class="logo-container">
-            <img src="../img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
+            <img src="../../img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
             <div class="admin-text">ADMIN</div>
         </div>
 
@@ -122,9 +122,11 @@
 
         <!-- Logout Container -->
         <div class="logout-container">
-            <button class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </button>
+            <a href="../../log in/logout.php" class="nav-item">
+                <div class="nav-item-content">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </div>
+            </a>
         </div>
     </div>

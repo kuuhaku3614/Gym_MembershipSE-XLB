@@ -6,7 +6,7 @@
     <title>Gym Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/navbar.css">
+    <link rel="stylesheet" href="../admin/css/navbar.css">
     <style>
         .main-content {
             margin-left: 335px;
@@ -39,6 +39,6 @@
         <!-- dynamic fill -->
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/navbar.js"></script>
+    <script src="../admin/js/navbar.js"></script>
 </body>
 </html>

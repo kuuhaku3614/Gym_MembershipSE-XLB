@@ -31,7 +31,7 @@ function loginUser($username, $password) {
 function redirectBasedOnRole($role) {
     switch($role) {
         case 'admin':
-            header("Location: ../admin/dashboard.php");
+            header("Location: ../admin/index.php");
             break;
         case 'staff':
             header("Location: ../staff/dashboard.php");
