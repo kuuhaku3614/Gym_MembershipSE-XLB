@@ -11,7 +11,7 @@
 #RewriteRule (.*) %3/$1 [DPI] 
 
 RewriteEngine On
-RewriteRule ^admin/dashboard$ admin/dashboard.php
+RewriteRule ^admin/dashboard$ admin/pages/dashboard/dashboard.php
 RewriteRule ^admin/members$ admin/dashboard.php
 RewriteRule ^admin/attendance$ admin/dashboard.php
 RewriteRule ^admin/attendance_history$ admin/dashboard.php

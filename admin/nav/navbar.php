@@ -8,7 +8,7 @@
        <!-- Navigation Links Container -->
        <div class="nav-links-container">
             <nav>
-            <a href="#" class="nav-item">
+            <a href="dashboard" id="dashboard-link" class="nav-item">
                 <div class="nav-item-content">
                     <i class="fas fa-th-large"></i>
                     Dashboard
