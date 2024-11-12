@@ -1,3 +1,16 @@
+<?php
+// session_start();
+// require_once 'config.php';
+
+// function checkAdminSession() {
+//     if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
+//         header("Location: ../log in/login.php");
+//         exit();
+//     }
+// }
+// checkAdminSession();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,20 +20,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../admin/css/navbar.css">
-    <style>
-        .main-content {
-            margin-left: 335px;
-            padding: 20px;
-            min-height: 100vh;
-            background: #f5f5f5;
-        }
-        
-        @media (max-width: 768px) {
-            .main-content {
-                margin-left: 0;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- Burger Menu Button -->
