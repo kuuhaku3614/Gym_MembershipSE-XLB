@@ -1,0 +1,19 @@
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'staff', 'member', 'coach') NOT NULL
+);
+
+CREATE TABLE personal_details (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL UNIQUE,
+    first_name VARCHAR(50) NOT NULL,
+    middle_name VARCHAR(50),
+    last_name VARCHAR(50) NOT NULL,
+    sex ENUM('Male', 'Female') NOT NULL,
+    birthdate DATE NOT NULL,
+    phone_number VARCHAR(20),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT one_to_one UNIQUE (user_id)
+);

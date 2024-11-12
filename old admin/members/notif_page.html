@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            width: 100%;
+            margin: 0;
+            background: #F5F5F5;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            width: 100%;
+            height: 70px;
+            background: #1A1A1A;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            margin-left: auto;
+            margin-right: 80px;
+        }
+
+        .nav-links a {
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .user-icon {
+            width: 40px;
+            height: 40px;
+            background: #C4C4C4;
+            border-radius: 50%;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+        }
+
+        .header {
+            width: 100%;
+            height: 180px;
+            background: #FF0000;
+            position: relative;
+            padding: 20px;
+        }
+
+        .member-tag {
+            font-size: 16px;
+            color: #FFFFFF;
+            margin-top: 10px;
+        }
+
+        .profile-name {
+            font-weight: 700;
+            font-size: 36px;
+            color: #FFFFFF;
+            margin-top: 40px;
+        }
+
+        .student-tag {
+            display: inline-block;
+            background: #FFFFFF;
+            border-radius: 5px;
+            padding: 2px 10px;
+            color: #FF0000;
+            font-size: 14px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .notifications {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-bar {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 200px;
+            height: 35px;
+            border: 1px solid #FF0000;
+            border-radius: 5px;
+            padding: 0 30px 0 10px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FF0000;
+            cursor: pointer;
+        }
+
+        .notification-card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .notification-date {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .notification-content {
+            font-size: 14px;
+            color: #333;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            line-height: 1.4;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #FF0000;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <img src="../img/jc_logo.png" alt="Logo" class="logo">
+        <div class="nav-links">
+            <a href="#">HOME</a>
+            <a href="#">SERVICES</a>
+            <a href="#">ABOUT US</a>
+            <a href="#">CONTACT</a>
+        </div>
+        <img src="/api/placeholder/40/40" alt="User" class="user-icon">
+    </nav>
+
+    <header class="header">
+        <div class="member-tag">Member</div>
+        <div class="profile-name">
+            Jamal Al badi
+            <span class="student-tag">Student</span>
+        </div>
+    </header>
+
+    <main class="notifications">
+        <div class="search-bar">
+            <input type="text" placeholder="Search notifications...">
+            <span class="search-icon">🔍</span>
+        </div>
+
+        <div class="notification-card">
+            <div class="notification-header">
+                <span class="notification-title">Your student promo will expire in 7 days</span>
+                <span class="notification-date">10/03/2024</span>
+            </div>
+            <div class="notification-content">
+                Jamal Al Badi, your student promo will expire in 7 days on October 10, 2024. Renew or avail of other services at JC Powerzone or visit our website...
+            </div>
+        </div>
+
+        <div class="notification-card">
+            <div class="notification-header">
+                <span class="notification-title">Availed service confirmed</span>
+                <span class="notification-date">09/10/2024</span>
+            </div>
+            <div class="notification-content">
+                Congratulations, Jamal Al Badi! Your student promo has been confirmed. Enjoy your workouts and have a great experience at JC Powerzone. Visit our website to stay updated with your records...
+            </div>
+        </div>
+
+        <div class="notification-card">
+            <div class="notification-header">
+                <span class="notification-title">Welcome</span>
+                <span class="notification-date">09/10/2024</span>
+            </div>
+            <div class="notification-content">
+                Welcome, Jamal Al Badi! We're excited to have you at JC Powerzone. Enjoy your fitness journey with us, and feel free to explore our services. Stay connected by visiting our website for updates and personalized offers...
+            </div>
+        </div>
+    </main>
+</body>
+</html>

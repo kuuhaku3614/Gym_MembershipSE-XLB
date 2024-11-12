@@ -1,0 +1,22 @@
+#RewriteEngine On
+#RewriteCond %{HTTP_HOST} ^([^\.]*)\.([^\.]*)$
+#RewriteRule (.*) http://www.%1.%2/$1 [L,R=301]
+
+#RewriteCond %{HTTP_HOST} ^www\.([^.]+)\.([^.]+)\.([^\.]*)$ [NC]
+#RewriteRule ^(.*)$ http://%1.%2.%3/$1 [L,R=301]
+
+#RewriteCond %{REQUEST_URI} !^projects/
+#RewriteCond %{REQUEST_URI} !^/projects/
+#RewriteCond %{HTTP_HOST} ^(www\.)?(.*)\.([^\.]*)\.([^\.]*)$
+#RewriteRule (.*) %3/$1 [DPI] 
+
+RewriteEngine On
+RewriteRule ^admin/dashboard$ admin/dashboard.php
+RewriteRule ^admin/members$ admin/dashboard.php
+RewriteRule ^admin/attendance$ admin/dashboard.php
+RewriteRule ^admin/attendance_history$ admin/dashboard.php
+RewriteRule ^admin/member_status$ admin/dashboard.php
+RewriteRule ^admin/walkIn$ admin/dashboard.php
+RewriteRule ^admin/payment_records$ admin/dashboard.php
+RewriteRule ^admin/website_settings$ admin/dashboard.php
+RewriteRule ^admin/report$ admin/dashboard.php
