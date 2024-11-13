@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';  // Ensure config file with PDO setup is included
+require_once 'config.php';  
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $promoName = $_POST['promoName'];
