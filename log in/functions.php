@@ -5,17 +5,13 @@ function loginUser($username, $password) {
     global $pdo;
     
     try {
-        $sql = "SELECT id, password, role, status FROM users WHERE username = :username";
+        $sql = "SELECT id, password, role FROM users WHERE username = :username";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
         
         if ($stmt->rowCount() == 1) {
             $user = $stmt->fetch();
-            
-            if ($user['status'] == 'inactive') {
-                return ['success' => false, 'message' => 'Account is inactive. Please contact admin.'];
-            }
             
             if (password_verify($password, $user['password'])) {
                 return [
@@ -32,24 +28,10 @@ function loginUser($username, $password) {
     }
 }
 
-function updateLastLogin($user_id) {
-    global $pdo;
-    
-    try {
-        $sql = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = :user_id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        // Log error
-        error_log("Error updating last login: " . $e->getMessage());
-    }
-}
-
 function redirectBasedOnRole($role) {
     switch($role) {
         case 'admin':
-            header("Location: ../admin/dashboard.php");
+            header("Location: ../admin/index.php");
             break;
         case 'staff':
             header("Location: ../staff/dashboard.php");
@@ -58,7 +40,7 @@ function redirectBasedOnRole($role) {
             header("Location: ../coach/dashboard.php");
             break;
         case 'member':
-            header("Location: ../members/dashboard.php");
+            header("Location: ../website/logged_in_website.html");
             break;
         default:
             header("Location: index.php");
@@ -68,10 +50,6 @@ function redirectBasedOnRole($role) {
 
 function sanitizeInput($data) {
     return htmlspecialchars(strip_tags(trim($data)));
-}
-
-function validateEmail($email) {
-    return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
 function isUsernameExists($username) {
@@ -89,27 +67,12 @@ function isUsernameExists($username) {
     }
 }
 
-function isEmailExists($email) {
-    global $pdo;
-    
-    try {
-        $sql = "SELECT id FROM users WHERE email = :email";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-        $stmt->execute();
-        
-        return $stmt->rowCount() > 0;
-    } catch (PDOException $e) {
-        return true; // Assume exists in case of error
-    }
-}
-
 function createUser($userData) {
     global $pdo;
     
     try {
-        $sql = "INSERT INTO users (username, password, email, first_name, last_name, role) 
-                VALUES (:username, :password, :email, :first_name, :last_name, :role)";
+        $sql = "INSERT INTO users (username, password, role) 
+                VALUES (:username, :password, :role)";
         
         $stmt = $pdo->prepare($sql);
         
@@ -117,9 +80,6 @@ function createUser($userData) {
         
         $stmt->bindParam(':username', $userData['username'], PDO::PARAM_STR);
         $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
-        $stmt->bindParam(':email', $userData['email'], PDO::PARAM_STR);
-        $stmt->bindParam(':first_name', $userData['first_name'], PDO::PARAM_STR);
-        $stmt->bindParam(':last_name', $userData['last_name'], PDO::PARAM_STR);
         $stmt->bindParam(':role', $userData['role'], PDO::PARAM_STR);
         
         return $stmt->execute();
@@ -128,4 +88,3 @@ function createUser($userData) {
         return false;
     }
 }
-?>

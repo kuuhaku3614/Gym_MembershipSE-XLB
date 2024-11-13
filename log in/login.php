@@ -24,9 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['username'] = $username;
             $_SESSION['role'] = $result['role'];
             
-            // Update last login
-            updateLastLogin($result['user_id']);
-            
             // Redirect based on role
             redirectBasedOnRole($result['role']);
         } else {
@@ -51,9 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="login-container text-center">
+            <!-- dynamic logo -->
             <div class="logo-placeholder">
-                <img src="../img/jc_logo.png" alt="JC Powerzone Gym Logo EST 2022">
+                <img src="../img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
             </div>
+            <!-- dynamic welcome message -->
             <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
             
             <?php if(!empty($error)): ?>
@@ -61,15 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <?php endif; ?>
 
             <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
-                <div class="form-group">
-                    <label for="username" class="input-label">Username:</label>
+                <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="username" name="username" 
-                           placeholder="Username" value="<?php echo htmlspecialchars($username); ?>">
+                         value="<?php echo htmlspecialchars($username); ?>">
+                    <label for="username">Username</label>
                 </div>
-                <div class="form-group">
-                    <label for="password" class="input-label">Password:</label>
-                    <input type="password" class="form-control" id="password" name="password" 
-                           placeholder="Password">
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" name="password" >
+                    <label for="password">Password</label>
                 </div>
                 <div class="form-row justify-content-between align-items-center mb-3">
                     <div class="form-check d-flex align-items-center">
@@ -78,9 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                     <a href="#" class="forgot-password">Forgot Password</a>
                 </div>
-                <button type="submit" class="btn btn-danger btn-block btn-login" 
-                        style="background-color: #FF0000;">Login</button>
-                <a href="register.php" class="btn btn-dark btn-block btn-register">Register</a>
+                <button type="submit" class="btn btn-block btn-login">Login</button>
+                <a href="../register/register.php" class="btn btn-block btn-register">Register</a>
             </form>
         </div>
     </div>
