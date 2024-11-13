@@ -25,7 +25,7 @@
 .logo-container {
     height: auto;
     min-height: 150px;
-    background: #000000;
+    background: #2f2f2f;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -79,10 +79,34 @@
     z-index: 999;
 }
 
+.logout-container {
+    background: #fc5555;
+    padding: 20px;
+}
+
+.logout-btn {
+    width: 100%;
+    color: #FFFFFF;
+    background: none;
+    border: none;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #b30000;
+}
+
+.logout-btn i {
+    margin-right: 15px;
+}
 /* Keep your existing styles below and adjust as needed */
 .nav-links-container {
     flex-grow: 1;
-    background: #FF0000;
+    background: #fc5555;
     overflow-y: auto;
 }
 
@@ -125,7 +149,7 @@
 }
 
 .sub-nav {
-    background: #b30000;
+    background: rgb(219, 46, 46);
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;
@@ -159,31 +183,6 @@
     background-color: #990000;
     color: #FFFFFF;
     border-left: 4px solid #FFFFFF;
-}
-
-.logout-container {
-    background: #FF0000;
-    padding: 20px;
-}
-
-.logout-btn {
-    width: 100%;
-    color: #FFFFFF;
-    background: none;
-    border: none;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.logout-btn:hover {
-    background-color: #b30000;
-}
-
-.logout-btn i {
-    margin-right: 15px;
 }
 
 @media (max-width: 768px) {
