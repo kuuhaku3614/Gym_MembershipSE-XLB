@@ -25,7 +25,7 @@
 .logo-container {
     height: auto;
     min-height: 150px;
-    background: #2f2f2f;
+    background: #1f1f1f;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -80,7 +80,7 @@
 }
 
 .logout-container {
-    background: #fc5555;
+    background: #c92f2f;
     padding: 20px;
 }
 
@@ -106,7 +106,7 @@
 /* Keep your existing styles below and adjust as needed */
 .nav-links-container {
     flex-grow: 1;
-    background: #fc5555;
+    background: #c92f2f;
     overflow-y: auto;
 }
 
@@ -149,7 +149,7 @@
 }
 
 .sub-nav {
-    background: rgb(219, 46, 46);
+    background: #a82727;
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;

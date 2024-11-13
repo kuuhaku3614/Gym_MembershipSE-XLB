@@ -1,9 +1,17 @@
 $(document).ready(function () {
-  // Handle all navigation item clicks
-  $(".nav-item, .nav-item.has-subnav, .sub-nav-item").on("click", function (e) {
+  // Handle navigation item clicks EXCEPT logout
+  $(".nav-item:not([href*='logout']), .nav-item.has-subnav, .sub-nav-item").on("click", function (e) {
     e.preventDefault();
     let url = $(this).attr("href");
     window.history.pushState({ path: url }, "", url);
+  });
+
+  // Special handler for logout
+  $("a[href*='logout']").on("click", function(e) {
+    e.preventDefault();
+    
+    // Perform a synchronous redirect to logout page
+    window.location.href = $(this).attr("href");
   });
 
   // Navigation click handlers
