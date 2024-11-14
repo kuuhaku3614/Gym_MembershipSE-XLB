@@ -40,7 +40,7 @@ function redirectBasedOnRole($role) {
             header("Location: ../coach/dashboard.php");
             break;
         case 'member':
-            header("Location: ../website/website.php");
+            header("Location: ../website/logged_in_website.html");
             break;
         default:
             header("Location: index.php");

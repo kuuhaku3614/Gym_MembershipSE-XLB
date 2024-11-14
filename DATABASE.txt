@@ -1,14 +1,10 @@
--- Users table Added
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'staff', 'member', 'coach') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    role ENUM('admin', 'staff', 'member', 'coach') NOT NULL
 );
 
--- Personal details table Added
 CREATE TABLE personal_details (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL UNIQUE,
@@ -18,143 +14,6 @@ CREATE TABLE personal_details (
     sex ENUM('Male', 'Female') NOT NULL,
     birthdate DATE NOT NULL,
     phone_number VARCHAR(20),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     CONSTRAINT one_to_one UNIQUE (user_id)
-);
-
--- Membership plans table Added
-CREATE TABLE membership_plans (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    plan_name VARCHAR(100) NOT NULL,
-    plan_type ENUM('standard', 'special', 'walk-in') NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    duration INT NOT NULL,
-    duration_type ENUM('days', 'months', 'year') NOT NULL,
-    description TEXT,
-    start_date DATE,
-    end_date DATE,
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Programs table Added
-CREATE TABLE programs (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    program_name VARCHAR(100) NOT NULL,
-    program_type ENUM('personal', 'group') NOT NULL,
-    user_id INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    duration INT NOT NULL,
-    duration_type ENUM('days', 'months', 'year') NOT NULL,
-    description TEXT,
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Rental services table Added
-CREATE TABLE rental_services (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    service_name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    total_slots INT NOT NULL,
-    available_slots INT NOT NULL,
-    duration INT NOT NULL,
-    duration_type ENUM('days', 'months', 'year') NOT NULL,
-    description TEXT,
-    status ENUM('active', 'inactive') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CHECK (available_slots >= 0 AND available_slots <= total_slots)
-);
-
--- Rental transactions table
-CREATE TABLE rental_transactions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    rental_service_id INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    amount_paid DECIMAL(10,2) NOT NULL,
-    status ENUM('active', 'expired', 'cancelled') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id)
-);
-
--- Reservations table
-CREATE TABLE reservations (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    membership_plan_id INT NOT NULL,
-    program_id INT,
-    rental_service_id INT,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (membership_plan_id) REFERENCES membership_plans(id),
-    FOREIGN KEY (program_id) REFERENCES programs(id),
-    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id)
-);
-
--- Notifications table
-CREATE TABLE notifications (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    reservation_id INT NOT NULL,
-    message TEXT NOT NULL,
-    read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (reservation_id) REFERENCES reservations(id)
-);
-
--- Memberships table
-CREATE TABLE memberships (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    membership_plan_id INT NOT NULL,
-    program_id INT,
-    rental_transaction_id INT,
-    reservation_id INT,
-    total_amount DECIMAL(10,2) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    status ENUM('active', 'expired', 'expiring') DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (membership_plan_id) REFERENCES membership_plans(id),
-    FOREIGN KEY (program_id) REFERENCES programs(id),
-    FOREIGN KEY (rental_transaction_id) REFERENCES rental_transactions(id),
-    FOREIGN KEY (reservation_id) REFERENCES reservations(id)
-);
-
--- Attendance history table
-CREATE TABLE attendance_history (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    date DATE NOT NULL,
-    time_in TIME,
-    time_out TIME,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Walk In table
-CREATE TABLE walk_ins (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
 );
