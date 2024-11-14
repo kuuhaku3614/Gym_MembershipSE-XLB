@@ -78,7 +78,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-confirm btn-block">Confirm</button>
-                <a href="../login/login.php" class="btn btn-exit btn-block">Exit</a>
+                <a href="../log in/login.php" class="btn btn-exit btn-block">Exit</a>
             </form>
         </div>
     </div>
@@ -187,7 +187,7 @@
             });
 
             $('.btn-login').click(function() {
-                window.location.href = '../login/login.php';
+                window.location.href = '../log in/login.php';
             });
 
             $('.resend-code').click(function() {
