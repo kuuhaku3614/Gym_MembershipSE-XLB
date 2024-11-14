@@ -1,4 +1,4 @@
--- Users table
+-- Users table Added
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -8,7 +8,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Personal details table
+-- Personal details table Added
 CREATE TABLE personal_details (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL UNIQUE,
@@ -24,7 +24,7 @@ CREATE TABLE personal_details (
     CONSTRAINT one_to_one UNIQUE (user_id)
 );
 
--- Membership plans table
+-- Membership plans table Added
 CREATE TABLE membership_plans (
     id INT PRIMARY KEY AUTO_INCREMENT,
     plan_name VARCHAR(100) NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE membership_plans (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Programs table
+-- Programs table Added
 CREATE TABLE programs (
     id INT PRIMARY KEY AUTO_INCREMENT,
     program_name VARCHAR(100) NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE programs (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Rental services table
+-- Rental services table Added
 CREATE TABLE rental_services (
     id INT PRIMARY KEY AUTO_INCREMENT,
     service_name VARCHAR(100) NOT NULL,
