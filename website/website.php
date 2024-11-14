@@ -95,7 +95,7 @@
         <div class="dropdown">
                 <button class="dropbtn"></button>
                 <div class="dropdown-content">
-                    <div class="username"><?php echo getFullName();?></div>
+                    <a href="user_account/profile.html" class="username"><?php echo getFullName();?></a>
                     <hr>
                     <a href="#"> Notifications</a>
                     <a href="?logout=1"> Logout</a>

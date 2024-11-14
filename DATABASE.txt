@@ -27,7 +27,7 @@ CREATE TABLE personal_details (
 -- Membership plans table
 CREATE TABLE membership_plans (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    plan_name VARCHAR(100) NOT NULL UNIQUE,
+    plan_name VARCHAR(100) NOT NULL,
     plan_type ENUM('standard', 'special', 'walk-in') NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     duration INT NOT NULL,
