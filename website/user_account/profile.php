@@ -1,3 +1,18 @@
+<?php
+    session_start();
+    require_once 'profile.class.php';
+
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ../login/login.php');
+        exit();
+    }
+
+    $profile = new Profile_class();
+    $userDetails = $profile->getUserDetails($_SESSION['user_id']);
+
+    $_SESSION['personal_details'] = $userDetails;
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +20,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../css/landing1.css">
     <style>
         * {
             padding: 0;
@@ -159,9 +175,11 @@
     </style>
 </head>
 <body>
+    <?php include('../includes/header.php'); ?>
+
     <header class="container-fluid" id="title">
         <div class="container-xl" id="name">
-            <h1>Jamal Al badi</h1>
+            <h1><?= $_SESSION['personal_details']['name'] ?></h1>
             <h5>Member</h5>
         </div>
     </header>
