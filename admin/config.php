@@ -7,7 +7,7 @@ class Database{
     private $password = '';           
     private $dbname = 'gym_managementdb';
 
-    protected $connection; 
+    public $connection; 
     
     function connect(){
         if($this->connection === null){

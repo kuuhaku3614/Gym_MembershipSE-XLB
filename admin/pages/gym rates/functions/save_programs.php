@@ -1,5 +1,5 @@
 <?php
-// Modified save_programs.php
+
 require_once '../config.php';  
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $programName = $_POST['programName'];

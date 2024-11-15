@@ -1,6 +1,9 @@
 <?php
 require_once 'config.php';
 
+$database = new Database();
+$pdo = $database->connect();
+
 function loginUser($username, $password) {
     global $pdo;
     
