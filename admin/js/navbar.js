@@ -84,3 +84,8 @@ window.addEventListener('resize', function() {
         burgerMenu.innerHTML = '<i class="fas fa-bars"></i>';
     }
 });
+
+// Your existing logout button handler
+document.querySelector('.logout-btn').addEventListener('click', function() {
+    console.log('Logout clicked');
+});
