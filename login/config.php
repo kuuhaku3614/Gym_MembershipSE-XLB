@@ -1,13 +1,18 @@
 <?php
-define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'gym_managementdb');
 
-try {
-    $pdo = new PDO("mysql:host=" . DB_SERVER . ";dbname=" . DB_NAME, DB_USERNAME, DB_PASSWORD);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("ERROR: Could not connect. " . $e->getMessage());
+class Database{
+   
+    private $host = 'localhost';      
+    private $username = 'root';       
+    private $password = '';           
+    private $dbname = 'gym_managementdb';
+
+    protected $connection; 
+    
+    function connect(){
+        if($this->connection === null){
+            $this->connection = new PDO("mysql:host=$this->host;dbname=$this->dbname", $this->username, $this->password);
+        }
+        return $this->connection;
+    }
 }
-?>
