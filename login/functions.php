@@ -7,6 +7,10 @@ $pdo = $database->connect();
 function loginUser($username, $password) {
     global $pdo;
     
+    if (!$pdo) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+    
     try {
         $sql = "SELECT id, password, role FROM users WHERE username = :username";
         $stmt = $pdo->prepare($sql);
