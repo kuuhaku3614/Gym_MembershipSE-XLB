@@ -10,7 +10,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<h2>Programs</h2>
+<h2>Fitness and Wellness Programs</h2>
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProgramModal">
     Add Program
 </button>

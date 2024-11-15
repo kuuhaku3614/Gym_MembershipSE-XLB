@@ -8,7 +8,7 @@ $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<h2>Gym Rates</h2>
+<h2>Facility and Service Rentals</h2>
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
     Add Service
 </button>

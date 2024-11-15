@@ -138,17 +138,26 @@ CREATE TABLE memberships (
     FOREIGN KEY (reservation_id) REFERENCES reservations(id)
 );
 
--- Attendance history table
+-- Attendance table
+CREATE TABLE attendance (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    date DATE NOT NULL,
+    time_in TIME,
+    time_out TIME,
+    status ENUM('pending', 'checked In', 'checked In') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
 CREATE TABLE attendance_history (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     date DATE NOT NULL,
     time_in TIME,
     time_out TIME,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    status ENUM('checked in', 'checked out'),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 -- Walk In table
 CREATE TABLE walk_ins (
   id INT PRIMARY KEY AUTO_INCREMENT,
