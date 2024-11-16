@@ -1,5 +1,6 @@
 <?php
-require_once 'config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config.php';
+
 // select gym rates
 $sql = "SELECT * FROM membership_plans";
 $stmt = $pdo->prepare($sql);

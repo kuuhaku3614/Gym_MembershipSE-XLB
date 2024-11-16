@@ -1,6 +1,7 @@
 <?php
 // session_start();
-require_once 'config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config.php';
+
 
 // function checkAdminSession() {
 //     if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
