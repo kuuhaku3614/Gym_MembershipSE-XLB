@@ -1,5 +1,6 @@
 <?php
-require_once '../config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config.php';
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Retrieve and sanitize input values from the POST request

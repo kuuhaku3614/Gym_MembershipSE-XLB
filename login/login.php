@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once 'config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config.php';
+
 require_once 'functions.php';
 
 // Check if user is already logged in
