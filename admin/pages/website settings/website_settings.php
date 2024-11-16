@@ -1,218 +1,167 @@
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box">
-                <h4 class="page-title">Website Settings</h4>
-                <div class="page-title-right">
-                    <form class="d-flex">
-                        <div class="input-group">
-                            <input type="text" class="form-control form-control-light" id="dash-daterange">
-                            <span class="input-group-text bg-primary border-primary text-white brand-bg-color">
-                                <i class="bi bi-calendar3"></i>
-                            </span>
-                        </div>
-                    </form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Settings</title>
+    <link rel="stylesheet" href="C:\xampp\htdocs\Gym_MembershipSE-XLB\admin\css\admin.css">
+</head>
+<body>
+<h2>Website Settings</h2>
+
+<form action="upload.php" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Header Section</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="companyHeader" class="form-label">Upload Header Image:</label>
+                    <input type="file" class="form-control" id="companyHeader" name="companyHeader" accept="image/*" required>
+                </div>
+                <div class="mb-3">
+                    <label for="companyName" class="form-label">Company Name:</label>
+                    <input type="text" class="form-control" id="companyName" name="companyName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="companyDescription" class="form-label">Company Description:</label>
+                    <input type="text" class="form-control" id="companyDescription" name="companyDescription" required>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-12 col-md-12 col-lg-12 col-xl-12 d-flex flex-column">
-            <div class="row flex-grow-1">
-            <div class="col-12 col-sm-6 col-md-6 col-xl-3 pb-4">
-                <div class="card widget-flat mb-0">
-                <div class="card-body">
-                    <div class="float-end me-2">
-                        <i class="bi bi-people fs-1  brand-color"></i>
-                    </div>
-                    <h5 class="text-muted fw-normal mt-0" title="Number of Customers">Customers</h5>
-                    <h3 class="my-3">36,254</h3>
-                    <p class="mb-0 text-muted">
-                        <span class="text-success me-2"><i class="bi bi-arrow-up"></i> 5.27%</span>
-                    </p>
-                    <p class="mb-0 text-muted pt-2">
-                        <span class="text-nowrap">Since last month</span>
-                    </p>
-                </div>
-                </div>
-            </div>
 
-            <div class="col-12 col-sm-6 col-md-6 col-xl-3 pb-4">
-                <div class="card widget-flat mb-0">
-                <div class="card-body">
-                    <div class="float-end me-2">
-                        <i class="bi bi-cart3 fs-1  brand-color"></i>
-                    </div>
-                    <h5 class="text-muted fw-normal mt-0" title="Number of Orders">Orders</h5>
-                    <h3 class="my-3">5,543</h3>
-                    <p class="mb-0 text-muted">
-                        <span class="text-danger me-2"><i class="bi bi-arrow-down"></i></i> 1.08%</span>
-                    </p>
-                    <p class="mb-0 text-muted pt-2">
-                        <span class="text-nowrap">Since last month</span>
-                    </p>
-                </div>
-                </div>
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Offers Section</h4>
             </div>
-
-            <div class="col-12 col-sm-6 col-md-6 col-xl-3 pb-4">
-                <div class="card widget-flat mb-0">
-                <div class="card-body">
-                    <div class="float-end me-2">
-                        <i class="bi bi-graph-up fs-1  brand-color"></i>
-                    </div>
-                    <h5 class="text-muted fw-normal mt-0" title="Average Sales">Sales</h5>
-                    <h3 class="my-3">₱6,254</h3>
-                    <p class="mb-0 text-muted">
-                        <span class="text-danger me-2"><i class="bi bi-arrow-down"></i></i> 7.00%</span>
-                    </p>
-                    <p class="mb-0 text-muted pt-2">
-                        <span class="text-nowrap">Since last month</span>
-                    </p>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="companyHeader" class="form-label">Upload offers image:</label>
+                    <input type="file" class="form-control" id="companyHeader" name="companyHeader" accept="image/*" required>
                 </div>
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title:</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
                 </div>
-            </div>
-
-            <div class="col-12 col-sm-6 col-md-6 col-xl-3 pb-4">
-                <div class="card widget-flat mb-0">
-                <div class="card-body">
-                    <div class="float-end me-2">
-                        <i class="bi bi-graph-up-arrow fs-1  brand-color"></i>
-                    </div>
-                    <h5 class="text-muted fw-normal mt-0" title="Growth">Growth</h5>
-                    <h3 class="my-3">+ 30.56%</h3>
-                    <p class="mb-0 text-muted">
-                        <span class="text-success me-2"><i class="bi bi-arrow-up"></i></i> 4.87%</span>
-                    </p>
-                    <p class="mb-0 text-muted pt-2">
-                        <span class="text-nowrap">Since last month</span>
-                    </p>
-                </div>
-                </div>
-            </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-12 col-lg-12 col-xl-12">
-            <div class="card card-h-100 p-3">
-                <div class="d-flex card-header justify-content-between align-items-center w-100">
-                    <h3 class="header-title mb-0">Sales By Month</h3>
-                    <div class="dropdown">
-                        <a href="#" class="dropdown-toggle arrow-none card-drop" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-three-dots-vertical brand-color fs-3"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a href="javascript:void(0);" class="dropdown-item">Export Report</a>
-                        </div>
-                    </div>
-                </div>
-                <canvas id="salesChart" class="card-body"></canvas>
-            </div>
-        </div>
-        <div class="col-12">
-            <div class="card p-4">
-                <div class="d-flex card-header justify-content-between align-items-center w-100 px-2">
-                    <h3 class="header-title mb-0">Top Selling Products</h3>
-                </div>
-                <div class="card-body p-1 pt-2">
-                    <div class="table-responsive">
-                        <table class="table table-centered table-nowrap table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">Spicy Pepperoni Pizza</h5>
-                                        <span class="text-muted font-13">07 April 2024</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱399.99</h5>
-                                        <span class="text-muted font-13">Price</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">82</h5>
-                                        <span class="text-muted font-13">Quantity</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱32,799.18</h5>
-                                        <span class="text-muted font-13">Amount</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">Jalapeño Hot Pizza</h5>
-                                        <span class="text-muted font-13">25 March 2024</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱499.50</h5>
-                                        <span class="text-muted font-13">Price</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">37</h5>
-                                        <span class="text-muted font-13">Quantity</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱18,481.50</h5>
-                                        <span class="text-muted font-13">Amount</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">Chili Lover's Pizza</h5>
-                                        <span class="text-muted font-13">17 March 2024</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱349.99</h5>
-                                        <span class="text-muted font-13">Price</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">64</h5>
-                                        <span class="text-muted font-13">Quantity</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱22,399.36</h5>
-                                        <span class="text-muted font-13">Amount</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">Spicy BBQ Pizza</h5>
-                                        <span class="text-muted font-13">12 March 2024</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱299.99</h5>
-                                        <span class="text-muted font-13">Price</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">184</h5>
-                                        <span class="text-muted font-13">Quantity</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱55,198.16</h5>
-                                        <span class="text-muted font-13">Amount</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">Extra Hot Pizza</h5>
-                                        <span class="text-muted font-13">05 March 2024</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱429.99</h5>
-                                        <span class="text-muted font-13">Price</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">69</h5>
-                                        <span class="text-muted font-13">Quantity</span>
-                                    </td>
-                                    <td>
-                                        <h5 class="font-14 my-1 fw-normal">₱29,669.31</h5>
-                                        <span class="text-muted font-13">Amount</span>
-                                    </td>
-                                </tr>
-
-                            </tbody>
-                        </table>
-                    </div> <!-- end table-responsive-->
+                <div class="mb-3">
+                    <label for="Description" class="form-label">Description:</label>
+                    <input type="text" class="form-control" id="Description" name="Description" required>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Products Section</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="products-img" class="form-label">Upload products image(MAX:8):</label>
+                    <input type="file" class="form-control" id="products-img" name="products-img" accept="image/*" required>
+                </div>
+
+            <div class="mb-3">
+                <label for="title" class="form-label">Title:</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="Description" class="form-label">Description:</label>
+                    <input type="text" class="form-control" id="Description" name="Description" required>
+                </div>  
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">About Us Section</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="aboutUs-img" class="form-label">Upload about image(MAX:4):</label>
+                    <input type="file" class="form-control" id="aboutUs-img" name="aboutUs-img" accept="image/*" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Description" class="form-label">About Us-Description:</label>
+                    <input type="text" class="form-control" id="Description" name="Description" required>
+                </div>  
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Tagline Section</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="tagline-img" class="form-label">Upload tagline image:</label>
+                    <input type="file" class="form-control" id="tagline-img" name="tagline-img" accept="image/*" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Tagline" class="form-label">Tagline:</label>
+                    <input type="text" class="form-control" id="Tagline" name="Tagline" required>
+                </div>  
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Staff Section</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="tagline-img" class="form-label">Upload staff image (MAX:5):</label>
+                    <input type="file" class="form-control" id="tagline-img" name="tagline-img" accept="image/*" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Contact Us Section</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="location-img" class="form-label">Upload location image:</label>
+                    <input type="file" class="form-control" id="location-img" name="location-img" accept="image/*" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Location" class="form-label">Location:</label>
+                    <input type="text" class="form-control" id="Location" name="Location" required>
+                </div>  
+                <div class="mb-3">
+                    <label for="Contact" class="form-label">Contact No:</label>
+                    <input type="text" class="form-control" id="Contact" name="Contact" required>
+                </div> 
+                <div class="mb-3">
+                    <label for="Email" class="form-label">Email:</label>
+                    <input type="text" class="form-control" id="Email" name="Email" required>
+                </div> 
+            </div>
+        </div>
+    </div>
+    
+        
+</form>
+    <div class="mt-3">
+            <button class="btn btn-primary update-btn " type="submit">Update</button>
+        </div>
+
+
+</body>
+</html>

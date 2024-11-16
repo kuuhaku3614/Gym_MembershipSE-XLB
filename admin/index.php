@@ -22,6 +22,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../admin/css/navbar1.css">
+    <link rel="stylesheet" href="../admin/css/admin.css">
 </head>
 <body>
     <!-- Burger Menu Button -->

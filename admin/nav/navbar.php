@@ -122,7 +122,7 @@
 
         <!-- Logout Container -->
         <div class="logout-container">
-            <a href="../../login/logout.php" class="nav-item">
+            <a href="../login/logout.php" class="nav-item">
                 <div class="nav-item-content">
                     <i class="fas fa-sign-out-alt"></i>
                     Logout
