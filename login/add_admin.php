@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 
 $username_err = $password_err = $success_msg = "";

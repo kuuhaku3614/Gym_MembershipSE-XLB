@@ -1,5 +1,5 @@
 <?php
-require_once '../../../../config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 if (!isset($_POST['userId'])) {
     echo json_encode(['success' => false, 'message' => 'User ID is required']);

@@ -185,7 +185,29 @@
   color: #ffffff;
   border-left: 4px solid #ffffff;
 }
+/* Add these styles to your existing CSS */
 
+.mb-3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  margin-bottom: 20px !important;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mb-3 {
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-start;
+  }
+
+  #showHistoryBtn {
+      align-self: flex-end;
+  }
+}
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;

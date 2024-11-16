@@ -1,5 +1,5 @@
 <?php
-require_once '../config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 try {
     $sql = "SELECT * FROM attendance WHERE date = CURRENT_DATE()";
