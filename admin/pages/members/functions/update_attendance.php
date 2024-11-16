@@ -1,47 +1,111 @@
 <?php
-require_once '../config.php'; 
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = $_POST['userId'];
-    $date = $_POST['date'];
     $status = $_POST['status'];
-
+    $date = $_POST['date'];
+    $currentTime = date('H:i:s');
+    
     try {
-        // Check if a record exists in the attendance table
+        $pdo->beginTransaction();
+        
+        // Check if attendance record exists for today
         $sql = "SELECT * FROM attendance WHERE user_id = :user_id AND date = :date";
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $stmt->bindParam(':date', $date, PDO::PARAM_STR);
-        $stmt->execute();
+        $stmt->execute([':user_id' => $userId, ':date' => $date]);
         $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($status === 'Checked In') {
+        
+        if ($status === 'checked In') {
+            // Handle check-in
             if ($existingRecord) {
-                // If the record exists, update the time_in and status
-                $sql = "UPDATE attendance SET time_in = NOW(), status = :status WHERE user_id = :user_id AND date = :date";
+                $sql = "UPDATE attendance 
+                        SET time_in = :time, 
+                            status = :status 
+                        WHERE user_id = :user_id 
+                        AND date = :date";
             } else {
-                // If no record exists, insert a new one
-                $sql = "INSERT INTO attendance (user_id, date, time_in, status) VALUES (:user_id, :date, NOW(), :status)";
+                $sql = "INSERT INTO attendance (user_id, date, time_in, status) 
+                        VALUES (:user_id, :date, :time, :status)";
             }
-        } elseif ($status === 'Checked Out') {
-            if ($existingRecord) {
-                // Update the time_out and status for check-out
-                $sql = "UPDATE attendance SET time_out = NOW(), status = :status WHERE user_id = :user_id AND date = :date";
+            
+            // Execute attendance update/insert
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':date' => $date,
+                ':time' => $currentTime,
+                ':status' => $status
+            ]);
+            
+            // Insert into attendance history for check-in only
+            $historySQL = "INSERT INTO attendance_history 
+                          (user_id, date, time_in, status) 
+                          VALUES (:user_id, :date, :time_in, :status)";
+            
+            $stmt = $pdo->prepare($historySQL);
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':date' => $date,
+                ':time_in' => $currentTime,
+                ':status' => $status
+            ]);
+            
+        } else if ($status === 'checked out') {
+            // Handle check-out
+            if ($existingRecord && $existingRecord['time_in']) {
+                // Update attendance record with check-out time
+                $sql = "UPDATE attendance 
+                        SET time_out = :time, 
+                            status = :status 
+                        WHERE user_id = :user_id 
+                        AND date = :date";
+                
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':user_id' => $userId,
+                    ':date' => $date,
+                    ':time' => $currentTime,
+                    ':status' => $status
+                ]);
+                
+                // Insert complete record into attendance history
+                $historySQL = "INSERT INTO attendance_history 
+                              (user_id, date, time_in, time_out, status) 
+                              VALUES (:user_id, :date, :time_in, :time_out, :status)";
+                
+                $stmt = $pdo->prepare($historySQL);
+                $stmt->execute([
+                    ':user_id' => $userId,
+                    ':date' => $date,
+                    ':time_in' => $existingRecord['time_in'], // Use existing check-in time
+                    ':time_out' => $currentTime,
+                    ':status' => $status
+                ]);
             } else {
-                // If no record exists, insert one with time_out
-                $sql = "INSERT INTO attendance (user_id, date, time_out, status) VALUES (:user_id, :date, NOW(), :status)";
+                throw new Exception("Cannot check out without a valid check-in record");
             }
         }
-
+        
+        $pdo->commit();
+        
+        // Fetch updated attendance record
+        $sql = "SELECT * FROM attendance WHERE user_id = :user_id AND date = :date";
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $stmt->bindParam(':date', $date, PDO::PARAM_STR);
-        $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-        $stmt->execute();
-
-        echo "success";
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+        $stmt->execute([':user_id' => $userId, ':date' => $date]);
+        $updatedRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'attendance' => $updatedRecord
+        ]);
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
     }
 }
 ?>

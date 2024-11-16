@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/Gym_MembershipSE-XLB/functions/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 
 $sql = "SELECT programs.*, CONCAT(personal_details.first_name, ' ', personal_details.last_name) AS coach_name 
