@@ -27,59 +27,37 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!-- Add Font Awesome for the default user icon -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-<!-- Add custom styles for the default icon -->
-<style>
-.profile-container {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background-color: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    border: 2px solid #dee2e6;
-}
-
-.default-user-icon {
-    font-size: 80px;
-    color: #adb5bd;
-}
-
-.profile-photo {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 2px solid #dee2e6;
-}
-</style>
-
 <!-- Verification Modal -->
 <div class="modal fade" id="verificationModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="verificationModalLabel">Verify Identity</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="verificationModalLabel"><i class="fas fa-user-check me-2"></i>Verify Identity</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="text-center mb-3">
-                    <div id="photoContainer" class="profile-container">
+                <div class="text-center mb-4">
+                    <div id="photoContainer" class="profile-container mb-3">
                         <!-- This will either contain the photo or the default icon -->
                     </div>
-                    <h4 id="userName" class="mt-2"></h4>
-                    <p id="userUsername" class="text-muted"></p>
+                    <h4 id="userName" class="fw-bold text-danger"></h4>
+                    <p id="userUsername" class="text-muted mb-0"></p>
                 </div>
-                <div class="form-group">
-                    <label for="password" class="form-label">Please enter your password to verify:</label>
-                    <input type="password" class="form-control" id="password" required>
-                    <div id="passwordError" class="invalid-feedback"></div>
-                </div>
+                <form>
+                    <div class="form-group mb-3">
+                        <label for="password" class="form-label fw-semibold">Enter your password:</label>
+                        <input type="password" class="form-control form-control-lg" id="password" placeholder="" required>
+                        <div id="passwordError" class="invalid-feedback"></div>
+                    </div>
+                </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="verifyButton">Verify</button>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times-circle me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="verifyButton">
+                    <i class="fas fa-check-circle me-2"></i>Verify
+                </button>
             </div>
         </div>
     </div>
