@@ -27,10 +27,6 @@
                     <i class="fas fa-clipboard-check"></i>
                     Attendance
                 </a>
-                <a href="attendance_history" id="attendance_history-link" class="sub-nav-item">
-                    <i class="fas fa-history"></i>
-                    Attendance History
-                </a>
                 <a href="member_status" id="member_status-link" class="sub-nav-item">
                     <i class="fas fa-user-check"></i>
                     Members Status

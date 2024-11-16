@@ -26,28 +26,64 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!-- Add Font Awesome for the default user icon -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+        .profile-container {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        border: 3px solid #dee2e6;
+        overflow: hidden;
+    }
 
+    .profile-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-container .default-user-icon {
+        font-size: 60px;
+        color: #adb5bd;
+    }
+
+    .modal-header {
+        border-bottom: none;
+    }
+
+    .modal-footer {
+        border-top: none;
+    }
+</style>
 <!-- Verification Modal -->
 <div class="modal fade" id="verificationModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="verificationModalLabel"><i class="fas fa-user-check me-2"></i>Verify Identity</h5>
+        <div class="modal-content shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="verificationModalLabel">
+                    <i class="fas fa-user-check me-2"></i>Verify Identity
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="text-center mb-4">
-                    <div id="photoContainer" class="profile-container mb-3">
+                    <div id="photoContainer" class="profile-container">
                         <!-- This will either contain the photo or the default icon -->
+                        <i class="default-user-icon fas fa-user-circle"></i>
                     </div>
-                    <h4 id="userName" class="fw-bold text-danger"></h4>
-                    <p id="userUsername" class="text-muted mb-0"></p>
+                    <h4 id="userName" class="fw-bold text-primary">John Doe</h4>
+                    <p id="userUsername" class="text-muted mb-0">@johndoe</p>
                 </div>
                 <form>
-                    <div class="form-group mb-3">
-                        <label for="password" class="form-label fw-semibold">Enter your password:</label>
-                        <input type="password" class="form-control form-control-lg" id="password" placeholder="" required>
-                        <div id="passwordError" class="invalid-feedback"></div>
+                    <div class="form-group mb-4">
+                        <label for="password" class="form-label">Enter your password:</label>
+                        <input type="password" class="form-control form-control-lg" id="password" placeholder="••••••••" required>
+                        <!-- Error message directly below the input field -->
+                        <div id="passwordError" class="invalid-feedback mt-2"></div>
                     </div>
                 </form>
             </div>
