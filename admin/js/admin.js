@@ -1,15 +1,18 @@
 $(document).ready(function () {
   // Handle navigation item clicks EXCEPT logout
-  $(".nav-item:not([href*='logout']), .nav-item.has-subnav, .sub-nav-item").on("click", function (e) {
-    e.preventDefault();
-    let url = $(this).attr("href");
-    window.history.pushState({ path: url }, "", url);
-  });
+  $(".nav-item:not([href*='logout']), .nav-item.has-subnav, .sub-nav-item").on(
+    "click",
+    function (e) {
+      e.preventDefault();
+      let url = $(this).attr("href");
+      window.history.pushState({ path: url }, "", url);
+    }
+  );
 
   // Special handler for logout
-  $("a[href*='logout']").on("click", function(e) {
+  $("a[href*='logout']").on("click", function (e) {
     e.preventDefault();
-    
+
     // Perform a synchronous redirect to logout page
     window.location.href = $(this).attr("href");
   });
@@ -21,32 +24,39 @@ $(document).ready(function () {
     "members-link": () => loadContent("pages/members/members.php"),
     "walk_in-link": () => loadContent("pages/walk in/walk_in.php"),
     "gym_rates-link": () => loadContent("pages/gym rates/gym_rates.php"),
-    "payment_records-link": () => loadContent("pages/payment records/payment_records.php"),
-    "notification-link": () => loadContent("pages/notification/notification.php"),
-    "website_settings-link": () => loadContent("pages/website settings/website_settings.php"),
+    "payment_records-link": () =>
+      loadContent("pages/payment records/payment_records.php"),
+    "notification-link": () =>
+      loadContent("pages/notification/notification.php"),
+    "website_settings-link": () =>
+      loadContent("pages/website settings/website_settings.php"),
     "report-link": () => loadContent("pages/report/report.php"),
-    "staff_management-link": () => loadContent("pages/staff management/staff_management.php"),
-    
+    "staff_management-link": () =>
+      loadContent("pages/staff management/staff_management.php"),
+
     // Sub nav items for Members
     "attendance-link": () => loadContent("pages/members/attendance.php"),
-    "attendance_history-link": () => loadContent("pages/members/attendance_history.php"),
+    "attendance_history-link": () =>
+      loadContent("pages/members/attendance_history.php"),
     "member_status-link": () => loadContent("pages/members/members_status.php"),
-    
+
     // Sub nav items for Gym Rates
     "programs-link": () => loadContent("pages/gym rates/programs.php"),
     "rentals-link": () => loadContent("pages/gym rates/rentals.php"),
-    
+
     // Sub nav items for Notification
-    "announcement-link": () => loadContent("pages/notification/announcements.php"),
-    
+    "announcement-link": () =>
+      loadContent("pages/notification/announcements.php"),
+
     // Sub nav items for Staff Management
-    "activity_log-link": () => loadContent("pages/staff management/staff_log.php"),
-    "coach_log-link": () => loadContent("pages/staff management/coach_log.php")
+    "activity_log-link": () =>
+      loadContent("pages/staff management/staff_log.php"),
+    "coach_log-link": () => loadContent("pages/staff management/coach_log.php"),
   };
 
   // Attach click handlers to all navigation items
-  Object.keys(navigationHandlers).forEach(id => {
-    $(`#${id}`).on("click", function(e) {
+  Object.keys(navigationHandlers).forEach((id) => {
+    $(`#${id}`).on("click", function (e) {
       e.preventDefault();
       navigationHandlers[id]();
     });
@@ -58,36 +68,36 @@ $(document).ready(function () {
       type: "GET",
       url: url,
       dataType: "html",
-      success: function(response) {
+      success: function (response) {
         $(".main-content").html(response);
       },
-      error: function() {
+      error: function () {
         $(".main-content").html("<p>Error loading the page content.</p>");
         alert("Error loading the page content.");
-      }
+      },
     });
   }
 
   // Handle initial page load based on URL
   let url = window.location.href;
   const urlMappings = {
-    "dashboard": "dashboard-link",
-    "members": "members-link",
-    "attendance": "attendance-link",
-    "attendance_history": "attendance_history-link",
-    "member_status": "member_status-link",
-    "walk_in": "walk_in-link",
-    "gym_rates": "gym_rates-link",
-    "programs": "programs-link",
-    "rentals": "rentals-link",
-    "payment_records": "payment_records-link",
-    "notification": "notification-link",
-    "announcement": "announcement-link",
-    "website_settings": "website_settings-link",
-    "report": "report-link",
-    "staff_management": "staff_management-link",
-    "activity_log": "activity_log-link",
-    "coach_log": "coach_log-link"
+    dashboard: "dashboard-link",
+    members: "members-link",
+    attendance: "attendance-link",
+    attendance_history: "attendance_history-link",
+    member_status: "member_status-link",
+    walk_in: "walk_in-link",
+    gym_rates: "gym_rates-link",
+    programs: "programs-link",
+    rentals: "rentals-link",
+    payment_records: "payment_records-link",
+    notification: "notification-link",
+    announcement: "announcement-link",
+    website_settings: "website_settings-link",
+    report: "report-link",
+    staff_management: "staff_management-link",
+    activity_log: "activity_log-link",
+    coach_log: "coach_log-link",
   };
 
   let matched = false;
