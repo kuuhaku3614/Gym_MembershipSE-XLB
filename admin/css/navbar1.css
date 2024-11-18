@@ -388,37 +388,69 @@ body {
   border-radius: 4px;
 }
 
-/* Notification List */
-.notification-list {
+/* Modal Overlay */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.3); /* Lighter backdrop */
+}
+
+/* Modal Content */
+.modal {
+  --bs-modal-bg: var(--white);
+  --bs-modal-border-color: var(--gray-200);
+}
+
+.modal-content {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gray-200);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--gray-200);
+  padding: 1rem;
+}
+
+.modal-header .btn-close {
+  opacity: 0.6;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--gray-200);
+  padding: 1rem;
+  justify-content: space-between;
+}
+
+/* Profile Icon in Modal */
+.profile-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 24px;
+  font-weight: bold;
+  margin-right: 15px;
 }
 
-/* Notification Item Styles */
-.notification {
-  padding: 15px;
-  border-radius: 6px;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: background-color 0.3s ease;
+/* Modal Buttons */
+.modal-footer .btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
 }
 
+.modal-footer .btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
 .notification:hover {
   background-color: #f1f3f5;
-}
-
-/* Notification Type Variants */
-.notification.walk-in {
-  border-left: 4px solid #28a745;
-}
-
-.notification.membership {
-  border-left: 4px solid #17a2b8;
-}
-
-.notification.renewal {
-  border-left: 4px solid #ffc107;
 }
 
 /* Responsive Design */
