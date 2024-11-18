@@ -66,5 +66,3 @@ $(document).ready(function () {
     window.print();
   });
 });
-
-alert("report.js loaded");
