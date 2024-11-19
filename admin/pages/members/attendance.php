@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../../../config.php'; // Navigates up 3 levels dynamically
 
 
 // SQL query remains the same

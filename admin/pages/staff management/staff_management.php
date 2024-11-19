@@ -1,6 +1,6 @@
 <?php
 // Database connection
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../../../config.php';
 $database = new Database();
 $pdo = $database->connect();
 

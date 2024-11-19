@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../../../../config.php';
 
 function insertAnnouncement($pdo, $message, $date, $time, $type) {
     // Validate inputs

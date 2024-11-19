@@ -1,5 +1,4 @@
 <?php
-
 class Database{
    
     private $host = 'localhost';      
@@ -17,4 +16,5 @@ class Database{
     }
 }
 $database = new Database();
+
 $pdo = $database->connect();
