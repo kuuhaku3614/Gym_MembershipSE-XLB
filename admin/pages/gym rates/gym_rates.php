@@ -1,8 +1,5 @@
 <?php
-require_once dirname(__DIR__, 3) . '/config.php'; // Navigates up 3 levels dynamically
-
-
-// select gym rates
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 // select gym rates
 $sql = "SELECT mp.*, dt.type_name as duration_type, st.status_name as status 
         FROM membership_plans mp

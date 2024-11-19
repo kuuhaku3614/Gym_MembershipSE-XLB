@@ -1,6 +1,6 @@
 <?php
 // session_start();
-require_once '../config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 
 // function checkAdminSession() {
