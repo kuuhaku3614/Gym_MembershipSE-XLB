@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../../../config.php';
 // select gym rates
 $sql = "SELECT mp.*, dt.type_name as duration_type, st.status_name as status 
         FROM membership_plans mp
