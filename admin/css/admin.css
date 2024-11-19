@@ -27,3 +27,16 @@
   flex-direction: column;
   overflow-y: auto;
 }
+
+/* REPORT */
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+}
+
+h3,
+h4,
+h5 {
+  font-weight: bold;
+}
