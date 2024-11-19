@@ -40,3 +40,33 @@ h4,
 h5 {
   font-weight: bold;
 }
+
+/* WALK IN */
+.btn-pay {
+  padding: 2px 8px;
+  font-size: 0.875rem;
+}
+.status-pending {
+  color: #ff8c00;
+  font-weight: 500;
+}
+.status-walked-in {
+  color: #28a745;
+  font-weight: 500;
+}
+.payment-unpaid {
+  color: #dc3545;
+  font-weight: 500;
+}
+.payment-paid {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+.modal-footer .btn {
+  width: 100px;
+}

@@ -12,19 +12,9 @@ require_once '../config.php';
 // checkAdminSession();
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="../admin/css/navbar1.css">
-    <link rel="stylesheet" href="../admin/css/admin.css">
-</head>
+    <?php
+        require_once '../admin/includes/header.php';
+    ?>
 <body>
     <!-- Burger Menu Button -->
     <button class="burger-menu" id="burgerMenu">
@@ -34,7 +24,7 @@ require_once '../config.php';
     <!-- Overlay for mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <?php
-        require_once '../admin/nav/navbar.php';
+        require_once '../admin/includes/navbar.php';
     ?>
     
      <!-- Main Content Container -->
@@ -42,12 +32,9 @@ require_once '../config.php';
             <!-- dynamic content here -->
      </div>
 
-    <script src="../"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../admin/js/navbar.js"></script>
-    <script src="../admin/js/admin.js"></script>
+    <?php
+        require_once '../admin/includes/footer.php';
+    ?>
 
 </body>
 </html>
