@@ -14,7 +14,7 @@
         </div>
         <div class="col-md-4">
           <label for="preparedBy" class="form-label">Prepared By</label>
-          <input type="text" class="form-control" id="preparedBy" value="JC Powerzone" readonly>
+          <input type="text" class="form-control" id="preparedBy" value="JC Powerzone" >
         </div>
       </div>
       <div class="row g-3 mt-3">
