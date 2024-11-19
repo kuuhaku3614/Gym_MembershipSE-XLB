@@ -3,10 +3,31 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 
 // Fetch data for display
-$sql = "SELECT * FROM rental_services";
+$sql = "
+    SELECT 
+        rs.*, 
+        dt.type_name AS duration_type, 
+        st.status_name AS status 
+    FROM rental_services rs
+    JOIN duration_types dt ON rs.duration_type_id = dt.id
+    JOIN status_types st ON rs.status_id = st.id
+";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch duration types
+$durationTypesSql = "SELECT id, type_name FROM duration_types";
+$durationTypesStmt = $pdo->prepare($durationTypesSql);
+$durationTypesStmt->execute();
+$durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch status types
+$statusTypesSql = "SELECT id, status_name FROM status_types";
+$statusTypesStmt = $pdo->prepare($statusTypesSql);
+$statusTypesStmt->execute();
+$statusTypes = $statusTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <h2>Facility and Service Rentals</h2>
@@ -28,31 +49,31 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </tr>
     </thead>
     <tbody>
-        <?php
-        $count = 1;
-        if (!empty($result)) {
-            foreach ($result as $row) {
-                echo "<tr>";
-                echo "<td>" . $count . "</td>";
-                echo "<td>" . htmlspecialchars($row['service_name']) . "</td>";
-                echo "<td>₱" . htmlspecialchars($row['price']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['total_slots']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['available_slots']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['duration']) . " " . htmlspecialchars($row['duration_type']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['status']) . "</td>";
-                echo "<td>
-                        <button class='btn btn-warning btn-sm' data-id='" . $row['id'] . "'>Deactivate</button>
-                        <button class='btn btn-primary btn-sm' data-id='" . $row['id'] . "'>Edit</button>
-                        <button class='btn btn-danger btn-sm' data-id='" . $row['id'] . "'>Remove</button>
-                    </td>";
-                echo "</tr>";
-                $count++;
-            }
-        } else {
-            echo "<tr><td colspan='8'>No data available</td></tr>";
+    <?php
+    $count = 1;
+    if (!empty($result)) {
+        foreach ($result as $row) {
+            echo "<tr>";
+            echo "<td>" . $count . "</td>";
+            echo "<td>" . htmlspecialchars($row['service_name']) . "</td>";
+            echo "<td>₱" . number_format($row['price'], 2) . "</td>";
+            echo "<td>" . htmlspecialchars($row['total_slots']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['available_slots']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['duration']) . " " . htmlspecialchars($row['duration_type']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['status']) . "</td>";
+            echo "<td>
+                    <button class='btn btn-warning btn-sm' data-id='" . $row['id'] . "'>Deactivate</button>
+                    <button class='btn btn-primary btn-sm' data-id='" . $row['id'] . "'>Edit</button>
+                    <button class='btn btn-danger btn-sm' data-id='" . $row['id'] . "'>Remove</button>
+                </td>";
+            echo "</tr>";
+            $count++;
         }
-        ?>
-    </tbody>
+    } else {
+        echo "<tr><td colspan='8'>No data available</td></tr>";
+    }
+    ?>
+</tbody>
 </table>
 
 <!-- Modal for adding/updating service -->
@@ -102,12 +123,14 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <!-- Duration Type -->
                             <div class="mb-3">
                                 <label for="durationType" class="form-label">Duration Type</label>
-                                    <select class="form-select" id="durationType" name="durationType" required>
-                                        <option value="">Select Type</option>
-                                        <option value="days">Days</option>
-                                        <option value="months">Months</option>
-                                        <option value="year">Year</option>
-                                    </select>
+                                <select class="form-select" id="durationType" name="durationType" required>
+                                    <option value="">Select Type</option>
+                                    <?php
+                                    foreach ($durationTypes as $type) {
+                                        echo "<option value='" . $type['id'] . "'>" . htmlspecialchars($type['type_name'], ENT_QUOTES, 'UTF-8') . "</option>";
+                                    }
+                                    ?>
+                                </select>
                             </div>
                         </div>
 
@@ -133,29 +156,46 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 // Save button handler with AJAX
-$('#saveServiceBtn').click(function() {
-    var formData = $('#addServiceForm').serialize();
-    
-    $.ajax({
-        url: '../admin/pages/gym rates/functions/save_rentals.php',
-        type: 'POST',
-        data: formData,
-        success: function(response) {
-            if (response === "success") {
-                $('#addServiceModal').modal('hide');
-                location.reload();
-            } else {
-                alert("Error: " + response);
-            }
-        },
-        error: function(xhr, status, error) {
-            alert("AJAX error: " + error);
+$(document).ready(function () {
+    // Save button handler
+    $('#saveServiceBtn').click(function () {
+        // Serialize the form data
+        var formData = $('#addServiceForm').serialize();
+
+        // Validate required fields (you can expand this for stricter validation)
+        if ($('#serviceName').val() === "" || 
+            $('#price').val() === "" || 
+            $('#slots').val() === "" || 
+            $('#duration').val() === "" || 
+            $('#durationType').val() === "") {
+            alert("All fields are required. Please fill out the form completely.");
+            return;
         }
+
+        // Send AJAX request
+        $.ajax({
+            url: '../admin/pages/gym rates/functions/save_rentals.php', // Adjust to the correct path
+            type: 'POST',
+            data: formData,
+            success: function (response) {
+                if (response.trim() === "success") {
+                    alert("Service saved successfully!");
+                    $('#addServiceModal').modal('hide'); // Close modal
+                    location.reload(); // Reload page to show the new data
+                } else {
+                    alert("Error saving service: " + response); // Display server-side error
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("AJAX error: " + error);
+            }
+        });
+    });
+
+    // Reset form when modal is closed
+    $('#addServiceModal').on('hidden.bs.modal', function () {
+        $('#addServiceForm')[0].reset(); // Clear form
     });
 });
 
-// Reset form when modal is closed
-$('#addServiceModal').on('hidden.bs.modal', function () {
-    $('#addServiceForm')[0].reset();
-});
 </script>
