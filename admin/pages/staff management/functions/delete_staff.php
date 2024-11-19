@@ -1,7 +1,7 @@
 <?php
 // delete_staff.php
 header('Content-Type: application/json');
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../../../config.php';
 
 try {
     $database = new Database();

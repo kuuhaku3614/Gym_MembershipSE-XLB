@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../../../../config.php';
 
 if (!isset($_POST['userId']) || !isset($_POST['password'])) {
     echo json_encode(['success' => false, 'message' => 'Missing required fields']);

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/functions/config.php';
+require_once '../../../../config.php';
 
 if (isset($_POST['programTypeId'])) {
     $programTypeId = $_POST['programTypeId'];

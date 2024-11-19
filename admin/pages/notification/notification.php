@@ -73,7 +73,6 @@
             <option value="membership">Membership</option>
             <option value="renewal">Renewal</option>
         </select>
-        <button class="refresh-btn">Refresh</button>
     </div>
 </div>
     <div class="container mt-5">
