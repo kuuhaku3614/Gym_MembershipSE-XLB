@@ -2,7 +2,12 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 // select gym rates
-$sql = "SELECT * FROM membership_plans";
+// select gym rates
+$sql = "SELECT mp.*, dt.type_name as duration_type, st.status_name as status 
+        FROM membership_plans mp
+        LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
+        LEFT JOIN status_types st ON mp.status_id = st.id
+        ORDER BY mp.created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

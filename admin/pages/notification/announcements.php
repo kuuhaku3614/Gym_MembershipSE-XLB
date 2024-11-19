@@ -153,7 +153,6 @@ $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <table id="announcementsTable" class="table table-striped table-hover">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Date</th>
                 <th>Message</th>
                 <th>Action</th>
@@ -162,7 +161,6 @@ $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <tbody>
             <?php foreach ($announcements as $announcement): ?>
                 <tr>
-                    <td><?= htmlspecialchars($announcement['id']) ?></td>
                     <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
                     <td><?= htmlspecialchars($announcement['message']) ?></td>
                     <td>

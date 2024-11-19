@@ -10,12 +10,11 @@ $userId = $_POST['userId'];
 $password = $_POST['password'];
 
 try {
-    $sql = "
-    SELECT u.password
-    FROM users u
-    JOIN personal_details pd ON u.id = pd.user_id
-    WHERE pd.id = ?
-    ";
+    // Modified to use personal_details id as requested
+    $sql = "SELECT u.password 
+            FROM users u 
+            JOIN personal_details pd ON u.id = pd.user_id 
+            WHERE pd.id = ?";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$userId]);
