@@ -1,16 +1,55 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
-
-$sql = "SELECT programs.*, CONCAT(personal_details.first_name, ' ', personal_details.last_name) AS coach_name 
-        FROM programs 
-        JOIN users ON programs.user_id = users.id 
-        JOIN personal_details ON users.id = personal_details.user_id 
-        WHERE users.role = 'coach'";
+// Fetch programs with new normalized schema
+$sql = "
+    SELECT 
+        programs.*, 
+        CONCAT(pd.first_name, ' ', pd.last_name) AS coach_name, 
+        pt.type_name AS program_type, 
+        dt.type_name AS duration_type, 
+        st.status_name AS status 
+    FROM programs
+    JOIN coaches c ON programs.coach_id = c.id
+    JOIN users u ON c.user_id = u.id
+    JOIN personal_details pd ON u.id = pd.user_id
+    JOIN program_types pt ON programs.program_type_id = pt.id
+    JOIN duration_types dt ON programs.duration_type_id = dt.id
+    JOIN status_types st ON programs.status_id = st.id
+";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch coach details for dropdown
+$coachSql = "
+    SELECT 
+        c.id AS coach_id, 
+        CONCAT(pd.first_name, ' ', pd.last_name) AS coach_name, 
+        pd.phone_number 
+    FROM coaches c
+    JOIN users u ON c.user_id = u.id
+    JOIN personal_details pd ON u.id = pd.user_id
+    WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'coach')
+";
+$coachStmt = $pdo->prepare($coachSql);
+$coachStmt->execute();
+$coaches = $coachStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch program types
+$programTypesSql = "SELECT id, type_name FROM program_types";
+$programTypesStmt = $pdo->prepare($programTypesSql);
+$programTypesStmt->execute();
+$programTypes = $programTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch duration types
+$durationTypesSql = "SELECT id, type_name FROM duration_types";
+$durationTypesStmt = $pdo->prepare($durationTypesSql);
+$durationTypesStmt->execute();
+$durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
+
 <h2>Fitness and Wellness Programs</h2>
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProgramModal">
     Add Program
@@ -40,7 +79,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 echo "<td>" . $row['program_type'] . "</td>";
                 echo "<td>" . $row['coach_name'] . "</td>";
                 echo "<td>" . $row['duration'] . " " . $row['duration_type'] . "</td>";
-                echo "<td>" . $row['price'] . "</td>";
+                echo "<td>₱" . number_format($row['price'], 2) . "</td>";
                 echo "<td>" . $row['status'] . "</td>";
                 echo "<td>
                         <button class='btn btn-warning btn-sm status-btn' data-id='" . $row['id'] . "'>Deactivate</button>
@@ -76,8 +115,11 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <label for="programType" class="form-label">Program Type</label>
                                 <select class="form-select" id="programType" name="programType" required>
                                     <option value="">Select Program Type</option>
-                                    <option value="personal">Personal</option>
-                                    <option value="group">Group</option>
+                                    <?php
+                                    foreach ($programTypes as $type) {
+                                        echo "<option value='" . $type['id'] . "'>" . $type['type_name'] . "</option>";
+                                    }
+                                    ?>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -85,18 +127,9 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <select class="form-select" id="coachId" name="coachId" required>
                                     <option value="">Select Coach</option>
                                     <?php
-                                    // Fetch coach
-                                    $coachSql = "SELECT u.id, pd.first_name, pd.last_name, pd.phone_number 
-                                               FROM users u 
-                                               JOIN personal_details pd ON u.id = pd.user_id 
-                                               WHERE u.role = 'coach'";
-                                    $coachStmt = $pdo->prepare($coachSql);
-                                    $coachStmt->execute();
-                                    $coaches = $coachStmt->fetchAll(PDO::FETCH_ASSOC);
-                                    
                                     foreach ($coaches as $coach) {
-                                        echo "<option value='" . $coach['id'] . "' data-phone='" . $coach['phone_number'] . "'>" 
-                                            . $coach['first_name'] . " " . $coach['last_name'] . "</option>";
+                                        echo "<option value='" . $coach['coach_id'] . "' data-phone='" . $coach['phone_number'] . "'>" 
+                                            . $coach['coach_name'] . "</option>";
                                     }
                                     ?>
                                 </select>
@@ -126,9 +159,11 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <label for="durationType" class="form-label">Duration Type</label>
                                         <select class="form-select" id="durationType" name="durationType" required>
                                             <option value="">Select Type</option>
-                                            <option value="days">Days</option>
-                                            <option value="months">Months</option>
-                                            <option value="year">Year</option>
+                                            <?php
+                                            foreach ($durationTypes as $type) {
+                                                echo "<option value='" . $type['id'] . "'>" . htmlspecialchars($type['type_name'], ENT_QUOTES, 'UTF-8') . "</option>";
+                                            }
+                                            ?>
                                         </select>
                                     </div>
                                 </div>
@@ -152,40 +187,63 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-$(document).ready(function() {
-    // Auto-fill contact number when coach is selected
-    $('#coachId').change(function() {
+$(document).ready(function () {
+    // Fetch coaches dynamically when program type is selected
+    $('#programType').change(function () {
+        var programTypeId = $(this).val();
+        if (programTypeId) {
+            $.ajax({
+                url: '../admin/pages/gym rates/functions/get_coaches.php',
+                type: 'POST',
+                data: { programTypeId: programTypeId },
+                success: function (data) {
+                    var coaches = JSON.parse(data);
+                    var coachDropdown = $('#coachId');
+                    coachDropdown.empty();
+                    coachDropdown.append('<option value="">Select Coach</option>'); // Default option
+                    coaches.forEach(function (coach) {
+                        coachDropdown.append(
+                            `<option value="${coach.coach_id}" data-phone="${coach.phone_number}">${coach.coach_name}</option>`
+                        );
+                    });
+                    $('#contactNo').val(''); // Reset contact number
+                },
+                error: function (xhr, status, error) {
+                    alert("Error fetching coaches: " + error);
+                },
+            });
+        } else {
+            $('#coachId').empty().append('<option value="">Select Coach</option>');
+            $('#contactNo').val('');
+        }
+    });
+
+    // Auto-fill contact number
+    $('#coachId').change(function () {
         var selectedOption = $(this).find('option:selected');
         var phoneNumber = selectedOption.data('phone');
         $('#contactNo').val(phoneNumber || '');
     });
+    
+    $('#saveProgramBtn').click(function () {
+    var formData = $('#addProgramForm').serialize();
 
-    // Save button handler
-    $('#saveProgramBtn').click(function() {
-        var formData = $('#addProgramForm').serialize();
-        
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/save_programs.php',
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response === "success") {
-                    $('#addProgramModal').modal('hide');
-                    location.reload();
-                } else {
-                    alert("Error saving program: " + response);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert("AJAX error: " + error);
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/save_programs.php',
+        type: 'POST',
+        data: formData,
+        success: function (response) {
+            if (response.trim() === "success") {
+                $('#addProgramModal').modal('hide');
+                location.reload();
+            } else {
+                alert("Error saving program: " + response);
             }
-        });
+        },
+        error: function (xhr, status, error) {
+            alert("AJAX error: " + error);
+        },
     });
-
-    // Reset form when modal is closed
-    $('#addProgramModal').on('hidden.bs.modal', function () {
-        $('#addProgramForm')[0].reset();
-        $('#contactNo').val('');
-    });
+});
 });
 </script>

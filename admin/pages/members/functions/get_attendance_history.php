@@ -7,14 +7,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $sql = "
             SELECT 
                 ah.id,
-                CONCAT(pd.first_name, ' ', pd.middle_name, ' ', pd.last_name) AS full_name,
-                ah.date,
-                ah.time_in,
-                ah.time_out,
-                ah.status
+                CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
+                a.date,
+                a.time_in,
+                a.time_out,
+                ast.status_name as status
             FROM attendance_history ah
-            JOIN personal_details pd ON ah.user_id = pd.id
-            ORDER BY ah.date DESC, ah.time_in DESC
+            JOIN attendance a ON ah.attendance_id = a.id
+            JOIN personal_details pd ON a.user_id = pd.id
+            JOIN attendance_status ast ON ah.status_id = ast.id
+            ORDER BY a.date DESC, a.time_in DESC;
         ";
         
         $stmt = $pdo->prepare($sql);

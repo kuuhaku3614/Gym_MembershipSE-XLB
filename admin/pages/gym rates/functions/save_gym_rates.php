@@ -1,6 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
-
+require_once __DIR__ . '/functions/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $promoName = $_POST['promoName'];
@@ -11,20 +10,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deactivationDate = $_POST['deactivationDate'];
     $price = $_POST['price']; 
     $description = isset($_POST['description']) ? $_POST['description'] : null;
+    
+    // Get duration_type_id from duration_types table
+    $durationTypeQuery = "SELECT id FROM duration_types WHERE type_name = :type_name";
+    $stmt = $pdo->prepare($durationTypeQuery);
+    $stmt->execute([':type_name' => $durationType]);
+    $durationTypeId = $stmt->fetchColumn();
+    
+    // Set default status as active (1)
+    $statusId = 1;
 
-    $sql = "INSERT INTO membership_plans (plan_name, plan_type, duration, duration_type, start_date, end_date, price, description)
-            VALUES (:plan_name, :plan_type, :duration, :duration_type, :start_date, :end_date, :price, :description)";
+    $sql = "INSERT INTO membership_plans (
+                plan_name, 
+                plan_type, 
+                duration, 
+                duration_type_id,
+                start_date, 
+                end_date, 
+                price, 
+                description,
+                status_id
+            ) VALUES (
+                :plan_name, 
+                :plan_type, 
+                :duration, 
+                :duration_type_id,
+                :start_date, 
+                :end_date, 
+                :price, 
+                :description,
+                :status_id
+            )";
     
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':plan_name', $promoName);
         $stmt->bindParam(':plan_type', $promoType);
         $stmt->bindParam(':duration', $duration, PDO::PARAM_INT);
-        $stmt->bindParam(':duration_type', $durationType);
+        $stmt->bindParam(':duration_type_id', $durationTypeId, PDO::PARAM_INT);
         $stmt->bindParam(':start_date', $activationDate);
         $stmt->bindParam(':end_date', $deactivationDate);
         $stmt->bindParam(':price', $price);
         $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':status_id', $statusId, PDO::PARAM_INT);
         
         if ($stmt->execute()) {
             echo "success";
@@ -35,5 +63,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "Error: " . $e->getMessage();
     }
 }
-
-?>

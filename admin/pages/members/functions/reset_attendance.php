@@ -1,11 +1,14 @@
 <?php
+// reset_attendance.php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 try {
     $pdo->beginTransaction();
     
     // Get all records before reset for history
-    $sql = "SELECT * FROM attendance WHERE date = CURRENT_DATE AND status != 'pending'";
+    $sql = "SELECT * FROM attendance 
+            WHERE date = CURRENT_DATE 
+            AND status_id != (SELECT id FROM attendance_status WHERE status_name = 'pending')";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -14,7 +17,7 @@ try {
     $sql = "UPDATE attendance 
             SET time_in = NULL, 
                 time_out = NULL, 
-                status = 'pending' 
+                status_id = (SELECT id FROM attendance_status WHERE status_name = 'pending')
             WHERE date = CURRENT_DATE";
     $pdo->exec($sql);
     
@@ -22,24 +25,25 @@ try {
     foreach ($records as $record) {
         if ($record['time_in'] !== null) {
             $sql = "INSERT INTO attendance_history 
-                    (user_id, date, time_in, status) 
-                    VALUES (:user_id, :date, :time_in, 'checked in')";
+                    (attendance_id, time_in, status_id) 
+                    VALUES (:attendance_id, :time_in, 
+                            (SELECT id FROM attendance_status WHERE status_name = 'checked in'))";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                ':user_id' => $record['user_id'],
-                ':date' => $record['date'],
+                ':attendance_id' => $record['id'],
                 ':time_in' => $record['time_in']
             ]);
         }
         
         if ($record['time_out'] !== null) {
             $sql = "INSERT INTO attendance_history 
-                    (user_id, date, time_out, status) 
-                    VALUES (:user_id, :date, :time_out, 'checked out')";
+                    (attendance_id, time_in, time_out, status_id) 
+                    VALUES (:attendance_id, :time_in, :time_out, 
+                            (SELECT id FROM attendance_status WHERE status_name = 'checked out'))";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                ':user_id' => $record['user_id'],
-                ':date' => $record['date'],
+                ':attendance_id' => $record['id'],
+                ':time_in' => $record['time_in'],
                 ':time_out' => $record['time_out']
             ]);
         }
@@ -58,4 +62,3 @@ try {
         'message' => $e->getMessage()
     ]);
 }
-?>

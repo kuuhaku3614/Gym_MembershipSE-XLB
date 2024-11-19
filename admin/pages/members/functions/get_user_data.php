@@ -11,13 +11,13 @@ $userId = $_POST['userId'];
 $sql = "
 SELECT 
     pd.id AS user_id,
-    CONCAT(pd.first_name, ' ', pd.middle_name, ' ', pd.last_name) AS full_name,
+    CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
     u.username,
     pp.photo_path
 FROM personal_details pd
 JOIN users u ON pd.user_id = u.id
 LEFT JOIN profile_photos pp ON u.id = pp.user_id
-WHERE pd.id = ?
+WHERE pd.id = ? AND u.is_active = 1;
 ";
 
 try {

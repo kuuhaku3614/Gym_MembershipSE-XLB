@@ -12,7 +12,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         if (!$message || !$date) {
             $response['message'] = "Message and date are required.";
         } else {
-            $sql = "INSERT INTO announcements (message, applied_date) VALUES ('$message', '$date')";
+            $sql = "INSERT INTO announcements (message, applied_date, is_active) VALUES ('$message', '$date', 1)";
             if ($conn->query($sql)) {
                 $response = ["status" => "success", "message" => "Announcement added successfully!"];
             } else {
@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
         if ($id <= 0) {
             $response['message'] = "Invalid announcement ID.";
         } else {
-            $sql = "DELETE FROM announcements WHERE id = $id";
+            $sql = "UPDATE announcements SET is_active = 0 WHERE id = $id";
             if ($conn->query($sql)) {
                 $response = ["status" => "success", "message" => "Announcement removed successfully!"];
             } else {
@@ -39,9 +39,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
 }
 
 $sql = "
-SELECT id, applied_date, message FROM announcements ORDER BY id DESC;
+SELECT id, applied_date, message 
+FROM announcements 
+WHERE is_active = 1 
+ORDER BY id DESC;
 ";
-
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -153,7 +155,6 @@ $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <table id="announcementsTable" class="table table-striped table-hover">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Date</th>
                 <th>Message</th>
                 <th>Action</th>
@@ -162,7 +163,6 @@ $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <tbody>
             <?php foreach ($announcements as $announcement): ?>
                 <tr>
-                    <td><?= htmlspecialchars($announcement['id']) ?></td>
                     <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
                     <td><?= htmlspecialchars($announcement['message']) ?></td>
                     <td>

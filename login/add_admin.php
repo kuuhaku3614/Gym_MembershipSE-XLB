@@ -1,5 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '../functions/config.php';
 
 
 $username_err = $password_err = $success_msg = "";
@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $username_err = "Please enter a username.";
     } else {
         // Prepare a select statement
-        $sql = "SELECT id FROM users WHERE username = ?";
+        $sql = "SELECT id FROM users WHERE username = ? AND role_id = (SELECT id FROM roles WHERE role_name = 'admin')";
         
         if ($stmt = $pdo->prepare($sql)) {
             $stmt->bindParam(1, $param_username, PDO::PARAM_STR);
@@ -36,7 +36,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // Check input errors before inserting into database
     if (empty($username_err) && empty($password_err)) {
-        $sql = "INSERT INTO users (username, password, role) VALUES (?, ?, 'coach')";
+        $sql = "INSERT INTO users (username, password, role_id) 
+        VALUES (?, ?, (SELECT id FROM roles WHERE role_name = 'admin'))";
         
         if ($stmt = $pdo->prepare($sql)) {
             $stmt->bindParam(1, $param_username, PDO::PARAM_STR);

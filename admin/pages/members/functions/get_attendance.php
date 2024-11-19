@@ -2,7 +2,12 @@
 require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
 
 try {
-    $sql = "SELECT * FROM attendance WHERE date = CURRENT_DATE()";
+    $sql = "SELECT 
+    a.*,
+    ast.status_name as status
+FROM attendance a
+JOIN attendance_status ast ON a.status_id = ast.id
+WHERE a.date = CURRENT_DATE();";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);

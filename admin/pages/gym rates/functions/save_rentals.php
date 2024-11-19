@@ -1,32 +1,38 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
-
+require_once __DIR__ . '/functions/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Retrieve and sanitize input values from the POST request
-    $serviceName = $_POST['serviceName'];
-    $price = $_POST['price'];
-    $totalSlots = $_POST['slots'];  
-    $duration = $_POST['duration'];
-    $durationType = $_POST['durationType'];
-    $description = isset($_POST['description']) ? $_POST['description'] : null;
-    $status = isset($_POST['status']) ? $_POST['status'] : 'active';
+    // Retrieve and sanitize input values
+    $serviceName = $_POST['serviceName'] ?? null;
+    $price = $_POST['price'] ?? null;
+    $totalSlots = $_POST['slots'] ?? null;
+    $duration = $_POST['duration'] ?? null;
+    $durationType = $_POST['durationType'] ?? null;
+    $description = $_POST['description'] ?? null;
+    $status = $_POST['status'] ?? 1; // Default to "active" (status_id = 1)
 
     $availableSlots = $totalSlots;
 
-    $sql = "INSERT INTO rental_services (service_name, price, total_slots, available_slots, duration, duration_type, description, status)
-            VALUES (:service_name, :price, :total_slots, :available_slots, :duration, :duration_type, :description, :status)";
+    if (empty($serviceName) || empty($price) || empty($totalSlots) || empty($duration) || empty($durationType)) {
+        echo "Error: All required fields must be filled.";
+        exit;
+    }
+
+    $sql = "INSERT INTO rental_services 
+            (service_name, price, total_slots, available_slots, duration, duration_type_id, description, status_id)
+            VALUES 
+            (:service_name, :price, :total_slots, :available_slots, :duration, :duration_type, :description, :status_id)";
     
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':service_name', $serviceName);
-        $stmt->bindParam(':price', $price);
+        $stmt->bindParam(':service_name', $serviceName, PDO::PARAM_STR);
+        $stmt->bindParam(':price', $price, PDO::PARAM_STR);
         $stmt->bindParam(':total_slots', $totalSlots, PDO::PARAM_INT);
         $stmt->bindParam(':available_slots', $availableSlots, PDO::PARAM_INT);
         $stmt->bindParam(':duration', $duration, PDO::PARAM_INT);
-        $stmt->bindParam(':duration_type', $durationType);
-        $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':duration_type', $durationType, PDO::PARAM_INT);
+        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
+        $stmt->bindParam(':status_id', $status, PDO::PARAM_INT);
 
         if ($stmt->execute()) {
             echo "success";

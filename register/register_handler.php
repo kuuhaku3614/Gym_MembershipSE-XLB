@@ -49,10 +49,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Start transaction
                 $pdo->beginTransaction();
                 
-                // Insert into users table
+                // Get the member role ID
+                $stmt = $pdo->prepare("SELECT id FROM roles WHERE role_name = 'member'");
+                $stmt->execute();
+                $roleId = $stmt->fetchColumn();
+                
+                if (!$roleId) {
+                    throw new Exception('Member role not found in database');
+                }
+                
+                // Insert into users table with role_id
                 $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, 'member')");
-                $stmt->execute([$data['username'], $hashedPassword]);
+                $stmt = $pdo->prepare("INSERT INTO users (username, password, role_id, is_active) VALUES (?, ?, ?, 1)");
+                $stmt->execute([$data['username'], $hashedPassword, $roleId]);
                 
                 // Get the last inserted user ID
                 $userId = $pdo->lastInsertId();

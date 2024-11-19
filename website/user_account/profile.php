@@ -1,0 +1,226 @@
+<?php
+    session_start();
+    require_once 'profile.class.php';
+
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ../login/login.php');
+        exit();
+    }
+
+    $profile = new Profile_class();
+    $userDetails = $profile->getUserDetails($_SESSION['user_id']);
+
+    $_SESSION['personal_details'] = $userDetails;
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../css/landing1.css">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+        :root {
+            --red: #ff0000;
+        }
+
+        body {
+            background-color: whitesmoke;
+        }
+
+        header {
+            margin-bottom: 2rem;
+        }
+
+        #title {
+            background-color: var(--red);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0px 5px 10px gray;
+            display: flex;
+            justify-content: center;
+        }
+        #name h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-style: italic;
+            font-family: arial;
+            margin: 0;
+        }
+        #name h5 {
+            font-size: 1.25rem;
+            font-family: arial;
+        }
+        #name {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        section {
+            width: 100%;
+            padding: 0 5%;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        section #availed {
+            width: 30%;
+            margin-right: 3%;
+            box-shadow: 0px 1px 3px gray;
+            border-radius: 10px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            height: auto;
+            max-height: 70vh;
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        section #availed::-webkit-scrollbar {
+            display: none;
+        }
+
+        section #log {
+            width: 67%;
+            background-color: whitesmoke;
+            height: 70vh;
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        section #log::-webkit-scrollbar {
+            display: none;
+        }
+
+        #log_table {
+            width: 100%;
+            height: auto;
+            border-collapse: separate;
+            border-spacing: 0px 1rem;
+            padding: 0.1rem;
+        }
+
+        #log_table tr {
+            box-shadow: 0px 1px 3px gray;
+            border-radius: 10px;
+            background-color: white;
+        }
+
+        #log_table td {
+            text-align: center;
+            padding: 1rem;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        #availed_table {
+            width: 100%;
+            background-color: white;
+            color: white;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #availed_table tr {
+            padding: 1rem;
+            border-radius: 10px;
+            background-color: var(--red);
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+
+        #availed_table td span {
+            font-weight: 900;
+        }
+
+        @media (max-width: 768px) {
+            #title {
+                padding: 1.5rem 0;
+            }
+            #name h1 {
+                font-size: 1.75rem;
+            }
+            #name h5 {
+                font-size: 1rem;
+            }
+            section {
+                flex-direction: column;
+            }
+            section #availed, section #log {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 2rem;
+            }
+            section #availed {
+                max-height: none;
+                height: auto;
+            }
+            #log_table td {
+                font-size: 0.875rem;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <?php include('../includes/header.php'); ?>
+
+    <header class="container-fluid" id="title">
+        <div class="container-xl" id="name">
+            <h1><?= $_SESSION['personal_details']['name'] ?></h1>
+            <h5>Member</h5>
+        </div>
+    </header>
+
+    <section>
+        <div id="availed">
+            <h4>Current availed services</h4>
+            <table id="availed_table">
+                <tr>
+                    <td>Type: <span>1 month</span></td>
+                    <td>Duration: <span>1 month</span></td>
+                    <td>Expiry date: <span>1 month</span></td>
+                </tr>
+                <tr>
+                    <td>Type:</td>
+                    <td>Duration:</td>
+                    <td>Expiry date:</td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="log">
+            <table id="log_table">
+                <tr>
+                    <td style="font-style:italic; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">Logged in</td>
+                    <td>1:00 pm</td>
+                    <td style="font-style:italic">Logged out</td>
+                    <td>3:00 pm</td>
+                    <td style="font-size: 0.875rem; font-weight: bold; border-top-right-radius: 10px; border-bottom-right-radius: 10px;">3 days ago</td>
+                </tr>
+                <tr>
+                    <td style="font-style:italic; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">Logged in</td>
+                    <td>1:00 pm</td>
+                    <td style="font-style:italic">Logged out</td>
+                    <td>3:00 pm</td>
+                    <td style="font-size: 0.875rem; font-weight: bold; border-top-right-radius: 10px; border-bottom-right-radius: 10px;">3 days ago</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
