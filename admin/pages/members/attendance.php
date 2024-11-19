@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__DIR__, 3) . '/config.php'; // Navigates up 3 levels dynamically
+require_once '../../../config.php'; // Navigates up 3 levels dynamically
 
 
 // SQL query remains the same

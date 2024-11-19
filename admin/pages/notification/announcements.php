@@ -1,6 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
-
+require_once '../../../config.php';
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     $response = ["status" => "error", "message" => "An error occurred."];
