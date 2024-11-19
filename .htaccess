@@ -1,0 +1,29 @@
+#RewriteEngine On
+#RewriteCond %{HTTP_HOST} ^([^\.]*)\.([^\.]*)$
+#RewriteRule (.*) http://www.%1.%2/$1 [L,R=301]
+
+#RewriteCond %{HTTP_HOST} ^www\.([^.]+)\.([^.]+)\.([^\.]*)$ [NC]
+#RewriteRule ^(.*)$ http://%1.%2.%3/$1 [L,R=301]
+
+#RewriteCond %{REQUEST_URI} !^projects/
+#RewriteCond %{REQUEST_URI} !^/projects/
+#RewriteCond %{HTTP_HOST} ^(www\.)?(.*)\.([^\.]*)\.([^\.]*)$
+#RewriteRule (.*) %3/$1 [DPI] 
+
+RewriteEngine On
+RewriteRule ^admin/dashboard$ admin/index.php
+RewriteRule ^admin/members$ admin/index.php
+RewriteRule ^admin/attendance$ admin/index.php
+RewriteRule ^admin/member_status$ admin/index.php
+RewriteRule ^admin/walk_in$ admin/index.php
+RewriteRule ^admin/gym_rates$ admin/index.php
+RewriteRule ^admin/programs$ admin/index.php
+RewriteRule ^admin/rentals$ admin/index.php
+RewriteRule ^admin/payment_records$ admin/index.php
+RewriteRule ^admin/notification$ admin/index.php
+RewriteRule ^admin/announcement$ admin/index.php
+RewriteRule ^admin/website_settings$ admin/index.php
+RewriteRule ^admin/report$ admin/index.php
+RewriteRule ^admin/staff_management$ admin/index.php
+RewriteRule ^admin/staff_activity_log$ admin/index.php
+RewriteRule ^admin/coach_log$ admin/index.php

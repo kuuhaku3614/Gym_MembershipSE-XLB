@@ -1,6 +1,6 @@
 <?php
 // session_start();
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once '../config.php';
 
 
 // function checkAdminSession() {
@@ -41,6 +41,8 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
      <div class="main-content">
             <!-- dynamic content here -->
      </div>
+
+    <script src="../"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
