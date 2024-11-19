@@ -71,13 +71,24 @@
     }
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <link rel="stylesheet" href="../css/landing1.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+
 <nav class="home-navbar">
       <div class="home-logo">
         <img src="" alt="logo" />
       </div>
       <ul class="nav-links">
-        <li><a href="#">Home</a></li>
-        <li><a href="#">Services</a></li>
+        <li><a href="website.php">Home</a></li>
+        <li><a href="services.php">Services</a></li>
         <li><a href="#S-About">About</a></li>
         <li><a href="#S-ContactUs">Contact</a></li>
       </ul>
@@ -86,7 +97,7 @@
         <div class="dropdown">
                 <button class="dropbtn"></button>
                 <div class="dropdown-content">
-                    <a href="user_account/profile.php" class="username"><?php echo getFullName();?></a>
+                    <a href="profile.php" class="username"><?php echo getFullName();?></a>
                     <hr>
                     <a href="#"> Notifications</a>
                     <a href="?logout=1"> Logout</a>

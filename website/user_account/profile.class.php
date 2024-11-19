@@ -1,6 +1,6 @@
 <?php
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+require_once __DIR__ . '/../../functions/config.php';
 
 class Profile_class{
 
