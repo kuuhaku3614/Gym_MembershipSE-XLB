@@ -1,19 +1,9 @@
 <?php
   session_start();
 
+  include('includes/header.php');
+
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home</title>
-  <link rel="stylesheet" href="../css/landing1.css">
-</head>
-<body>
-
-  <?php include('includes/header.php'); ?>
 
   <header class="home-header"></header>
 

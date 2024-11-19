@@ -1,21 +1,16 @@
 <?php
-// Start the session at the very beginning
-if (session_status() === PHP_SESSION_NONE) {
     session_start();
-}
+    require_once 'profile.class.php';
 
-// Redirect to login if user is not authenticated
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../../login/login.php');
-    exit();
-}
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ../login/login.php');
+        exit();
+    }
 
-// Include dependencies
-require_once 'profile.class.php';
+    $profile = new Profile_class();
+    $userDetails = $profile->getUserDetails($_SESSION['user_id']);
 
-$profile = new Profile_class();
-$userDetails = $profile->getUserDetails($_SESSION['user_id']);
-$_SESSION['personal_details'] = $userDetails;
+    $_SESSION['personal_details'] = $userDetails;
 ?>
 
 <!DOCTYPE html>
