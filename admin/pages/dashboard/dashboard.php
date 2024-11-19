@@ -1,3 +1,27 @@
+<?php
+require_once $_SERVER['DOCUMENT_ROOT'] . '/functions/config.php';
+
+$admin_sql = "
+SELECT id, applied_date, applied_time, message 
+FROM announcements 
+WHERE is_active = 1 AND announcement_type = 'administrative'
+ORDER BY applied_date DESC, applied_time DESC
+";
+$admin_stmt = $pdo->prepare($admin_sql);
+$admin_stmt->execute();
+$administrative_announcements = $admin_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch activity announcements
+$activity_sql = "
+SELECT id, applied_date, applied_time, message 
+FROM announcements 
+WHERE is_active = 1 AND announcement_type = 'activity'
+ORDER BY applied_date DESC, applied_time DESC
+";
+$activity_stmt = $pdo->prepare($activity_sql);
+$activity_stmt->execute();
+$activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <style>
         /* Previous styles remain the same until graph-container */
         :root {
@@ -251,34 +275,51 @@
             </div>
         </div>
 
-        <!-- Tables Section -->
-        <div class="tables-section">
-            <div class="table-container">
-                <div class="table-header">Announcements</div>
-                <table id="announcementsTable" class="display" width="100%">
-                    <thead>
-                        <tr>
-                            <th>Announcement</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <div class="table-container">
-                <div class="table-header">Activities</div>
-                <table id="activitiesTable" class="display" width="100%">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
+<!-- Tables Section -->
+<div class="tables-section">
+    <div class="table-container">
+        <div class="table-header">Administrative Announcements</div>
+        <table id="administrativeAnnouncementsTable" class="display" width="100%">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($administrative_announcements as $announcement): ?>
+                    <tr>
+                        <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
+                        <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
+                        <td><?= htmlspecialchars($announcement['message']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
+    <div class="table-container">
+        <div class="table-header">Activity Announcements</div>
+        <table id="activityAnnouncementsTable" class="display" width="100%">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($activity_announcements as $announcement): ?>
+                    <tr>
+                        <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
+                        <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
+                        <td><?= htmlspecialchars($announcement['message']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
     <script src="js/dashboard.js"></script>
 </body>

@@ -43,22 +43,21 @@ new Chart(ctx, {
     },
   },
 });
-
-// Sample data for tables
-$(document).ready(function () {
-  $("#announcementsTable").DataTable({
-    data: [
-      ["Gym maintenance scheduled", "2024-10-21"],
-      ["New fitness class added", "2024-10-22"],
-      ["Holiday schedule update", "2024-10-23"],
-    ],
-  });
-
-  $("#activitiesTable").DataTable({
-    data: [
-      ["Yoga Class", "2024-10-21", "09:00 AM"],
-      ["Zumba Session", "2024-10-21", "11:00 AM"],
-      ["CrossFit Training", "2024-10-22", "02:00 PM"],
-    ],
+$(document).ready(function() {
+  // Initialize DataTables for both announcement tables
+  $('#administrativeAnnouncementsTable, #activityAnnouncementsTable').DataTable({
+      order: [[0, 'desc'], [1, 'desc']],
+      pageLength: 5,
+      lengthMenu: [[5, 10, 25, 50], [5, 10, 25, 50]],
+      responsive: true,
+      columnDefs: [
+          { width: '20%', targets: 0 },  // Date column
+          { width: '15%', targets: 1 },  // Time column
+          { width: '65%', targets: 2 }   // Message column
+      ],
+      language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search announcements...",
+      }
   });
 });
