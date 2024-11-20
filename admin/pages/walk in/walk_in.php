@@ -1,5 +1,5 @@
 <div class="container mt-4">
-        <h2 class="text-center text-danger mb-4">Walk-in</h2>
+        <h1>Walk-in</h1>
         
         <div class="d-flex justify-content-between">
             <button class="btn btn-primary" id="addButton">Add</button><!-- Button to trigger modal -->
@@ -31,11 +31,10 @@
                     <td></td>
                     <td>
                         <span class="payment-unpaid">Unpaid</span>
-                        <button id="payWalkIn" class="btn btn-primary btn-pay btn-sm">Pay</button>
                     </td>
                     <td><span class="status-pending">Pending</span></td>
                     <td>
-                        <button class="btn btn-primary btn-sm">Walk in</button>
+                        <button class="btn btn-primary btn-sm">Confirm</button>
                         <button class="btn btn-danger btn-sm">Remove</button>
                     </td>
                 </tr>
@@ -46,11 +45,10 @@
                     <td></td>
                     <td>
                         <span class="payment-unpaid">Unpaid</span>
-                        <button id="payWalkIn" class="btn btn-primary btn-pay btn-sm">Pay</button>
                     </td>
                     <td><span class="status-pending">Pending</span></td>
                     <td>
-                        <button class="btn btn-primary btn-sm">Walk in</button>
+                        <button class="btn btn-primary btn-sm">Confirm</button>
                         <button class="btn btn-danger btn-sm">Remove</button>
                     </td>
                 </tr>
@@ -60,7 +58,7 @@
                     <td>17/10/24</td>
                     <td>10am</td>
                     <td><span class="payment-paid">Paid</span></td>
-                    <td><span class="status-walked-in">Walked-in</span></td>
+                    <td><span class="status-walked-in">Confirmed</span></td>
                     <td>
                         <button class="btn btn-danger btn-sm">Remove</button>
                     </td>
@@ -69,7 +67,7 @@
         </table>
     </div>
 
-<!-- Modal -->
+<!-- Add Walk-in Modal -->
 <div class="modal fade" id="addWalkinModal" tabindex="-1" aria-labelledby="addWalkinModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -81,11 +79,11 @@
         <form id="addWalkinForm">
           <div class="mb-3">
             <label for="firstName" class="form-label">First Name</label>
-            <input type="text" class="form-control" id="firstName" placeholder="First name">
+            <input type="text" class="form-control" id="firstName" placeholder="First name" required>
           </div>
           <div class="mb-3">
             <label for="lastName" class="form-label">Last Name</label>
-            <input type="text" class="form-control" id="lastName" placeholder="Last name">
+            <input type="text" class="form-control" id="lastName" placeholder="Last name" required>
           </div>
           <div class="mb-3">
             <label for="middleName" class="form-label">Middle Name (optional)</label>
@@ -93,26 +91,7 @@
           </div>
           <div class="mb-3">
             <label for="phoneNo" class="form-label">Phone No.</label>
-            <input type="text" class="form-control" id="phoneNo" placeholder="Phone no.">
-          </div>
-          <div class="mb-3">
-            <label for="scheduleDate" class="form-label">Schedule Date</label>
-            <input type="date" class="form-control" id="scheduleDate">
-          </div>
-          <div class="mb-3">
-            <label for="membershipType" class="form-label">Membership Type/Promo</label>
-            <input type="text" class="form-control" id="membershipType" value="Walk-in" readonly>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Payment Status</label><br>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="paymentStatus" id="paidStatus" value="Paid">
-              <label class="form-check-label" for="paidStatus">Paid</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="paymentStatus" id="unpaidStatus" value="Unpaid" checked>
-              <label class="form-check-label" for="unpaidStatus">Unpaid</label>
-            </div>
+            <input type="text" class="form-control" id="phoneNo" placeholder="Phone no." required>
           </div>
           <div class="mb-3">
             <label class="form-label">Total Payment</label>
@@ -128,23 +107,19 @@
   </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="confirmIdentityModal" tabindex="-1" aria-labelledby="confirmIdentityModalLabel" aria-hidden="true">
+<!-- Identity Confirmation Modal -->
+<div class="modal fade" id="confirmIdentityModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title text-danger fw-bold" id="confirmIdentityModalLabel">Confirm Identity</h5>
+        <h5 class="modal-title text-danger fw-bold">Confirm Identity</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
-        <!-- User Icon -->
         <img src="https://via.placeholder.com/100" alt="User Icon" class="mb-3" style="width: 100px; height: 100px;">
-        <!-- User Information -->
         <div class="mb-2">
-          <p class="mb-0"><strong>Full Name:</strong> Jamsk</p>
-          <p class="mb-0"><strong>Age:</strong> 20</p>
+          <p class="mb-0"></p> <!-- Customer name will be inserted here -->
         </div>
-        <!-- Password Field -->
         <div class="mt-3">
           <input type="password" id="identityPassword" class="form-control text-center" placeholder="Password">
         </div>
@@ -158,67 +133,130 @@
 
 
     <script>
-        $(document).ready(function() {
-            $('#walkInTable').DataTable({
-                pageLength: 10,
-                ordering: false,
-                responsive: true,
-                dom: '<"row"<l f>>rtip'
-            });
+$(document).ready(function () {
+  // Check if DataTable is already initialized
+  if (!$.fn.DataTable.isDataTable('#walkInTable')) {
+    // Initialize DataTable only if it hasn't been initialized yet
+    const table = $("#walkInTable").DataTable({
+      pageLength: 10,
+      ordering: false,
+      responsive: true,
+      dom: '<"row"<l f>>rtip',
+    });
+  } else {
+    // If already initialized, get the existing instance
+    const table = $("#walkInTable").DataTable();
+  }
 
-            // Refresh button action
-            $('#refreshBtn').click(function() {
-                location.reload();
-            });
+  // Add button action
+  $('#addButton').on('click', function() {
+    // Clear form fields before showing modal
+    $('#addWalkinForm')[0].reset();
+    $('#addWalkinModal').modal('show');
+  });
 
-            // Pay button action
-            $('.btn-pay').click(function() {
-                let row = $(this).closest('tr');
-                row.find('.payment-unpaid').text('Paid').removeClass('payment-unpaid').addClass('payment-paid');
-                $(this).remove();
-            });
+  // Save button action in Add Modal
+  $('#addWalkinModal .btn-primary').on('click', function() {
+    // Get form values
+    const firstName = $('#firstName').val().trim();
+    const lastName = $('#lastName').val().trim();
+    const middleName = $('#middleName').val().trim();
+    const phoneNo = $('#phoneNo').val().trim();
 
-            // Walk in button action
-            $('.btn-primary:contains("Walk in")').click(function() {
-                let row = $(this).closest('tr');
-                row.find('.status-pending').text('Walked-in').removeClass('status-pending').addClass('status-walked-in');
-                $(this).remove();
-            });
+    // Basic validation
+    if (!firstName || !lastName || !phoneNo) {
+      alert('Please fill in all required fields (First Name, Last Name, and Phone No.)');
+      return;
+    }
 
-            // Remove button action
-            $('.btn-danger').click(function() {
-                $(this).closest('tr').remove();
-            });
-        });
+    // Get current date in DD/MM/YY format
+    const today = new Date();
+    const date = String(today.getDate()).padStart(2, '0') + '/' +
+                 String(today.getMonth() + 1).padStart(2, '0') + '/' +
+                 String(today.getFullYear()).slice(-2);
 
-        $(document).ready(function () {
-            // Open modal when the add button is clicked
-            $('#addButton').click(function () {
-            $('#addWalkinModal').modal('show');
-            });
-        });
+    // Create full name
+    const fullName = middleName ? 
+      `${firstName} ${middleName} ${lastName}` : 
+      `${firstName} ${lastName}`;
 
-        $(document).ready(function () {
-            // Open the modal when the pay button is clicked
-            $('#payWalkIn').click(function () {
-            $('#confirmIdentityModal').modal('show');
-            });
+    // Add new row to DataTable
+    const table = $('#walkInTable').DataTable();
+    table.row.add([
+      '', // DataTable will auto-increment this
+      fullName,
+      date,
+      '', // Time in (empty initially)
+      '<span class="payment-unpaid">Unpaid</span>',
+      '<span class="status-pending">Pending</span>',
+      '<button class="btn btn-primary btn-sm">Confirm</button> ' +
+      '<button class="btn btn-danger btn-sm">Remove</button>'
+    ]).draw();
 
-            // Placeholder for the Confirm button click action
-            $('#confirmButton').click(function () {
-            const password = $('#identityPassword').val();
-            if (password === "") {
-                alert("Please enter a password!");
-            } else {
-                alert("Identity confirmed!");
-                $('#confirmIdentityModal').modal('hide');
-            }
-            });
-        });
+    // Close modal
+    $('#addWalkinModal').modal('hide');
+  });
 
-    </script>
-</body>
-</html>
+  // Refresh button action
+  $("#refreshBtn").click(function () {
+    location.reload();
+  });
+
+  // Confirm button action with identity verification
+  $('#walkInTable').on('click', 'button.btn-primary:contains("Confirm")', function() {
+    const row = $(this).closest("tr");
+    const customerName = row.find("td:eq(1)").text();
+    
+    // Update modal with customer details before showing
+    $('#confirmIdentityModal .modal-body').find('p:first').html(`<strong>Customer Name:</strong> ${customerName}`);
+    
+    // Show the identity confirmation modal
+    $('#confirmIdentityModal').modal('show');
+    
+    // Handle the confirmation button click
+    $('#confirmButton').off('click').on('click', function() {
+      const password = $('#identityPassword').val();
+      
+      if (!password) {
+        alert("Please enter a password!");
+        return;
+      }
+      
+      // If password is entered, proceed with status updates
+      $('#confirmIdentityModal').modal('hide');
+      
+      // Clear the password field for next use
+      $('#identityPassword').val('');
+      
+      // Update payment status
+      row.find("td:eq(4)")
+         .html('<span class="payment-paid">Paid</span>');
+      
+      // Update walk-in status
+      row.find("td:eq(5)")
+         .html('<span class="status-walked-in">Confirmed</span>');
+      
+      // Get current time
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      // Update time in column
+      row.find("td:eq(3)").text(timeStr);
+      
+      // Update action buttons - remove confirm button, keep remove button
+      row.find("td:eq(6)").html(
+        '<button class="btn btn-danger btn-sm">Remove</button>'
+      );
+    });
+  });
+
+  // Remove button action using event delegation
+  $('#walkInTable').on('click', 'button.btn-danger', function() {
+    const table = $('#walkInTable').DataTable();
+    table.row($(this).closest("tr")).remove().draw();
+  });
+});
+</script>
 
             
             
