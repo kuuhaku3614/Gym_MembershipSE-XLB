@@ -177,3 +177,52 @@ INSERT INTO program_types (type_name) VALUES
 
 INSERT INTO attendance_status (status_name) VALUES 
 ('checked in'), ('checked out');
+
+--New
+-- Memberships master table
+CREATE TABLE memberships (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    membership_plan_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    status_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (membership_plan_id) REFERENCES membership_plans(id),
+    FOREIGN KEY (status_id) REFERENCES status_types(id)
+);
+
+-- Table for program subscriptions
+CREATE TABLE program_subscriptions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    membership_id INT NOT NULL,
+    program_id INT NOT NULL,
+    coach_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    status_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (membership_id) REFERENCES memberships(id),
+    FOREIGN KEY (program_id) REFERENCES programs(id),
+    FOREIGN KEY (coach_id) REFERENCES coaches(id),
+    FOREIGN KEY (status_id) REFERENCES status_types(id)
+);
+
+-- Table for rental subscriptions
+CREATE TABLE rental_subscriptions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    membership_id INT NOT NULL,
+    rental_service_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    status_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (membership_id) REFERENCES memberships(id),
+    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id),
+    FOREIGN KEY (status_id) REFERENCES status_types(id)
+);
