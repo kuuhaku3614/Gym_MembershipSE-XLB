@@ -78,8 +78,8 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- This will either contain the photo or the default icon -->
                         <i class="default-user-icon fas fa-user-circle"></i>
                     </div>
-                    <h4 id="userName" class="fw-bold text-primary"></h4>
-                    <p id="userUsername" class="text-muted mb-0"></p>
+                    <h4 id="userName" class="fw-bold text-primary">unknown</h4>
+                    <p id="userUsername" class="text-muted mb-0">unknown</p>
                 </div>
                 <form>
                     <div class="form-group mb-4">
@@ -131,13 +131,13 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 <div class="mb-3">
-    <h1 class="nav-title">Attendance Table</h1>
+    <h1>Attendance Table</h1>
     <button type="button" class="btn btn-info" id="showHistoryBtn">
         <i class="fas fa-history"></i> View Attendance History
     </button>
 </div>
 <table id="attendanceTable" class="table table-striped table-bordered">
-    <thead class="table-dark">
+    <thead>
         <tr>
             <th>Full Name</th>
             <th>Date</th>
@@ -186,16 +186,8 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function () {
-    // Check if DataTable is already initialized
-    if (!$.fn.DataTable.isDataTable('#attendanceTable')) {
-        // Initialize DataTable only if it hasn't been initialized yet
-        const table = $('#attendanceTable').DataTable({
-            pageLength: 10,
-            ordering: false,
-            responsive: true,
-            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
-        });
-    }
+    // Initialize DataTable
+    const table = $('#attendanceTable').DataTable();
 
     // Variables to store current user interaction state
     let currentUserData = null;
@@ -263,7 +255,7 @@ $(document).ready(function () {
         photoContainer.empty();
         
         if (userData.photo_path) {
-            photoContainer.html(`<img src="${userData.photo_path}" class="profile-photo" alt="Profile Photo">`);
+            photoContainer.html(`<img src="../../../${userData.photo_path}" class="profile-photo" alt="Profile Photo">`);
         } else {
             photoContainer.html('<i class="fas fa-user default-user-icon"></i>');
         }
