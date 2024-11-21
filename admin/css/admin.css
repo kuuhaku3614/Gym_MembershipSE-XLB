@@ -53,6 +53,40 @@ h5 {
   color: #ffffff;
 }
 
+/* tables */
+
+.search-section {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.table-responsive {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.table thead th {
+  background-color: #333;
+  color: white;
+}
+.table tbody tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+.search-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.search-controls input[type="text"] {
+  flex: 1;
+}
+.date-filter {
+  width: 150px;
+}
+
 /* WALK IN */
 .btn-pay {
   padding: 2px 8px;

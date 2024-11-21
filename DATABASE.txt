@@ -187,13 +187,14 @@ CREATE TABLE memberships (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
-    status_id INT NOT NULL,
+    status ENUM('active', 'expiring', 'expired') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES personal_details(id),
     FOREIGN KEY (membership_plan_id) REFERENCES membership_plans(id),
     FOREIGN KEY (status_id) REFERENCES status_types(id)
 );
+
 
 -- Table for program subscriptions
 CREATE TABLE program_subscriptions (

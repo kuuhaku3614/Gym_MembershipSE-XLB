@@ -136,7 +136,6 @@ function insertNewUser($pdo, $data) {
 }
 
 function insertMembership($pdo, $userId, $data) {
-    // 4. Insert membership
     $stmt = $pdo->prepare("
         INSERT INTO memberships (
             user_id, 
@@ -144,16 +143,15 @@ function insertMembership($pdo, $userId, $data) {
             start_date, 
             end_date, 
             total_amount, 
-            status_id
-        ) VALUES (?, ?, ?, ?, ?, ?)
+            status
+        ) VALUES (?, ?, ?, ?, ?, 'active')
     ");
     $stmt->execute([
         $userId,
         $data['membership_plan'],
         $data['start_date'],
         $data['end_date'],
-        $data['total_amount'],
-        1 // status_id 1 for 'active' as per database
+        $data['total_amount']
     ]);
     return $pdo->lastInsertId();
 }

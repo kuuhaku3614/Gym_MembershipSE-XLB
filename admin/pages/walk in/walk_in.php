@@ -1,16 +1,23 @@
 <div class="container mt-4">
         <h1 class="nav-title">Walk-in</h1>
-        
-        <div class="d-flex justify-content-between">
-            <button class="btn btn-primary" id="addButton">Add</button><!-- Button to trigger modal -->
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary" id="refreshBtn">Refresh</button>
-                <select class="form-select" style="width: 100px;">
-                    <option>--Select--</option>
-                </select>
+
+        <div class="search-section">
+            <div class="row align-items-center">
+                <div class="col-md-6 ">
+                    <div class="search-controls">
+                        <button class="btn btn-primary" id="addButton">Add</button><!-- Button to trigger modal -->
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex justify-content-end">
+                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+                          <select class="form-select ms-2" style="width: 100px;">
+                            <option>--Select--</option>
+                          </select>
+                </div>
             </div>
         </div>
 
+        <div class="table-responsive">
         <table id="walkInTable" class="table table-striped table-bordered">
             <thead class="table-dark">
                 <tr>
@@ -66,6 +73,7 @@
             </tbody>
         </table>
     </div>
+  </div>
 
 <!-- Add Walk-in Modal -->
 <div class="modal fade" id="addWalkinModal" tabindex="-1" aria-labelledby="addWalkinModalLabel" aria-hidden="true">
@@ -134,19 +142,13 @@
 
     <script>
 $(document).ready(function () {
-  // Check if DataTable is already initialized
-  if (!$.fn.DataTable.isDataTable('#walkInTable')) {
-    // Initialize DataTable only if it hasn't been initialized yet
+
     const table = $("#walkInTable").DataTable({
       pageLength: 10,
       ordering: false,
       responsive: true,
       dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
     });
-  } else {
-    // If already initialized, get the existing instance
-    const table = $("#walkInTable").DataTable();
-  }
 
   // Add button action
   $('#addButton').on('click', function() {

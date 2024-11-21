@@ -51,22 +51,33 @@ $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <h1 class="nav-title">Programs</h1>
-<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addProgramModal">
-    Add Program
-</button>
 
-<table id="programsTable" class="table table-striped table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>No.</th>
-            <th>Program Name</th>
-            <th>Program Type</th>
-            <th>Coach Name</th> 
-            <th>Duration</th>
-            <th>Price</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
+<div class="search-section">
+            <div class="row align-items-center">
+                <div class="col-md-6 ">
+                    <div class="search-controls">
+                    <button type="button" class="btn btn-primary " data-bs-toggle="modal" data-bs-target="#addProgramModal">Add Program</button>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex justify-content-end">
+                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+                </div>
+            </div>
+        </div>
+
+    <div class="table-responsive">
+        <table id="programsTable" class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>No.</th>
+                    <th>Program Name</th>
+                    <th>Program Type</th>
+                    <th>Coach Name</th> 
+                    <th>Duration</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
     </thead>
     <tbody>
         <?php
@@ -95,6 +106,7 @@ $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
     </tbody>
 </table>
+</div>
 
 <div class="modal fade" id="addProgramModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -188,6 +200,14 @@ $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function () {
+
+    const table = $("#programsTable").DataTable({
+            pageLength: 10,
+            ordering: false,
+            responsive: true,
+            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+            });
+
     // Fetch coaches dynamically when program type is selected
     $('#programType').change(function () {
         var programTypeId = $(this).val();
