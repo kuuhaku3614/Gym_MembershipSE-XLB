@@ -10,13 +10,13 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<h2>Gym Rates</h2>
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGymRateModal">
+<h1 class="nav-title">Gym Rates</h1>
+<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addGymRateModal">
     Add Gym Rate
 </button>
 
-<table id="gymRatesTable" class="table table-striped table-bordered">
-    <thead>
+    <table id="gymRatesTable" class="table table-striped table-bordered">
+    <thead class="table-dark">
         <tr>
             <th>No.</th>
             <th>Promo Name</th>
@@ -152,6 +152,14 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
+
+    const table = $("#gymRatesTable").DataTable({
+      pageLength: 10,
+      ordering: false,
+      responsive: true,
+      dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+    });
+    
 // Initialize the datepicker with today's date as minimum
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];

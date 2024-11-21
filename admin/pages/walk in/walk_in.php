@@ -1,5 +1,5 @@
 <div class="container mt-4">
-        <h1>Walk-in</h1>
+        <h1 class="nav-title">Walk-in</h1>
         
         <div class="d-flex justify-content-between">
             <button class="btn btn-primary" id="addButton">Add</button><!-- Button to trigger modal -->
@@ -141,7 +141,7 @@ $(document).ready(function () {
       pageLength: 10,
       ordering: false,
       responsive: true,
-      dom: '<"row"<l f>>rtip',
+      dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
     });
   } else {
     // If already initialized, get the existing instance

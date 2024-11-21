@@ -1,8 +1,9 @@
 <body class="bg-light">
+
   <div class="container mt-4">
+  <h1 class="nav-title">Report Overview</h1>
     <!-- Report Overview Section -->
     <div class="card shadow-sm p-4">
-      <h3 class="mb-4">Report Overview</h3>
       <div class="row g-3">
         <div class="col-md-4">
           <label for="dateRangeFrom" class="form-label">Date Range</label>

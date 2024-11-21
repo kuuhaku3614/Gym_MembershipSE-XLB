@@ -131,13 +131,13 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 <div class="mb-3">
-    <h1>Attendance Table</h1>
+    <h1 class="nav-title">Attendance Table</h1>
     <button type="button" class="btn btn-info" id="showHistoryBtn">
         <i class="fas fa-history"></i> View Attendance History
     </button>
 </div>
 <table id="attendanceTable" class="table table-striped table-bordered">
-    <thead>
+    <thead class="table-dark">
         <tr>
             <th>Full Name</th>
             <th>Date</th>
@@ -186,8 +186,16 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function () {
-    // Initialize DataTable
-    const table = $('#attendanceTable').DataTable();
+    // Check if DataTable is already initialized
+    if (!$.fn.DataTable.isDataTable('#attendanceTable')) {
+        // Initialize DataTable only if it hasn't been initialized yet
+        const table = $('#attendanceTable').DataTable({
+            pageLength: 10,
+            ordering: false,
+            responsive: true,
+            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+        });
+    }
 
     // Variables to store current user interaction state
     let currentUserData = null;

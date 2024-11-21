@@ -50,13 +50,13 @@ $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
-<h2>Fitness and Wellness Programs</h2>
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProgramModal">
+<h1 class="nav-title">Programs</h1>
+<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addProgramModal">
     Add Program
 </button>
 
 <table id="programsTable" class="table table-striped table-bordered">
-    <thead>
+    <thead class="table-dark">
         <tr>
             <th>No.</th>
             <th>Program Name</th>
