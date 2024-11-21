@@ -1,31 +1,33 @@
 <?php
 require_once 'config.php';
 
-if (isset($_GET['id'])) {
-    $rentalId = intval($_GET['id']);
+// Check if a specific ID is requested
+$rentalId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
-    $stmt = $pdo->query("
-    SELECT rs.*, st.status_name, dt.type_name as duration_type
+$query = "
+    SELECT rs.*, dt.type_name as duration_type
     FROM rental_services rs 
     JOIN status_types st ON rs.status_id = st.id
     JOIN duration_types dt ON rs.duration_type_id = dt.id
     WHERE st.status_name = 'active'
-");
-    $stmt->execute([$rentalId]);
-    $rental = $stmt->fetch(PDO::FETCH_ASSOC);
+";
 
-    if ($rental) {
-        ?>
-        <input type="hidden" class="rental-id" value="<?= $rental['id'] ?>">
-        <h6 class="rental-name"><?= htmlspecialchars($rental['service_name']) ?></h6>
-        <p><strong>Description:</strong> <?= htmlspecialchars($rental['description']) ?></p>
-        <p><strong>Available Slots:</strong> <?= $rental['available_slots'] ?></p>
-        <p><strong>Price:</strong> <span class="rental-price">₱<?= number_format($rental['price'], 2) ?></span></p>
-        <?php
-    } else {
-        echo "Rental details not found.";
-    }
+if ($rentalId) {
+    $query .= " AND rs.id = :id";
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':id', $rentalId, PDO::PARAM_INT);
 } else {
-    echo "Invalid rental ID.";
+    $stmt = $pdo->query($query);
 }
+
+$rentals = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
+<?php foreach ($rentals as $rental): ?>
+    <div class="service-box rental" data-id="<?= $rental['id'] ?>">
+        <h6 class="rental-name"><?= htmlspecialchars($rental['service_name']) ?></h6>
+        <p>Available Slots: <?= $rental['available_slots'] ?></p>
+        <p class="text-primary rental-price">₱<?= number_format($rental['price'], 2) ?></p>
+        <input type="hidden" class="rental-id" value="<?= $rental['id'] ?>">
+    </div>
+<?php endforeach; ?>
