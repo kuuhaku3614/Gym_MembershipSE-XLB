@@ -142,19 +142,13 @@
 
     <script>
 $(document).ready(function () {
-  // Check if DataTable is already initialized
-  if (!$.fn.DataTable.isDataTable('#walkInTable')) {
-    // Initialize DataTable only if it hasn't been initialized yet
+
     const table = $("#walkInTable").DataTable({
       pageLength: 10,
       ordering: false,
       responsive: true,
       dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
     });
-  } else {
-    // If already initialized, get the existing instance
-    const table = $("#walkInTable").DataTable();
-  }
 
   // Add button action
   $('#addButton').on('click', function() {
