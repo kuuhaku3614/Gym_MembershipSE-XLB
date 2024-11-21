@@ -192,6 +192,9 @@ if (!file_exists($uploadsDir)) {
 
 <!-- Main Container -->
 <div class="container-fluid">
+
+<h1 class="nav-title">Members</h1>
+
     <!-- Add Member Button -->
     <button type="button" class="btn btn-primary mb-4" id="addMemberBtn">
         <i class="fas fa-plus mr-2"></i>Add New Member

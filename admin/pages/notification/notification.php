@@ -62,8 +62,9 @@
         }
 </style>
 
-<div class="header">
-    <h1>Notifications</h1>
+    <h1 class="nav-title">Notifications</h1>
+    <div class="header">
+    
     <div class="actions">
         <input type="text" class="search-input" placeholder="Search notifications..." />
         <button class="search-btn">Search</button>

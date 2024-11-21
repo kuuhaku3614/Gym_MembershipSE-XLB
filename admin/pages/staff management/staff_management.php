@@ -35,18 +35,18 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="container mt-4">
+    <h1 class="nav-title">Staff Management</h1>
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Staff Management</h2>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">
             Add New Staff
         </button>
     </div>
 
     <!-- Staff Table -->
-    <table class="table table-striped" id="staffTable">
-        <thead>
+    <table class="table table-striped table-bordered" id="staffTable">
+        <thead class="table-dark" >
             <tr>
-                <th>Full Name</th>
+                <th >Full Name</th>
                 <th>Username</th>
                 <th>Role</th>
                 <th>Contact Number</th>

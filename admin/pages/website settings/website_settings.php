@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="C:\xampp\htdocs\Gym_MembershipSE-XLB\admin\css\admin.css">
 </head>
 <body>
-<h2>Website Settings</h2>
+<h1 class="nav-title">Website Settings</h1>
 
 <form action="upload.php" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
     <div class="container mt-5">

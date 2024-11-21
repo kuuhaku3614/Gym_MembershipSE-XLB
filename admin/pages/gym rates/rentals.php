@@ -30,13 +30,13 @@ $statusTypes = $statusTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
-<h2>Facility and Service Rentals</h2>
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+<h1 class="nav-title">Facility and Service Rentals</h1>
+<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addServiceModal">
     Add Service
 </button>
 
 <table id="gymRatesTable" class="table table-striped table-bordered">
-    <thead>
+    <thead class="table-dark">
         <tr>
             <th>No.</th>
             <th>Service Name</th>
