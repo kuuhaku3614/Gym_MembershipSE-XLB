@@ -1,329 +1,167 @@
+<!-- add_member_modal.php -->
 <?php
-// Add this near the top of your file
-$uploadsDir = __DIR__ . '/uploads';
-if (!file_exists($uploadsDir)) {
-    mkdir($uploadsDir, 0777, true);
+require_once 'config.php';
+?>
+<!-- Add necessary CSS -->
+<style>
+.service-box {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
 }
 
-// Make sure default.png exists
+.service-box:hover {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
 
-?>
+.verification-input {
+    width: 200px;
+    margin: 20px auto;
+    text-align: center;
+    letter-spacing: 5px;
+    font-size: 24px;
+}
 
-<!-- members.php -->
-<?php require_once 'config.php'; ?>
+.availed-container {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+}
 
-    <!-- Styles -->
-    <style>
-        /* General Modal Styles */
-        .modal-header { border-bottom: 2px solid #e9ecef; }
-        .modal-footer { border-top: 2px solid #e9ecef; }
+.modal-xl {
+    max-width: 95%;
+}
 
-        /* Service Container Styles */
-        .service-container {
-            background-color: #ffffff;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-        }
+.services-scrollable-container {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
 
-        .service-box {
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 0.375rem;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .service-box:hover {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        /* Services Grid Layout */
-        .services-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        @media (min-width: 768px) {
-            .services-grid { grid-template-columns: 1fr 1fr; }
-        }
-
-        /* Summary Container */
-        .summary-container {
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .summary-header {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        /* Scrollable Containers */
-        .services-scrollable-container {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .services-scrollable-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .services-scrollable-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        .services-scrollable-container::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
-        }
-
-        /* Table Styles */
-        .table {
-            font-size: 0.9rem;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .table thead th {
-            background-color: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 15px;
-            border-bottom: 2px solid #dee2e6;
-            vertical-align: middle;
-        }
-
-        .table tbody td {
-            padding: 15px;
-            vertical-align: middle;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        /* Member Name Style */
-        .member-name {
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 0.95rem;
-        }
-
-        /* Status Badge Styles */
-        .badge {
-            font-weight: 500;
-            padding: 8px 12px;
-            font-size: 0.75rem;
-            letter-spacing: 0.3px;
-        }
-
-        .badge-success {
-            background-color: #28a745;
-        }
-
-        .badge-danger {
-            background-color: #dc3545;
-        }
-
-        .badge-warning {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        /* Action Buttons */
-        .btn-group .btn {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .btn-info {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        /* Photo Container */
-        .member-photo-container {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto;
-        }
-
-        /* Default User Icon */
-        .default-user-icon {
-            width: 60px;
-            height: 60px;
-            background-color: #f8f9fa;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .default-user-icon i {
-            font-size: 1.5rem;
-            color: #6c757d;
-        }
-
-        /* Date and Plan Styles */
-        .date-cell, .plan-cell {
-            color: #6c757d;
-            font-size: 0.85rem;
-        }
-    </style>
-
-<!-- Main Container -->
-<div class="container-fluid">
-    <!-- Add Member Button -->
-    <button type="button" class="btn btn-primary mb-4" id="addMemberBtn">
-        <i class="fas fa-plus mr-2"></i>Add New Member
-    </button>
-
-    <!-- Members Table -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Members List</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="text-center">Profile</th>
-                            <th>Member Name</th>
-                            <th>Membership Plan</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="membersTableBody">
-                        <!-- Table content will be dynamically populated -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Member Modal -->
-    <div class="modal fade" id="addMemberModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Member</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+.service-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+</style>
+    <!-- Main Content Container -->
+    <div class="main-content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <button type="button" class="btn btn-primary mb-3" id="addMemberBtn">
+                        Add New Member
                     </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Progress Bar -->
-                    <div class="progress mb-4">
-                        <div class="progress-bar" role="progressbar" style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100">Phase 1/3</div>
-                    </div>
 
-                    <!-- Phase 1: Member Details -->
-                    <div id="phase1" class="phase-content">
-                        <form id="membershipForm" enctype="multipart/form-data">
-                            <div class="row">
-                                <!-- Left Section - Personal Details -->
-                                <div class="col-md-6">
-                                    <h6 class="mb-3">Personal Details</h6>
-                                    
-                                    <!-- Profile Photo Upload -->
-                                    <div class="form-group mb-4">
-                                        <label>Profile Photo</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="profile_photo" name="profile_photo" accept="image/*">
-                                            <label class="custom-file-label" for="profile_photo">Choose file</label>
-                                        </div>
-                                        <div id="preview" class="mt-2"></div>
+                    <!-- Add Member Modal -->
+                    <div class="modal fade" id="addMemberModal" tabindex="-1" role="dialog" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="addMemberModalLabel">Add New Member</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Progress Bar -->
+                                    <div class="progress mb-4">
+                                        <div class="progress-bar" role="progressbar" style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100">Phase 1/3</div>
                                     </div>
 
-                                    <div id="new_user_form">
-                                        <div class="form-group">
-                                            <label>First Name</label>
-                                            <input type="text" class="form-control" name="first_name" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Middle Name</label>
-                                            <input type="text" class="form-control" name="middle_name">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Last Name</label>
-                                            <input type="text" class="form-control" name="last_name" required>
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group col-md-6">
-                                                <label>Sex</label>
-                                                <select class="form-control" name="sex" required>
-                                                    <option value="Male">Male</option>
-                                                    <option value="Female">Female</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-6">
-                                                <label>Birthdate</label>
-                                                <input type="date" class="form-control" name="birthdate" required>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Phone Number</label>
-                                            <input type="tel" class="form-control" name="phone" required>
-                                        </div>
+                                    <!-- Phase 1: Member Details -->
+                <div id="phase1" class="phase-content">
+                    <form id="membershipForm">
+                        <div class="row">
+                            <!-- Left Section - Personal Details -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Personal Details</h6>
+
+                                
+                                <div id="existing_user_form" style="display: none;">
+                                    <div class="form-group">
+                                        <label>Search User</label>
+                                        <input type="text" class="form-control" id="search_user">
                                     </div>
                                 </div>
 
-                                <!-- Right Section - Membership Details -->
-                                <div class="col-md-6">
-                                    <h6 class="mb-3">Membership Details</h6>
+                                <div id="new_user_form">
                                     <div class="form-group">
-                                        <label>Username</label>
-                                        <input type="text" class="form-control" name="username" required>
+                                        <label>First Name</label>
+                                        <input type="text" class="form-control" name="first_name" required>
                                     </div>
                                     <div class="form-group">
-                                        <label>Password</label>
-                                        <input type="password" class="form-control" name="password" required>
+                                        <label>Middle Name</label>
+                                        <input type="text" class="form-control" name="middle_name">
                                     </div>
                                     <div class="form-group">
-                                        <label>Membership Plan</label>
-                                        <select class="form-control" name="membership_plan" id="membership_plan" required>
-                                            <option value="">Select Plan</option>
-                                        </select>
+                                        <label>Last Name</label>
+                                        <input type="text" class="form-control" name="last_name" required>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Sex</label>
+                                            <select class="form-control" name="sex" required>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Birthdate</label>
+                                            <input type="date" class="form-control" name="birthdate" required>
+                                        </div>
                                     </div>
                                     <div class="form-group">
-                                        <label>Start Date</label>
-                                        <input type="date" class="form-control" name="start_date" id="start_date" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>End Date</label>
-                                        <input type="date" class="form-control" name="end_date" id="end_date" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Price</label>
-                                        <input type="text" class="form-control" name="price" id="price" readonly>
+                                        <label>Phone Number</label>
+                                        <input type="tel" class="form-control" name="phone" required>
                                     </div>
                                 </div>
                             </div>
-                        </form>
-                    </div>
+
+                            <!-- Right Section - Membership Details -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Membership Details</h6>
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" class="form-control" name="username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="password" class="form-control" name="password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Membership Plan</label>
+                                    <select class="form-control" name="membership_plan" id="membership_plan" required>
+                                        <option value="">Select Plan</option>
+                                        <?php
+                                        $stmt = $pdo->query("SELECT * FROM membership_plans WHERE status_id = 1");
+                                        while ($row = $stmt->fetch()) {
+                                            echo "<option value='{$row['id']}' 
+                                                data-price='{$row['price']}' 
+                                                data-duration='{$row['duration']}'
+                                                data-duration-type='{$row['duration_type_id']}'>{$row['plan_name']}</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" class="form-control" name="start_date" id="start_date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>End Date</label>
+                                    <input type="date" class="form-control" name="end_date" id="end_date" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Price</label>
+                                    <input type="text" class="form-control" name="price" id="price" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
 
                                     <!-- Phase 2: Services -->
 <div id="phase2" class="phase-content" style="display: none;">
@@ -343,6 +181,9 @@ if (!file_exists($uploadsDir)) {
                         <div class="additional-services">
                             <h6>Additional Services</h6>
                             <div id="selected_services"></div>
+                        </div>
+                        <div class="total-amount mt-3">
+                            <h6>Total Amount: <span id="total_amount">₱0.00</span></h6>
                         </div>
                     </div>
                 </div>
@@ -376,500 +217,307 @@ if (!file_exists($uploadsDir)) {
     </div>
 </div>
                                 <!-- Detailed Program Modal -->
-                            <div class="modal fade" id="programDetailModal" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Program Details</h5>
-                                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <h6>Program Information</h6>
-                                                    <div id="programDetailContent"></div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <h6>Available Coaches</h6>
-                                                    <select id="coachSelect" class="form-control"></select>
-                                                    <div id="coachDetails" class="mt-3"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                            <button type="button" class="btn btn-primary" id="addProgramDetailBtn">Add to Membership</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Detailed Rental Modal -->
-                            <div class="modal fade" id="rentalDetailModal" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Rental Service Details</h5>
-                                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                        </div>
-                                        <div class="modal-body" id="rentalDetailContent"></div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                            <button type="button" class="btn btn-primary" id="addRentalDetailBtn">Add to Membership</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                    <!-- Phase 3: Verification -->
-                    <div id="phase3" class="phase-content" style="display: none;">
-                        <div class="verification-container text-center">
-                            <h6>Phone Verification</h6>
-                            <p>Enter verification code sent to <span id="phone_display"></span></p>
-                            <p><strong>Mock Code:</strong> <span id="verificationCodeDisplay">Loading...</span></p>
-                            <input type="text" class="form-control verification-input" maxlength="6">
-                            <button class="btn btn-link resend-code">Resend code</button>
-                        </div>
+<div class="modal fade" id="programDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Program Details</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Program Information</h6>
+                        <div id="programDetailContent"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Available Coaches</h6>
+                        <select id="coachSelect" class="form-control"></select>
+                        <div id="coachDetails" class="mt-3"></div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
-                    <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="addProgramDetailBtn">Add to Membership</button>
             </div>
         </div>
     </div>
 </div>
-<script>
-    // Membership Management Script
-    const MembershipManager = {
-    state: {
-        currentPhase: 1,
-        selectedPrograms: [],
-        selectedRentals: [],
-        totalAmount: 0,
-        VERIFICATION_CODE: '123456'
-    },
 
-    init() {
-        this.initializeDatatable();
-        this.bindEvents();
-        this.loadMembersTable();
-    },
+<!-- Detailed Rental Modal -->
+<div class="modal fade" id="rentalDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rental Service Details</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" id="rentalDetailContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="addRentalDetailBtn">Add to Membership</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-    initializeDatatable() {
-        this.loadMembersTable();
-    },
+                                    <!-- Phase 3: Verification -->
+                                    <div id="phase3" class="phase-content" style="display: none;">
+                                    <div class="verification-container text-center">
+                                        <h6>Phone Verification</h6>
+                                        <p>Enter verification code sent to <span id="phone_display"></span></p>
+                                        <p><strong>Mock Code:</strong> <span id="verificationCodeDisplay">Loading...</span></p>
+                                        <input type="text" class="form-control verification-input" maxlength="6">
+                                        <button class="btn btn-link resend-code">Resend code</button>
+                                    </div>
+                                    </div>
+                                </div>
 
-    bindEvents() {
-        $('#addMemberBtn').click(() => this.resetAndShowModal());
-        $('#membership_plan').change(() => this.handlePlanChange());
-        $('#start_date').change(() => {
-            if ($('#membership_plan').val()) {
-                this.handlePlanChange();
-            }
-        });
-        $('#nextBtn').click(() => this.handleNextPhase());
-        $('#prevBtn').click(() => this.handlePrevPhase());
-        this.bindServiceEvents();
-        this.bindFileUpload();
-        this.bindDeleteMember();
-    },
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
+                                    <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    bindFileUpload() {
-        $('#profile_photo').change(function() {
-            const file = this.files[0];
-            const reader = new FileReader();
-            
-            // Update file input label
-            $(this).next('.custom-file-label').html(file.name);
-            
-            reader.onload = function(e) {
-                $('#preview').html(`
-                    <img src="${e.target.result}" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">
-                `);
-            }
-            
-            reader.readAsDataURL(file);
-        });
-    },
+                    
 
-    bindDeleteMember() {
-        $(document).on('click', '.delete-member', (e) => {
-            const memberId = $(e.target).data('id');
-            if (confirm('Are you sure you want to delete this member?')) {
-                this.deleteMember(memberId);
-            }
-        });
-    },
-
-    bindServiceEvents() {
-        $('.program').click((e) => {
-            const programId = $(e.target).closest('.program').data('id');
-            this.loadProgramDetails(programId);
-        });
-
-        $('.rental').click((e) => {
-            const rentalId = $(e.target).closest('.rental').data('id');
-            this.loadRentalDetails(rentalId);
-        });
-
-        $('#addProgramDetailBtn').click(() => this.addProgramToMembership());
-        $('#addRentalDetailBtn').click(() => this.addRentalToMembership());
-    },
-
-    resetAndShowModal() {
-        this.state.currentPhase = 1;
-        this.state.selectedPrograms = [];
-        this.state.selectedRentals = [];
-        this.state.totalAmount = 0;
+    <script>
+$(document).ready(function() {
+    // Initialize global variables
+    let currentPhase = 1;
+    let selectedPrograms = [];
+    let selectedRentals = [];
+    let totalAmount = 0;
+    
+    // Add Member Button
+    $('#addMemberBtn').click(function() {
+        // Reset everything
+        currentPhase = 1;
+        selectedPrograms = [];
+        selectedRentals = [];
+        totalAmount = 0;
         
+        // Reset form
         $('#membershipForm')[0].reset();
-        $('#preview').empty();
+        
+        // Reset phase display
         $('.phase-content').hide();
         $('#phase1').show();
         
-        $('.progress-bar')
-            .css('width', '33%')
-            .attr('aria-valuenow', 33)
-            .text('Phase 1/3');
+        // Reset progress bar
+        $('.progress-bar').css('width', '33%')
+                         .attr('aria-valuenow', 33)
+                         .text('Phase 1/3');
         
+        // Reset navigation buttons
         $('#prevBtn').hide();
         $('#nextBtn').text('Next');
         
+        // Show modal
         $('#addMemberModal').modal('show');
-        this.loadMembershipPlans();
-        this.loadAvailableServices();
-    },
+        
+        // Load available services
+        loadAvailableServices();
+    });
 
-    handlePlanChange() {
-        const selectedOption = $('#membership_plan option:selected');
-        if (!selectedOption.val()) {
-            $('#end_date').val('');
-            $('#price').val('');
-            this.updateTotalAmount();
-            return;
+    // Load Available Services
+    function loadAvailableServices() {
+    $.ajax({
+        url: '../admin/pages/members/get_available_services.php',
+        method: 'GET',
+        success: function(response) {
+            // Populate the container with the response HTML
+            $('.services-container').html(response);
+
+            // Rebind click events for dynamic content
+            bindServiceClickEvents();
+        },
+        error: function() {
+            alert('Error loading available services');
+        }
+    });
+}
+
+
+    function bindServiceClickEvents() {
+        $('.program').click(function() {
+            const programId = $(this).data('id');
+            
+            $.ajax({
+                url: '../admin/pages/members/get_program_details.php',
+                method: 'GET',
+                data: { id: programId },
+                success: function(response) {
+                    $('#program_details_content').html(response);
+                    $('#programDetailsModal').modal('show');
+                },
+                error: function() {
+                    alert('Error fetching program details');
+                }
+            });
+        });
+
+        $('.rental').click(function() {
+            const rentalId = $(this).data('id');
+            
+            $.ajax({
+                url: '../admin/pages/members/get_rental_details.php',
+                method: 'GET',
+                data: { id: rentalId },
+                success: function(response) {
+                    $('#rental_details_content').html(response);
+                    $('#rentalDetailsModal').modal('show');
+                },
+                error: function() {
+                    alert('Error fetching rental details');
+                }
+            });
+        });
+    }
+
+    // Membership Plan Calculation
+    $('#membership_plan').on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const price = selectedOption.data('price') || 0;
+        const duration = selectedOption.data('duration') || 0;
+        
+        // Set start date to today if not set
+        const startDate = new Date().toISOString().split('T')[0];
+        $('#start_date').val(startDate);
+
+        // Calculate end date based on duration
+        const endDate = new Date(startDate);
+        const durationType = selectedOption.data('duration-type');
+        
+        switch(durationType) {
+            case 1: // days
+                endDate.setDate(endDate.getDate() + duration);
+                break;
+            case 2: // months
+                endDate.setMonth(endDate.getMonth() + duration);
+                break;
+            case 3: // year
+                endDate.setFullYear(endDate.getFullYear() + duration);
+                break;
         }
 
-        const duration = parseInt(selectedOption.data('duration'));
-        const durationType = parseInt(selectedOption.data('duration-type'));
-        const price = parseFloat(selectedOption.data('price'));
-        
-        // Get or set start date
-        let startDate = $('#start_date').val();
-        if (!startDate) {
-            startDate = new Date().toISOString().split('T')[0];
-            $('#start_date').val(startDate);
-        }
+        $('#end_date').val(endDate.toISOString().split('T')[0]);
 
-        // Calculate end date
-        const endDate = this.calculateEndDate(startDate, duration, durationType);
-        
-        // Update fields
-        $('#end_date').val(endDate);
-        $('#price').val(price.toFixed(2));
-        
-        this.updateTotalAmount();
-    },
+        // Set price
+        $('#price').val(parseFloat(price).toFixed(2));
+    });
 
-    calculateEndDate(startDate, duration, type) {
-        const date = new Date(startDate);
-        switch(type) {
-            case 1: date.setDate(date.getDate() + duration); break;
-            case 2: date.setMonth(date.getMonth() + duration); break;
-            case 3: date.setFullYear(date.getFullYear() + duration); break;
-        }
-        return date.toISOString().split('T')[0];
-    },
-
-    loadAvailableServices() {
-        $.ajax({
-            url: '../admin/pages/members/get_program_details.php',
-            method: 'GET',
-            success: (programsResponse) => {
-                const programs = JSON.parse(programsResponse);
-                this.renderPrograms(programs);
-            }
-        });
-
-        $.ajax({
-            url: '../admin/pages/members/get_rental_details.php',
-            method: 'GET',
-            success: (rentalsResponse) => {
-                const rentals = JSON.parse(rentalsResponse);
-                this.renderRentals(rentals);
-            }
-        });
-    },
-
-    renderPrograms(programs) {
-        const html = programs.map(program => `
-            <div class="service-box program" data-id="${program.id}">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">${program.program_name}</h6>
-                        <p class="text-muted small mb-0">${program.type_name}</p>
-                    </div>
-                    <div>
-                        <span class="badge badge-primary">₱${parseFloat(program.price).toFixed(2)}</span>
-                        <button class="btn btn-sm btn-outline-success ml-2 add-program" data-id="${program.id}">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-        
-        $('.card-body.services-scrollable-container').first().html(html);
-        
-        // Bind add program button
-        $('.add-program').click((e) => {
-            const programId = $(e.currentTarget).data('id');
-            this.loadProgramDetails(programId);
-        });
-    },
-
-    renderRentals(rentals) {
-        const html = rentals.map(rental => `
-            <div class="service-box rental" data-id="${rental.id}">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">${rental.service_name}</h6>
-                        <p class="text-muted small mb-0">Available Slots: ${rental.available_slots}</p>
-                    </div>
-                    <div>
-                        <span class="badge badge-primary">₱${parseFloat(rental.price).toFixed(2)}</span>
-                        <button class="btn btn-sm btn-outline-success ml-2 add-rental" data-id="${rental.id}">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-        
-        $('.card-body.services-scrollable-container').last().html(html);
-        
-        // Bind add rental button
-        $('.add-rental').click((e) => {
-            const rentalId = $(e.currentTarget).data('id');
-            this.loadRentalDetails(rentalId);
-        });
-    },
-
-    updateSelectedServices() {
+    // Display Selected Plan
+    function displaySelectedPlan() {
         const planOption = $('#membership_plan option:selected');
         const planName = planOption.text();
-        const planPrice = parseFloat(planOption.data('price')) || 0;
+        const startDate = $('#start_date').val();
+        const endDate = $('#end_date').val();
+        const price = parseFloat(planOption.data('price')) || 0;
 
-        let selectedServicesHtml = `
-            <div class="service-item bg-light p-2 rounded mb-2">
-                <div class="d-flex justify-content-between">
-                    <span>Membership Plan: ${planName}</span>
-                    <span class="text-primary">₱${planPrice.toFixed(2)}</span>
-                </div>
-            </div>
-        `;
+        $('#selected_plan_details').html(`
+            <p><strong>Plan:</strong> ${planName}</p>
+            <p><strong>Start Date:</strong> ${startDate}</p>
+            <p><strong>End Date:</strong> ${endDate}</p>
+            <p><strong>Price:</strong> ₱${price.toFixed(2)}</p>
+        `);
 
-        // Render Programs
-        if (this.state.selectedPrograms.length > 0) {
-            selectedServicesHtml += `
-                <div class="mb-2">
-                    <h6 class="text-muted small">Added Programs</h6>
-                    ${this.state.selectedPrograms.map(program => `
-                        <div class="service-item d-flex justify-content-between align-items-center p-2 bg-white rounded mb-1">
-                            <span>${program.name}</span>
-                            <div>
-                                <span class="text-primary mr-2">₱${program.price.toFixed(2)}</span>
-                                <button class="btn btn-xs btn-outline-danger remove-program" data-id="${program.id}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
+        // Update total amount to include membership plan price
+        totalAmount = price;
+        updateSelectedServices();
+    }
 
-        // Render Rentals
-        if (this.state.selectedRentals.length > 0) {
-            selectedServicesHtml += `
-                <div class="mb-2">
-                    <h6 class="text-muted small">Added Rental Services</h6>
-                    ${this.state.selectedRentals.map(rental => `
-                        <div class="service-item d-flex justify-content-between align-items-center p-2 bg-white rounded mb-1">
-                            <span>${rental.name}</span>
-                            <div>
-                                <span class="text-primary mr-2">₱${rental.price.toFixed(2)}</span>
-                                <button class="btn btn-xs btn-outline-danger remove-rental" data-id="${rental.id}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        // Total Amount
-        selectedServicesHtml += `
-            <div class="total-amount mt-3 p-2 bg-primary text-white rounded">
-                <div class="d-flex justify-content-between">
-                    <strong>Total Amount:</strong>
-                    <strong>₱${this.state.totalAmount.toFixed(2)}</strong>
-                </div>
-            </div>
-        `;
-
-        $('#selected_services').html(selectedServicesHtml);
-
-        // Bind remove buttons
-        $('.remove-program').click((e) => {
-            const programId = $(e.currentTarget).data('id');
-            this.removeProgram(programId);
-        });
-
-        $('.remove-rental').click((e) => {
-            const rentalId = $(e.currentTarget).data('id');
-            this.removeRental(rentalId);
-        });
-    },
-
-    removeProgram(programId) {
-        const index = this.state.selectedPrograms.findIndex(p => p.id === programId);
-        if (index !== -1) {
-            const removedProgram = this.state.selectedPrograms.splice(index, 1)[0];
-            this.state.totalAmount -= removedProgram.price;
-            this.updateSelectedServices();
-        }
-    },
-
-    removeRental(rentalId) {
-        const index = this.state.selectedRentals.findIndex(r => r.id === rentalId);
-        if (index !== -1) {
-            const removedRental = this.state.selectedRentals.splice(index, 1)[0];
-            this.state.totalAmount -= removedRental.price;
-            this.updateSelectedServices();
-        }
-    },
-
-    addProgramToMembership() {
-        const $details = $('#programDetailContent');
+    // Add Program to Membership
+    $('#addProgramBtn').click(function() {
+        const $details = $('#program_details_content');
         const programId = $details.find('.program-id').val();
         const programName = $details.find('.program-name').text();
         const programPrice = parseFloat($details.find('.program-price').text().replace('₱', ''));
 
-        // Prevent duplicate programs
-        if (!this.state.selectedPrograms.some(p => p.id === programId)) {
-            this.state.selectedPrograms.push({
+        if (!selectedPrograms.some(p => p.id === programId)) {
+            selectedPrograms.push({
                 id: programId,
                 name: programName,
                 price: programPrice
             });
 
-            this.state.totalAmount += programPrice;
-            this.updateSelectedServices();
+            totalAmount += programPrice;
+            updateSelectedServices();
         }
 
-        $('#programDetailModal').modal('hide');
-    },
+        $('#programDetailsModal').modal('hide');
+    });
 
-    addRentalToMembership() {
-        const $details = $('#rentalDetailContent');
+    // Add Rental to Membership
+    $('#addRentalBtn').click(function() {
+        const $details = $('#rental_details_content');
         const rentalId = $details.find('.rental-id').val();
         const rentalName = $details.find('.rental-name').text();
         const rentalPrice = parseFloat($details.find('.rental-price').text().replace('₱', ''));
 
-        // Prevent duplicate rentals
-        if (!this.state.selectedRentals.some(r => r.id === rentalId)) {
-            this.state.selectedRentals.push({
+        if (!selectedRentals.some(r => r.id === rentalId)) {
+            selectedRentals.push({
                 id: rentalId,
                 name: rentalName,
                 price: rentalPrice
             });
 
-            this.state.totalAmount += rentalPrice;
-            this.updateSelectedServices();
+            totalAmount += rentalPrice;
+            updateSelectedServices();
         }
 
-        $('#rentalDetailModal').modal('hide');
-    },
+        $('#rentalDetailsModal').modal('hide');
+    });
 
-    handleNextPhase() {
-        if (this.validateCurrentPhase()) {
-            this.state.currentPhase++;
-            this.updatePhaseDisplay();
-        }
-    },
+    // Update Selected Services
+    function updateSelectedServices() {
+        let servicesHtml = '';
 
-    handlePrevPhase() {
-        if (this.state.currentPhase > 1) {
-            this.state.currentPhase--;
-            this.updatePhaseDisplay();
-        }
-    },
+        // Include Membership Plan in Services
+        const planOption = $('#membership_plan option:selected');
+        const planName = planOption.text();
+        const planPrice = parseFloat(planOption.data('price')) || 0;
 
-    validateCurrentPhase() {
-        switch(this.state.currentPhase) {
-            case 1:
-                return this.validatePhaseOne();
-            case 2:
-                return this.validatePhaseTwo();
-            case 3:
-                return this.processMembership();
-            default:
-                return false;
-        }
-    },
+        servicesHtml += `
+            <div class="service-item">
+                <span>Membership Plan: ${planName}</span>
+                <span class="float-right">₱${planPrice.toFixed(2)}</span>
+            </div>
+        `;
 
-    validatePhaseOne() {
-        const form = $('#membershipForm')[0];
-        if (!form.checkValidity()) {
-            $('<input type="submit">').hide().appendTo(form).click().remove();
-            return false;
-        }
+        selectedPrograms.forEach(program => {
+            servicesHtml += `
+                <div class="service-item">
+                    <span>${program.name}</span>
+                    <span class="float-right">₱${program.price.toFixed(2)}</span>
+                </div>
+            `;
+        });
 
-        const membershipPlan = $('#membership_plan').val();
-        if (!membershipPlan) {
-            alert('Please select a membership plan');
-            return false;
-        }
+        selectedRentals.forEach(rental => {
+            servicesHtml += `
+                <div class="service-item">
+                    <span>${rental.name}</span>
+                    <span class="float-right">₱${rental.price.toFixed(2)}</span>
+                </div>
+            `;
+        });
 
-        return true;
-    },
+        $('#selected_services').html(servicesHtml);
+        $('#total_amount').text('₱' + totalAmount.toFixed(2));
+    }
 
-    validatePhaseTwo() {
-        // Add any phase two validation logic here
-        return true;
-    },
-
-    updatePhaseDisplay() {
-        $('.phase-content').hide();
-        $(`#phase${this.state.currentPhase}`).show();
-        
-        const progress = (this.state.currentPhase / 3) * 100;
-        $('.progress-bar')
-            .css('width', `${progress}%`)
-            .attr('aria-valuenow', progress)
-            .text(`Phase ${this.state.currentPhase}/3`);
-        
-        $('#prevBtn').toggle(this.state.currentPhase > 1);
-        $('#nextBtn').text(this.state.currentPhase === 3 ? 'Submit' : 'Next');
-        
-        if (this.state.currentPhase === 2) {
-            this.loadServices();
-            this.updateSelectedServices();
-        } else if (this.state.currentPhase === 3) {
-            const phoneNumber = $('input[name="phone"]').val();
-            $('#phone_display').text(phoneNumber);
-            $('#verificationCodeDisplay').text(this.state.VERIFICATION_CODE);
-        }
-    },
-
-    processMembership() {
+    // Submit Membership Form
+    function submitMembershipForm() {
         const formData = new FormData($('#membershipForm')[0]);
-        formData.append('programs', JSON.stringify(this.state.selectedPrograms));
-        formData.append('rentals', JSON.stringify(this.state.selectedRentals));
-        formData.append('user_type', 'new');
-        formData.append('total_amount', this.state.totalAmount.toString());
+        
+        // Add selected programs and rentals to form data
+        formData.append('selected_programs', JSON.stringify(selectedPrograms));
+        formData.append('selected_rentals', JSON.stringify(selectedRentals));
+        formData.append('total_amount', totalAmount);
 
         $.ajax({
             url: '../admin/pages/members/process_membership.php',
@@ -877,261 +525,92 @@ if (!file_exists($uploadsDir)) {
             data: formData,
             processData: false,
             contentType: false,
-            dataType: 'json',
-            success: (response) => {
-                if (response.success) {
-                    alert('Membership created successfully!');
+            success: function(response) {
+                if (response.status === 'success') {
                     $('#addMemberModal').modal('hide');
-                    this.loadMembersTable();
+                    alert('Membership registered successfully!');
+                    // Optionally reload the page or update the members list
                 } else {
                     alert('Error: ' + response.message);
                 }
             },
-            error: (xhr, status, error) => {
-                console.error('Server Response:', xhr.responseText);
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    alert('Error processing membership: ' + response.message);
-                } catch (e) {
-                    alert('Error processing membership. Please check the console for details.');
-                }
+            error: function() {
+                alert('An error occurred while processing the membership.');
             }
         });
-        return true;
-    },
+    }
 
-    deleteMember(memberId) {
-        $.ajax({
-            url: 'delete_member.php',
-            method: 'POST',
-            data: { id: memberId },
-            success: (response) => {
-                try {
-                    const result = JSON.parse(response);
-                    if (result.success) {
-                        alert('Member deleted successfully');
-                        this.loadMembersTable();
-                    } else {
-                        alert('Error deleting member: ' + result.message);
-                    }
-                } catch (e) {
-                    alert('Error processing server response');
-                    console.error('Error parsing delete response:', e);
+    // Phase navigation
+    $('#nextBtn').click(function () {
+        if (currentPhase === 1) {
+            if (validatePhase1()) {
+                currentPhase++;
+                updatePhase();
+                displaySelectedPlan(); // Show selected plan details in phase 2
+            }
+        } else if (currentPhase === 2) {
+            currentPhase++;
+            updatePhase();
+
+            // Set phone number for verification
+            const phoneNumber = $('input[name="phone"]').val();
+            $('#phone_display').text(phoneNumber);
+        } else if (currentPhase === 3) {
+            const phoneNumber = $('input[name="phone"]').val();
+
+            // Mock verification: Get the code from the server
+            $.post('process_membership.php', { phone: phoneNumber }, function (response) {
+                if (response.success) {
+                    $('#verificationCodeDisplay').text(response.verificationCode); // Display the mock code
+                } else {
+                    alert(response.message || 'Failed to send verification code');
                 }
-            },
-            error: (xhr, status, error) => {
-                alert('Error deleting member');
-                console.error('Delete request failed:', error);
-            }
-        });
-    },
-
-    loadMembersTable() {
-    // Show loading state
-    $('#membersTableBody').html(`
-        <tr>
-            <td colspan="7" class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-                <p class="mt-2">Loading members...</p>
-            </td>
-        </tr>
-    `);
-
-    $.ajax({
-        url: '../admin/pages/members/get_members.php',
-        type: 'GET',
-        dataType: 'json',
-        success: (response) => {
-            console.log('Server Response:', response); // Debug log
-
-            if (!response.success) {
-                $('#membersTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="text-center text-danger">
-                            <i class="fas fa-exclamation-circle"></i>
-                            Error: ${response.message || 'Failed to load members'}
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            const members = response.data;
-            if (!members || members.length === 0) {
-                $('#membersTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="text-center">
-                            <i class="fas fa-users"></i>
-                            No members found
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            const tableBody = members.map(member => `
-                <tr>
-                    <td class="align-middle text-center">
-                        <div class="member-photo-container">
-                            ${member.photo_path ? 
-                                `<img src="../${member.photo_path}" 
-                                     class="img-fluid rounded-circle member-photo" 
-                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                     alt="Profile Photo"
-                                     onerror="this.parentElement.innerHTML='<div class=\'default-user-icon\'><i class=\'fas fa-user\'></i></div>';"
-                                />` : 
-                                `<div class="default-user-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>`
-                            }
-                        </div>
-                    </td>
-                    <td class="align-middle">
-                        <span class="member-name">${member.full_name || 'N/A'}</span>
-                    </td>
-                    <td class="align-middle plan-cell">${member.plan_name || 'No Plan'}</td>
-                    <td class="align-middle date-cell">${member.start_date || 'N/A'}</td>
-                    <td class="align-middle date-cell">${member.end_date || 'N/A'}</td>
-                    <td class="align-middle">
-                        <span class="badge badge-pill badge-${
-                            member.status === 'Active' ? 'success' : 
-                            member.status === 'Expired' ? 'danger' : 
-                            'warning'
-                        }">
-                            ${member.status}
-                        </span>
-                    </td>
-                    <td class="align-middle">
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-info view-member mr-1" data-id="${member.member_id}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger delete-member" data-id="${member.member_id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-
-            $('#membersTableBody').html(tableBody);
-        },
-        error: (xhr, status, error) => {
-            console.error('Ajax Error:', {
-                xhr: xhr,
-                status: status,
-                error: error,
-                responseText: xhr.responseText
-            });
-            
-            $('#membersTableBody').html(`
-                <tr>
-                    <td colspan="7" class="text-center text-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error loading members data. Please try refreshing the page.
-                        <br>
-                        <small class="text-muted">Path: ${window.location.pathname}</small>
-                        <br>
-                        <small class="text-muted">Error: ${error}</small>
-                        <br>
-                        <small class="text-muted">Response: ${xhr.responseText}</small>
-                    </td>
-                </tr>
-            `);
+            }, 'json');
         }
     });
-},
 
-    loadMembershipPlans() {
-        $.ajax({
-            url: '../admin/pages/members/get_membership_plans.php',
-            method: 'GET',
-            dataType: 'json',
-            success: (plans) => {
-                let options = '<option value="">Select Plan</option>';
-                
-                plans.forEach(plan => {
-                    options += `
-                        <option value="${plan.id}" 
-                            data-duration="${plan.duration}"
-                            data-duration-type="${plan.duration_type_id}"
-                            data-price="${plan.price}"
-                            data-duration-name="${plan.duration_type}">
-                            ${plan.plan_name} (${plan.duration} ${plan.duration_type}) - ₱${parseFloat(plan.price).toFixed(2)}
-                        </option>`;
-                });
-                
-                $('#membership_plan').html(options);
-            },
-            error: (xhr, status, error) => {
-                console.error('Error loading membership plans:', error);
-                alert('Error loading membership plans. Please try again.');
-            }
-        });
-    },
+    $('#prevBtn').click(function () {
+        if (currentPhase > 1) {
+            currentPhase--;
+            updatePhase();
+        }
+    });
 
-    updateTotalAmount() {
-        const planPrice = parseFloat($('#price').val()) || 0;
-        this.state.totalAmount = planPrice;
-        
-        // Add prices of selected programs
-        this.state.selectedPrograms.forEach(program => {
-            this.state.totalAmount += program.price;
-        });
-        
-        // Add prices of selected rentals
-        this.state.selectedRentals.forEach(rental => {
-            this.state.totalAmount += rental.price;
-        });
-        
-        this.updateSelectedServices();
-    }
-};
+    function updatePhase() {
+        // Hide all phases
+        $('.phase-content').hide();
 
-// Initialize the MembershipManager when document is ready
-$(document).ready(() => MembershipManager.init());
+        // Show current phase
+        $(`#phase${currentPhase}`).show();
 
-// Update membership plan handling
-$('#membership_plan').on('change', function() {
-    const planId = $(this).val();
-    if (!planId) {
-        $('#end_date').val('');
-        $('#price').val('');
-        MembershipManager.updateTotalAmount();
-        return;
+        // Update progress bar
+        const progress = (currentPhase / 3) * 100;
+        $('.progress-bar')
+            .css('width', `${progress}%`)
+            .attr('aria-valuenow', progress)
+            .text(`Phase ${currentPhase}/3`);
+
+        // Update navigation buttons
+        $('#prevBtn').toggle(currentPhase > 1);
+        $('#nextBtn').text(currentPhase === 3 ? 'Submit' : 'Next');
     }
 
-    const selectedOption = $(this).find('option:selected');
-    const duration = selectedOption.data('duration');
-    const durationType = selectedOption.data('duration-type');
-    const price = selectedOption.data('price');
-    
-    // Get or set start date
-    let startDate = $('#start_date').val();
-    if (!startDate) {
-        startDate = new Date().toISOString().split('T')[0];
-        $('#start_date').val(startDate);
-    }
+    function validatePhase1() {
+        const form = $('#membershipForm')[0];
+        if (!form.checkValidity()) {
+            // Trigger HTML5 validation
+            $('<input type="submit">').hide().appendTo(form).click().remove();
+            return false;
+        }
 
-    // Calculate end date
-    const endDate = MembershipManager.calculateEndDate(startDate, duration, durationType);
-    
-    // Update fields
-    $('#end_date').val(endDate);
-    $('#price').val(parseFloat(price).toFixed(2));
-    
-    // Update total amount
-    MembershipManager.updateTotalAmount();
-});
+        // Additional validation if needed
+        const membershipPlan = $('#membership_plan').val();
+        if (!membershipPlan) {
+            alert('Please select a membership plan');
+            return false;
+        }
 
-// Update start date handling
-$('#start_date').on('change', function() {
-    const planId = $('#membership_plan').val();
-    if (planId) {
-        // Trigger membership plan change to recalculate end date
-        $('#membership_plan').trigger('change');
+        return true;
     }
 });
 </script>
