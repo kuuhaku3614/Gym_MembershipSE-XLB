@@ -490,6 +490,7 @@ $(document).ready(function() {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     loadAvailableServices() {
         $.ajax({
             url: '../admin/pages/members/get_program_details.php',
