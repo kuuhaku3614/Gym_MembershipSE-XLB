@@ -531,7 +531,7 @@ $(document).ready(function() {
                     alert('Membership registered successfully!');
                     // Optionally reload the page or update the members list
                 } else {
-                    alert('Error: ' + response.message);
+                    alert('Error: ' + result.message);
                 }
             },
             error: function() {

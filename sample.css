@@ -1,0 +1,174 @@
+        /* General Modal Styles */
+        .modal-header { border-bottom: 2px solid #e9ecef; }
+        .modal-footer { border-top: 2px solid #e9ecef; }
+
+        /* Service Container Styles */
+        .service-container {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-box {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .service-box:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Services Grid Layout */
+        .services-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .services-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* Summary Container */
+        .summary-container {
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-header {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* Scrollable Containers */
+        .services-scrollable-container {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .services-scrollable-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .services-scrollable-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .services-scrollable-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        /* Table Styles */
+        .table {
+            font-size: 0.9rem;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 15px;
+            border-bottom: 2px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* Member Name Style */
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        /* Status Badge Styles */
+        .badge {
+            font-weight: 500;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-success {
+            background-color: #28a745;
+        }
+
+        .badge-danger {
+            background-color: #dc3545;
+        }
+
+        .badge-warning {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        /* Action Buttons */
+        .btn-group .btn {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-info {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        /* Photo Container */
+        .member-photo-container {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto;
+        }
+
+        /* Default User Icon */
+        .default-user-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #f8f9fa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .default-user-icon i {
+            font-size: 1.5rem;
+            color: #6c757d;
+        }
+
+        /* Date and Plan Styles */
+        .date-cell, .plan-cell {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
