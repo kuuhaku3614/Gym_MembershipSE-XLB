@@ -182,6 +182,12 @@ require_once 'config.php';
                             <h6>Additional Services</h6>
                             <div id="selected_services"></div>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+                        </div>
+                        <div class="total-amount mt-3">
+                            <h6>Total Amount: <span id="total_amount">₱0.00</span></h6>
+>>>>>>> parent of bdfdd0a (membership page)
 =======
                         </div>
                         <div class="total-amount mt-3">
@@ -192,6 +198,7 @@ require_once 'config.php';
                 </div>
             </div>
         </div>
+<<<<<<< HEAD
 <<<<<<< HEAD
 
         <!-- Optional Offers Container -->
@@ -248,6 +255,8 @@ require_once 'config.php';
                                     </div>
                                 </div>
                             </div>
+=======
+>>>>>>> parent of bdfdd0a (membership page)
 =======
 >>>>>>> parent of bdfdd0a (membership page)
 
@@ -480,6 +489,7 @@ $(document).ready(function() {
         const price = parseFloat(planOption.data('price')) || 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     loadAvailableServices() {
         $.ajax({
             url: '../admin/pages/members/get_program_details.php',
@@ -555,10 +565,72 @@ $(document).ready(function() {
     },
 
     updateSelectedServices() {
+=======
+        $('#selected_plan_details').html(`
+            <p><strong>Plan:</strong> ${planName}</p>
+            <p><strong>Start Date:</strong> ${startDate}</p>
+            <p><strong>End Date:</strong> ${endDate}</p>
+            <p><strong>Price:</strong> ₱${price.toFixed(2)}</p>
+        `);
+
+        // Update total amount to include membership plan price
+        totalAmount = price;
+        updateSelectedServices();
+    }
+
+    // Add Program to Membership
+    $('#addProgramBtn').click(function() {
+        const $details = $('#program_details_content');
+        const programId = $details.find('.program-id').val();
+        const programName = $details.find('.program-name').text();
+        const programPrice = parseFloat($details.find('.program-price').text().replace('₱', ''));
+
+        if (!selectedPrograms.some(p => p.id === programId)) {
+            selectedPrograms.push({
+                id: programId,
+                name: programName,
+                price: programPrice
+            });
+
+            totalAmount += programPrice;
+            updateSelectedServices();
+        }
+
+        $('#programDetailsModal').modal('hide');
+    });
+
+    // Add Rental to Membership
+    $('#addRentalBtn').click(function() {
+        const $details = $('#rental_details_content');
+        const rentalId = $details.find('.rental-id').val();
+        const rentalName = $details.find('.rental-name').text();
+        const rentalPrice = parseFloat($details.find('.rental-price').text().replace('₱', ''));
+
+        if (!selectedRentals.some(r => r.id === rentalId)) {
+            selectedRentals.push({
+                id: rentalId,
+                name: rentalName,
+                price: rentalPrice
+            });
+
+            totalAmount += rentalPrice;
+            updateSelectedServices();
+        }
+
+        $('#rentalDetailsModal').modal('hide');
+    });
+
+    // Update Selected Services
+    function updateSelectedServices() {
+        let servicesHtml = '';
+
+        // Include Membership Plan in Services
+>>>>>>> parent of bdfdd0a (membership page)
         const planOption = $('#membership_plan option:selected');
         const planName = planOption.text();
         const planPrice = parseFloat(planOption.data('price')) || 0;
 
+<<<<<<< HEAD
         let selectedServicesHtml = `
             <div class="service-item bg-light p-2 rounded mb-2">
                 <div class="d-flex justify-content-between">
@@ -584,10 +656,25 @@ $(document).ready(function() {
                             </div>
                         </div>
                     `).join('')}
+=======
+        servicesHtml += `
+            <div class="service-item">
+                <span>Membership Plan: ${planName}</span>
+                <span class="float-right">₱${planPrice.toFixed(2)}</span>
+            </div>
+        `;
+
+        selectedPrograms.forEach(program => {
+            servicesHtml += `
+                <div class="service-item">
+                    <span>${program.name}</span>
+                    <span class="float-right">₱${program.price.toFixed(2)}</span>
+>>>>>>> parent of bdfdd0a (membership page)
                 </div>
             `;
         }
 
+<<<<<<< HEAD
         // Render Rentals
         if (this.state.selectedRentals.length > 0) {
             selectedServicesHtml += `
@@ -604,6 +691,13 @@ $(document).ready(function() {
                             </div>
                         </div>
                     `).join('')}
+=======
+        selectedRentals.forEach(rental => {
+            servicesHtml += `
+                <div class="service-item">
+                    <span>${rental.name}</span>
+                    <span class="float-right">₱${rental.price.toFixed(2)}</span>
+>>>>>>> parent of bdfdd0a (membership page)
                 </div>
             `;
         }
@@ -626,6 +720,7 @@ $(document).ready(function() {
             this.removeProgram(programId);
         });
 
+<<<<<<< HEAD
         $('.remove-rental').click((e) => {
             const rentalId = $(e.currentTarget).data('id');
             this.removeRental(rentalId);
@@ -828,6 +923,14 @@ $(document).ready(function() {
             `;
         });
 
+        $('#selected_services').html(servicesHtml);
+        $('#total_amount').text('₱' + totalAmount.toFixed(2));
+    }
+
+    // Submit Membership Form
+    function submitMembershipForm() {
+>>>>>>> parent of bdfdd0a (membership page)
+=======
         $('#selected_services').html(servicesHtml);
         $('#total_amount').text('₱' + totalAmount.toFixed(2));
     }
