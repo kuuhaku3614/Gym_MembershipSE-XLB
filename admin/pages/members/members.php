@@ -183,6 +183,12 @@ require_once 'config.php';
                             <div id="selected_services"></div>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+                        </div>
+                        <div class="total-amount mt-3">
+                            <h6>Total Amount: <span id="total_amount">₱0.00</span></h6>
+>>>>>>> parent of bdfdd0a (membership page)
 =======
                         </div>
                         <div class="total-amount mt-3">
@@ -198,6 +204,7 @@ require_once 'config.php';
                 </div>
             </div>
         </div>
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 
@@ -255,6 +262,8 @@ require_once 'config.php';
                                     </div>
                                 </div>
                             </div>
+=======
+>>>>>>> parent of bdfdd0a (membership page)
 =======
 >>>>>>> parent of bdfdd0a (membership page)
 =======
@@ -579,6 +588,20 @@ $(document).ready(function() {
         updateSelectedServices();
     }
 
+=======
+        $('#selected_plan_details').html(`
+            <p><strong>Plan:</strong> ${planName}</p>
+            <p><strong>Start Date:</strong> ${startDate}</p>
+            <p><strong>End Date:</strong> ${endDate}</p>
+            <p><strong>Price:</strong> ₱${price.toFixed(2)}</p>
+        `);
+
+        // Update total amount to include membership plan price
+        totalAmount = price;
+        updateSelectedServices();
+    }
+
+>>>>>>> parent of bdfdd0a (membership page)
     // Add Program to Membership
     $('#addProgramBtn').click(function() {
         const $details = $('#program_details_content');
@@ -626,11 +649,15 @@ $(document).ready(function() {
         let servicesHtml = '';
 
         // Include Membership Plan in Services
+<<<<<<< HEAD
+>>>>>>> parent of bdfdd0a (membership page)
+=======
 >>>>>>> parent of bdfdd0a (membership page)
         const planOption = $('#membership_plan option:selected');
         const planName = planOption.text();
         const planPrice = parseFloat(planOption.data('price')) || 0;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
         let selectedServicesHtml = `
             <div class="service-item bg-light p-2 rounded mb-2">
@@ -658,6 +685,8 @@ $(document).ready(function() {
                         </div>
                     `).join('')}
 =======
+=======
+>>>>>>> parent of bdfdd0a (membership page)
         servicesHtml += `
             <div class="service-item">
                 <span>Membership Plan: ${planName}</span>
@@ -676,6 +705,7 @@ $(document).ready(function() {
         }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Render Rentals
         if (this.state.selectedRentals.length > 0) {
             selectedServicesHtml += `
@@ -693,6 +723,8 @@ $(document).ready(function() {
                         </div>
                     `).join('')}
 =======
+=======
+>>>>>>> parent of bdfdd0a (membership page)
         selectedRentals.forEach(rental => {
             servicesHtml += `
                 <div class="service-item">
@@ -721,6 +753,7 @@ $(document).ready(function() {
             this.removeProgram(programId);
         });
 
+<<<<<<< HEAD
 <<<<<<< HEAD
         $('.remove-rental').click((e) => {
             const rentalId = $(e.currentTarget).data('id');
@@ -924,6 +957,14 @@ $(document).ready(function() {
             `;
         });
 
+        $('#selected_services').html(servicesHtml);
+        $('#total_amount').text('₱' + totalAmount.toFixed(2));
+    }
+
+    // Submit Membership Form
+    function submitMembershipForm() {
+>>>>>>> parent of bdfdd0a (membership page)
+=======
         $('#selected_services').html(servicesHtml);
         $('#total_amount').text('₱' + totalAmount.toFixed(2));
     }
