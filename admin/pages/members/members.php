@@ -242,7 +242,7 @@ if (!file_exists($uploadsDir)) {
 
                     <!-- Phase 1: Member Details -->
                     <div id="phase1" class="phase-content">
-                        <form id="membershipForm" enctype="multipart/form-data">
+                        <form id="membershipForm" method="POST" enctype="multipart/form-data">
                             <div class="row">
                                 <!-- Left Section - Personal Details -->
                                 <div class="col-md-6">
@@ -252,7 +252,7 @@ if (!file_exists($uploadsDir)) {
                                     <div class="form-group mb-4">
                                         <label>Profile Photo</label>
                                         <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="profile_photo" name="profile_photo" accept="image/*">
+                                            <input type="file" class="custom-file-input" id="profile_photo" name="profile_photo" accept=".jpg, .jpeg, .png">
                                             <label class="custom-file-label" for="profile_photo">Choose file</label>
                                         </div>
                                         <div id="preview" class="mt-2"></div>
@@ -796,7 +796,16 @@ if (!file_exists($uploadsDir)) {
     },
 
     processMembership() {
+        const profilePhotoInput = $('#profile_photo')[0];
+        
+        // Create FormData from the form in the first phase
         const formData = new FormData($('#membershipForm')[0]);
+        
+        // Explicitly check and append the file
+        if (profilePhotoInput.files.length > 0) {
+            formData.append('profile_photo', profilePhotoInput.files[0]);
+        }
+
         formData.append('programs', JSON.stringify(this.state.selectedPrograms));
         formData.append('rentals', JSON.stringify(this.state.selectedRentals));
         formData.append('user_type', 'new');
@@ -829,7 +838,7 @@ if (!file_exists($uploadsDir)) {
             }
         });
         return true;
-    },
+        },
 
     deleteMember(memberId) {
         $.ajax({

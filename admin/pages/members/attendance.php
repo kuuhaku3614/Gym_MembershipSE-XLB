@@ -78,8 +78,8 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- This will either contain the photo or the default icon -->
                         <i class="default-user-icon fas fa-user-circle"></i>
                     </div>
-                    <h4 id="userName" class="fw-bold text-primary">John Doe</h4>
-                    <p id="userUsername" class="text-muted mb-0">@johndoe</p>
+                    <h4 id="userName" class="fw-bold text-primary"></h4>
+                    <p id="userUsername" class="text-muted mb-0"></p>
                 </div>
                 <form>
                     <div class="form-group mb-4">
