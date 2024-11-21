@@ -32,7 +32,7 @@
       <div class="row">
         <div class="col-md-6">
           <h5>Total Earnings</h5>
-          <h2 class="text-danger">₱30,000</h2>
+          <h2 class="text-danger">₱10,000</h2>
           <div>
             <h5>Monthly Earnings Trend</h5>
             <canvas id="monthlyEarningsChart"></canvas>

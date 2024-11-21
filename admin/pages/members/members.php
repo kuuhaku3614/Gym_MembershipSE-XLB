@@ -1,16 +1,55 @@
 <?php
 // Add this near the top of your file
-$uploadsDir = __DIR__ . '/uploads';
+// Define the upload directory relative to the project root
+$uploadsDir = dirname(__DIR__, 3) . '/uploads'; // Move up two levels from the current file's directory
+
+// Check if the directory exists, if not, create it
 if (!file_exists($uploadsDir)) {
     mkdir($uploadsDir, 0777, true);
 }
 
-// Make sure default.png exists
+
+require_once 'config.php';
+
+$query = "
+        SELECT 
+        u.id AS user_id,
+        u.username,
+        pd.first_name,
+        pd.middle_name,
+        pd.last_name,
+        pd.sex,
+        pd.birthdate,
+        pd.phone_number,
+        COALESCE(pp.photo_path, NULL) AS photo_path,
+        msp.plan_name,
+        ms.start_date AS membership_start,
+        ms.end_date AS membership_end,
+        ms.total_amount AS membership_amount,
+        ms.status AS membership_status,
+        GROUP_CONCAT(DISTINCT prg.program_name SEPARATOR ', ') AS subscribed_programs,
+        GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services
+    FROM users u
+    INNER JOIN memberships ms ON u.id = ms.user_id
+    LEFT JOIN personal_details pd ON u.id = pd.user_id
+    LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
+    LEFT JOIN membership_plans msp ON ms.membership_plan_id = msp.id
+    LEFT JOIN program_subscriptions ps ON ms.id = ps.membership_id
+    LEFT JOIN programs prg ON ps.program_id = prg.id
+    LEFT JOIN rental_subscriptions rs ON ms.id = rs.membership_id
+    LEFT JOIN rental_services rsvc ON rs.rental_service_id = rsvc.id
+    WHERE u.is_active = 1
+    GROUP BY u.id, u.username, pd.first_name, pd.middle_name, pd.last_name, 
+            pd.sex, pd.birthdate, pd.phone_number, pp.photo_path, 
+            msp.plan_name, ms.start_date, ms.end_date, 
+            ms.total_amount, ms.status;
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
-
-<!-- members.php -->
-<?php require_once 'config.php'; ?>
 
     <!-- Styles -->
     <style>
@@ -188,6 +227,30 @@ if (!file_exists($uploadsDir)) {
             color: #6c757d;
             font-size: 0.85rem;
         }
+        .member-photo-container {
+            display: inline-block;
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .member-photo {
+            border: 1px solid; /* Adds a border for better visibility */
+            transition: transform 0.3s ease;
+        }
+
+        .member-photo:hover {
+            transform: scale(1.2 ); /* Slight zoom-in effect on hover */
+        }
+
+        .bg-light {
+            border: 2px dashed #ccc; /* Dashed border for placeholders */
+        }
+
+        .bi-person-circle {
+            color: #6c757d; /* Neutral gray for placeholder icon */
+        }
+
     </style>
 
 <!-- Main Container -->
@@ -199,7 +262,6 @@ if (!file_exists($uploadsDir)) {
     <button type="button" class="btn btn-primary mb-4" id="addMemberBtn">
         <i class="fas fa-plus mr-2"></i>Add New Member
     </button>
-
     <!-- Members Table -->
     <div class="card">
         <div class="card-header">
@@ -219,14 +281,47 @@ if (!file_exists($uploadsDir)) {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="membersTableBody">
-                        <!-- Table content will be dynamically populated -->
+                    <tbody>
+                        <?php if (!empty($members)): ?>
+                            <?php foreach ($members as $member): ?>
+                                <tr>
+                                    <td class="align-middle text-center">
+                                        <div class="member-photo-container">
+                                            <img src="../../../<?= htmlspecialchars($member['photo_path']); ?>" 
+                                                class="img-fluid rounded-circle member-photo" 
+                                                style="width: 60px; height: 60px; object-fit: cover;"
+                                                alt="Profile Photo">
+                                        </div>
+                                    </td>
+                                    <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
+                                    <td><?= htmlspecialchars($member['plan_name']) ?: 'No Plan'; ?></td>
+                                    <td><?= htmlspecialchars($member['membership_start']) ?: 'N/A'; ?></td>
+                                    <td><?= htmlspecialchars($member['membership_end']) ?: 'N/A'; ?></td>
+                                    <td><?= htmlspecialchars($member['membership_status']) ?: 'Unknown'; ?></td>
+                                    <td class="align-middle">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger delete-member" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <i class="fas fa-users"></i> No members found
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
     <!-- Add Member Modal -->
     <div class="modal fade" id="addMemberModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
@@ -264,7 +359,7 @@ if (!file_exists($uploadsDir)) {
                                     <div id="new_user_form">
                                         <div class="form-group">
                                             <label>First Name</label>
-                                            <input type="text" class="form-control" name="first_name" required>
+                                            <input type="text" class="form-control" name="first_name" >
                                         </div>
                                         <div class="form-group">
                                             <label>Middle Name</label>
@@ -272,24 +367,24 @@ if (!file_exists($uploadsDir)) {
                                         </div>
                                         <div class="form-group">
                                             <label>Last Name</label>
-                                            <input type="text" class="form-control" name="last_name" required>
+                                            <input type="text" class="form-control" name="last_name" >
                                         </div>
                                         <div class="form-row">
                                             <div class="form-group col-md-6">
                                                 <label>Sex</label>
-                                                <select class="form-control" name="sex" required>
+                                                <select class="form-control" name="sex" >
                                                     <option value="Male">Male</option>
                                                     <option value="Female">Female</option>
                                                 </select>
                                             </div>
                                             <div class="form-group col-md-6">
                                                 <label>Birthdate</label>
-                                                <input type="date" class="form-control" name="birthdate" required>
+                                                <input type="date" class="form-control" name="birthdate" >
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label>Phone Number</label>
-                                            <input type="tel" class="form-control" name="phone" required>
+                                            <input type="tel" class="form-control" name="phone" >
                                         </div>
                                     </div>
                                 </div>
@@ -299,21 +394,21 @@ if (!file_exists($uploadsDir)) {
                                     <h6 class="mb-3">Membership Details</h6>
                                     <div class="form-group">
                                         <label>Username</label>
-                                        <input type="text" class="form-control" name="username" required>
+                                        <input type="text" class="form-control" name="username" >
                                     </div>
                                     <div class="form-group">
                                         <label>Password</label>
-                                        <input type="password" class="form-control" name="password" required>
+                                        <input type="password" class="form-control" name="password" >
                                     </div>
                                     <div class="form-group">
                                         <label>Membership Plan</label>
-                                        <select class="form-control" name="membership_plan" id="membership_plan" required>
+                                        <select class="form-control" name="membership_plan" id="membership_plan" >
                                             <option value="">Select Plan</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
                                         <label>Start Date</label>
-                                        <input type="date" class="form-control" name="start_date" id="start_date" required>
+                                        <input type="date" class="form-control" name="start_date" id="start_date" >
                                     </div>
                                     <div class="form-group">
                                         <label>End Date</label>
@@ -354,85 +449,19 @@ if (!file_exists($uploadsDir)) {
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Optional Offers Container -->
-                        <div class="col-md-12">
-                            <div class="row">
-                                <!-- Programs -->
-                                <div class="col-md-6">
-                                    <div class="card h-100">
-                                        <div class="card-header">Available Programs</div>
-                                        <div class="card-body services-scrollable-container">
-                                            <!-- Program boxes will be dynamically populated -->
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Rental Services -->
-                                <div class="col-md-6">
-                                    <div class="card h-100">
-                                        <div class="card-header">Available Rental Services</div>
-                                        <div class="card-body services-scrollable-container">
-                                            <!-- Rental service boxes will be dynamically populated -->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div>
+                            Optional Offers(programs and rentals): Here
                         </div>
                     </div>
                 </div>
-                                <!-- Detailed Program Modal -->
-                            <div class="modal fade" id="programDetailModal" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Program Details</h5>
-                                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <h6>Program Information</h6>
-                                                    <div id="programDetailContent"></div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <h6>Available Coaches</h6>
-                                                    <select id="coachSelect" class="form-control"></select>
-                                                    <div id="coachDetails" class="mt-3"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                            <button type="button" class="btn btn-primary" id="addProgramDetailBtn">Add to Membership</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Detailed Rental Modal -->
-                            <div class="modal fade" id="rentalDetailModal" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Rental Service Details</h5>
-                                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                        </div>
-                                        <div class="modal-body" id="rentalDetailContent"></div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                            <button type="button" class="btn btn-primary" id="addRentalDetailBtn">Add to Membership</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                
                     <!-- Phase 3: Verification -->
                     <div id="phase3" class="phase-content" style="display: none;">
                         <div class="verification-container text-center">
                             <h6>Phone Verification</h6>
                             <p>Enter verification code sent to <span id="phone_display"></span></p>
                             <p><strong>Mock Code:</strong> <span id="verificationCodeDisplay">Loading...</span></p>
-                            <input type="text" class="form-control verification-input" maxlength="6">
+                            <input type="text" class="form-control verification-input" maxlength="6" required>
                             <button class="btn btn-link resend-code">Resend code</button>
                         </div>
                     </div>
@@ -446,7 +475,6 @@ if (!file_exists($uploadsDir)) {
     </div>
 </div>
 <script>
-    // Membership Management Script
     const MembershipManager = {
     state: {
         currentPhase: 1,
@@ -457,13 +485,7 @@ if (!file_exists($uploadsDir)) {
     },
 
     init() {
-        this.initializeDatatable();
         this.bindEvents();
-        this.loadMembersTable();
-    },
-
-    initializeDatatable() {
-        this.loadMembersTable();
     },
 
     bindEvents() {
@@ -486,7 +508,6 @@ if (!file_exists($uploadsDir)) {
             const file = this.files[0];
             const reader = new FileReader();
             
-            // Update file input label
             $(this).next('.custom-file-label').html(file.name);
             
             reader.onload = function(e) {
@@ -509,18 +530,38 @@ if (!file_exists($uploadsDir)) {
     },
 
     bindServiceEvents() {
-        $('.program').click((e) => {
+        $(document).on('click', '.program', (e) => {
             const programId = $(e.target).closest('.program').data('id');
             this.loadProgramDetails(programId);
         });
 
-        $('.rental').click((e) => {
+        $(document).on('click', '.rental', (e) => {
             const rentalId = $(e.target).closest('.rental').data('id');
             this.loadRentalDetails(rentalId);
         });
 
         $('#addProgramDetailBtn').click(() => this.addProgramToMembership());
         $('#addRentalDetailBtn').click(() => this.addRentalToMembership());
+    },
+
+    loadProgramDetails(programId) {
+        $('#programDetailContent').load('get_program_details.php?id=' + programId, function(response, status, xhr) {
+            if (status == "success") {
+                $('#programDetailModal').modal('show');
+            } else {
+                console.error("Error loading program details:", xhr.status, xhr.statusText);
+            }
+        });
+    },
+
+    loadRentalDetails(rentalId) {
+        $('#rentalDetailContent').load('get_rental_details.php?id=' + rentalId, function(response, status, xhr) {
+            if (status == "success") {
+                $('#rentalDetailModal').modal('show');
+            } else {
+                console.error("Error loading rental details:", xhr.status, xhr.statusText);
+            }
+        });
     },
 
     resetAndShowModal() {
@@ -544,7 +585,6 @@ if (!file_exists($uploadsDir)) {
         
         $('#addMemberModal').modal('show');
         this.loadMembershipPlans();
-        this.loadAvailableServices();
     },
 
     handlePlanChange() {
@@ -585,72 +625,6 @@ if (!file_exists($uploadsDir)) {
             case 3: date.setFullYear(date.getFullYear() + duration); break;
         }
         return date.toISOString().split('T')[0];
-    },
-
-    loadAvailableServices() {
-        $.ajax({
-            url: 'get_program_details.php',
-            method: 'GET',
-            success: (response) => {
-                const programs = JSON.parse(response);
-                this.renderPrograms(programs);
-            }
-        });
-
-        $.ajax({
-            url: 'get_rental_details.php',
-            method: 'GET',
-            success: (response) => {
-                const rentals = JSON.parse(response);
-                this.renderRentals(rentals);
-            }
-        });
-    },
-
-    renderPrograms(programs) {
-        const html = programs.map(program => `
-            <div class="service-box program" data-id="${program.id}">
-                <h6>${program.program_name}</h6>
-                <p>${program.type_name}</p>
-                <p class="text-primary">₱${parseFloat(program.price).toFixed(2)}</p>
-            </div>
-        `).join('');
-        $('.programs-container').html(html);
-    },
-
-    renderRentals(rentals) {
-        const html = rentals.map(rental => `
-            <div class="service-box rental" data-id="${rental.id}">
-                <h6>${rental.service_name}</h6>
-                <p>Available Slots: ${rental.available_slots}</p>
-                <p class="text-primary">₱${parseFloat(rental.price).toFixed(2)}</p>
-            </div>
-        `).join('');
-        $('.rentals-container').html(html);
-    },
-
-    loadProgramDetails(programId) {
-        $.ajax({
-            url: '../admin/pages/members/get_program_details.php',
-            method: 'GET',
-            data: { id: programId },
-            success: (response) => {
-                $('#programDetailContent').html(response);
-                $('#programDetailModal').modal('show');
-            }
-        });
-    },
-
-    loadRentalDetails(rentalId) {
-        $.ajax({
-            url: '../admin/pages/members/get_rental_details.php',
-            method: 'GET',
-            data: { id: rentalId },
-            success: (response) => {
-                $('#rentalDetailContent').html(response);
-                $('#rentalDetailModal').modal('show');
-            }
-        });
     },
 
     addProgramToMembership() {
@@ -789,7 +763,6 @@ if (!file_exists($uploadsDir)) {
         $('#nextBtn').text(this.state.currentPhase === 3 ? 'Submit' : 'Next');
         
         if (this.state.currentPhase === 2) {
-            this.loadServices();
             this.updateSelectedServices();
         } else if (this.state.currentPhase === 3) {
             const phoneNumber = $('input[name="phone"]').val();
@@ -825,7 +798,7 @@ if (!file_exists($uploadsDir)) {
                 if (response.success) {
                     alert('Membership created successfully!');
                     $('#addMemberModal').modal('hide');
-                    this.loadMembersTable();
+                    location.reload(); // Simple way to refresh the page
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -868,124 +841,6 @@ if (!file_exists($uploadsDir)) {
             }
         });
     },
-
-    loadMembersTable() {
-    // Show loading state
-    $('#membersTableBody').html(`
-        <tr>
-            <td colspan="7" class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-                <p class="mt-2">Loading members...</p>
-            </td>
-        </tr>
-    `);
-
-    $.ajax({
-        url: '../admin/pages/members/get_members.php',
-        type: 'GET',
-        dataType: 'json',
-        success: (response) => {
-            console.log('Server Response:', response); // Debug log
-
-            if (!response.success) {
-                $('#membersTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="text-center text-danger">
-                            <i class="fas fa-exclamation-circle"></i>
-                            Error: ${response.message || 'Failed to load members'}
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            const members = response.data;
-            if (!members || members.length === 0) {
-                $('#membersTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="text-center">
-                            <i class="fas fa-users"></i>
-                            No members found
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            const tableBody = members.map(member => `
-                <tr>
-                    <td class="align-middle text-center">
-                        <div class="member-photo-container">
-                            ${member.photo_path ? 
-                                `<img src="../${member.photo_path}" 
-                                     class="img-fluid rounded-circle member-photo" 
-                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                     alt="Profile Photo"
-                                     onerror="this.parentElement.innerHTML='<div class=\'default-user-icon\'><i class=\'fas fa-user\'></i></div>';"
-                                />` : 
-                                `<div class="default-user-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>`
-                            }
-                        </div>
-                    </td>
-                    <td class="align-middle">
-                        <span class="member-name">${member.full_name || 'N/A'}</span>
-                    </td>
-                    <td class="align-middle plan-cell">${member.plan_name || 'No Plan'}</td>
-                    <td class="align-middle date-cell">${member.start_date || 'N/A'}</td>
-                    <td class="align-middle date-cell">${member.end_date || 'N/A'}</td>
-                    <td class="align-middle">
-                        <span class="badge badge-pill badge-${
-                            member.status === 'Active' ? 'success' : 
-                            member.status === 'Expired' ? 'danger' : 
-                            'warning'
-                        }">
-                            ${member.status}
-                        </span>
-                    </td>
-                    <td class="align-middle">
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-info view-member mr-1" data-id="${member.member_id}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger delete-member" data-id="${member.member_id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-
-            $('#membersTableBody').html(tableBody);
-        },
-        error: (xhr, status, error) => {
-            console.error('Ajax Error:', {
-                xhr: xhr,
-                status: status,
-                error: error,
-                responseText: xhr.responseText
-            });
-            
-            $('#membersTableBody').html(`
-                <tr>
-                    <td colspan="7" class="text-center text-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error loading members data. Please try refreshing the page.
-                        <br>
-                        <small class="text-muted">Path: ${window.location.pathname}</small>
-                        <br>
-                        <small class="text-muted">Error: ${error}</small>
-                        <br>
-                        <small class="text-muted">Response: ${xhr.responseText}</small>
-                    </td>
-                </tr>
-            `);
-        }
-    });
-},
 
     loadMembershipPlans() {
         $.ajax({
