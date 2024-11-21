@@ -1,16 +1,53 @@
 <?php
 // Add this near the top of your file
-$uploadsDir = __DIR__ . '/uploads';
+// Define the upload directory relative to the project root
+$uploadsDir = dirname(__DIR__, 3) . '/uploads'; // Move up two levels from the current file's directory
+
+// Check if the directory exists, if not, create it
 if (!file_exists($uploadsDir)) {
     mkdir($uploadsDir, 0777, true);
 }
 
-// Make sure default.png exists
+
+require_once 'config.php';
+
+$query = "
+        SELECT 
+        u.id AS user_id,
+        u.username,
+        pd.first_name,
+        pd.middle_name,
+        pd.last_name,
+        pd.sex,
+        pd.birthdate,
+        pd.phone_number,
+        COALESCE(pp.photo_path, NULL) AS photo_path,
+        msp.plan_name,
+        ms.start_date AS membership_start,
+        ms.end_date AS membership_end,
+        ms.total_amount AS membership_amount,
+        st.status_name AS membership_status,
+        GROUP_CONCAT(DISTINCT prg.program_name SEPARATOR ', ') AS subscribed_programs,
+        GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services
+        FROM users u
+        INNER JOIN memberships ms ON u.id = ms.user_id
+        LEFT JOIN personal_details pd ON u.id = pd.user_id
+        LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
+        LEFT JOIN membership_plans msp ON ms.membership_plan_id = msp.id
+        LEFT JOIN status_types st ON ms.status_id = st.id
+        LEFT JOIN program_subscriptions ps ON ms.id = ps.membership_id
+        LEFT JOIN programs prg ON ps.program_id = prg.id
+        LEFT JOIN rental_subscriptions rs ON ms.id = rs.membership_id
+        LEFT JOIN rental_services rsvc ON rs.rental_service_id = rsvc.id
+        WHERE u.is_active = 1
+        GROUP BY u.id;
+    ";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
-
-<!-- members.php -->
-<?php require_once 'config.php'; ?>
 
     <!-- Styles -->
     <style>
@@ -188,6 +225,30 @@ if (!file_exists($uploadsDir)) {
             color: #6c757d;
             font-size: 0.85rem;
         }
+        .member-photo-container {
+            display: inline-block;
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .member-photo {
+            border: 1px solid; /* Adds a border for better visibility */
+            transition: transform 0.3s ease;
+        }
+
+        .member-photo:hover {
+            transform: scale(1.2 ); /* Slight zoom-in effect on hover */
+        }
+
+        .bg-light {
+            border: 2px dashed #ccc; /* Dashed border for placeholders */
+        }
+
+        .bi-person-circle {
+            color: #6c757d; /* Neutral gray for placeholder icon */
+        }
+
     </style>
 
 <!-- Main Container -->
@@ -196,7 +257,6 @@ if (!file_exists($uploadsDir)) {
     <button type="button" class="btn btn-primary mb-4" id="addMemberBtn">
         <i class="fas fa-plus mr-2"></i>Add New Member
     </button>
-
     <!-- Members Table -->
     <div class="card">
         <div class="card-header">
@@ -216,14 +276,47 @@ if (!file_exists($uploadsDir)) {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="membersTableBody">
-                        <!-- Table content will be dynamically populated -->
+                    <tbody>
+                        <?php if (!empty($members)): ?>
+                            <?php foreach ($members as $member): ?>
+                                <tr>
+                                    <td class="align-middle text-center">
+                                        <div class="member-photo-container">
+                                            <img src="../../../<?= htmlspecialchars($member['photo_path']); ?>" 
+                                                class="img-fluid rounded-circle member-photo" 
+                                                style="width: 60px; height: 60px; object-fit: cover;"
+                                                alt="Profile Photo">
+                                        </div>
+                                    </td>
+                                    <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
+                                    <td><?= htmlspecialchars($member['plan_name']) ?: 'No Plan'; ?></td>
+                                    <td><?= htmlspecialchars($member['membership_start']) ?: 'N/A'; ?></td>
+                                    <td><?= htmlspecialchars($member['membership_end']) ?: 'N/A'; ?></td>
+                                    <td><?= htmlspecialchars($member['membership_status']) ?: 'Unknown'; ?></td>
+                                    <td class="align-middle">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger delete-member" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <i class="fas fa-users"></i> No members found
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
     <!-- Add Member Modal -->
     <div class="modal fade" id="addMemberModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
@@ -454,14 +547,9 @@ if (!file_exists($uploadsDir)) {
     },
 
     init() {
-        this.initializeDatatable();
         this.bindEvents();
-        this.loadMembersTable();
     },
 
-    initializeDatatable() {
-        this.loadMembersTable();
-    },
 
     bindEvents() {
         $('#addMemberBtn').click(() => this.resetAndShowModal());
@@ -822,7 +910,7 @@ if (!file_exists($uploadsDir)) {
                 if (response.success) {
                     alert('Membership created successfully!');
                     $('#addMemberModal').modal('hide');
-                    this.loadMembersTable();
+                    location.reload(); // Simple way to refresh the page
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -865,124 +953,6 @@ if (!file_exists($uploadsDir)) {
             }
         });
     },
-
-    loadMembersTable() {
-    // Show loading state
-    $('#membersTableBody').html(`
-        <tr>
-            <td colspan="7" class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-                <p class="mt-2">Loading members...</p>
-            </td>
-        </tr>
-    `);
-
-    $.ajax({
-        url: '../admin/pages/members/get_members.php',
-        type: 'GET',
-        dataType: 'json',
-        success: (response) => {
-            console.log('Server Response:', response); // Debug log
-
-            if (!response.success) {
-                $('#membersTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="text-center text-danger">
-                            <i class="fas fa-exclamation-circle"></i>
-                            Error: ${response.message || 'Failed to load members'}
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            const members = response.data;
-            if (!members || members.length === 0) {
-                $('#membersTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="text-center">
-                            <i class="fas fa-users"></i>
-                            No members found
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            const tableBody = members.map(member => `
-                <tr>
-                    <td class="align-middle text-center">
-                        <div class="member-photo-container">
-                            ${member.photo_path ? 
-                                `<img src="../${member.photo_path}" 
-                                     class="img-fluid rounded-circle member-photo" 
-                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                     alt="Profile Photo"
-                                     onerror="this.parentElement.innerHTML='<div class=\'default-user-icon\'><i class=\'fas fa-user\'></i></div>';"
-                                />` : 
-                                `<div class="default-user-icon">
-                                    <i class="fas fa-user"></i>
-                                </div>`
-                            }
-                        </div>
-                    </td>
-                    <td class="align-middle">
-                        <span class="member-name">${member.full_name || 'N/A'}</span>
-                    </td>
-                    <td class="align-middle plan-cell">${member.plan_name || 'No Plan'}</td>
-                    <td class="align-middle date-cell">${member.start_date || 'N/A'}</td>
-                    <td class="align-middle date-cell">${member.end_date || 'N/A'}</td>
-                    <td class="align-middle">
-                        <span class="badge badge-pill badge-${
-                            member.status === 'Active' ? 'success' : 
-                            member.status === 'Expired' ? 'danger' : 
-                            'warning'
-                        }">
-                            ${member.status}
-                        </span>
-                    </td>
-                    <td class="align-middle">
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-info view-member mr-1" data-id="${member.member_id}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger delete-member" data-id="${member.member_id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-
-            $('#membersTableBody').html(tableBody);
-        },
-        error: (xhr, status, error) => {
-            console.error('Ajax Error:', {
-                xhr: xhr,
-                status: status,
-                error: error,
-                responseText: xhr.responseText
-            });
-            
-            $('#membersTableBody').html(`
-                <tr>
-                    <td colspan="7" class="text-center text-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error loading members data. Please try refreshing the page.
-                        <br>
-                        <small class="text-muted">Path: ${window.location.pathname}</small>
-                        <br>
-                        <small class="text-muted">Error: ${error}</small>
-                        <br>
-                        <small class="text-muted">Response: ${xhr.responseText}</small>
-                    </td>
-                </tr>
-            `);
-        }
-    });
-},
 
     loadMembershipPlans() {
         $.ajax({

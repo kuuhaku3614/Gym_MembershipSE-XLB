@@ -34,8 +34,8 @@ function uploadProfilePhoto($userId, $profilePhoto) {
         throw new Exception("File size exceeds 5MB limit.");
     }
 
-    // Prepare upload directory
-    $uploadDir = __DIR__ . '/uploads/';
+    // Set upload directory relative to the project root
+    $uploadDir = dirname(__DIR__, 3) . '/uploads'; // Navigate up three levels to reach the project root
     if (!file_exists($uploadDir)) {
         if (!mkdir($uploadDir, 0755, true)) {
             throw new Exception("Failed to create upload directory");
@@ -44,8 +44,8 @@ function uploadProfilePhoto($userId, $profilePhoto) {
 
     // Generate unique filename
     $newFileName = 'profile_' . $userId . '_' . uniqid() . '.' . $fileExtension;
-    $uploadPath = $uploadDir . $newFileName;
-    $relativePath = 'uploads/' . $newFileName;
+    $uploadPath = $uploadDir . '/' . $newFileName; // Full file path for saving
+    $relativePath = 'uploads/' . $newFileName; // Relative path for storing in the database
 
     // Log additional information for debugging
     error_log("Photo Upload Debug: " . json_encode([
