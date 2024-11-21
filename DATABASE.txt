@@ -178,7 +178,7 @@ INSERT INTO program_types (type_name) VALUES
 INSERT INTO attendance_status (status_name) VALUES 
 ('checked in'), ('checked out');
 
---New
+-- New
 -- Memberships master table
 CREATE TABLE memberships (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -190,7 +190,7 @@ CREATE TABLE memberships (
     status_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (user_id) REFERENCES personal_details(id),
     FOREIGN KEY (membership_plan_id) REFERENCES membership_plans(id),
     FOREIGN KEY (status_id) REFERENCES status_types(id)
 );
