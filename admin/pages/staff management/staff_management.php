@@ -36,14 +36,28 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="container mt-4">
     <h1 class="nav-title">Staff Management</h1>
+
+    <div class="search-section">
+            <div class="row align-items-center">
+                <div class="col-md-6 ">
+                    <div class="search-controls">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">Add New Staff</button>
+                    </div>
+                </div>
+
+                <div class="col-md-6 d-flex justify-content-end">
+                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">
-            Add New Staff
-        </button>
     </div>
 
     <!-- Staff Table -->
-    <table class="table table-striped table-bordered" id="staffTable">
+    <div class="table-responsive">
+    <table id="staffManagementTable" class="table table-striped table-bordered" id="staffTable">
         <thead class="table-dark" >
             <tr>
                 <th >Full Name</th>
@@ -92,6 +106,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php endforeach; ?>
         </tbody>
     </table>
+</div>
 </div>
 
 <?php
@@ -169,6 +184,14 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function() {
+
+    const table = $("#staffManagementTable").DataTable({
+            pageLength: 10,
+            ordering: false,
+            responsive: true,
+            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+            });
+
     // Initialize Bootstrap modal
     const addStaffModal = new bootstrap.Modal(document.getElementById('addStaffModal'));
 

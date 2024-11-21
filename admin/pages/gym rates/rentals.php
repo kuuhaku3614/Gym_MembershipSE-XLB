@@ -31,24 +31,38 @@ $statusTypes = $statusTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <h1 class="nav-title">Facility and Service Rentals</h1>
-<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addServiceModal">
-    Add Service
-</button>
 
-<table id="gymRatesTable" class="table table-striped table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>No.</th>
-            <th>Service Name</th>
-            <th>Price</th>
-            <th>Total Slots</th>
-            <th>Available Slots</th>
-            <th>Duration</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
+        <div class="search-section">
+            <div class="row align-items-center">
+                    <div class="col-md-6 ">
+                        <div class="search-controls">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">Add Service</button>
+
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-end">
+                            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="table-responsive">
+        <table id="rentalsTable" class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>No.</th>
+                    <th>Service Name</th>
+                    <th>Price</th>
+                    <th>Total Slots</th>
+                    <th>Available Slots</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+        <tbody>
+    </div>
     <?php
     $count = 1;
     if (!empty($result)) {
@@ -157,6 +171,14 @@ $statusTypes = $statusTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 <script>
 // Save button handler with AJAX
 $(document).ready(function () {
+
+    const table = $("#rentalsTable").DataTable({
+            pageLength: 10,
+            ordering: false,
+            responsive: true,
+            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+            });
+
     // Save button handler
     $('#saveServiceBtn').click(function () {
         // Serialize the form data

@@ -10,5 +10,5 @@
     <link rel="stylesheet" href="../vendor/datatable-2.1.8/datatables.min.css" >
     <link rel="stylesheet" href="../vendor/fontawesome-free-5.15.4-web/css/all.min.css">
     <link rel="stylesheet" href="../admin/css/navbar1.css">
-    <link rel="stylesheet" href="../admin/css/admin1.css">
+    <link rel="stylesheet" href="../admin/css/admin.css">
 </head>

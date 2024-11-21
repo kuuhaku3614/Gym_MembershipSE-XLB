@@ -11,10 +11,23 @@ $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <h1 class="nav-title">Gym Rates</h1>
-<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addGymRateModal">
-    Add Gym Rate
-</button>
 
+<div class="search-section">
+            <div class="row align-items-center">
+                <div class="col-md-6 ">
+                    <div class="search-controls">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGymRateModal">Add Gym Rate</button>
+
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex justify-content-end">
+                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+                </div>
+            </div>
+        </div>
+
+
+    <div class="table-responsive">
     <table id="gymRatesTable" class="table table-striped table-bordered">
     <thead class="table-dark">
         <tr>
@@ -57,6 +70,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
     </tbody>
 </table>
+</div>
 
 <!-- Modified Modal -->
 <div class="modal fade" id="addGymRateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addGymRateModalLabel" aria-hidden="true">
