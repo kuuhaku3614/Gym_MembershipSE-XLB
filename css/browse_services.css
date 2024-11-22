@@ -178,3 +178,204 @@
 .services-page .row {
     padding-top: 15px;
 }
+
+/* Cart sidebar styles */
+.cart-sidebar {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    transition: right 0.3s ease-in-out;
+    z-index: 1001;
+    overflow-y: auto;
+}
+
+.cart-sidebar.active {
+    right: 0;
+}
+
+.cart-header {
+    background: #ff0000;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.cart-header h5 {
+    color: white;
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.close-cart {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+.close-cart:hover {
+    transform: scale(1.1);
+}
+
+.cart-body {
+    padding: 20px;
+}
+
+.cart-item {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.item-details {
+    font-size: 0.95rem;
+}
+
+.item-details p {
+    margin: 5px 0;
+}
+
+.price {
+    color: #ff0000;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.remove-item {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+.remove-item:hover {
+    transform: scale(1.1);
+}
+
+.cart-summary {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.cart-summary .text-muted {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.cart-summary .d-flex {
+    margin: 8px 0;
+    font-size: 0.95rem;
+}
+
+.cart-total {
+    border-top: 2px solid #dee2e6;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.cart-total .fw-bold {
+    font-size: 1.1rem;
+}
+
+.cart-total .btn-danger {
+    padding: 8px 25px;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.cart-total .btn-danger:hover {
+    transform: scale(1.05);
+}
+
+/* Overlay styles */
+.cart-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+.cart-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+    .cart-sidebar {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .cart-body {
+        padding: 15px;
+    }
+    
+    .cart-header {
+        padding: 15px;
+    }
+}
+
+/* Keep the scrollbar hidden but functionality intact */
+.cart-sidebar::-webkit-scrollbar {
+    width: 0;
+    background: transparent;
+}
+
+/* Update the cart button styles */
+.cart-btn {
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-right: 15px;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.cart-btn:hover {
+    transform: scale(1.1);
+    background-color: #e60000;
+}
+
+.cart-btn i {
+    font-size: 1.2rem;
+    color: white;
+    line-height: 1;
+}
+
+/* Make sure the icon stays white */
+.cart-btn .fas {
+    color: white !important;
+}

@@ -65,10 +65,10 @@ CREATE TABLE coaches (
 
 CREATE TABLE coach_program_types (
     coach_id INT NOT NULL,
-    program_type_id INT NOT NULL,
-    PRIMARY KEY (coach_id, program_type_id),
+    program_id INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (coach_id) REFERENCES coaches(id),
-    FOREIGN KEY (program_type_id) REFERENCES program_types(id)
+    FOREIGN KEY (program_id) REFERENCES programs(id)
 );
 
 -- Membership and Program tables
@@ -93,8 +93,6 @@ CREATE TABLE programs (
     id INT PRIMARY KEY AUTO_INCREMENT,
     program_name VARCHAR(100) NOT NULL,
     program_type_id INT NOT NULL,
-    coach_id INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
     duration INT NOT NULL,
     duration_type_id INT NOT NULL,
     description TEXT,
@@ -102,7 +100,6 @@ CREATE TABLE programs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (program_type_id) REFERENCES program_types(id),
-    FOREIGN KEY (coach_id) REFERENCES coaches(id),
     FOREIGN KEY (duration_type_id) REFERENCES duration_types(id),
     FOREIGN KEY (status_id) REFERENCES status_types(id)
 );

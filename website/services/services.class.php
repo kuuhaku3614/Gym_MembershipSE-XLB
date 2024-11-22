@@ -37,16 +37,16 @@ class Services_class{
         return $stmt->fetchAll();
     }
 
-    public function displayPrograms(){
+    public function displayPrograms() {
         $conn = $this->db->connect();
-        $sql = "SELECT p.id as program_id, p.program_name, p.price,
+        $sql = "SELECT p.id as program_id, p.program_name,
                 CONCAT(p.duration, ' ', dt.type_name) as validity,
                 pt.type_name as program_type
                 FROM programs p
                 LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
                 LEFT JOIN program_types pt ON p.program_type_id = pt.id
                 WHERE p.status_id = 1
-                ORDER BY p.program_type_id, p.price";
+                ORDER BY p.program_type_id";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
@@ -114,5 +114,45 @@ class Services_class{
             $conn->rollBack();
             return false;
         }
+    }
+
+    public function fetchProgram($program_id) {
+        $conn = $this->db->connect();
+        $sql = "SELECT p.*, dt.type_name as duration_type, 
+                pt.type_name as program_type
+                FROM programs p
+                LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
+                LEFT JOIN program_types pt ON p.program_type_id = pt.id
+                WHERE p.id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$program_id]);
+        return $stmt->fetch();
+    }
+
+    public function fetchProgramCoaches($program_id) {
+        $conn = $this->db->connect();
+        $sql = "SELECT DISTINCT c.id as coach_id, 
+                CONCAT(pd.first_name, ' ', pd.last_name) as coach_name,
+                cpt.price as coach_price
+                FROM coaches c
+                JOIN coach_program_types cpt ON c.id = cpt.coach_id
+                JOIN users u ON c.user_id = u.id
+                JOIN personal_details pd ON u.id = pd.user_id
+                WHERE cpt.program_id = ?
+                AND u.is_active = 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$program_id]);
+        return $stmt->fetchAll();
+    }
+
+    public function fetchRental($rental_id) {
+        $conn = $this->db->connect();
+        $sql = "SELECT rs.*, dt.type_name as duration_type 
+                FROM rental_services rs
+                LEFT JOIN duration_types dt ON rs.duration_type_id = dt.id 
+                WHERE rs.id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$rental_id]);
+        return $stmt->fetch();
     }
 }

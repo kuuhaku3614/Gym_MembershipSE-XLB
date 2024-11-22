@@ -9,22 +9,31 @@
     // Handle POST request for adding to cart
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
         if (isset($_SESSION['user_id'])) {
+            if (empty($_POST['coach_id'])) {
+                $_SESSION['error'] = "Please select a coach for the program.";
+                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['program_id']);
+                exit();
+            }
+
             try {
                 $item = [
-                    'id' => $_POST['membership_plan_id'],
-                    'name' => $_POST['plan_name'],
+                    'id' => $_POST['program_id'],
+                    'name' => $_POST['program_name'],
                     'price' => $_POST['price'],
-                    'validity' => $_POST['validity']
+                    'validity' => $_POST['validity'],
+                    'type' => 'program',
+                    'coach_id' => $_POST['coach_id'],
+                    'coach_name' => $_POST['coach_name']
                 ];
                 
-                $Cart->addMembership($item);
+                $Cart->addProgram($item);
                 
-                $_SESSION['success'] = "Membership plan added to cart successfully!";
+                $_SESSION['success'] = "Program added to cart successfully!";
                 header("Location: ../services.php");
                 exit();
             } catch (Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
-                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['membership_plan_id']);
+                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['program_id']);
                 exit();
             }
         } else {
@@ -34,24 +43,33 @@
         }
     }
     
-    // Existing GET request handling code...
+    // Handle GET request for displaying program details
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if (isset($_GET['id'])) {
-            $membership_plan_id = $_GET['id'];
-            $record = $Obj->fetchGymrate($membership_plan_id);
+            $program_id = $_GET['id'];
+            $record = $Obj->fetchProgram($program_id);
             if (!empty($record)) {
-                $plan_name = $record['plan_name'];
-                $plan_type = $record['plan_type'];
-                $price = $record['price'];
+                $program_name = $record['program_name'];
+                $program_type = $record['program_type'];
                 $duration = $record['duration'];
                 $duration_type_id = $record['duration_type_id'];
                 $description = $record['description'];
+                
+                // Fetch coaches with their prices
+                $coaches = $Obj->fetchProgramCoaches($program_id);
+                
+                // Get the minimum price for initial display
+                $initial_price = !empty($coaches) ? min(array_column($coaches, 'coach_price')) : 0;
+                
+                if (empty($coaches)) {
+                    echo "<!-- No coaches found for program ID: " . $program_id . " -->";
+                }
             } else {
-                echo 'No membership plan found';
+                echo 'No program found';
                 exit;
             }
         } else {
-            echo 'No membership plan id found';
+            echo 'No program id found';
             exit;
         }
     }
@@ -78,11 +96,11 @@
         }
     </style>
 
-<div class="avail-membership-page">
+<div class="avail-program-page">
     <div class="container-fluid p-0">
         <!-- Header -->
         <div class="bg-custom-red text-white p-3 d-flex align-items-center">
-            <button class="btn text-white me-3">
+            <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
@@ -91,15 +109,28 @@
         <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
             <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
                 <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $plan_type ?> rates</h2>
+                    <h2 class="fs-4 fw-bold mb-0"><?= $program_type ?> Program</h2>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    <h3 class="fs-5 fw-bold mb-4"><?= $plan_name ?></h3>
+                    <h3 class="fs-5 fw-bold mb-4"><?= $program_name ?></h3>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity : <?= $duration ?> <?= $record['duration_type'] ?></p>
+                        <label for="coach" class="form-label">Select Coach:</label>
+                        <select class="form-select" id="coach" name="coach_id" required>
+                            <option value="">Choose a coach</option>
+                            <?php foreach ($coaches as $coach) { ?>
+                                <option value="<?= $coach['coach_id'] ?>" 
+                                        data-coach-name="<?= htmlspecialchars($coach['coach_name']) ?>"
+                                        data-price="<?= $coach['coach_price'] ?>">
+                                    <?= htmlspecialchars($coach['coach_name']) ?>
+                                </option>
+                            <?php } ?>
+                        </select>
                     </div>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Price : ₱<?= number_format($price, 2) ?></p>
+                        <p class="mb-0">Validity: <?= $duration ?> <?= $record['duration_type'] ?></p>
+                    </div>
+                    <div class="mb-3 p-2 border rounded">
+                        <p class="mb-0">Price: ₱<span id="price-display"><?= number_format($initial_price, 2) ?></span></p>
                     </div>
                     <?php if (!empty($description)) { ?>
                         <div class="mb-3 p-2 border rounded">
@@ -110,10 +141,12 @@
                         <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
                         <?php if (isset($_SESSION['user_id'])) { ?>
                             <form method="POST" style="width: 48%;">
-                                <input type="hidden" name="membership_plan_id" value="<?= $membership_plan_id ?>">
-                                <input type="hidden" name="plan_name" value="<?= $plan_name ?>">
-                                <input type="hidden" name="price" value="<?= $price ?>">
+                                <input type="hidden" name="program_id" value="<?= $program_id ?>">
+                                <input type="hidden" name="program_name" value="<?= $program_name ?>">
+                                <input type="hidden" name="price" id="selected_price" value="<?= $initial_price ?>">
                                 <input type="hidden" name="validity" value="<?= $duration . ' ' . $record['duration_type'] ?>">
+                                <input type="hidden" name="coach_id" id="selected_coach_id">
+                                <input type="hidden" name="coach_name" id="selected_coach_name">
                                 <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
                             </form>
                         <?php } else { ?>
@@ -140,5 +173,23 @@
         <?php unset($_SESSION['success']); ?>
     </div>
 <?php endif; ?>
+
+<script>
+document.getElementById('coach').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const coachId = this.value;
+    const coachName = selectedOption.dataset.coachName;
+    const price = selectedOption.dataset.price;
+    
+    document.getElementById('selected_coach_id').value = coachId;
+    document.getElementById('selected_coach_name').value = coachName;
+    
+    if (price) {
+        document.getElementById('price-display').textContent = 
+            new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(price);
+        document.getElementById('selected_price').value = price;
+    }
+});
+</script>
 </body>
 </html>

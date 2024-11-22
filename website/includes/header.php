@@ -62,22 +62,34 @@ function getFullName() {
   <link rel="stylesheet" href="../css/landing1.css">
   <link rel="stylesheet" href="../css/browse_services.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
 <nav class="home-navbar">
     <div class="home-logo">
         <img src="" alt="logo" />
-      </div>
-      <ul class="nav-links">
+    </div>
+    <ul class="nav-links">
         <li><a href="website.php">Home</a></li>
         <li><a href="services.php">Services</a></li>
         <li><a href="#S-About">About</a></li>
         <li><a href="#S-ContactUs">Contact</a></li>
     </ul>
 
-    <?php if ($isLoggedIn): ?>
-        <div class="dropdown">
+    <div class="nav-right">
+        <?php if ($isLoggedIn): ?>
+            <?php 
+            // Get the current page filename
+            $current_page = basename($_SERVER['PHP_SELF']);
+            if ($current_page === 'services.php'): 
+            ?>
+                <button class="cart-btn" id="showCartBtn">
+                    <i class="fas fa-shopping-cart"></i>
+                </button>
+            <?php endif; ?>
+            
+            <div class="dropdown">
                 <button class="dropbtn"></button>
                 <div class="dropdown-content">
                     <a href="profile.php" class="username"><?php echo getFullName();?></a>
@@ -87,6 +99,7 @@ function getFullName() {
                 </div>
             </div>
         <?php else: ?>
-          <a href="../login/login.php" class="home-signIn">Sign In</a>
+            <a href="../login/login.php" class="home-signIn">Sign In</a>
         <?php endif; ?>
-    </nav>
+    </div>
+</nav>

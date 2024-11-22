@@ -11,20 +11,21 @@
         if (isset($_SESSION['user_id'])) {
             try {
                 $item = [
-                    'id' => $_POST['membership_plan_id'],
-                    'name' => $_POST['plan_name'],
+                    'id' => $_POST['rental_id'],
+                    'name' => $_POST['service_name'],
                     'price' => $_POST['price'],
-                    'validity' => $_POST['validity']
+                    'validity' => $_POST['validity'],
+                    'type' => 'rental'
                 ];
                 
-                $Cart->addMembership($item);
+                $Cart->addRental($item);
                 
-                $_SESSION['success'] = "Membership plan added to cart successfully!";
+                $_SESSION['success'] = "Item added to cart successfully!";
                 header("Location: ../services.php");
                 exit();
             } catch (Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
-                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['membership_plan_id']);
+                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['rental_id']);
                 exit();
             }
         } else {
@@ -34,24 +35,23 @@
         }
     }
     
-    // Existing GET request handling code...
+    // Handle GET request for displaying rental details
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if (isset($_GET['id'])) {
-            $membership_plan_id = $_GET['id'];
-            $record = $Obj->fetchGymrate($membership_plan_id);
+            $rental_id = $_GET['id'];
+            $record = $Obj->fetchRental($rental_id);
             if (!empty($record)) {
-                $plan_name = $record['plan_name'];
-                $plan_type = $record['plan_type'];
+                $service_name = $record['service_name'];
                 $price = $record['price'];
                 $duration = $record['duration'];
                 $duration_type_id = $record['duration_type_id'];
                 $description = $record['description'];
             } else {
-                echo 'No membership plan found';
+                echo 'No rental service found';
                 exit;
             }
         } else {
-            echo 'No membership plan id found';
+            echo 'No rental service id found';
             exit;
         }
     }
@@ -78,11 +78,11 @@
         }
     </style>
 
-<div class="avail-membership-page">
+<div class="avail-rental-page">
     <div class="container-fluid p-0">
         <!-- Header -->
         <div class="bg-custom-red text-white p-3 d-flex align-items-center">
-            <button class="btn text-white me-3">
+            <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
@@ -91,15 +91,15 @@
         <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
             <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
                 <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $plan_type ?> rates</h2>
+                    <h2 class="fs-4 fw-bold mb-0">Optional Services</h2>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    <h3 class="fs-5 fw-bold mb-4"><?= $plan_name ?></h3>
+                    <h3 class="fs-5 fw-bold mb-4"><?= $service_name ?></h3>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity : <?= $duration ?> <?= $record['duration_type'] ?></p>
+                        <p class="mb-0">Validity: <?= $duration ?> <?= $record['duration_type'] ?></p>
                     </div>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Price : ₱<?= number_format($price, 2) ?></p>
+                        <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
                     </div>
                     <?php if (!empty($description)) { ?>
                         <div class="mb-3 p-2 border rounded">
@@ -110,11 +110,13 @@
                         <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
                         <?php if (isset($_SESSION['user_id'])) { ?>
                             <form method="POST" style="width: 48%;">
-                                <input type="hidden" name="membership_plan_id" value="<?= $membership_plan_id ?>">
-                                <input type="hidden" name="plan_name" value="<?= $plan_name ?>">
+                                <input type="hidden" name="rental_id" value="<?= $rental_id ?>">
+                                <input type="hidden" name="service_name" value="<?= $service_name ?>">
                                 <input type="hidden" name="price" value="<?= $price ?>">
                                 <input type="hidden" name="validity" value="<?= $duration . ' ' . $record['duration_type'] ?>">
-                                <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
+                                <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">
+                                    Add to Cart
+                                </button>
                             </form>
                         <?php } else { ?>
                             <a href="../../login/login.php" class="btn btn-custom-red btn-lg" style="width: 48%;">Login to Add</a>
