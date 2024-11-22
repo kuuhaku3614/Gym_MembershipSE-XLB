@@ -627,45 +627,45 @@ $query = "
         return date.toISOString().split('T')[0];
     },
 
-    addProgramToMembership() {
-        const $details = $('#programDetailContent');
-        const programId = $details.find('.program-id').val();
-        const programName = $details.find('.program-name').text();
-        const programPrice = parseFloat($details.find('.program-price').text().replace('₱', ''));
+    // addProgramToMembership() {
+    //     const $details = $('#programDetailContent');
+    //     const programId = $details.find('.program-id').val();
+    //     const programName = $details.find('.program-name').text();
+    //     const programPrice = parseFloat($details.find('.program-price').text().replace('₱', ''));
 
-        if (!this.state.selectedPrograms.some(p => p.id === programId)) {
-            this.state.selectedPrograms.push({
-                id: programId,
-                name: programName,
-                price: programPrice
-            });
+    //     if (!this.state.selectedPrograms.some(p => p.id === programId)) {
+    //         this.state.selectedPrograms.push({
+    //             id: programId,
+    //             name: programName,
+    //             price: programPrice
+    //         });
 
-            this.state.totalAmount += programPrice;
-            this.updateSelectedServices();
-        }
+    //         this.state.totalAmount += programPrice;
+    //         this.updateSelectedServices();
+    //     }
 
-        $('#programDetailModal').modal('hide');
-    },
+    //     $('#programDetailModal').modal('hide');
+    // },
 
-    addRentalToMembership() {
-        const $details = $('#rentalDetailContent');
-        const rentalId = $details.find('.rental-id').val();
-        const rentalName = $details.find('.rental-name').text();
-        const rentalPrice = parseFloat($details.find('.rental-price').text().replace('₱', ''));
+    // addRentalToMembership() {
+    //     const $details = $('#rentalDetailContent');
+    //     const rentalId = $details.find('.rental-id').val();
+    //     const rentalName = $details.find('.rental-name').text();
+    //     const rentalPrice = parseFloat($details.find('.rental-price').text().replace('₱', ''));
 
-        if (!this.state.selectedRentals.some(r => r.id === rentalId)) {
-            this.state.selectedRentals.push({
-                id: rentalId,
-                name: rentalName,
-                price: rentalPrice
-            });
+    //     if (!this.state.selectedRentals.some(r => r.id === rentalId)) {
+    //         this.state.selectedRentals.push({
+    //             id: rentalId,
+    //             name: rentalName,
+    //             price: rentalPrice
+    //         });
 
-            this.state.totalAmount += rentalPrice;
-            this.updateSelectedServices();
-        }
+    //         this.state.totalAmount += rentalPrice;
+    //         this.updateSelectedServices();
+    //     }
 
-        $('#rentalDetailModal').modal('hide');
-    },
+    //     $('#rentalDetailModal').modal('hide');
+    // },
 
     updateSelectedServices() {
         const planOption = $('#membership_plan option:selected');
