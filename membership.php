@@ -2,7 +2,7 @@
 require_once 'config.php';
 
 // Execute the query
-$query = "SELECT 
+$query = "SELECT DISTINCT
     m.id AS membership_id,
     CONCAT(pd.first_name, ' ', pd.last_name) AS member_name,
     mp.plan_name,
@@ -17,24 +17,34 @@ $query = "SELECT
     r.service_name,
     rs.price AS rental_price,
     CONCAT(staff_pd.first_name, ' ', staff_pd.last_name) AS processed_by,
-    u.id AS staff_id,
+    m.staff_id,
     m.start_date AS membership_start_date,
     m.end_date AS membership_end_date,
     ps.start_date AS program_start_date,
     ps.end_date AS program_end_date,
     rs.start_date AS rental_start_date,
-    rs.end_date AS rental_end_date
+    rs.end_date AS rental_end_date,
+    t_mem.payment_date AS membership_payment_date,
+    t_prog.payment_date AS program_payment_date,
+    t_rent.payment_date AS rental_payment_date,
+    m.status AS membership_status
 FROM memberships m
-LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
-LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
-LEFT JOIN program_subscriptions ps ON ps.membership_id = m.id
+JOIN users member_user ON m.user_id = member_user.id
+JOIN personal_details pd ON member_user.id = pd.user_id
+JOIN membership_plans mp ON m.membership_plan_id = mp.id
+JOIN duration_types dt ON mp.duration_type_id = dt.id
+JOIN users staff_user ON m.staff_id = staff_user.id
+JOIN personal_details staff_pd ON staff_user.id = staff_pd.user_id
+LEFT JOIN transactions t_mem ON m.id = t_mem.membership_id 
+    AND t_mem.program_subscription_id IS NULL 
+    AND t_mem.rental_subscription_id IS NULL
+LEFT JOIN program_subscriptions ps ON m.id = ps.membership_id
 LEFT JOIN programs p ON ps.program_id = p.id
-LEFT JOIN rental_subscriptions rs ON rs.membership_id = m.id
+LEFT JOIN transactions t_prog ON ps.id = t_prog.program_subscription_id
+LEFT JOIN rental_subscriptions rs ON m.id = rs.membership_id
 LEFT JOIN rental_services r ON rs.rental_service_id = r.id
-JOIN users u ON m.staff_id = u.id
-JOIN personal_details staff_pd ON u.id = staff_pd.user_id
-JOIN personal_details pd ON m.user_id = pd.user_id
-ORDER BY m.id";
+LEFT JOIN transactions t_rent ON rs.id = t_rent.rental_subscription_id
+ORDER BY m.id DESC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute();

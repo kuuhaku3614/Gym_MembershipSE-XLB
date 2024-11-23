@@ -257,7 +257,92 @@ function insertRentalSubscriptions($pdo, $membershipId, $data) {
         ]);
     }
 }
+function insertTransactions($pdo, $staffId, $membershipId, $programSubs, $rentalSubs, $totalAmount) {
+    // Insert main membership transaction
+    $stmt = $pdo->prepare("
+        INSERT INTO transactions (
+            staff_id,
+            membership_id,
+            total_amount,
+            payment_date
+        ) VALUES (?, ?, ?, NOW())
+    ");
+    $stmt->execute([
+        $staffId,
+        $membershipId,
+        $totalAmount
+    ]);
 
+    // Insert program subscription transactions
+    $programs = json_decode($programSubs, true) ?? [];
+    if (is_array($programs)) {
+        foreach ($programs as $program) {
+            if (isset($program['id'])) {
+                // Get the program subscription ID
+                $stmt = $pdo->prepare("
+                    SELECT id FROM program_subscriptions 
+                    WHERE membership_id = ? AND program_id = ?
+                    ORDER BY id DESC LIMIT 1
+                ");
+                $stmt->execute([$membershipId, $program['id']]);
+                $programSubId = $stmt->fetchColumn();
+
+                if ($programSubId) {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO transactions (
+                            staff_id,
+                            membership_id,
+                            program_subscription_id,
+                            total_amount,
+                            payment_date
+                        ) VALUES (?, ?, ?, ?, NOW())
+                    ");
+                    $stmt->execute([
+                        $staffId,
+                        $membershipId,
+                        $programSubId,
+                        $program['price']
+                    ]);
+                }
+            }
+        }
+    }
+
+    // Insert rental subscription transactions
+    $rentals = json_decode($rentalSubs, true) ?? [];
+    if (is_array($rentals)) {
+        foreach ($rentals as $rental) {
+            if (isset($rental['id'])) {
+                // Get the rental subscription ID
+                $stmt = $pdo->prepare("
+                    SELECT id FROM rental_subscriptions 
+                    WHERE membership_id = ? AND rental_service_id = ?
+                    ORDER BY id DESC LIMIT 1
+                ");
+                $stmt->execute([$membershipId, $rental['id']]);
+                $rentalSubId = $stmt->fetchColumn();
+
+                if ($rentalSubId) {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO transactions (
+                            staff_id,
+                            membership_id,
+                            rental_subscription_id,
+                            total_amount,
+                            payment_date
+                        ) VALUES (?, ?, ?, ?, NOW())
+                    ");
+                    $stmt->execute([
+                        $staffId,
+                        $membershipId,
+                        $rentalSubId,
+                        $rental['price']
+                    ]);
+                }
+            }
+        }
+    }
+}
 try {
     // Validate required fields
     $required_fields = [
@@ -297,34 +382,42 @@ try {
     // Begin transaction
     $pdo->beginTransaction();
 
-    // Get or create user ID
+    // Process user and membership
     $userId = ($_POST['user_type'] === 'new') 
         ? insertNewUser($pdo, $_POST) 
         : $_POST['existing_user_id'];
 
-    // Insert membership (now correctly references users.id)
+    // Insert membership
     $membershipId = insertMembership($pdo, $userId, $_POST);
 
-    // Insert related subscriptions
+    // Insert program subscriptions
     insertProgramSubscriptions($pdo, $membershipId, $_POST);
+
+    // Insert rental subscriptions
     insertRentalSubscriptions($pdo, $membershipId, $_POST);
 
-    // Commit transaction
+    // Insert transactions
+    insertTransactions(
+        $pdo,
+        $_POST['staff_id'],
+        $membershipId,
+        $_POST['programs'] ?? '[]',
+        $_POST['rentals'] ?? '[]',
+        $_POST['total_amount']
+    );
+
     $pdo->commit();
 
-    // Return success response
     echo json_encode([
         'success' => true,
-        'message' => 'Membership created successfully',
-        'user_id' => $userId,
-        'membership_id' => $membershipId
+        'message' => 'Membership and transactions created successfully'
     ]);
-
 } catch (Exception $e) {
-    // Rollback on error
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-    handleError($e->getMessage());
+    $pdo->rollBack();
+    error_log("Error in process_membership.php: " . $e->getMessage());
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 ?>
