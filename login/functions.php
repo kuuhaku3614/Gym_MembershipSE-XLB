@@ -5,59 +5,65 @@ require_once __DIR__ . '/../config.php';
 $database = new Database();
 $pdo = $database->connect();
 
+function redirectBasedOnRole($role) {
+    $roleRoutes = [
+        'admin' => '../admin/index.php',
+        'staff' => '../staff/dashboard.php',
+        'coach' => '../coach/dashboard.php',
+        'member' => '../website/website.php',
+    ];
+    if (isset($roleRoutes[$role])) {
+        header("Location: " . $roleRoutes[$role]);
+    } else {
+        error_log("Unexpected role encountered: " . $role);
+        header("Location: index.php");
+    }
+    exit();
+}
+
 function loginUser($username, $password) {
     global $pdo;
-    
+
     if (!$pdo) {
         return ['success' => false, 'message' => 'Database connection failed'];
     }
-    
+
     try {
-        $sql = "SELECT u.id, u.password, r.role_name as role 
-        FROM users u 
-        JOIN roles r ON u.role_id = r.id 
-        WHERE u.username = :username AND u.is_active = 1";
+        // Modified SQL to include role_id
+        $sql = "SELECT u.id, u.password, u.role_id, r.role_name as role 
+                FROM users u 
+                JOIN roles r ON u.role_id = r.id 
+                WHERE u.username = :username AND u.is_active = 1";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
-        
+
         if ($stmt->rowCount() == 1) {
             $user = $stmt->fetch();
-            
+
             if (password_verify($password, $user['password'])) {
+                // Ensure the role is valid before proceeding
+                $validRoles = ['admin', 'staff', 'coach', 'member'];
+                if (!in_array($user['role'], $validRoles)) {
+                    return ['success' => false, 'message' => 'Unauthorized role detected.'];
+                }
+
                 return [
                     'success' => true,
                     'user_id' => $user['id'],
-                    'role' => $user['role']
+                    'role' => $user['role'],
+                    'role_id' => $user['role_id']  // Added role_id to return data
                 ];
             }
         }
-        
+
         return ['success' => false, 'message' => 'Invalid username or password.'];
     } catch (PDOException $e) {
+        error_log("Login error: " . $e->getMessage());
         return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
     }
 }
 
-function redirectBasedOnRole($role) {
-    switch($role) {
-        case 'admin':
-            header("Location: ../admin/index.php");
-            break;
-        case 'staff':
-            header("Location: ../staff/dashboard.php");
-            break;
-        case 'coach':
-            header("Location: ../coach/dashboard.php");
-            break;
-        case 'member':
-            header("Location: ../website/website.php");
-            break;
-        default:
-            header("Location: index.php");
-    }
-    exit();
-}
 
 function sanitizeInput($data) {
     return htmlspecialchars(strip_tags(trim($data)));

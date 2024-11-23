@@ -1,13 +1,32 @@
 <?php
 require_once 'config.php';
 
+// Ensure proper error handling
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Turn off display_errors but log them
+ini_set('log_errors', 1);
+
+// Set proper content type header
 header('Content-Type: application/json');
 
-function validateRequiredFields($fields, $data, $isNewUser = false) {
+function handleError($message, $details = null) {
+    error_log("Membership Processing Error: " . $message . ($details ? " Details: " . json_encode($details) : ""));
+    echo json_encode([
+        'success' => false,
+        'message' => $message
+    ]);
+    exit;
+}
+
+function validateRequiredFields($fields, $data) {
+    $missing = [];
     foreach ($fields as $field) {
         if (!isset($data[$field]) || empty($data[$field])) {
-            throw new Exception("Missing required field: {$field}");
+            $missing[] = $field;
         }
+    }
+    if (!empty($missing)) {
+        handleError("Missing required fields: " . implode(", ", $missing));
     }
 }
 
@@ -65,154 +84,177 @@ function uploadProfilePhoto($userId, $profilePhoto) {
 }
 
 function insertNewUser($pdo, $data) {
-    // 1. Insert into users table (authentication data)
-    $stmt = $pdo->prepare("
-        INSERT INTO users (username, password, role_id, is_active)
-        VALUES (?, ?, ?, TRUE)
-    ");
-    $stmt->execute([
-        $data['username'],
-        password_hash($data['password'], PASSWORD_DEFAULT),
-        3 // role_id 3 for 'member' as per database
-    ]);
-    $userId = $pdo->lastInsertId();
-
-    // 2. Insert into personal_details table
-    $stmt = $pdo->prepare("
-        INSERT INTO personal_details (
-            user_id, 
-            first_name, 
-            middle_name, 
-            last_name, 
-            sex, 
-            birthdate, 
-            phone_number
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $userId,
-        $data['first_name'],
-        $data['middle_name'] ?? null,
-        $data['last_name'],
-        $data['sex'],
-        $data['birthdate'],
-        $data['phone']
-    ]);
-
-    // 3. Handle profile photo upload
-    error_log("New User ID Created: " . $userId);
-    error_log("POST Data: " . json_encode($_POST));
-    error_log("FILES Data: " . json_encode($_FILES));
-
-    // 3. Handle profile photo upload
-    $photoPath = null;
-    if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-        try {
-            error_log("Profile Photo Upload Attempt for User ID: " . $userId);
-            $photoPath = uploadProfilePhoto($userId, $_FILES['profile_photo']);
-            
-            error_log("Photo Path Generated: " . $photoPath);
-            
-            // Insert photo path into database
-            $stmt = $pdo->prepare("
-                INSERT INTO profile_photos (
-                    user_id, 
-                    photo_path, 
-                    is_active, 
-                    uploaded_at
-                ) VALUES (?, ?, TRUE, NOW())
-            ");
-            $stmt->execute([$userId, $photoPath]);
-            
-            error_log("Photo Path Inserted Successfully");
-        } catch (Exception $photoUploadError) {
-            error_log("Profile photo upload failed: " . $photoUploadError->getMessage());
+    try {
+        // 1. Insert into users table first
+        $stmt = $pdo->prepare("
+            INSERT INTO users (username, password, role_id, is_active)
+            VALUES (?, ?, ?, TRUE)
+        ");
+        
+        if (!$stmt->execute([
+            $data['username'],
+            password_hash($data['password'], PASSWORD_DEFAULT),
+            3 // role_id 3 for 'member'
+        ])) {
+            throw new Exception("Failed to insert user data");
         }
-    } else {
-        error_log("No profile photo uploaded or upload failed");
-    }
+        
+        $userId = $pdo->lastInsertId();
 
-    return $userId;
+        // 2. Insert into personal_details
+        $stmt = $pdo->prepare("
+            INSERT INTO personal_details (
+                user_id, 
+                first_name, 
+                middle_name, 
+                last_name, 
+                sex, 
+                birthdate, 
+                phone_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        if (!$stmt->execute([
+            $userId,
+            $data['first_name'],
+            $data['middle_name'] ?? null,
+            $data['last_name'],
+            $data['sex'],
+            $data['birthdate'],
+            $data['phone']
+        ])) {
+            throw new Exception("Failed to insert personal details");
+        }
+
+        // 3. Handle profile photo if provided
+        if (isset($_FILES['profile_photo'])) {
+            $photoPath = uploadProfilePhoto($userId, $_FILES['profile_photo']);
+            if ($photoPath) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO profile_photos (
+                        user_id, 
+                        photo_path, 
+                        is_active
+                    ) VALUES (?, ?, TRUE)
+                ");
+                $stmt->execute([$userId, $photoPath]);
+            }
+        }
+
+        return $userId;
+    } catch (PDOException $e) {
+        throw new Exception("Database error during user insertion: " . $e->getMessage());
+    }
 }
 
 function insertMembership($pdo, $userId, $data) {
-    $stmt = $pdo->prepare("
-        INSERT INTO memberships (
-            user_id, 
-            membership_plan_id, 
-            start_date, 
-            end_date, 
-            total_amount, 
-            status
-        ) VALUES (?, ?, ?, ?, ?, 'active')
-    ");
-    $stmt->execute([
-        $userId,
-        $data['membership_plan'],
-        $data['start_date'],
-        $data['end_date'],
-        $data['total_amount']
-    ]);
-    return $pdo->lastInsertId();
+    try {
+        // First verify that the user exists in users table
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+        if (!$stmt->execute([$userId])) {
+            throw new Exception("Failed to verify user existence");
+        }
+        if (!$stmt->fetch()) {
+            throw new Exception("User ID not found in users table");
+        }
+
+        // Now insert the membership with verified user_id
+        $stmt = $pdo->prepare("
+            INSERT INTO memberships (
+                user_id,               -- Now correctly references users.id
+                membership_plan_id,
+                staff_id,
+                start_date,
+                end_date,
+                total_amount,
+                status
+            ) VALUES (?, ?, ?, ?, ?, ?, 'active')
+        ");
+        
+        if (!$stmt->execute([
+            $userId,
+            $data['membership_plan'],
+            $data['staff_id'],
+            $data['start_date'],
+            $data['end_date'],
+            $data['total_amount']
+        ])) {
+            throw new Exception("Failed to insert membership");
+        }
+        
+        return $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        throw new Exception("Database error during membership insertion: " . $e->getMessage());
+    }
 }
 
 function insertProgramSubscriptions($pdo, $membershipId, $data) {
-    // 5. Insert program subscriptions
-    $programs = isset($data['programs']) ? json_decode($data['programs'], true) : [];
-    if (is_array($programs)) {
-        foreach ($programs as $program) {
-            if (isset($program['id'])) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO program_subscriptions (
-                        membership_id, 
-                        program_id,
-                        coach_id,
-                        start_date,
-                        end_date,
-                        price,
-                        status_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ");
-                $stmt->execute([
-                    $membershipId,
-                    $program['id'],
-                    $program['coach_id'] ?? 1, // Default coach_id if not specified
-                    $data['start_date'],
-                    $data['end_date'],
-                    $program['price'],
-                    1 // status_id 1 for 'active'
-                ]);
-            }
-        }
+    if (!isset($data['programs'])) {
+        return;
+    }
+
+    $programs = json_decode($data['programs'], true);
+    if (!is_array($programs)) {
+        return;
+    }
+
+    foreach ($programs as $program) {
+        if (!isset($program['id'])) continue;
+
+        $stmt = $pdo->prepare("
+            INSERT INTO program_subscriptions (
+                membership_id, 
+                program_id,
+                coach_id,
+                start_date,
+                end_date,
+                price,
+                status
+            ) VALUES (?, ?, ?, ?, ?, ?, 'active')
+        ");
+        
+        $stmt->execute([
+            $membershipId,
+            $program['id'],
+            $program['coach_id'] ?? 1,
+            $data['start_date'],
+            $data['end_date'],
+            $program['price']
+        ]);
     }
 }
 
 function insertRentalSubscriptions($pdo, $membershipId, $data) {
-    // 6. Insert rental subscriptions
-    $rentals = isset($data['rentals']) ? json_decode($data['rentals'], true) : [];
-    if (is_array($rentals)) {
-        foreach ($rentals as $rental) {
-            if (isset($rental['id'])) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO rental_subscriptions (
-                        membership_id, 
-                        rental_service_id,
-                        start_date,
-                        end_date,
-                        price,
-                        status_id
-                    ) VALUES (?, ?, ?, ?, ?, ?)
-                ");
-                $stmt->execute([
-                    $membershipId,
-                    $rental['id'],
-                    $data['start_date'],
-                    $data['end_date'],
-                    $rental['price'],
-                    1 // status_id 1 for 'active'
-                ]);
-            }
-        }
+    if (!isset($data['rentals'])) {
+        return;
+    }
+
+    $rentals = json_decode($data['rentals'], true);
+    if (!is_array($rentals)) {
+        return;
+    }
+
+    foreach ($rentals as $rental) {
+        if (!isset($rental['id'])) continue;
+
+        $stmt = $pdo->prepare("
+            INSERT INTO rental_subscriptions (
+                membership_id, 
+                rental_service_id,
+                start_date,
+                end_date,
+                price,
+                status
+            ) VALUES (?, ?, ?, ?, ?, 'active')
+        ");
+        
+        $stmt->execute([
+            $membershipId,
+            $rental['id'],
+            $data['start_date'],
+            $data['end_date'],
+            $rental['price']
+        ]);
     }
 }
 
@@ -223,7 +265,8 @@ try {
         'membership_plan',
         'start_date',
         'end_date',
-        'total_amount'
+        'total_amount',
+        'staff_id'
     ];
 
     // Additional fields required for new users
@@ -237,44 +280,51 @@ try {
         'password'
     ];
 
-    // Check for required fields
+    // Log incoming data for debugging
+    error_log("Incoming POST data: " . json_encode($_POST));
+    error_log("Incoming FILES data: " . json_encode($_FILES));
+
+    // Validate required fields
     validateRequiredFields($required_fields, $_POST);
 
-    // Check additional fields for new users
+    // Additional validation for new users
     if ($_POST['user_type'] === 'new') {
-        validateRequiredFields($new_user_fields, $_POST, true);
+        validateRequiredFields($new_user_fields, $_POST);
     } else if (!isset($_POST['existing_user_id']) || empty($_POST['existing_user_id'])) {
-        throw new Exception("Missing existing_user_id for existing user");
+        handleError("Missing existing_user_id for existing user");
     }
 
+    // Begin transaction
     $pdo->beginTransaction();
 
-    // Process user and membership
+    // Get or create user ID
     $userId = ($_POST['user_type'] === 'new') 
         ? insertNewUser($pdo, $_POST) 
         : $_POST['existing_user_id'];
 
-    // Insert membership
+    // Insert membership (now correctly references users.id)
     $membershipId = insertMembership($pdo, $userId, $_POST);
 
-    // Insert program subscriptions
+    // Insert related subscriptions
     insertProgramSubscriptions($pdo, $membershipId, $_POST);
-
-    // Insert rental subscriptions
     insertRentalSubscriptions($pdo, $membershipId, $_POST);
 
+    // Commit transaction
     $pdo->commit();
 
+    // Return success response
     echo json_encode([
         'success' => true,
-        'message' => 'Membership created successfully'
+        'message' => 'Membership created successfully',
+        'user_id' => $userId,
+        'membership_id' => $membershipId
     ]);
+
 } catch (Exception $e) {
-    $pdo->rollBack();
-    error_log("Error in process_membership.php: " . $e->getMessage());
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
+    // Rollback on error
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    handleError($e->getMessage());
 }
 ?>

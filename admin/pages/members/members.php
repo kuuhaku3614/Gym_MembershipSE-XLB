@@ -1,5 +1,74 @@
 <?php
-// Add this near the top of your file
+session_start();
+require_once 'config.php';
+
+// Ensure proper session validation
+function validateSession() {
+    // First check if required session variables exist
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role_id'])) {
+        return [
+            'success' => false,
+            'message' => 'Please log in to continue'
+        ];
+    }
+
+    // Validate user exists and is active
+    global $pdo;
+    $stmt = $pdo->prepare("
+        SELECT u.id, u.role_id, u.is_active, r.role_name as role
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.id = ? AND u.is_active = TRUE
+    ");
+    
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Check if user exists
+    if (!$user) {
+        return [
+            'success' => false,
+            'message' => 'Invalid user session'
+        ];
+    }
+
+    // Validate role matches session
+    if ($user['role_id'] != $_SESSION['role_id']) {
+        return [
+            'success' => false,
+            'message' => 'Invalid role assignment'
+        ];
+    }
+
+    // Check if role_id is valid (admin=1, staff=2, coach=3, member=4)
+    if (!in_array($user['role_id'], [1, 2, 3, 4])) {
+        return [
+            'success' => false,
+            'message' => 'Unauthorized access'
+        ];
+    }
+
+    return [
+        'success' => true,
+        'user' => $user
+    ];
+}
+
+// Example usage:
+$sessionValidation = validateSession();
+if (!$sessionValidation['success']) {
+    // Handle invalid session
+    echo json_encode([
+        'success' => false,
+        'message' => $sessionValidation['message']
+    ]);
+    exit;
+}
+
+// If validation succeeds, you can use the user data
+$currentUser = $sessionValidation['user'];
+
+
 // Define the upload directory relative to the project root
 $uploadsDir = dirname(__DIR__, 3) . '/uploads'; // Move up two levels from the current file's directory
 
@@ -8,8 +77,6 @@ if (!file_exists($uploadsDir)) {
     mkdir($uploadsDir, 0777, true);
 }
 
-
-require_once 'config.php';
 
 $query = "
         SELECT 
@@ -53,205 +120,71 @@ $query = "
 
     <!-- Styles -->
     <style>
-        /* General Modal Styles */
-        .modal-header { border-bottom: 2px solid #e9ecef; }
-        .modal-footer { border-top: 2px solid #e9ecef; }
+    /* Modal Header and Footer */
+    .modal-header {
+        border-bottom: 1px solid #ddd;
+        padding: 1rem;
+    }
 
-        /* Service Container Styles */
-        .service-container {
-            background-color: #ffffff;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
+    .modal-footer {
+        border-top: 1px solid #ddd;
+        padding: 1rem;
+    }
+
+    /* Member Photo Styling */
+    .member-photo {
+        border: 3px solid #fff;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .member-photo:hover {
+        transform: scale(1.1);
+    }
+
+    /* Section Styling */
+    .info-section {
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        background-color: #f8f9fa;
+    }
+
+    .info-header {
+        font-size: 1.125rem;
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Member Name */
+    .member-name {
+        font-size: 1.25rem;
+        color: #2c3e50;
+    }
+
+    /* Badge Styling */
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 576px) {
+        .modal-body .row {
+            flex-direction: column;
+        }
+
+        .info-section {
             margin-bottom: 1rem;
         }
+    }
+</style>
 
-        .service-box {
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 0.375rem;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .service-box:hover {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        /* Services Grid Layout */
-        .services-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        @media (min-width: 768px) {
-            .services-grid { grid-template-columns: 1fr 1fr; }
-        }
-
-        /* Summary Container */
-        .summary-container {
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .summary-header {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        /* Scrollable Containers */
-        .services-scrollable-container {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .services-scrollable-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .services-scrollable-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        .services-scrollable-container::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
-        }
-
-        /* Table Styles */
-        .table {
-            font-size: 0.9rem;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .table thead th {
-            background-color: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 15px;
-            border-bottom: 2px solid #dee2e6;
-            vertical-align: middle;
-        }
-
-        .table tbody td {
-            padding: 15px;
-            vertical-align: middle;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        /* Member Name Style */
-        .member-name {
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 0.95rem;
-        }
-
-        /* Status Badge Styles */
-        .badge {
-            font-weight: 500;
-            padding: 8px 12px;
-            font-size: 0.75rem;
-            letter-spacing: 0.3px;
-        }
-
-        .badge-success {
-            background-color: #28a745;
-        }
-
-        .badge-danger {
-            background-color: #dc3545;
-        }
-
-        .badge-warning {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        /* Action Buttons */
-        .btn-group .btn {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .btn-info {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        /* Photo Container */
-        .member-photo-container {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto;
-        }
-
-        /* Default User Icon */
-        .default-user-icon {
-            width: 60px;
-            height: 60px;
-            background-color: #f8f9fa;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .default-user-icon i {
-            font-size: 1.5rem;
-            color: #6c757d;
-        }
-
-        /* Date and Plan Styles */
-        .date-cell, .plan-cell {
-            color: #6c757d;
-            font-size: 0.85rem;
-        }
-        .member-photo-container {
-            display: inline-block;
-            position: relative;
-            width: 60px;
-            height: 60px;
-        }
-
-        .member-photo {
-            border: 1px solid; /* Adds a border for better visibility */
-            transition: transform 0.3s ease;
-        }
-
-        .member-photo:hover {
-            transform: scale(1.2 ); /* Slight zoom-in effect on hover */
-        }
-
-        .bg-light {
-            border: 2px dashed #ccc; /* Dashed border for placeholders */
-        }
-
-        .bi-person-circle {
-            color: #6c757d; /* Neutral gray for placeholder icon */
-        }
-
-    </style>
 
 <!-- Main Container -->
 <div class="container-fluid">
@@ -323,92 +256,101 @@ $query = "
         </div>
     </div>
     <!-- Add Member Modal -->
-    <div class="modal fade" id="addMemberModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Member</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Member</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Progress Bar -->
+                <div class="progress mb-4">
+                    <div class="progress-bar" role="progressbar" style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100">Phase 1/3</div>
                 </div>
-                <div class="modal-body">
-                    <!-- Progress Bar -->
-                    <div class="progress mb-4">
-                        <div class="progress-bar" role="progressbar" style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100">Phase 1/3</div>
-                    </div>
-
+                <form id="membershipForm" method="POST" enctype="multipart/form-data">
+                    <!-- Hidden Fields for User Data -->
+                    <input type="hidden" id="userId" name="staff_id" value="<?php echo htmlspecialchars($_SESSION['user_id']); ?>">
+                    <input type="hidden" id="userRole" name="user_role" value="<?php echo htmlspecialchars($_SESSION['role_id']); ?>">
+                    <input type="hidden" id="currentPhase" name="current_phase" value="1">
+                    
                     <!-- Phase 1: Member Details -->
                     <div id="phase1" class="phase-content">
-                        <form id="membershipForm" method="POST" enctype="multipart/form-data">
-                            <div class="row">
-                                <!-- Left Section - Personal Details -->
-                                <div class="col-md-6">
-                                    <h6 class="mb-3">Personal Details</h6>
-                                    
-                                    <!-- Profile Photo Upload -->
-                                    <div class="form-group mb-4">
-                                        <label>Profile Photo</label>
-                                        <div class="custom-file">
-                                            <input type="file" class="custom-file-input" id="profile_photo" name="profile_photo" accept=".jpg, .jpeg, .png">
-                                            <label class="custom-file-label" for="profile_photo">Choose file</label>
-                                        </div>
-                                        <div id="preview" class="mt-2"></div>
+                        <div class="row">
+                            <!-- Left Section - Personal Details -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Personal Details</h6>
+                                
+                                <!-- Profile Photo Upload -->
+                                <div class="form-group mb-4">
+                                    <label>Profile Photo</label>
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="profile_photo" name="profile_photo" accept=".jpg, .jpeg, .png">
+                                        <label class="custom-file-label" for="profile_photo">Choose file</label>
                                     </div>
-
-                                    <div id="new_user_form">
-                                        <div class="form-group">
-                                            <label>First Name</label>
-                                            <input type="text" class="form-control" name="first_name" >
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Middle Name</label>
-                                            <input type="text" class="form-control" name="middle_name">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Last Name</label>
-                                            <input type="text" class="form-control" name="last_name" >
-                                        </div>
-                                        <div class="form-row">
-                                            <div class="form-group col-md-6">
-                                                <label>Sex</label>
-                                                <select class="form-control" name="sex" >
-                                                    <option value="Male">Male</option>
-                                                    <option value="Female">Female</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-6">
-                                                <label>Birthdate</label>
-                                                <input type="date" class="form-control" name="birthdate" >
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Phone Number</label>
-                                            <input type="tel" class="form-control" name="phone" >
-                                        </div>
-                                    </div>
+                                    <div id="preview" class="mt-2"></div>
                                 </div>
 
-                                <!-- Right Section - Membership Details -->
-                                <div class="col-md-6">
-                                    <h6 class="mb-3">Membership Details</h6>
+                                <div id="new_user_form">
+                                    <!-- Basic details visible to both admin and staff -->
                                     <div class="form-group">
-                                        <label>Username</label>
-                                        <input type="text" class="form-control" name="username" >
+                                        <label>First Name</label>
+                                        <input type="text" class="form-control" name="first_name">
                                     </div>
                                     <div class="form-group">
-                                        <label>Password</label>
-                                        <input type="password" class="form-control" name="password" >
+                                        <label>Middle Name</label>
+                                        <input type="text" class="form-control" name="middle_name">
                                     </div>
+                                    <div class="form-group">
+                                        <label>Last Name</label>
+                                        <input type="text" class="form-control" name="last_name">
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Sex</label>
+                                            <select class="form-control" name="sex">
+                                                <option value="" selected disabled>--select--</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Birthdate</label>
+                                            <input type="date" class="form-control" name="birthdate">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Phone Number</label>
+                                        <input type="tel" class="form-control" name="phone">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Section - Membership Details -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Membership Details</h6>
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" class="form-control" name="username">
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="password" class="form-control" name="password">
+                                </div>
+                                
+                                <!-- Staff and Admin section -->
+                                <div class="staff-only">
                                     <div class="form-group">
                                         <label>Membership Plan</label>
-                                        <select class="form-control" name="membership_plan" id="membership_plan" >
+                                        <select class="form-control" name="membership_plan" id="membership_plan">
                                             <option value="">Select Plan</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
                                         <label>Start Date</label>
-                                        <input type="date" class="form-control" name="start_date" id="start_date" >
+                                        <input type="date" class="form-control" name="start_date" id="start_date">
                                     </div>
                                     <div class="form-group">
                                         <label>End Date</label>
@@ -420,41 +362,40 @@ $query = "
                                     </div>
                                 </div>
                             </div>
-                        </form>
+                        </div>
                     </div>
 
-                                    <!-- Phase 2: Services -->
-                <div id="phase2" class="phase-content" style="display: none;">
-                    <div class="row">
-                        <!-- Availed Services Container (Top) -->
-                        <div class="col-md-12 mb-4">
-                            <div class="card availed-container">
-                                <div class="card-header">
-                                    <h6>Membership Summary</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="availed_services">
-                                        <div class="membership-details mb-3">
-                                            <h6>Membership Plan</h6>
-                                            <div id="selected_plan_details"></div>
-                                        </div>
-                                        <div class="additional-services">
-                                            <h6>Additional Services</h6>
-                                            <div id="selected_services"></div>
-                                        </div>
-                                        <div class="total-amount mt-3">
-                                            <h6>Total Amount: <span id="total_amount">₱0.00</span></h6>
+                    <!-- Phase 2: Services -->
+                    <div id="phase2" class="phase-content" style="display: none;">
+                        <div class="row">
+                            <!-- Availed Services Container -->
+                            <div class="col-md-12 mb-4">
+                                <div class="card availed-container">
+                                    <div class="card-header">
+                                        <h6>Membership Summary</h6>
+                                    </div>
+                                    <div class="card-body">
+
+                                        <!-- Regular services visible to both -->
+                                        <div class="staff-only">
+                                            <div class="membership-details mb-3">
+                                                <h6>Membership Plan</h6>
+                                                <div id="selected_plan_details"></div>
+                                            </div>
+                                            <div class="additional-services">
+                                                <h6>Additional Services</h6>
+                                                <div id="selected_services"></div>
+                                            </div>
+                                            <div class="total-amount mt-3">
+                                                <h6>Total Amount: <span id="total_amount">₱0.00</span></h6>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div>
-                            Optional Offers(programs and rentals): Here
-                        </div>
                     </div>
-                </div>
-                                
+
                     <!-- Phase 3: Verification -->
                     <div id="phase3" class="phase-content" style="display: none;">
                         <div class="verification-container text-center">
@@ -465,15 +406,79 @@ $query = "
                             <button class="btn btn-link resend-code">Resend code</button>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
-                    <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
+                <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
             </div>
         </div>
     </div>
 </div>
+<!-- full details modal -->
+<div class="modal fade" id="memberViewModal" tabindex="-1" role="dialog" aria-labelledby="memberViewModalLabel" aria-hidden="true" data-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="memberViewModalLabel">Member Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Left Column -->
+                    <div class="col-md-4 text-center">
+                        <div class="member-photo-container mb-3">
+                            <img 
+                                id="memberPhoto" 
+                                src="" 
+                                alt="Member Photo" 
+                                class="img-fluid rounded-circle shadow member-photo"
+                                style="width: 150px; height: 150px; object-fit: cover;"
+                            >
+                        </div>
+                        <div class="text-center">
+                            <h5 id="memberName" class="member-name text-dark font-weight-bold mb-2"></h5>
+                            <p id="memberUsername" class="text-muted mb-2"></p>
+                            <span class="badge badge-secondary" id="membershipStatus"></span>
+                        </div>
+                    </div>
+                    <!-- Right Column -->
+                    <div class="col-md-8">
+                        <div class="info-section mb-4">
+                            <h6 class="info-header">Personal Information</h6>
+                            <p><strong>Sex:</strong> <span id="memberSex"></span></p>
+                            <p><strong>Birthdate:</strong> <span id="memberBirthdate"></span></p>
+                            <p><strong>Phone:</strong> <span id="memberPhone"></span></p>
+                        </div>
+                        <div class="info-section mb-4">
+                            <h6 class="info-header">Membership Details</h6>
+                            <p><strong>Plan:</strong> <span id="memberPlan"></span></p>
+                            <p><strong>Amount:</strong> <span id="membershipAmount"></span></p>
+                        </div>
+                        <div class="info-section mb-4">
+                            <h6 class="info-header">Subscription Period</h6>
+                            <p><strong>Start Date:</strong> <span id="membershipStart"></span></p>
+                            <p><strong>End Date:</strong> <span id="membershipEnd"></span></p>
+                        </div>
+                        <div class="info-section mb-4">
+                            <h6 class="info-header">Programs Availed</h6>
+                            <p id="memberPrograms" class="text-muted">None</p>
+                        </div>
+                        <div class="info-section">
+                            <h6 class="info-header">Services Availed</h6>
+                            <p id="memberServices" class="text-muted">None</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editMemberBtn">Edit Member</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const MembershipManager = {
     state: {
@@ -481,26 +486,85 @@ $query = "
         selectedPrograms: [],
         selectedRentals: [],
         totalAmount: 0,
-        VERIFICATION_CODE: '123456'
+        VERIFICATION_CODE: '123456',
+        formData: new FormData(),
+        isInitialized: false
     },
 
     init() {
+        if (this.state.isInitialized) return;
+        
+        this.state.isInitialized = true;
+        
+        // Initialize with current user's session data
+        this.state.formData.set('staff_id', document.getElementById('userId').value);
+        this.state.formData.set('user_role', document.getElementById('userRole').value);
+        
         this.bindEvents();
+        this.loadMembershipPlans();
+        this.initializeModal();
+    },
+
+    initializeModal() {
+        // Pre-initialize the modal
+        $('#addMemberModal').modal({
+            show: false,
+            backdrop: 'static',
+            keyboard: false
+        });
     },
 
     bindEvents() {
-        $('#addMemberBtn').click(() => this.resetAndShowModal());
-        $('#membership_plan').change(() => this.handlePlanChange());
-        $('#start_date').change(() => {
+        // Use event delegation for dynamically loaded content
+        $(document).on('click', '#addMemberBtn', (e) => {
+            e.preventDefault();
+            this.resetAndShowModal();
+        });
+
+        // Other event bindings
+        $(document).on('change', '#membership_plan', () => this.handlePlanChange());
+        $(document).on('change', '#start_date', () => {
             if ($('#membership_plan').val()) {
                 this.handlePlanChange();
             }
         });
-        $('#nextBtn').click(() => this.handleNextPhase());
-        $('#prevBtn').click(() => this.handlePrevPhase());
+        
+        $('#nextBtn').on('click', () => this.handleNextPhase());
+        $('#prevBtn').on('click', () => this.handlePrevPhase());
+        
         this.bindServiceEvents();
         this.bindFileUpload();
         this.bindDeleteMember();
+        
+        // Form change handler
+        $('#membershipForm').on('change', 'input, select', (e) => {
+            this.updateFormData(e.target);
+        });
+
+        // Handle role-specific UI elements
+        this.handleRoleBasedAccess();
+    },
+    handleRoleBasedAccess() {
+        const userRole = $('#userRole').val();
+        
+        // Show/hide elements based on role
+        if (userRole === '1') { // Admin
+            $('.admin-only').show();
+            $('.staff-only').show();
+        } else if (userRole === '2') { // Staff
+            $('.admin-only').hide();
+            $('.staff-only').show();
+        } else {
+            $('.admin-only, .staff-only').hide();
+        }
+    },
+
+    updateFormData(element) {
+        if (element.type === 'file') {
+            this.state.formData.set(element.name, element.files[0]);
+        } else {
+            this.state.formData.set(element.name, element.value);
+        }
     },
 
     bindFileUpload() {
@@ -565,25 +629,33 @@ $query = "
     },
 
     resetAndShowModal() {
+        // Reset state
         this.state.currentPhase = 1;
         this.state.selectedPrograms = [];
         this.state.selectedRentals = [];
         this.state.totalAmount = 0;
+        this.state.formData = new FormData();
         
+        // Reset form and UI
         $('#membershipForm')[0].reset();
         $('#preview').empty();
         $('.phase-content').hide();
         $('#phase1').show();
         
+        // Reset progress bar
         $('.progress-bar')
             .css('width', '33%')
             .attr('aria-valuenow', 33)
             .text('Phase 1/3');
         
+        // Reset buttons
         $('#prevBtn').hide();
-        $('#nextBtn').text('Next');
+        $('#nextBtn').text('Next').show();
         
+        // Show modal
         $('#addMemberModal').modal('show');
+        
+        // Load membership plans
         this.loadMembershipPlans();
     },
 
@@ -592,6 +664,8 @@ $query = "
         if (!selectedOption.val()) {
             $('#end_date').val('');
             $('#price').val('');
+            this.state.formData.set('end_date', '');  // Clear from FormData
+            this.state.formData.set('start_date', ''); // Clear from FormData
             this.updateTotalAmount();
             return;
         }
@@ -610,9 +684,14 @@ $query = "
         // Calculate end date
         const endDate = this.calculateEndDate(startDate, duration, durationType);
         
-        // Update fields
+        // Update fields and FormData
         $('#end_date').val(endDate);
         $('#price').val(price.toFixed(2));
+        
+        // Explicitly update FormData with dates
+        this.state.formData.set('start_date', startDate);
+        this.state.formData.set('end_date', endDate);
+        this.state.formData.set('price', price.toFixed(2));
         
         this.updateTotalAmount();
     },
@@ -627,45 +706,6 @@ $query = "
         return date.toISOString().split('T')[0];
     },
 
-    // addProgramToMembership() {
-    //     const $details = $('#programDetailContent');
-    //     const programId = $details.find('.program-id').val();
-    //     const programName = $details.find('.program-name').text();
-    //     const programPrice = parseFloat($details.find('.program-price').text().replace('₱', ''));
-
-    //     if (!this.state.selectedPrograms.some(p => p.id === programId)) {
-    //         this.state.selectedPrograms.push({
-    //             id: programId,
-    //             name: programName,
-    //             price: programPrice
-    //         });
-
-    //         this.state.totalAmount += programPrice;
-    //         this.updateSelectedServices();
-    //     }
-
-    //     $('#programDetailModal').modal('hide');
-    // },
-
-    // addRentalToMembership() {
-    //     const $details = $('#rentalDetailContent');
-    //     const rentalId = $details.find('.rental-id').val();
-    //     const rentalName = $details.find('.rental-name').text();
-    //     const rentalPrice = parseFloat($details.find('.rental-price').text().replace('₱', ''));
-
-    //     if (!this.state.selectedRentals.some(r => r.id === rentalId)) {
-    //         this.state.selectedRentals.push({
-    //             id: rentalId,
-    //             name: rentalName,
-    //             price: rentalPrice
-    //         });
-
-    //         this.state.totalAmount += rentalPrice;
-    //         this.updateSelectedServices();
-    //     }
-
-    //     $('#rentalDetailModal').modal('hide');
-    // },
 
     updateSelectedServices() {
         const planOption = $('#membership_plan option:selected');
@@ -703,8 +743,24 @@ $query = "
 
     handleNextPhase() {
         if (this.validateCurrentPhase()) {
-            this.state.currentPhase++;
-            this.updatePhaseDisplay();
+            if (this.state.currentPhase === 3) {
+                this.processMembership();
+            } else {
+                this.state.currentPhase++;
+                this.state.formData.set('current_phase', this.state.currentPhase.toString());
+                this.updatePhaseDisplay();
+                
+                // If entering phase 2, update services display
+                if (this.state.currentPhase === 2) {
+                    this.updateSelectedServices();
+                }
+                // If entering phase 3, update verification display
+                else if (this.state.currentPhase === 3) {
+                    const phoneNumber = $('input[name="phone"]').val();
+                    $('#phone_display').text(phoneNumber);
+                    $('#verificationCodeDisplay').text(this.state.VERIFICATION_CODE);
+                }
+            }
         }
     },
 
@@ -716,17 +772,58 @@ $query = "
     },
 
     validateCurrentPhase() {
-        switch(this.state.currentPhase) {
-            case 1:
-                return this.validatePhaseOne();
-            case 2:
-                return this.validatePhaseTwo();
-            case 3:
-                return this.processMembership();
-            default:
-                return false;
+        let isValid = true;
+        const phase = this.state.currentPhase;
+        
+        // Clear previous validation messages
+        $('.is-invalid').removeClass('is-invalid');
+        $('.invalid-feedback').remove();
+        
+        if (phase === 1) {
+            // Required fields for phase 1
+            const requiredFields = {
+                'first_name': 'First Name',
+                'last_name': 'Last Name',
+                'sex': 'Sex',
+                'birthdate': 'Birthdate',
+                'phone': 'Phone Number',
+                'username': 'Username',
+                'password': 'Password',
+                'membership_plan': 'Membership Plan',
+                'start_date': 'Start Date'
+            };
+
+            for (const [fieldName, label] of Object.entries(requiredFields)) {
+                const field = $(`[name="${fieldName}"]`);
+                if (!field.val() || field.val().trim() === '') {
+                    isValid = false;
+                    field.addClass('is-invalid');
+                    field.after(`<div class="invalid-feedback">${label} is required.</div>`);
+                }
+            }
+        } else if (phase === 2) {
+            // Validate total amount is greater than 0
+            if (this.state.totalAmount <= 0) {
+                isValid = false;
+                $('#total_amount').addClass('is-invalid');
+                $('#total_amount').after('<div class="invalid-feedback">Total amount must be greater than 0</div>');
+            }
+        } else if (phase === 3) {
+            const inputCode = $('.verification-input').val();
+            if (!inputCode) {
+                isValid = false;
+                $('.verification-input').addClass('is-invalid');
+                $('.verification-input').after('<div class="invalid-feedback">Verification code is required</div>');
+            } else if (inputCode !== this.state.VERIFICATION_CODE) {
+                isValid = false;
+                $('.verification-input').addClass('is-invalid');
+                $('.verification-input').after('<div class="invalid-feedback">Invalid verification code</div>');
+            }
         }
+
+        return isValid;
     },
+
 
     validatePhaseOne() {
         const form = $('#membershipForm')[0];
@@ -771,50 +868,89 @@ $query = "
         }
     },
 
-    processMembership() {
-        const profilePhotoInput = $('#profile_photo')[0];
-        
-        // Create FormData from the form in the first phase
-        const formData = new FormData($('#membershipForm')[0]);
-        
-        // Explicitly check and append the file
-        if (profilePhotoInput.files.length > 0) {
-            formData.append('profile_photo', profilePhotoInput.files[0]);
+    validatePhaseThree() {
+        const inputCode = $('.verification-input').val();
+        if (inputCode !== this.state.VERIFICATION_CODE) {
+            alert('Invalid verification code');
+            return false;
         }
+        return true;
+    },
 
-        formData.append('programs', JSON.stringify(this.state.selectedPrograms));
-        formData.append('rentals', JSON.stringify(this.state.selectedRentals));
-        formData.append('user_type', 'new');
-        formData.append('total_amount', this.state.totalAmount.toString());
+    // 1. First, let's add debugging to see what data is being sent
+processMembership() {
+    // Ensure we have staff_id and role
+    const staffId = document.getElementById('userId').value;
+    const userRole = document.getElementById('userRole').value;
+    
+    if (!staffId || !userRole) {
+        alert('Session error: Missing staff credentials');
+        return false;
+    }
 
-        $.ajax({
-            url: '../admin/pages/members/process_membership.php',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: (response) => {
-                if (response.success) {
-                    alert('Membership created successfully!');
-                    $('#addMemberModal').modal('hide');
-                    location.reload(); // Simple way to refresh the page
+    // Debug log 1: Check staff credentials
+    console.log('Staff Credentials:', { staffId, userRole });
+
+    // Update formData with final values
+    const formData = this.state.formData;
+    formData.set('staff_id', staffId);
+    formData.set('user_role', userRole);
+    formData.set('user_type', 'new');
+    formData.set('total_amount', this.state.totalAmount);
+
+    // Add programs and rentals if any
+    if (this.state.selectedPrograms.length > 0) {
+        formData.set('programs', JSON.stringify(this.state.selectedPrograms));
+    }
+    if (this.state.selectedRentals.length > 0) {
+        formData.set('rentals', JSON.stringify(this.state.selectedRentals));
+    }
+
+    // Debug log 2: Check all form data
+    const formDataDebug = {};
+    for (let pair of formData.entries()) {
+        formDataDebug[pair[0]] = pair[1];
+    }
+    console.log('Form Data Being Sent:', formDataDebug);
+
+    $.ajax({
+        url: '../admin/pages/members/process_membership.php',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: (response) => {
+            console.log('Server Response:', response);
+            if (response.success) {
+                alert('Membership created successfully!');
+                $('#addMemberModal').modal('hide');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (response.message || 'Unknown error occurred'));
+            }
+        },
+        error: (xhr, status, error) => {
+            console.error('AJAX Error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText
+            });
+            try {
+                // Try to parse error response
+                const response = JSON.parse(xhr.responseText);
+                alert('Error: ' + (response.message || 'Server error occurred'));
+            } catch (e) {
+                // If parsing fails, check if it's a PHP error
+                if (xhr.responseText.includes('Fatal error')) {
+                    alert('Server error occurred. Please check the error logs.');
                 } else {
-                    alert('Error: ' + response.message);
-                }
-            },
-            error: (xhr, status, error) => {
-                console.error('Server Response:', xhr.responseText);
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    alert('Error processing membership: ' + response.message);
-                } catch (e) {
-                    alert('Error processing membership. Please check the console for details.');
+                    alert('Error processing membership. Please try again.');
                 }
             }
-        });
-        return true;
-        },
+        }
+    });
+},
 
     deleteMember(memberId) {
         $.ajax({
@@ -889,7 +1025,9 @@ $query = "
 };
 
 // Initialize the MembershipManager when document is ready
-$(document).ready(() => MembershipManager.init());
+$(document).ready(() => {
+    MembershipManager.init();
+});
 
 // Update membership plan handling
 $('#membership_plan').on('change', function() {
@@ -932,4 +1070,53 @@ $('#start_date').on('change', function() {
         $('#membership_plan').trigger('change');
     }
 });
+
+$(document).ready(function () {
+    const membersData = <?php echo json_encode($members); ?>;
+
+    // View Member Details
+    $('.view-member').on('click', function () {
+        const userId = $(this).data('id');
+        const memberData = membersData.find((member) => member.user_id == userId);
+
+        if (memberData) {
+            $('#memberPhoto').attr(
+                'src', 
+                memberData.photo_path 
+                    ? `../../../${memberData.photo_path}` 
+                    : '../../../uploads/default.png'
+            );
+            $('#memberName').text(`${memberData.first_name} ${memberData.middle_name || ''} ${memberData.last_name}`);
+            $('#memberUsername').text(memberData.username);
+            $('#memberSex').text(memberData.sex);
+            $('#memberBirthdate').text(formatDate(memberData.birthdate));
+            $('#memberPhone').text(memberData.phone_number);
+            $('#memberPlan').text(memberData.plan_name);
+            $('#membershipStatus').text(memberData.membership_status);
+            $('#membershipAmount').text(formatCurrency(memberData.membership_amount));
+            $('#membershipStart').text(formatDate(memberData.membership_start));
+            $('#membershipEnd').text(formatDate(memberData.membership_end));
+            $('#memberPrograms').text(memberData.subscribed_programs || 'None');
+            $('#memberServices').text(memberData.rental_services || 'None');
+            $('#editMemberBtn').data('id', userId);
+            $('#memberViewModal').modal('show');
+        } else {
+            alert('Member data not found');
+        }
+    });
+
+    function formatDate(date) {
+        return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+    }
+
+    $('#editMemberBtn').on('click', function () {
+        const userId = $(this).data('id');
+        alert('Edit functionality will be implemented for user ID: ' + userId);
+    });
+});
+
 </script>

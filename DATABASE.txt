@@ -181,15 +181,16 @@ CREATE TABLE memberships (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     membership_plan_id INT NOT NULL,
+    staff_id INT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     status ENUM('active', 'expiring', 'expired') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES personal_details(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),           -- Changed from personal_details(id) to users(id)
     FOREIGN KEY (membership_plan_id) REFERENCES membership_plans(id),
-    FOREIGN KEY (status_id) REFERENCES status_types(id)
+    FOREIGN KEY (staff_id) REFERENCES users(id)
 );
 
 
@@ -202,12 +203,11 @@ CREATE TABLE program_subscriptions (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    status_id INT NOT NULL,
+    status ENUM('active', 'expiring', 'expired') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (membership_id) REFERENCES memberships(id),
     FOREIGN KEY (program_id) REFERENCES programs(id),
-    FOREIGN KEY (coach_id) REFERENCES coaches(id),
-    FOREIGN KEY (status_id) REFERENCES status_types(id)
+    FOREIGN KEY (coach_id) REFERENCES coaches(id)
 );
 
 -- Table for rental subscriptions
@@ -218,9 +218,22 @@ CREATE TABLE rental_subscriptions (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     price DECIMAL(10,2) NOT NULL,
-    status_id INT NOT NULL,
+    status ENUM('active', 'expiring', 'expired') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (membership_id) REFERENCES memberships(id),
-    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id),
-    FOREIGN KEY (status_id) REFERENCES status_types(id)
+    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id)
+);
+
+CREATE TABLE transactions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    staff_id INT NOT NULL,
+    membership_id INT,
+    program_subscription_id INT,
+    rental_subscription_id INT,
+    total_amount DECIMAL(10,2) NOT NULL,
+    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (staff_id) REFERENCES users(id),
+    FOREIGN KEY (membership_id) REFERENCES memberships(id),
+    FOREIGN KEY (program_subscription_id) REFERENCES program_subscriptions(id),
+    FOREIGN KEY (rental_subscription_id) REFERENCES rental_subscriptions(id)
 );

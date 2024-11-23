@@ -11,19 +11,21 @@
 #RewriteRule (.*) %3/$1 [DPI] 
 
 RewriteEngine On
-RewriteRule ^admin/dashboard$ admin/index.php
-RewriteRule ^admin/members$ admin/index.php
-RewriteRule ^admin/attendance$ admin/index.php
-RewriteRule ^admin/member_status$ admin/index.php
-RewriteRule ^admin/walk_in$ admin/index.php
-RewriteRule ^admin/gym_rates$ admin/index.php
-RewriteRule ^admin/programs$ admin/index.php
-RewriteRule ^admin/rentals$ admin/index.php
-RewriteRule ^admin/payment_records$ admin/index.php
-RewriteRule ^admin/notification$ admin/index.php
-RewriteRule ^admin/announcement$ admin/index.php
-RewriteRule ^admin/website_settings$ admin/index.php
-RewriteRule ^admin/report$ admin/index.php
-RewriteRule ^admin/staff_management$ admin/index.php
-RewriteRule ^admin/staff_activity_log$ admin/index.php
-RewriteRule ^admin/coach_log$ admin/index.php
+
+# Rewrite rules for admin pages
+RewriteRule ^admin/dashboard$ admin/index.php?page=dashboard [L]
+RewriteRule ^admin/members$ admin/index.php?page=members [L]
+RewriteRule ^admin/attendance$ admin/index.php?page=attendance [L]
+RewriteRule ^admin/member_status$ admin/index.php?page=member_status [L]
+RewriteRule ^admin/walk_in$ admin/index.php?page=walk_in [L]
+RewriteRule ^admin/gym_rates$ admin/index.php?page=gym_rates [L]
+RewriteRule ^admin/programs$ admin/index.php?page=programs [L]
+RewriteRule ^admin/rentals$ admin/index.php?page=rentals [L]
+RewriteRule ^admin/payment_records$ admin/index.php?page=payment_records [L]
+RewriteRule ^admin/notification$ admin/index.php?page=notification [L]
+RewriteRule ^admin/announcement$ admin/index.php?page=announcement [L]
+RewriteRule ^admin/website_settings$ admin/index.php?page=website_settings [L]
+RewriteRule ^admin/report$ admin/index.php?page=report [L]
+RewriteRule ^admin/staff_management$ admin/index.php?page=staff_management [L]
+RewriteRule ^admin/staff_activity_log$ admin/index.php?page=staff_activity_log [L]
+RewriteRule ^admin/coach_log$ admin/index.php?page=coach_log [L]

@@ -4,7 +4,7 @@ session_start();
 require_once 'functions.php';
 
 // Check if user is already logged in
-if(isset($_SESSION['user_id'])) {
+if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && isset($_SESSION['role_id'])) {
     redirectBasedOnRole($_SESSION['role']);
 }
 
@@ -20,9 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $result = loginUser($username, $password);
         if ($result['success']) {
+            // Store all necessary session variables
             $_SESSION['user_id'] = $result['user_id'];
             $_SESSION['username'] = $username;
             $_SESSION['role'] = $result['role'];
+            $_SESSION['role_id'] = $result['role_id'];  // Added role_id to session
             
             // Redirect based on role
             redirectBasedOnRole($result['role']);
