@@ -139,61 +139,64 @@ try {
                 </tr>
 
                 <!-- Modal for Receipt -->
-                <div class="modal fade" id="receiptModal-<?php echo $row['transaction_id']; ?>" tabindex="-1" aria-labelledby="receiptModalLabel-<?php echo $row['transaction_id']; ?>" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Transaction Receipt</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="receipt-header">
-                                    <div class="member-photo-container mb-3">
-                                        <img src="../../../<?php echo $row['member_photo'] ?: 'path/to/default/image.png'; ?>" 
-                                            alt="Member Photo" 
-                                            class="member-photo">
+                    <div class="modal fade" id="receiptModal-<?php echo $row['transaction_id']; ?>" tabindex="-1" aria-labelledby="receiptModalLabel-<?php echo $row['transaction_id']; ?>" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Transaction Receipt</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body" id="receiptContent-<?php echo $row['transaction_id']; ?>">
+                                    <div class="receipt-header">
+                                        <div class="member-photo-container mb-3">
+                                            <img src="../../../<?php echo $row['member_photo'] ?: 'path/to/default/image.png'; ?>" 
+                                                alt="Member Photo" 
+                                                class="member-photo">
+                                        </div>
+                                        <h4><?php echo htmlspecialchars($row['member_name']); ?></h4>
+                                        <p class="text-muted mb-0">Transaction ID: <?php echo $row['transaction_id']; ?></p>
+                                        <p class="text-muted">Payment Date: <?php echo date('M d, Y H:i', strtotime($row['payment_date'])); ?></p>
                                     </div>
-                                    <h4><?php echo htmlspecialchars($row['member_name']); ?></h4>
-                                    <p class="text-muted mb-0">Transaction ID: <?php echo $row['transaction_id']; ?></p>
-                                    <p class="text-muted">Payment Date: <?php echo date('M d, Y H:i', strtotime($row['payment_date'])); ?></p>
+                                    <div class="receipt-body">
+                                        <!-- Membership Details -->
+                                        <h5 class="text-primary">Membership Details</h5>
+                                        <p>Plan Name: <?php echo $row['plan_name'] ?: 'N/A'; ?></p>
+                                        <p>Duration: <?php echo $row['membership_start_date'] . ' - ' . $row['membership_end_date']; ?></p>
+                                        <p>Status: <?php echo ucfirst($row['membership_status']); ?></p>
+                                        <p>Price: $<?php echo number_format($row['membership_price'], 2); ?></p>
+
+                                        <!-- Program Subscription -->
+                                        <h5 class="text-primary">Program Subscription</h5>
+                                        <p>Program Name: <?php echo $row['program_name'] ?: 'N/A'; ?></p>
+                                        <p>Duration: <?php echo $row['program_duration'] . ' ' . $row['program_duration_type']; ?></p>
+                                        <p>Period: <?php echo $row['program_start_date'] . ' - ' . $row['program_end_date']; ?></p>
+                                        <p>Price: $<?php echo number_format($row['program_price'], 2); ?></p>
+
+                                        <!-- Rental Service -->
+                                        <h5 class="text-primary">Rental Service</h5>
+                                        <p>Service Name: <?php echo $row['rental_service_name'] ?: 'N/A'; ?></p>
+                                        <p>Duration: <?php echo $row['rental_duration'] . ' ' . $row['rental_duration_type']; ?></p>
+                                        <p>Period: <?php echo $row['rental_start_date'] . ' - ' . $row['rental_end_date']; ?></p>
+                                        <p>Price: $<?php echo number_format($row['rental_price'], 2); ?></p>
+
+                                        <!-- Total Amount -->
+                                        <h5 class="text-primary">Total Amount</h5>
+                                        <p class="total-amount">$<?php echo number_format($row['total_amount'], 2); ?></p>
+
+                                        <!-- Staff -->
+                                        <h5 class="text-primary">Processed by</h5>
+                                        <p><?php echo htmlspecialchars($row['staff_name']); ?></p>
+                                    </div>
                                 </div>
-                                <div class="receipt-body">
-                                    <!-- Membership Details -->
-                                    <h5 class="text-primary">Membership Details</h5>
-                                    <p>Plan Name: <?php echo $row['plan_name'] ?: 'N/A'; ?></p>
-                                    <p>Duration: <?php echo $row['membership_start_date'] . ' - ' . $row['membership_end_date']; ?></p>
-                                    <p>Status: <?php echo ucfirst($row['membership_status']); ?></p>
-                                    <p>Price: $<?php echo number_format($row['membership_price'], 2); ?></p>
-
-                                    <!-- Program Subscription -->
-                                    <h5 class="text-primary">Program Subscription</h5>
-                                    <p>Program Name: <?php echo $row['program_name'] ?: 'N/A'; ?></p>
-                                    <p>Duration: <?php echo $row['program_duration'] . ' ' . $row['program_duration_type']; ?></p>
-                                    <p>Period: <?php echo $row['program_start_date'] . ' - ' . $row['program_end_date']; ?></p>
-                                    <p>Price: $<?php echo number_format($row['program_price'], 2); ?></p>
-
-                                    <!-- Rental Service -->
-                                    <h5 class="text-primary">Rental Service</h5>
-                                    <p>Service Name: <?php echo $row['rental_service_name'] ?: 'N/A'; ?></p>
-                                    <p>Duration: <?php echo $row['rental_duration'] . ' ' . $row['rental_duration_type']; ?></p>
-                                    <p>Period: <?php echo $row['rental_start_date'] . ' - ' . $row['rental_end_date']; ?></p>
-                                    <p>Price: $<?php echo number_format($row['rental_price'], 2); ?></p>
-
-                                    <!-- Total Amount -->
-                                    <h5 class="text-primary">Total Amount</h5>
-                                    <p class="total-amount">$<?php echo number_format($row['total_amount'], 2); ?></p>
-
-                                    <!-- Staff -->
-                                    <h5 class="text-primary">Processed by</h5>
-                                    <p><?php echo htmlspecialchars($row['staff_name']); ?></p>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-primary" onclick="printReceipt('receiptContent-<?php echo $row['transaction_id']; ?>')">
+                                        Print Receipt
+                                    </button>
                                 </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
-                </div>
                 <?php endwhile; ?>
 
             </tbody>
@@ -204,15 +207,46 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // Attach click event to all "View Receipt" buttons
-        document.querySelectorAll(".view-details").forEach(button => {
-            button.addEventListener("click", function () {
-                // Show the modal
-                const receiptModal = new bootstrap.Modal(document.getElementById("receiptModal"));
-                receiptModal.show();
-            });
-        });
-    });
+    function printReceipt(contentId) {
+        // Get the content of the receipt
+        const content = document.getElementById(contentId).innerHTML;
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        // Write the receipt content to the new window
+        printWindow.document.open();
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print Receipt</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <style>
+                        .receipt-header, .receipt-footer {
+                            text-align: center;
+                            padding: 20px 0;
+                            border: 2px dashed #ddd;
+                        }
+                        .receipt-item-label {
+                            font-weight: bold;
+                            color: #666;
+                        }
+                        .member-photo {
+                            width: 100px;
+                            height: 100px;
+                            border-radius: 50%;
+                            object-fit: cover;
+                        }
+                        .total-amount {
+                            font-size: 1.5rem;
+                            font-weight: bold;
+                            color: #0d6efd;
+                        }
+                    </style>
+                </head>
+                <body onload="window.print(); window.close();">
+                    ${content}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
 </script>
-
