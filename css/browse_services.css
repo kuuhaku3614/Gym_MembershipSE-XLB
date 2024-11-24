@@ -379,3 +379,10 @@
 .cart-btn .fas {
     color: white !important;
 }
+
+/* Adjust nav-right to properly align items */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}

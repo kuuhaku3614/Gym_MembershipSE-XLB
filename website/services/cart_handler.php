@@ -43,6 +43,17 @@ try {
                 }
                 break;
                 
+            case 'update_quantity':
+                $rental_id = $_POST['rental_id'] ?? '';
+                $quantity = $_POST['quantity'] ?? '';
+                if ($rental_id && $quantity) {
+                    $Cart->updateRentalQuantity($rental_id, $quantity);
+                    echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
+                } else {
+                    throw new Exception('Missing rental_id or quantity for update');
+                }
+                break;
+                
             default:
                 throw new Exception('Invalid action');
         }

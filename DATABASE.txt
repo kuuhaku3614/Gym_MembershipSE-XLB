@@ -67,6 +67,7 @@ CREATE TABLE coach_program_types (
     coach_id INT NOT NULL,
     program_id INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
+    description TEXT,
     FOREIGN KEY (coach_id) REFERENCES coaches(id),
     FOREIGN KEY (program_id) REFERENCES programs(id)
 );

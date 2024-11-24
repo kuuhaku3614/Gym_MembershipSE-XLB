@@ -111,11 +111,14 @@
 <div class="cart-overlay" id="cartOverlay"></div>
 
 <!-- Cart Sidebar -->
-<div class="cart-sidebar" id="cartSidebar">
+<div class="cart-sidebar" id="cartSidebar" aria-label="Shopping Cart">
     <div class="cart-header">
         <h5>Shopping Cart</h5>
-        <button class="close-cart" id="closeCart">
-            <i class="fas fa-times"></i>
+        <button class="close-cart" 
+                id="closeCart" 
+                aria-label="Close shopping cart"
+                title="Close cart">
+            <i class="fas fa-times" aria-hidden="true"></i>
         </button>
     </div>
     

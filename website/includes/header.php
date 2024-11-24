@@ -84,13 +84,15 @@ function getFullName() {
             $current_page = basename($_SERVER['PHP_SELF']);
             if ($current_page === 'services.php'): 
             ?>
-                <button class="cart-btn" id="showCartBtn">
-                    <i class="fas fa-shopping-cart"></i>
+                <button class="cart-btn" id="showCartBtn" aria-label="Open Shopping Cart" title="Open Shopping Cart">
+                    <i class="fas fa-shopping-cart" aria-hidden="true"></i>
                 </button>
             <?php endif; ?>
             
             <div class="dropdown">
-                <button class="dropbtn"></button>
+                <button class="dropbtn" aria-label="User Menu" title="User Menu">
+                    <i class="fas fa-user" aria-hidden="true"></i>
+                </button>
                 <div class="dropdown-content">
                     <a href="profile.php" class="username"><?php echo getFullName();?></a>
                     <hr>

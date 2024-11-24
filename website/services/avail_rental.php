@@ -14,13 +14,12 @@
                     'id' => $_POST['rental_id'],
                     'name' => $_POST['service_name'],
                     'price' => $_POST['price'],
-                    'validity' => $_POST['validity'],
-                    'type' => 'rental'
+                    'validity' => $_POST['validity']
                 ];
                 
                 $Cart->addRental($item);
                 
-                $_SESSION['success'] = "Item added to cart successfully!";
+                $_SESSION['success'] = "Rental service added to cart successfully!";
                 header("Location: ../services.php");
                 exit();
             } catch (Exception $e) {
@@ -35,7 +34,7 @@
         }
     }
     
-    // Handle GET request for displaying rental details
+    // Handle GET request
     if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if (isset($_GET['id'])) {
             $rental_id = $_GET['id'];
@@ -44,7 +43,8 @@
                 $service_name = $record['service_name'];
                 $price = $record['price'];
                 $duration = $record['duration'];
-                $duration_type_id = $record['duration_type_id'];
+                $duration_type = $record['duration_type'];
+                $available_slots = $record['available_slots'];
                 $description = $record['description'];
             } else {
                 echo 'No rental service found';
@@ -57,26 +57,23 @@
     }
 ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <style>
-        .bg-custom-red {
-            background-color: #ff0000;
-        }
-        .card-header, .btn-custom-red {
-            background-color: #ff0000;
-            color: white;
-        }
-        .card-header {
-            background-color: #ff0000;
-            border-bottom: 2px solid #ff0000;
-            padding: 1rem;
-        }
-        .card-body {
-            border: 2px solid #ff0000;
-        }
-        .card-body {
-            border: 1px solid #ff0000;
-        }
-    </style>
+<style>
+    .bg-custom-red {
+        background-color: #ff0000;
+    }
+    .card-header, .btn-custom-red {
+        background-color: #ff0000;
+        color: white;
+    }
+    .card-header {
+        background-color: #ff0000;
+        border-bottom: 2px solid #ff0000;
+        padding: 1rem;
+    }
+    .card-body {
+        border: 2px solid #ff0000;
+    }
+</style>
 
 <div class="avail-rental-page">
     <div class="container-fluid p-0">
@@ -91,15 +88,18 @@
         <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
             <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
                 <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0">Optional Services</h2>
+                    <h2 class="fs-4 fw-bold mb-0">Rental Service</h2>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
                     <h3 class="fs-5 fw-bold mb-4"><?= $service_name ?></h3>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity: <?= $duration ?> <?= $record['duration_type'] ?></p>
+                        <p class="mb-0">Validity: <?= $duration ?> <?= $duration_type ?></p>
                     </div>
                     <div class="mb-3 p-2 border rounded">
                         <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
+                    </div>
+                    <div class="mb-3 p-2 border rounded">
+                        <p class="mb-0">Available Slots: <?= $available_slots ?></p>
                     </div>
                     <?php if (!empty($description)) { ?>
                         <div class="mb-3 p-2 border rounded">
@@ -113,10 +113,8 @@
                                 <input type="hidden" name="rental_id" value="<?= $rental_id ?>">
                                 <input type="hidden" name="service_name" value="<?= $service_name ?>">
                                 <input type="hidden" name="price" value="<?= $price ?>">
-                                <input type="hidden" name="validity" value="<?= $duration . ' ' . $record['duration_type'] ?>">
-                                <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">
-                                    Add to Cart
-                                </button>
+                                <input type="hidden" name="validity" value="<?= $duration . ' ' . $duration_type ?>">
+                                <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
                             </form>
                         <?php } else { ?>
                             <a href="../../login/login.php" class="btn btn-custom-red btn-lg" style="width: 48%;">Login to Add</a>

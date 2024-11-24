@@ -24,7 +24,7 @@ class Cart {
         $_SESSION['cart']['membership'] = [
             'id' => $item['id'],
             'name' => $item['name'],
-            'price' => $item['price'],
+            'price' => floatval($item['price']),
             'validity' => $item['validity'],
             'type' => 'membership'
         ];
@@ -42,24 +42,52 @@ class Cart {
         $_SESSION['cart']['programs'][] = [
             'id' => $item['id'],
             'name' => $item['name'],
-            'price' => $item['price'],
+            'price' => floatval($item['price']),
             'validity' => $item['validity'],
             'type' => 'program',
-            'coach_id' => $item['coach_id'],
-            'coach_name' => $item['coach_name']
+            'coach_id' => $item['coach_id'] ?? null,
+            'coach_name' => $item['coach_name'] ?? null
         ];
         $this->updateTotal();
     }
 
     public function addRental($item) {
-        // Rental services can be repeated, so no validation needed
-        $_SESSION['cart']['rentals'][] = [
+        // Add rental service with quantity
+        $rental = [
             'id' => $item['id'],
             'name' => $item['name'],
-            'price' => $item['price'],
+            'price' => floatval($item['price']),
             'validity' => $item['validity'],
-            'type' => 'rental'
+            'type' => 'rental',
+            'quantity' => 1 // Default quantity
         ];
+
+        // Check if this rental already exists in cart
+        $exists = false;
+        foreach ($_SESSION['cart']['rentals'] as &$existingRental) {
+            if ($existingRental['id'] == $item['id']) {
+                // Increment quantity instead of adding new item
+                $existingRental['quantity']++;
+                $exists = true;
+                break;
+            }
+        }
+
+        // If rental doesn't exist in cart, add it
+        if (!$exists) {
+            $_SESSION['cart']['rentals'][] = $rental;
+        }
+
+        $this->updateTotal();
+    }
+
+    public function updateRentalQuantity($rentalId, $quantity) {
+        foreach ($_SESSION['cart']['rentals'] as &$rental) {
+            if ($rental['id'] == $rentalId) {
+                $rental['quantity'] = max(1, intval($quantity)); // Ensure quantity is at least 1
+                break;
+            }
+        }
         $this->updateTotal();
     }
 
@@ -72,45 +100,27 @@ class Cart {
             });
             $_SESSION['cart']['programs'] = array_values($_SESSION['cart']['programs']); // Re-index array
         } else if ($type === 'rental') {
-            // Remove only the first occurrence of the rental item
-            $found = false;
-            foreach ($_SESSION['cart']['rentals'] as $key => $item) {
-                if ($item['id'] == $id && !$found) {
-                    unset($_SESSION['cart']['rentals'][$key]);
-                    $found = true;
-                }
-            }
+            $_SESSION['cart']['rentals'] = array_filter($_SESSION['cart']['rentals'], function($item) use ($id) {
+                return $item['id'] != $id;
+            });
             $_SESSION['cart']['rentals'] = array_values($_SESSION['cart']['rentals']); // Re-index array
         }
         $this->updateTotal();
-    }
-
-    public function validateCart() {
-        $errors = [];
-        
-        // Check if a membership plan is selected
-        if ($_SESSION['cart']['membership'] === null) {
-            $errors[] = "Please select a membership plan.";
-        }
-        
-        // Additional validations can be added here
-        
-        return $errors;
     }
 
     private function updateTotal() {
         $total = 0;
         
         if ($_SESSION['cart']['membership']) {
-            $total += $_SESSION['cart']['membership']['price'];
+            $total += floatval($_SESSION['cart']['membership']['price']);
         }
         
         foreach ($_SESSION['cart']['programs'] as $program) {
-            $total += $program['price'];
+            $total += floatval($program['price']);
         }
         
         foreach ($_SESSION['cart']['rentals'] as $rental) {
-            $total += $rental['price'];
+            $total += floatval($rental['price']) * $rental['quantity'];
         }
         
         $_SESSION['cart']['total'] = $total;
@@ -122,5 +132,23 @@ class Cart {
 
     public function clearCart() {
         $this->initializeCart();
+    }
+
+    public function validateCart() {
+        $errors = [];
+        
+        // Check if a membership plan is selected
+        if ($_SESSION['cart']['membership'] === null) {
+            $errors[] = "Please select a membership plan.";
+        }
+        
+        // Validate rental quantities
+        foreach ($_SESSION['cart']['rentals'] as $rental) {
+            if ($rental['quantity'] < 1) {
+                $errors[] = "Invalid quantity for rental item: " . $rental['name'];
+            }
+        }
+        
+        return $errors;
     }
 } 
