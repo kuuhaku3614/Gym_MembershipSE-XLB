@@ -11,6 +11,7 @@ function redirectBasedOnRole($role) {
         'staff' => '../staff/dashboard.php',
         'coach' => '../coach/dashboard.php',
         'member' => '../website/website.php',
+        'user' => '../website/website.php',
     ];
     if (isset($roleRoutes[$role])) {
         header("Location: " . $roleRoutes[$role]);
@@ -43,7 +44,7 @@ function loginUser($username, $password) {
 
             if (password_verify($password, $user['password'])) {
                 // Ensure the role is valid before proceeding
-                $validRoles = ['admin', 'staff', 'coach', 'member'];
+                $validRoles = ['admin', 'staff', 'coach', 'member', 'user'];
                 if (!in_array($user['role'], $validRoles)) {
                     return ['success' => false, 'message' => 'Unauthorized role detected.'];
                 }
