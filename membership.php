@@ -1,256 +1,213 @@
-<?php
-require_once 'config.php';
-
-// Execute the query
-$query = "SELECT DISTINCT
-    m.id AS membership_id,
-    CONCAT(pd.first_name, ' ', pd.last_name) AS member_name,
-    mp.plan_name,
-    mp.plan_type,
-    mp.price AS membership_price,
-    mp.duration AS membership_duration,
-    dt.type_name AS duration_type,
-    ps.id AS program_subscription_id,
-    p.program_name,
-    ps.price AS program_price,
-    rs.id AS rental_subscription_id,
-    r.service_name,
-    rs.price AS rental_price,
-    CONCAT(staff_pd.first_name, ' ', staff_pd.last_name) AS processed_by,
-    m.staff_id,
-    m.start_date AS membership_start_date,
-    m.end_date AS membership_end_date,
-    ps.start_date AS program_start_date,
-    ps.end_date AS program_end_date,
-    rs.start_date AS rental_start_date,
-    rs.end_date AS rental_end_date,
-    t_mem.payment_date AS membership_payment_date,
-    t_prog.payment_date AS program_payment_date,
-    t_rent.payment_date AS rental_payment_date,
-    m.status AS membership_status
-FROM memberships m
-JOIN users member_user ON m.user_id = member_user.id
-JOIN personal_details pd ON member_user.id = pd.user_id
-JOIN membership_plans mp ON m.membership_plan_id = mp.id
-JOIN duration_types dt ON mp.duration_type_id = dt.id
-JOIN users staff_user ON m.staff_id = staff_user.id
-JOIN personal_details staff_pd ON staff_user.id = staff_pd.user_id
-LEFT JOIN transactions t_mem ON m.id = t_mem.membership_id 
-    AND t_mem.program_subscription_id IS NULL 
-    AND t_mem.rental_subscription_id IS NULL
-LEFT JOIN program_subscriptions ps ON m.id = ps.membership_id
-LEFT JOIN programs p ON ps.program_id = p.id
-LEFT JOIN transactions t_prog ON ps.id = t_prog.program_subscription_id
-LEFT JOIN rental_subscriptions rs ON m.id = rs.membership_id
-LEFT JOIN rental_services r ON rs.rental_service_id = r.id
-LEFT JOIN transactions t_rent ON rs.id = t_rent.rental_subscription_id
-ORDER BY m.id DESC";
-
-$stmt = $pdo->prepare($query);
-$stmt->execute();
-?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Membership Records</title>
-    <link rel="stylesheet" href="../vendor/bootstrap-5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../vendor/bootstrap-icons-1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../vendor/datatable-2.1.8/datatables.min.css">
-    <link rel="stylesheet" href="../vendor/fontawesome-free-5.15.4-web/css/all.min.css">
-    <link rel="stylesheet" href="../admin/css/navbar1.css">
-    <link rel="stylesheet" href="../admin/css/admin.css">
+    <!-- Bootstrap CSS and Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            .print-only {
-                display: block !important;
-            }
-        }
         .receipt-header {
             text-align: center;
-            margin-bottom: 20px;
+            padding: 20px 0;
+            border-bottom: 2px dashed #ddd;
         }
-        .receipt-details {
-            margin: 20px 0;
+        
+        .receipt-body {
+            padding: 20px;
         }
-        .receipt-table {
-            width: 100%;
-            margin: 20px 0;
-        }
+        
         .receipt-footer {
-            margin-top: 30px;
             text-align: center;
+            padding: 20px 0;
+            border-top: 2px dashed #ddd;
+        }
+        
+        .receipt-item {
+            margin-bottom: 15px;
+        }
+        
+        .receipt-item-label {
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .member-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .total-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0d6efd;
         }
     </style>
 </head>
 <body>
-<div class="container mt-4">
-        <h2>Membership Records</h2>
-        <div class="table-responsive">
-            <table id="membershipTable" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Member Name</th>
-                        <th>Plan Name</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
-                    <tr>
-                        <td><?php echo $row['membership_id']; ?></td>
-                        <td><?php echo htmlspecialchars($row['member_name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['plan_name']); ?></td>
-                        <td><?php echo $row['membership_start_date']; ?></td>
-                        <td><?php echo $row['membership_end_date']; ?></td>
-                        <td>
-                            <button class="btn btn-primary btn-sm view-details" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#receiptModal"
-                                    data-membership="<?php echo htmlspecialchars(json_encode($row)); ?>">
-                                View Details
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <!-- Button trigger modal -->
+    <button class="btn btn-primary btn-sm view-details">
+        <i class="bi bi-receipt me-1"></i> View Receipt
+    </button>
 
-    <!-- Receipt Modal -->
-    <div class="modal fade" id="receiptModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+    <!-- Modal -->
+    <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header no-print">
-                    <h5 class="modal-title" id="receiptModalLabel">Membership Receipt</h5>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="receiptModalLabel">Transaction Receipt</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" id="receiptContent">
+                <div class="modal-body">
                     <div class="receipt-header">
-                        <h2>GYM NAME</h2>
-                        <p>123 Fitness Street, Gym City</p>
-                        <p>Phone: (123) 456-7890</p>
+                        <div class="member-photo-container mb-3">
+                            <img src="" alt="Member Photo" class="member-photo" id="memberPhoto">
+                        </div>
+                        <h4 id="memberName"></h4>
+                        <p class="text-muted mb-0" id="transactionId"></p>
+                        <p class="text-muted" id="paymentDate"></p>
                     </div>
                     
-                    <div class="receipt-details">
+                    <div class="receipt-body">
                         <div class="row">
-                            <div class="col-6">
-                                <p><strong>Receipt No:</strong> <span id="membershipId"></span></p>
-                                <p><strong>Member Name:</strong> <span id="memberName"></span></p>
-                                <p><strong>Date Issued:</strong> <span id="startDate"></span></p>
+                            <div class="col-12 mb-4">
+                                <h5 class="text-primary">Membership Details</h5>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Plan Name</div>
+                                    <div id="planName"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Duration</div>
+                                    <div id="membershipDuration"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Status</div>
+                                    <div id="membershipStatus"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Price</div>
+                                    <div id="membershipPrice"></div>
+                                </div>
                             </div>
-                            <div class="col-6 text-end">
-                                <p><strong>Processed By:</strong> <span id="processedBy"></span></p>
+                            
+                            <div class="col-12 mb-4" id="programSection">
+                                <h5 class="text-primary">Program Subscription</h5>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Program Name</div>
+                                    <div id="programName"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Duration</div>
+                                    <div id="programDuration"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Price</div>
+                                    <div id="programPrice"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mb-4" id="rentalSection">
+                                <h5 class="text-primary">Rental Service</h5>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Service Name</div>
+                                    <div id="rentalServiceName"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Duration</div>
+                                    <div id="rentalDuration"></div>
+                                </div>
+                                <div class="receipt-item">
+                                    <div class="receipt-item-label">Price</div>
+                                    <div id="rentalPrice"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="receipt-footer">
+                            <div class="receipt-item">
+                                <div class="receipt-item-label">Total Amount</div>
+                                <div class="total-amount" id="totalAmount"></div>
+                            </div>
+                            <div class="receipt-item">
+                                <div class="receipt-item-label">Processed by</div>
+                                <div id="staffName"></div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="receipt-table">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Duration</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr id="membershipRow">
-                                    <td id="planName"></td>
-                                    <td id="duration"></td>
-                                    <td id="membershipPrice"></td>
-                                </tr>
-                                <tr id="programRow">
-                                    <td id="programName"></td>
-                                    <td id="programDuration"></td>
-                                    <td id="programPrice"></td>
-                                </tr>
-                                <tr id="rentalRow">
-                                    <td id="rentalService"></td>
-                                    <td id="rentalDuration"></td>
-                                    <td id="rentalPrice"></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" class="text-end"><strong>Total Amount:</strong></td>
-                                    <td id="totalAmount"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="receipt-footer">
-                        <p>Thank you for choosing our gym!</p>
-                        <p>This is an official receipt of your transaction.</p>
-                    </div>
-                </div>
-                <div class="modal-footer no-print">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="window.print()">Print Receipt</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="../vendor/jQuery-3.7.1/jquery-3.7.1.min.js"></script>
-    <script src="../vendor/bootstrap-5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../vendor/datatable-2.1.8/datatables.min.js"></script>
-    <script src="../vendor/datatable-2.1.8/dataTables.bootstrap5.min.js"></script>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        $(document).ready(function() {
-            // Initialize DataTable
-            $('#membershipTable').DataTable();
-
-            // Handle view details button click
-            $('.view-details').click(function() {
-                const membershipData = JSON.parse($(this).data('membership'));
-                
-                // Populate modal with membership data
-                $('#membershipId').text(membershipData.membership_id);
-                $('#memberName').text(membershipData.member_name);
-                $('#startDate').text(membershipData.membership_start_date);
-                $('#processedBy').text(membershipData.processed_by);
-                
-                // Membership details
-                $('#planName').text(membershipData.plan_name);
-                $('#duration').text(membershipData.membership_duration + ' ' + membershipData.duration_type);
-                $('#membershipPrice').text('$' + parseFloat(membershipData.membership_price).toFixed(2));
-                
-                // Program details
-                if (membershipData.program_name) {
-                    $('#programRow').show();
-                    $('#programName').text(membershipData.program_name);
-                    $('#programDuration').text(membershipData.program_start_date + ' to ' + membershipData.program_end_date);
-                    $('#programPrice').text('$' + parseFloat(membershipData.program_price).toFixed(2));
-                } else {
-                    $('#programRow').hide();
-                }
-                
-                // Rental details
-                if (membershipData.service_name) {
-                    $('#rentalRow').show();
-                    $('#rentalService').text(membershipData.service_name);
-                    $('#rentalDuration').text(membershipData.rental_start_date + ' to ' + membershipData.rental_end_date);
-                    $('#rentalPrice').text('$' + parseFloat(membershipData.rental_price).toFixed(2));
-                } else {
-                    $('#rentalRow').hide();
-                }
-                
-                // Calculate total
-                let total = parseFloat(membershipData.membership_price) || 0;
-                total += parseFloat(membershipData.program_price) || 0;
-                total += parseFloat(membershipData.rental_price) || 0;
-                $('#totalAmount').text('$' + total.toFixed(2));
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewDetailsButtons = document.querySelectorAll('.view-details');
+            const receiptModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+            
+            viewDetailsButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // In a real application, you would fetch the data for the specific transaction
+                    // Here's an example of how to populate the modal with the data
+                    const transactionData = {
+                        transaction_id: "TRX-001",
+                        total_amount: 250.00,
+                        payment_date: "2024-03-24",
+                        staff_name: "John Doe",
+                        member_name: "Jane Smith",
+                        member_photo: "/api/placeholder/100/100", // placeholder image
+                        membership_start_date: "2024-03-24",
+                        membership_end_date: "2025-03-23",
+                        membership_status: "Active",
+                        plan_name: "Premium Annual",
+                        program_name: "Yoga Basics",
+                        program_duration: "12",
+                        program_duration_type: "Weeks",
+                        program_price: 150.00,
+                        rental_service_name: "Yoga Mat",
+                        rental_duration: "1",
+                        rental_duration_type: "Month",
+                        rental_price: 25.00,
+                        membership_price: 75.00
+                    };
+                    
+                    // Populate the modal with data
+                    document.getElementById('memberPhoto').src = transactionData.member_photo;
+                    document.getElementById('memberName').textContent = transactionData.member_name;
+                    document.getElementById('transactionId').textContent = `Transaction ID: ${transactionData.transaction_id}`;
+                    document.getElementById('paymentDate').textContent = `Payment Date: ${new Date(transactionData.payment_date).toLocaleDateString()}`;
+                    document.getElementById('planName').textContent = transactionData.plan_name;
+                    document.getElementById('membershipDuration').textContent = `${transactionData.membership_start_date} to ${transactionData.membership_end_date}`;
+                    document.getElementById('membershipStatus').textContent = transactionData.membership_status;
+                    document.getElementById('membershipPrice').textContent = `$${transactionData.membership_price.toFixed(2)}`;
+                    
+                    // Program details
+                    if (transactionData.program_name) {
+                        document.getElementById('programName').textContent = transactionData.program_name;
+                        document.getElementById('programDuration').textContent = `${transactionData.program_duration} ${transactionData.program_duration_type}`;
+                        document.getElementById('programPrice').textContent = `$${transactionData.program_price.toFixed(2)}`;
+                        document.getElementById('programSection').style.display = 'block';
+                    } else {
+                        document.getElementById('programSection').style.display = 'none';
+                    }
+                    
+                    // Rental details
+                    if (transactionData.rental_service_name) {
+                        document.getElementById('rentalServiceName').textContent = transactionData.rental_service_name;
+                        document.getElementById('rentalDuration').textContent = `${transactionData.rental_duration} ${transactionData.rental_duration_type}`;
+                        document.getElementById('rentalPrice').textContent = `$${transactionData.rental_price.toFixed(2)}`;
+                        document.getElementById('rentalSection').style.display = 'block';
+                    } else {
+                        document.getElementById('rentalSection').style.display = 'none';
+                    }
+                    
+                    document.getElementById('totalAmount').textContent = `$${transactionData.total_amount.toFixed(2)}`;
+                    document.getElementById('staffName').textContent = transactionData.staff_name;
+                    
+                    receiptModal.show();
+                });
             });
         });
     </script>
