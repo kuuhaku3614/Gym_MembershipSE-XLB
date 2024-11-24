@@ -1,7 +1,5 @@
 function updateCartDisplay(cart) {
-    console.log('Cart contents:', cart);  // Debug log
-    console.log('Rentals:', cart.rentals); // Specifically log rentals
-    console.log('Updating cart display:', cart);
+    console.log('Cart contents:', cart);
     const cartBody = document.querySelector('.cart-body');
     if (!cartBody) {
         console.error('Cart body element not found');
@@ -20,12 +18,13 @@ function updateCartDisplay(cart) {
                             <p class="mb-1">${cart.membership.name}</p>
                             <p class="price mb-1">₱${parseFloat(cart.membership.price).toFixed(2)}</p>
                             <p class="text-muted mb-0">Validity: ${cart.membership.validity}</p>
+                            <p class="text-muted mb-0">Start: ${formatDate(cart.membership.start_date)}</p>
+                            <p class="text-muted mb-0">End: ${formatDate(cart.membership.end_date)}</p>
                         </div>
                         <button class="remove-item" 
                                 onclick="removeFromCart('membership', ${cart.membership.id})"
-                                aria-label="Remove ${cart.membership.name} from cart"
-                                title="Remove from cart">
-                            <i class="fas fa-times" aria-hidden="true"></i>
+                                aria-label="Remove ${cart.membership.name} from cart">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
@@ -33,9 +32,9 @@ function updateCartDisplay(cart) {
         `;
     }
 
-    // Programs section
+    // Programs section - each program is displayed individually
     if (cart.programs && cart.programs.length > 0) {
-        cart.programs.forEach(program => {
+        cart.programs.forEach((program, index) => {
             html += `
                 <div class="cart-item">
                     <div class="item-details">
@@ -44,13 +43,14 @@ function updateCartDisplay(cart) {
                                 <p class="mb-1">${program.name}</p>
                                 <p class="price mb-1">₱${parseFloat(program.price).toFixed(2)}</p>
                                 <p class="text-muted mb-0">Validity: ${program.validity}</p>
-                                ${program.coach_name ? `<p class="text-muted mb-0">Coach: ${program.coach_name}</p>` : ''}
+                                <p class="text-muted mb-0">Coach: ${program.coach_name}</p>
+                                <p class="text-muted mb-0">Start: ${formatDate(program.start_date)}</p>
+                                <p class="text-muted mb-0">End: ${formatDate(program.end_date)}</p>
                             </div>
                             <button class="remove-item" 
-                                    onclick="removeFromCart('program', ${program.id})"
-                                    aria-label="Remove ${program.name} from cart"
-                                    title="Remove from cart">
-                                <i class="fas fa-times" aria-hidden="true"></i>
+                                    onclick="removeFromCart('program', ${index})"
+                                    aria-label="Remove ${program.name} from cart">
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -59,38 +59,24 @@ function updateCartDisplay(cart) {
         });
     }
 
-    // Rentals section with quantity controls
+    // Rentals section
     if (cart.rentals && cart.rentals.length > 0) {
-        cart.rentals.forEach(rental => {
+        cart.rentals.forEach((rental, index) => {
             html += `
                 <div class="cart-item">
                     <div class="item-details">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="mb-1">${rental.name}</p>
-                                <p class="price mb-1">₱${parseFloat(rental.price).toFixed(2)} × ${rental.quantity}</p>
+                                <p class="price mb-1">₱${parseFloat(rental.price).toFixed(2)}</p>
                                 <p class="text-muted mb-0">Validity: ${rental.validity}</p>
-                                <div class="quantity-controls mt-2">
-                                    <button class="btn btn-sm btn-outline-secondary" 
-                                            onclick="updateQuantity(${rental.id}, ${rental.quantity - 1})"
-                                            aria-label="Decrease quantity of ${rental.name}"
-                                            title="Decrease quantity">
-                                        <i class="fas fa-minus" aria-hidden="true"></i>
-                                    </button>
-                                    <span class="mx-2" aria-label="Quantity">${rental.quantity}</span>
-                                    <button class="btn btn-sm btn-outline-secondary" 
-                                            onclick="updateQuantity(${rental.id}, ${rental.quantity + 1})"
-                                            aria-label="Increase quantity of ${rental.name}"
-                                            title="Increase quantity">
-                                        <i class="fas fa-plus" aria-hidden="true"></i>
-                                    </button>
-                                </div>
+                                <p class="text-muted mb-0">Start: ${formatDate(rental.start_date)}</p>
+                                <p class="text-muted mb-0">End: ${formatDate(rental.end_date)}</p>
                             </div>
                             <button class="remove-item" 
-                                    onclick="removeFromCart('rental', ${rental.id})"
-                                    aria-label="Remove ${rental.name} from cart"
-                                    title="Remove from cart">
-                                <i class="fas fa-times" aria-hidden="true"></i>
+                                    onclick="removeFromCart('rental', ${index})"
+                                    aria-label="Remove ${rental.name} from cart">
+                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -108,16 +94,10 @@ function updateCartDisplay(cart) {
             </div>
             ${cart.total > 0 ? `
                 <div class="d-grid gap-2 mt-3">
-                    <button class="btn btn-danger" 
-                            onclick="checkout()"
-                            aria-label="Proceed to checkout"
-                            title="Proceed to checkout">
-                        Proceed to Checkout
+                    <button class="btn btn-danger" onclick="availServices()">
+                        Avail Services
                     </button>
-                    <button class="btn btn-outline-danger" 
-                            onclick="clearCart()"
-                            aria-label="Clear shopping cart"
-                            title="Clear cart">
+                    <button class="btn btn-outline-danger" onclick="clearCart()">
                         Clear Cart
                     </button>
                 </div>
@@ -131,21 +111,24 @@ function updateCartDisplay(cart) {
 }
 
 function removeFromCart(type, id) {
-    console.log('Removing item:', type, id); // Debug log
+    const formData = new FormData();
+    formData.append('action', 'remove');
+    formData.append('type', type);
+    formData.append('id', id.toString());
+
     fetch('services/cart_handler.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `action=remove&type=${type}&id=${id}`
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Remove response:', data); // Debug log
         if (data.success) {
             updateCartDisplay(data.cart);
         } else {
             console.error('Failed to remove item:', data.message);
+            if (data.debug) {
+                console.log('Debug info:', data.debug);
+            }
         }
     })
     .catch(error => console.error('Error removing item:', error));
@@ -189,28 +172,70 @@ function clearCart() {
     .catch(error => console.error('Error clearing cart:', error));
 }
 
-// Add this new function to handle quantity updates
-function updateQuantity(rentalId, newQuantity) {
-    if (newQuantity < 1) return; // Prevent negative quantities
-    
+// Add this function to handle checkout
+function availServices() {
+    // First validate the cart
     fetch('services/cart_handler.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `action=update_quantity&rental_id=${rentalId}&quantity=${newQuantity}`
+        body: 'action=validate'
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            updateCartDisplay(data.cart);
+            // If validation passes, proceed with availing services
+            proceedWithAvailing();
+        } else {
+            // Show validation errors
+            alert(data.errors.join('\n'));
         }
     })
-    .catch(error => console.error('Error updating quantity:', error));
+    .catch(error => {
+        console.error('Error validating cart:', error);
+        alert('An error occurred while validating the cart.');
+    });
+}
+
+function proceedWithAvailing() {
+    if (confirm('Are you sure you want to avail these services?')) {
+        fetch('services/checkout_handler.php', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Redirect to a success page or reload current page
+                window.location.href = `avail_success.php?id=${data.membership_id}`;
+            } else {
+                alert('Failed to avail services: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error during service availing:', error);
+            alert('An error occurred while processing your request. Please try again.');
+        });
+    }
 }
 
 // Initialize cart when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing cart...'); // Debug log
     loadCart();
-}); 
+});
+
+// Add this helper function for date formatting
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    // Format as MM/DD/YYYY
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${month}/${day}/${year}`;
+} 

@@ -102,11 +102,6 @@
     </div>
 </div>
 
-<!-- Add this right after your last div and before the cart overlay -->
-<button class="cart-btn" id="showCartBtn">
-    <i class="fas fa-shopping-cart"></i>
-</button>
-
 <!-- Cart Overlay -->
 <div class="cart-overlay" id="cartOverlay"></div>
 

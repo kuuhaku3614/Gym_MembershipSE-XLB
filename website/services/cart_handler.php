@@ -13,8 +13,9 @@ try {
         switch ($action) {
             case 'remove':
                 $type = $_POST['type'] ?? '';
-                $id = $_POST['id'] ?? '';
-                if ($type && $id) {
+                $id = isset($_POST['id']) ? $_POST['id'] : null;
+                
+                if ($type !== '' && $id !== null) {
                     $Cart->removeItem($type, $id);
                     echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
                 } else {
@@ -43,17 +44,6 @@ try {
                 }
                 break;
                 
-            case 'update_quantity':
-                $rental_id = $_POST['rental_id'] ?? '';
-                $quantity = $_POST['quantity'] ?? '';
-                if ($rental_id && $quantity) {
-                    $Cart->updateRentalQuantity($rental_id, $quantity);
-                    echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
-                } else {
-                    throw new Exception('Missing rental_id or quantity for update');
-                }
-                break;
-                
             default:
                 throw new Exception('Invalid action');
         }
@@ -66,6 +56,8 @@ try {
         'message' => $e->getMessage(),
         'debug' => [
             'action' => $_POST['action'] ?? null,
+            'type' => $_POST['type'] ?? null,
+            'id' => $_POST['id'] ?? null,
             'post_data' => $_POST,
             'session' => isset($_SESSION['cart']) ? 'exists' : 'not set'
         ]

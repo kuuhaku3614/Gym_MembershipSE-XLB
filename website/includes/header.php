@@ -91,7 +91,6 @@ function getFullName() {
             
             <div class="dropdown">
                 <button class="dropbtn" aria-label="User Menu" title="User Menu">
-                    <i class="fas fa-user" aria-hidden="true"></i>
                 </button>
                 <div class="dropdown-content">
                     <a href="profile.php" class="username"><?php echo getFullName();?></a>

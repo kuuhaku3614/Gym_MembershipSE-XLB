@@ -9,12 +9,20 @@
     // Handle POST request for adding to cart
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
         if (isset($_SESSION['user_id'])) {
+            if (empty($_POST['start_date'])) {
+                $_SESSION['error'] = "Please select a start date.";
+                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['membership_plan_id']);
+                exit();
+            }
+
             try {
                 $item = [
                     'id' => $_POST['membership_plan_id'],
                     'name' => $_POST['plan_name'],
                     'price' => $_POST['price'],
-                    'validity' => $_POST['validity']
+                    'validity' => $_POST['validity'],
+                    'start_date' => $_POST['start_date'],
+                    'end_date' => $_POST['end_date']
                 ];
                 
                 $Cart->addMembership($item);
@@ -96,7 +104,15 @@
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
                     <h3 class="fs-5 fw-bold mb-4"><?= $plan_name ?></h3>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity : <?= $duration ?> <?= $record['duration_type'] ?></p>
+                        <label for="start_date" class="form-label">Start Date:</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               min="<?= date('Y-m-d', strtotime('today')) ?>" 
+                               value="<?= date('Y-m-d') ?>"
+                               required
+                               onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $record['duration_type'] ?>')">
+                    </div>
+                    <div class="mb-3 p-2 border rounded">
+                        <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
                     </div>
                     <div class="mb-3 p-2 border rounded">
                         <p class="mb-0">Price : ₱<?= number_format($price, 2) ?></p>
@@ -109,11 +125,13 @@
                     <div class="d-flex justify-content-between mt-4">
                         <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
                         <?php if (isset($_SESSION['user_id'])) { ?>
-                            <form method="POST" style="width: 48%;">
+                            <form method="POST" style="width: 48%;" onsubmit="return validateForm()">
                                 <input type="hidden" name="membership_plan_id" value="<?= $membership_plan_id ?>">
                                 <input type="hidden" name="plan_name" value="<?= $plan_name ?>">
                                 <input type="hidden" name="price" value="<?= $price ?>">
                                 <input type="hidden" name="validity" value="<?= $duration . ' ' . $record['duration_type'] ?>">
+                                <input type="hidden" name="start_date" id="hidden_start_date">
+                                <input type="hidden" name="end_date" id="hidden_end_date">
                                 <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
                             </form>
                         <?php } else { ?>
@@ -140,5 +158,53 @@
         <?php unset($_SESSION['success']); ?>
     </div>
 <?php endif; ?>
+
+<script>
+function validateForm() {
+    const startDate = document.getElementById('start_date').value;
+    if (!startDate) {
+        alert('Please select a start date.');
+        return false;
+    }
+    
+    // Update hidden fields before submission
+    document.getElementById('hidden_start_date').value = startDate;
+    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $record['duration_type'] ?>');
+    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
+    
+    return true;
+}
+
+function updateEndDate(startDate, duration, durationType) {
+    const endDate = calculateEndDate(startDate, duration, durationType);
+    document.getElementById('end_date').textContent = formatDate(endDate);
+    
+    // Update hidden input for form submission
+    document.getElementById('hidden_start_date').value = startDate;
+    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
+}
+
+function calculateEndDate(startDate, duration, durationType) {
+    const start = new Date(startDate);
+    let end = new Date(start);
+    
+    if (durationType === 'days') {
+        end.setDate(end.getDate() + parseInt(duration));
+    } else if (durationType === 'months') {
+        end.setMonth(end.getMonth() + parseInt(duration));
+    } else if (durationType === 'year') {
+        end.setFullYear(end.getFullYear() + parseInt(duration));
+    }
+    
+    return end;
+}
+
+function formatDate(date) {
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+}
+</script>
 </body>
 </html>
