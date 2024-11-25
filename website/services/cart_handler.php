@@ -1,8 +1,12 @@
 <?php
 session_start();
 require_once 'cart.class.php';
+require_once '../../config.php';
 
 header('Content-Type: application/json');
+// Prevent any output before JSON response
+error_reporting(0);
+ini_set('display_errors', 0);
 
 try {
     $Cart = new Cart();
@@ -53,13 +57,7 @@ try {
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage(),
-        'debug' => [
-            'action' => $_POST['action'] ?? null,
-            'type' => $_POST['type'] ?? null,
-            'id' => $_POST['id'] ?? null,
-            'post_data' => $_POST,
-            'session' => isset($_SESSION['cart']) ? 'exists' : 'not set'
-        ]
+        'message' => $e->getMessage()
     ]);
-} 
+}
+exit();

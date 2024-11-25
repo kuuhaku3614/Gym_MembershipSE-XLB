@@ -207,8 +207,8 @@ function proceedWithAvailing() {
         .then(data => {
             if (data.success) {
                 alert(data.message);
-                // Redirect to a success page or reload current page
-                window.location.href = `avail_success.php?id=${data.membership_id}`;
+                // Updated path to go up to the website directory
+                window.location.href = 'profile.php';
             } else {
                 alert('Failed to avail services: ' + data.message);
             }

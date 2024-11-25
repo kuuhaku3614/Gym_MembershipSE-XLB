@@ -124,10 +124,29 @@ class Cart {
             $errors[] = "Please select a membership plan.";
         }
         
-        // Validate rental quantities
-        foreach ($_SESSION['cart']['rentals'] as $rental) {
-            if ($rental['quantity'] < 1) {
-                $errors[] = "Invalid quantity for rental item: " . $rental['name'];
+        // Check if programs have valid coaches
+        if (!empty($_SESSION['cart']['programs'])) {
+            foreach ($_SESSION['cart']['programs'] as $program) {
+                if (empty($program['coach_id'])) {
+                    $errors[] = "Please select a coach for program: " . $program['name'];
+                }
+            }
+        }
+        
+        // Check if rental services have available slots
+        if (!empty($_SESSION['cart']['rentals'])) {
+            $db = new Database();
+            $conn = $db->connect();
+            
+            foreach ($_SESSION['cart']['rentals'] as $rental) {
+                $sql = "SELECT available_slots FROM rental_services WHERE id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$rental['id']]);
+                $result = $stmt->fetch();
+                
+                if ($result && $result['available_slots'] < 1) {
+                    $errors[] = "No available slots for rental service: " . $rental['name'];
+                }
             }
         }
         

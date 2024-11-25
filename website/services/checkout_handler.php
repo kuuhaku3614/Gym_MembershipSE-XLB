@@ -28,8 +28,8 @@ try {
         $conn->beginTransaction();
         
         // 1. Create membership record
-        $sql = "INSERT INTO memberships (user_id, membership_plan_id, start_date, end_date, 
-                total_amount, status) VALUES (?, ?, ?, ?, ?, 'active')";
+        $sql = "INSERT INTO memberships (user_id, membership_plan_id, staff_id, start_date, end_date, 
+                total_amount, status) VALUES (?, ?, NULL, ?, ?, ?, 'active')";
         
         $stmt = $conn->prepare($sql);
         $stmt->execute([
@@ -44,11 +44,21 @@ try {
         
         // 2. Create program subscriptions if any
         if (!empty($cart['programs'])) {
-            $sql = "INSERT INTO program_subscriptions (membership_id, program_id, coach_id, 
+            $sql = "INSERT INTO program_subscriptions (membership_id, program_id, coach_id, staff_id,
                     start_date, end_date, price, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, 'active')";
+                    VALUES (?, ?, ?, NULL, ?, ?, ?, 'active')";
             
             foreach ($cart['programs'] as $program) {
+                // Verify coach exists and is active
+                $verify_coach = "SELECT id FROM users 
+                                WHERE id = ? AND is_active = 1 
+                                AND role_id = (SELECT id FROM roles WHERE role_name = 'coach')";
+                $stmt = $conn->prepare($verify_coach);
+                $stmt->execute([$program['coach_id']]);
+                if (!$stmt->fetch()) {
+                    throw new Exception("Selected coach is no longer available");
+                }
+
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([
                     $membership_id,
@@ -63,9 +73,9 @@ try {
         
         // 3. Create rental subscriptions if any
         if (!empty($cart['rentals'])) {
-            $sql = "INSERT INTO rental_subscriptions (membership_id, rental_service_id, 
+            $sql = "INSERT INTO rental_subscriptions (membership_id, rental_service_id, staff_id,
                     start_date, end_date, price, status) 
-                    VALUES (?, ?, ?, ?, ?, 'active')";
+                    VALUES (?, ?, NULL, ?, ?, ?, 'active')";
             
             foreach ($cart['rentals'] as $rental) {
                 $stmt = $conn->prepare($sql);
@@ -77,14 +87,13 @@ try {
                     $rental['price']
                 ]);
                 
-                // Update available slots for rental services (decrease by 1 for each instance)
+                // Update available slots for rental services
                 $update_sql = "UPDATE rental_services 
                              SET available_slots = available_slots - 1 
                              WHERE id = ? AND available_slots >= 1";
                 $stmt = $conn->prepare($update_sql);
                 $stmt->execute([$rental['id']]);
                 
-                // Check if update was successful
                 if ($stmt->rowCount() === 0) {
                     throw new Exception("Not enough available slots for rental service: " . $rental['name']);
                 }

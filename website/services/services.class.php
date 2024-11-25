@@ -131,15 +131,17 @@ class Services_class{
 
     public function fetchProgramCoaches($program_id) {
         $conn = $this->db->connect();
-        $sql = "SELECT DISTINCT c.id as coach_id, 
+        $sql = "SELECT DISTINCT u.id as coach_id, 
                 CONCAT(pd.first_name, ' ', pd.last_name) as coach_name,
-                cpt.price as coach_price
-                FROM coaches c
-                JOIN coach_program_types cpt ON c.id = cpt.coach_id
-                JOIN users u ON c.user_id = u.id
+                cpt.price as coach_price,
+                cpt.description
+                FROM users u
                 JOIN personal_details pd ON u.id = pd.user_id
+                JOIN coach_program_types cpt ON u.id = cpt.coach_id
                 WHERE cpt.program_id = ?
-                AND u.is_active = 1";
+                AND u.is_active = 1 
+                AND u.role_id = (SELECT id FROM roles WHERE role_name = 'coach')
+                ORDER BY pd.last_name, pd.first_name";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$program_id]);
         return $stmt->fetchAll();

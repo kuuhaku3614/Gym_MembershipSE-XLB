@@ -105,20 +105,13 @@ CREATE TABLE rental_services (
 );
 
 -- Coach related tables
-CREATE TABLE coaches (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
 
 CREATE TABLE coach_program_types (
     coach_id INT NOT NULL,
     program_id INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     description TEXT,
-    FOREIGN KEY (coach_id) REFERENCES coaches(id),
+    FOREIGN KEY (coach_id) REFERENCES users(id),
     FOREIGN KEY (program_id) REFERENCES programs(id)
 );
 
@@ -182,7 +175,7 @@ CREATE TABLE memberships (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     membership_plan_id INT NOT NULL,
-    staff_id INT NOT NULL,
+    staff_id INT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
@@ -201,6 +194,7 @@ CREATE TABLE program_subscriptions (
     membership_id INT NOT NULL,
     program_id INT NOT NULL,
     coach_id INT NOT NULL,
+    staff_id INT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     price DECIMAL(10,2) NOT NULL,
@@ -208,7 +202,8 @@ CREATE TABLE program_subscriptions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (membership_id) REFERENCES memberships(id),
     FOREIGN KEY (program_id) REFERENCES programs(id),
-    FOREIGN KEY (coach_id) REFERENCES coaches(id)
+    FOREIGN KEY (coach_id) REFERENCES users(id),
+    FOREIGN KEY (staff_id) REFERENCES users(id)
 );
 
 -- Table for rental subscriptions
@@ -216,13 +211,15 @@ CREATE TABLE rental_subscriptions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     membership_id INT NOT NULL,
     rental_service_id INT NOT NULL,
+    staff_id INT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     status ENUM('active', 'expiring', 'expired') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (membership_id) REFERENCES memberships(id),
-    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id)
+    FOREIGN KEY (rental_service_id) REFERENCES rental_services(id),
+    FOREIGN KEY (staff_id) REFERENCES users(id)
 );
 
 CREATE TABLE transactions (
@@ -236,5 +233,6 @@ CREATE TABLE transactions (
     FOREIGN KEY (staff_id) REFERENCES users(id),
     FOREIGN KEY (membership_id) REFERENCES memberships(id),
     FOREIGN KEY (program_subscription_id) REFERENCES program_subscriptions(id),
-    FOREIGN KEY (rental_subscription_id) REFERENCES rental_subscriptions(id)
+    FOREIGN KEY (rental_subscription_id) REFERENCES rental_subscriptions(id),
+    FOREIGN KEY (staff_id) REFERENCES users(id)
 );

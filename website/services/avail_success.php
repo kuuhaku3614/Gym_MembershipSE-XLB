@@ -28,10 +28,10 @@ try {
     $sql = "SELECT ps.*, p.program_name, CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
             FROM program_subscriptions ps
             JOIN programs p ON ps.program_id = p.id
-            JOIN coaches c ON ps.coach_id = c.id
-            JOIN users u ON c.user_id = u.id
+            JOIN users u ON ps.coach_id = u.id
             JOIN personal_details pd ON u.id = pd.user_id
-            WHERE ps.membership_id = ?";
+            WHERE ps.membership_id = ?
+            AND u.role_id = (SELECT id FROM roles WHERE role_name = 'coach')";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$membership_id]);
     $programs = $stmt->fetchAll();

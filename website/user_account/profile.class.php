@@ -24,8 +24,11 @@ class Profile_class{
     public function getUserDetails($userId) {
         $conn = $this->db->connect();
         
-        $query = "SELECT pd.*, CONCAT(pd.first_name, ' ', pd.middle_name, ' ', pd.last_name) AS name
+        $query = "SELECT pd.*, CONCAT(pd.first_name, ' ', pd.middle_name, ' ', pd.last_name) AS name,
+                  r.role_name
                   FROM personal_details pd 
+                  JOIN users u ON pd.user_id = u.id
+                  JOIN roles r ON u.role_id = r.id
                   WHERE pd.user_id = :user_id";
                   
         $stmt = $conn->prepare($query);

@@ -19,7 +19,13 @@
     <header class="container-fluid" id="title">
         <div class="container-xl" id="name">
             <h1><?= $_SESSION['personal_details']['name'] ?></h1>
-            <h5>Member</h5>
+            <?php if (isset($_SESSION['personal_details']['role_name'])): ?>
+                <?php if ($_SESSION['personal_details']['role_name'] === 'member'): ?>
+                    <h5>Member</h5>
+                <?php elseif ($_SESSION['personal_details']['role_name'] === 'coach'): ?>
+                    <h5>Coach</h5>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
     </header>
 
