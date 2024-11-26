@@ -13,9 +13,54 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
+<style>
+/* Default red color for all sections */
+.section-heading {
+    color: #ff0000 !important;
+}
+
+.card .card-header {
+    background-color: #ff0000 !important;
+}
+
+/* Black color only for OFFER PROGRAMS section */
+.coach-section {
+    color: #000000 !important;
+}
+
+.coach-card .card-header {
+    background-color: #000000 !important;
+}
+
+.coach-card:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+}
+</style>
+
 <div class="services-page">
     <div class="container-fluid p-0">
         <div class="content-wrapper">
+            <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+                <h2 class="section-heading coach-section">OFFER PROGRAMS</h2>
+                <div class="row g-4 mb-4">
+                    <?php foreach ($programs as $program){ ?>
+                        <div class="col-sm-6 col-md-6 col-lg-3">
+                            <a href="services/offer_program.php?id=<?= $program['program_id'] ?>" class="program-link">
+                                <div class="card shadow coach-card">
+                                    <div class="card-header text-white text-center">
+                                        <h2 class="fw-bold mb-0"><?= $program['program_name'] ?></h2>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text mb-1">Validity: <?= $program['validity'] ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php } ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Standard Plans Section -->
             <h2 class="section-heading">GYM RATES</h2>
             <div class="row g-4 mb-4">

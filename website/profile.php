@@ -82,7 +82,7 @@
         }
 
         #title {
-            background-color: var(--red) !important;
+            background-color: <?php echo (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach') ? '#000000' : 'var(--red)'; ?> !important;
             color: white !important;
             padding: 2rem 0 !important;
             box-shadow: 0px 5px 10px gray !important;

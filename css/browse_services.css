@@ -30,7 +30,7 @@
 }
 
 .services-page .card-header {
-    background: linear-gradient(135deg, #ff4646, #ff0000);
+    background-color: var(--primary-color) !important;
     flex: 3;
     display: flex;
     align-items: center;
@@ -38,7 +38,7 @@
     padding: 1rem;
     margin: 0;
     border-radius: 0;
-    box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     border: none;
 }
 
@@ -118,8 +118,9 @@
 }
 
 .services-page .card-header {
-    background-size: 200% 200%;
-    animation: gradient 15s ease infinite;
+    /* Remove this gradient style that's causing the red color */
+    /* background: linear-gradient(135deg, #ff4646, #ff0000); */
+    /* animation: gradient 15s ease infinite; */
 }
 
 /* Add responsive adjustments for card sizes */
@@ -385,4 +386,47 @@
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+/* Update or add these styles */
+.services-page .card .card-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.section-heading {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-weight: bold;
+}
+
+.card {
+    transition: transform 0.3s ease;
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+.program-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Make sure these important rules are applied */
+.card .card-header {
+    background-color: var(--primary-color) !important;
+}
+
+.section-heading {
+    color: var(--primary-color) !important;
 }

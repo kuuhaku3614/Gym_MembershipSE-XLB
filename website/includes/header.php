@@ -14,6 +14,14 @@ if (isset($_GET['logout'])) {
     exit(); // Ensure the script stops after redirecting
 }
 
+// If user is logged in but personal_details is not set, fetch them
+if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
+    require_once __DIR__ . '/../user_account/profile.class.php';
+    $profile = new Profile_class();
+    $userDetails = $profile->getUserDetails($_SESSION['user_id']);
+    $_SESSION['personal_details'] = $userDetails;
+}
+
 // Function to ensure login
 function requireLogin() {
     if (!isset($_SESSION['user_id'])) {

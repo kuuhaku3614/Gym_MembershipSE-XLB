@@ -220,4 +220,41 @@ class Services_class{
             return false;
         }
     }
+
+    public function checkExistingProgram($coach_id, $program_id) {
+        $conn = $this->db->connect();
+        $sql = "SELECT * FROM coach_program_types 
+                WHERE coach_id = ? AND program_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$coach_id, $program_id]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function offerProgram($coach_id, $program_id, $price, $description) {
+        $conn = $this->db->connect();
+        try {
+            // First check if program already exists
+            if ($this->checkExistingProgram($coach_id, $program_id)) {
+                throw new Exception("You have already offered this program. Please choose a different program.");
+            }
+
+            $sql = "INSERT INTO coach_program_types (coach_id, program_id, price, description, status) 
+                   VALUES (?, ?, ?, ?, 'active')";
+            $stmt = $conn->prepare($sql);
+            return $stmt->execute([$coach_id, $program_id, $price, $description]);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function fetchMembership($plan_id) {
+        $conn = $this->db->connect();
+        $sql = "SELECT mp.*, dt.type_name as duration_type 
+                FROM membership_plans mp
+                LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                WHERE mp.id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$plan_id]);
+        return $stmt->fetch();
+    }
 }

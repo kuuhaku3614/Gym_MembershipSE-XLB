@@ -9,7 +9,7 @@ function redirectBasedOnRole($role) {
     $roleRoutes = [
         'admin' => '../admin/index.php',
         'staff' => '../staff/dashboard.php',
-        'coach' => '../coach/dashboard.php',
+        'coach' => '../website/website.php',
         'member' => '../website/website.php',
         'user' => '../website/website.php',
     ];
