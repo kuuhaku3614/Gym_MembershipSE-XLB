@@ -1,69 +1,108 @@
 <?php
-    session_start();
-    require_once 'services.class.php';
-    require_once 'cart.class.php';
+session_start();
+require_once 'services.class.php';
+require_once 'cart.class.php';
 
-    $Obj = new Services_Class();
-    $Cart = new Cart();
-    
-    // Handle POST request for adding to cart
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
-        if (isset($_SESSION['user_id'])) {
-            if (empty($_POST['start_date'])) {
-                $_SESSION['error'] = "Please select a start date.";
-                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['membership_plan_id']);
-                exit();
-            }
+if (!isset($_SESSION['user_id'])) {
+    header('location: ../../login/login.php');
+    exit;
+}
 
-            try {
-                $item = [
-                    'id' => $_POST['membership_plan_id'],
-                    'name' => $_POST['plan_name'],
-                    'price' => $_POST['price'],
-                    'validity' => $_POST['validity'],
-                    'start_date' => $_POST['start_date'],
-                    'end_date' => $_POST['end_date']
-                ];
-                
-                $Cart->addMembership($item);
-                
-                $_SESSION['success'] = "Membership plan added to cart successfully!";
-                header("Location: ../services.php");
-                exit();
-            } catch (Exception $e) {
-                $_SESSION['error'] = $e->getMessage();
-                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['membership_plan_id']);
-                exit();
-            }
+$membership_plan_id = $plan_name = $plan_type = $price = $duration = $duration_type = $description = '';
+$start_date = $end_date = '';
+
+// Error variables
+$membership_plan_idErr = $start_dateErr = $end_dateErr = '';
+
+$Services = new Services_Class();
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    if (isset($_GET['id'])) {
+        $membership_plan_id = $_GET['id'];
+        $record = $Services->fetchGymrate($membership_plan_id);
+        if (!empty($record)) {
+            $plan_name = $record['plan_name'];
+            $plan_type = $record['plan_type'];
+            $price = $record['price'];
+            $duration = $record['duration'];
+            $duration_type = $record['duration_type'];
+            $description = $record['description'];
         } else {
-            $_SESSION['error'] = "Please login to add items to cart.";
-            header("Location: ../../login/login.php");
-            exit();
-        }
-    }
-    
-    // Existing GET request handling code...
-    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        if (isset($_GET['id'])) {
-            $membership_plan_id = $_GET['id'];
-            $record = $Obj->fetchGymrate($membership_plan_id);
-            if (!empty($record)) {
-                $plan_name = $record['plan_name'];
-                $plan_type = $record['plan_type'];
-                $price = $record['price'];
-                $duration = $record['duration'];
-                $duration_type_id = $record['duration_type_id'];
-                $description = $record['description'];
-            } else {
-                echo 'No membership plan found';
-                exit;
-            }
-        } else {
-            echo 'No membership plan id found';
+            echo 'No membership plan found';
             exit;
         }
+    } else {
+        echo 'No membership plan id found';
+        exit;
     }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $membership_plan_id = clean_input($_POST['membership_plan_id']);
+    $start_date = clean_input($_POST['start_date']);
+    $end_date = clean_input($_POST['end_date']);
+    $price = clean_input($_POST['price']);
+    $plan_name = clean_input($_POST['plan_name']);
+
+    // Get validity directly from the record
+    $record = $Services->fetchGymrate($membership_plan_id);
+    $validity = $record['duration'] . ' ' . $record['duration_type'];
+
+    // Validate inputs
+    if(empty($membership_plan_id)) {
+        $membership_plan_idErr = 'Membership plan is required';
+    }
+
+    if(empty($start_date)) {
+        $start_dateErr = 'Start date is required';
+    }
+
+    if(empty($end_date)) {
+        $end_dateErr = 'End date is required';
+    }
+
+    // If no errors, add to cart
+    if(empty($membership_plan_idErr) && empty($start_dateErr) && empty($end_dateErr)) {
+        $Cart = new Cart();
+        try {
+            $item = [
+                'id' => $membership_plan_id,
+                'name' => $plan_name,
+                'price' => $price,
+                'validity' => $validity,
+                'start_date' => $start_date,
+                'end_date' => $end_date
+            ];
+            
+            if($Cart->addMembership($item)) {
+                echo "<script>
+                    alert('Added to cart successfully!');
+                    window.location.href = '../services.php';
+                </script>";
+                exit;
+            } else {
+                echo "<script>
+                    alert('Failed to add to cart.');
+                    window.location.href = '../services.php';
+                </script>";
+            }
+        } catch (Exception $e) {
+            echo "<script>
+                alert('" . addslashes($e->getMessage()) . "');
+                window.location.href = '../services.php';
+            </script>";
+        }
+    }
+}
+
+function clean_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
 ?>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <style>
         .bg-custom-red {
@@ -104,6 +143,9 @@
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
                     <h3 class="fs-5 fw-bold mb-4"><?= $plan_name ?></h3>
                     <div class="mb-3 p-2 border rounded">
+                        <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                    </div>
+                    <div class="mb-3 p-2 border rounded">
                         <label for="start_date" class="form-label">Start Date:</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" 
                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
@@ -126,10 +168,9 @@
                         <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
                         <?php if (isset($_SESSION['user_id'])) { ?>
                             <form method="POST" style="width: 48%;" onsubmit="return validateForm()">
-                                <input type="hidden" name="membership_plan_id" value="<?= $membership_plan_id ?>">
-                                <input type="hidden" name="plan_name" value="<?= $plan_name ?>">
-                                <input type="hidden" name="price" value="<?= $price ?>">
-                                <input type="hidden" name="validity" value="<?= $duration . ' ' . $record['duration_type'] ?>">
+                                <input type="hidden" name="membership_plan_id" value="<?= htmlspecialchars($membership_plan_id) ?>">
+                                <input type="hidden" name="plan_name" value="<?= htmlspecialchars($plan_name) ?>">
+                                <input type="hidden" name="price" value="<?= htmlspecialchars($price) ?>">
                                 <input type="hidden" name="start_date" id="hidden_start_date">
                                 <input type="hidden" name="end_date" id="hidden_end_date">
                                 <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>

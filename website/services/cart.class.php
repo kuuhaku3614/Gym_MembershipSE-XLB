@@ -1,14 +1,17 @@
 <?php
 class Cart {
-    public function __construct() {
+    protected $db;
+
+    function __construct() {
         if (!isset($_SESSION['cart'])) {
             $this->initializeCart();
         }
+        $this->db = new Database();
     }
 
     private function initializeCart() {
         $_SESSION['cart'] = [
-            'membership' => null,
+            'memberships' => [],
             'programs' => [],
             'rentals' => [],
             'total' => 0
@@ -16,11 +19,7 @@ class Cart {
     }
 
     public function addMembership($item) {
-        if ($_SESSION['cart']['membership'] !== null) {
-            throw new Exception("You can only select one membership plan. Please remove the existing plan first.");
-        }
-        
-        $_SESSION['cart']['membership'] = [
+        $_SESSION['cart']['memberships'][] = [
             'id' => $item['id'],
             'name' => $item['name'],
             'price' => floatval($item['price']),
@@ -30,6 +29,7 @@ class Cart {
             'end_date' => $item['end_date']
         ];
         $this->updateTotal();
+        return true;
     }
 
     public function addProgram($item) {
@@ -39,16 +39,26 @@ class Cart {
             'price' => floatval($item['price']),
             'validity' => $item['validity'],
             'type' => 'program',
-            'coach_id' => $item['coach_id'] ?? null,
-            'coach_name' => $item['coach_name'] ?? null,
+            'coach_id' => $item['coach_id'],
+            'coach_name' => $item['coach_name'],
             'start_date' => $item['start_date'],
             'end_date' => $item['end_date']
         ];
         $this->updateTotal();
+        return true;
     }
 
     public function addRental($item) {
-        // Each rental service is treated as a separate instance
+        // Check available slots
+        $sql = "SELECT available_slots FROM rental_services WHERE id = ?";
+        $stmt = $this->db->connect()->prepare($sql);
+        $stmt->execute([$item['id']]);
+        $result = $stmt->fetch();
+        
+        if ($result && $result['available_slots'] < 1) {
+            return false;
+        }
+
         $_SESSION['cart']['rentals'][] = [
             'id' => $item['id'],
             'name' => $item['name'],
@@ -59,21 +69,17 @@ class Cart {
             'end_date' => $item['end_date']
         ];
         
-        // Sort rentals by start date and service name
-        usort($_SESSION['cart']['rentals'], function($a, $b) {
-            $dateCompare = strtotime($a['start_date']) - strtotime($b['start_date']);
-            if ($dateCompare === 0) {
-                return strcmp($a['name'], $b['name']);
-            }
-            return $dateCompare;
-        });
-        
         $this->updateTotal();
+        return true;
     }
 
     public function removeItem($type, $id) {
         if ($type === 'membership') {
-            $_SESSION['cart']['membership'] = null;
+            $index = intval($id);
+            if (isset($_SESSION['cart']['memberships'][$index])) {
+                array_splice($_SESSION['cart']['memberships'], $index, 1);
+                $_SESSION['cart']['memberships'] = array_values($_SESSION['cart']['memberships']);
+            }
         } else if ($type === 'program') {
             $index = intval($id);
             if (isset($_SESSION['cart']['programs'][$index])) {
@@ -88,13 +94,14 @@ class Cart {
             }
         }
         $this->updateTotal();
+        return true;
     }
 
     private function updateTotal() {
         $total = 0;
         
-        if ($_SESSION['cart']['membership']) {
-            $total += floatval($_SESSION['cart']['membership']['price']);
+        foreach ($_SESSION['cart']['memberships'] as $membership) {
+            $total += floatval($membership['price']);
         }
         
         foreach ($_SESSION['cart']['programs'] as $program) {
@@ -114,14 +121,15 @@ class Cart {
 
     public function clearCart() {
         $this->initializeCart();
+        return true;
     }
 
     public function validateCart() {
         $errors = [];
         
-        // Check if a membership plan is selected
-        if ($_SESSION['cart']['membership'] === null) {
-            $errors[] = "Please select a membership plan.";
+        // Check if at least one membership plan is selected
+        if (empty($_SESSION['cart']['memberships'])) {
+            $errors[] = "Please select at least one membership plan.";
         }
         
         // Check if programs have valid coaches
@@ -135,12 +143,10 @@ class Cart {
         
         // Check if rental services have available slots
         if (!empty($_SESSION['cart']['rentals'])) {
-            $db = new Database();
-            $conn = $db->connect();
+            $sql = "SELECT available_slots FROM rental_services WHERE id = ?";
+            $stmt = $this->db->connect()->prepare($sql);
             
             foreach ($_SESSION['cart']['rentals'] as $rental) {
-                $sql = "SELECT available_slots FROM rental_services WHERE id = ?";
-                $stmt = $conn->prepare($sql);
                 $stmt->execute([$rental['id']]);
                 $result = $stmt->fetch();
                 

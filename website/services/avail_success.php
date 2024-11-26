@@ -9,6 +9,11 @@ if (!isset($_GET['id'])) {
 
 $membership_id = $_GET['id'];
 $Services = new Services_Class();
+
+// Initialize variables
+$membership = $programs = $rentals = [];
+$membershipErr = $programsErr = $rentalsErr = '';
+
 $db = new Database();
 $conn = $db->connect();
 
@@ -23,6 +28,10 @@ try {
     $stmt = $conn->prepare($sql);
     $stmt->execute([$membership_id]);
     $membership = $stmt->fetch();
+
+    if (!$membership) {
+        $membershipErr = 'Membership not found';
+    }
 
     // Fetch program subscriptions
     $sql = "SELECT ps.*, p.program_name, CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
@@ -95,44 +104,48 @@ try {
                         <i class="fas fa-check-circle success-icon"></i>
                         <h5 class="mb-4">Thank you for availing our services!</h5>
                         
-                        <!-- Membership Details -->
-                        <div class="text-start mb-4">
-                            <h6 class="fw-bold">Membership Plan:</h6>
-                            <p class="mb-1">Plan: <?= htmlspecialchars($membership['plan_name']) ?></p>
-                            <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($membership['start_date'])) ?></p>
-                            <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($membership['end_date'])) ?></p>
-                            <p class="mb-1">Amount: ₱<?= number_format($membership['total_amount'], 2) ?></p>
-                        </div>
+                        <?php if (!empty($membershipErr)): ?>
+                            <div class="alert alert-danger"><?= $membershipErr ?></div>
+                        <?php else: ?>
+                            <!-- Membership Details -->
+                            <div class="text-start mb-4">
+                                <h6 class="fw-bold">Membership Plan:</h6>
+                                <p class="mb-1">Plan: <?= htmlspecialchars($membership['plan_name']) ?></p>
+                                <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($membership['start_date'])) ?></p>
+                                <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($membership['end_date'])) ?></p>
+                                <p class="mb-1">Amount: ₱<?= number_format($membership['total_amount'], 2) ?></p>
+                            </div>
+                        <?php endif; ?>
 
                         <!-- Program Subscriptions -->
                         <?php if (!empty($programs)): ?>
-                        <div class="text-start mb-4">
-                            <h6 class="fw-bold">Programs:</h6>
-                            <?php foreach ($programs as $program): ?>
-                            <div class="mb-3">
-                                <p class="mb-1">Program: <?= htmlspecialchars($program['program_name']) ?></p>
-                                <p class="mb-1">Coach: <?= htmlspecialchars($program['coach_name']) ?></p>
-                                <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($program['start_date'])) ?></p>
-                                <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($program['end_date'])) ?></p>
-                                <p class="mb-1">Amount: ₱<?= number_format($program['price'], 2) ?></p>
+                            <div class="text-start mb-4">
+                                <h6 class="fw-bold">Programs:</h6>
+                                <?php foreach ($programs as $program): ?>
+                                    <div class="mb-3">
+                                        <p class="mb-1">Program: <?= htmlspecialchars($program['program_name']) ?></p>
+                                        <p class="mb-1">Coach: <?= htmlspecialchars($program['coach_name']) ?></p>
+                                        <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($program['start_date'])) ?></p>
+                                        <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($program['end_date'])) ?></p>
+                                        <p class="mb-1">Amount: ₱<?= number_format($program['price'], 2) ?></p>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                            <?php endforeach; ?>
-                        </div>
                         <?php endif; ?>
 
                         <!-- Rental Subscriptions -->
                         <?php if (!empty($rentals)): ?>
-                        <div class="text-start mb-4">
-                            <h6 class="fw-bold">Rental Services:</h6>
-                            <?php foreach ($rentals as $rental): ?>
-                            <div class="mb-3">
-                                <p class="mb-1">Service: <?= htmlspecialchars($rental['service_name']) ?></p>
-                                <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($rental['start_date'])) ?></p>
-                                <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($rental['end_date'])) ?></p>
-                                <p class="mb-1">Amount: ₱<?= number_format($rental['price'], 2) ?></p>
+                            <div class="text-start mb-4">
+                                <h6 class="fw-bold">Rental Services:</h6>
+                                <?php foreach ($rentals as $rental): ?>
+                                    <div class="mb-3">
+                                        <p class="mb-1">Service: <?= htmlspecialchars($rental['service_name']) ?></p>
+                                        <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($rental['start_date'])) ?></p>
+                                        <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($rental['end_date'])) ?></p>
+                                        <p class="mb-1">Amount: ₱<?= number_format($rental['price'], 2) ?></p>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                            <?php endforeach; ?>
-                        </div>
                         <?php endif; ?>
 
                         <div class="mt-4">

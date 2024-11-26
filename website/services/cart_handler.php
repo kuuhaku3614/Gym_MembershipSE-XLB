@@ -3,61 +3,78 @@ session_start();
 require_once 'cart.class.php';
 require_once '../../config.php';
 
-header('Content-Type: application/json');
-// Prevent any output before JSON response
-error_reporting(0);
-ini_set('display_errors', 0);
-
-try {
-    $Cart = new Cart();
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
-            case 'remove':
-                $type = $_POST['type'] ?? '';
-                $id = isset($_POST['id']) ? $_POST['id'] : null;
-                
-                if ($type !== '' && $id !== null) {
-                    $Cart->removeItem($type, $id);
-                    echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
-                } else {
-                    throw new Exception('Missing type or id for remove action');
-                }
-                break;
-                
-            case 'get':
-                echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
-                break;
-                
-            case 'clear':
-                $Cart->clearCart();
-                echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
-                break;
-                
-            case 'validate':
-                $errors = $Cart->validateCart();
-                if (empty($errors)) {
-                    echo json_encode(['success' => true]);
-                } else {
-                    echo json_encode([
-                        'success' => false,
-                        'errors' => $errors
-                    ]);
-                }
-                break;
-                
-            default:
-                throw new Exception('Invalid action');
-        }
-    } else {
-        throw new Exception('Invalid request method');
-    }
-} catch (Exception $e) {
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
+if (!isset($_SESSION['user_id'])) {
+    header('location: ../../login/login.php');
+    exit;
 }
-exit();
+
+// Initialize variables
+$action = $type = $id = '';
+
+// Error variables
+$actionErr = $typeErr = $idErr = '';
+
+$Cart = new Cart();
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $action = clean_input($_POST['action'] ?? '');
+    
+    switch ($action) {
+        case 'remove':
+            $type = clean_input($_POST['type'] ?? '');
+            $id = isset($_POST['id']) ? clean_input($_POST['id']) : null;
+            
+            if (empty($type)) {
+                $typeErr = 'Type is required for remove action';
+                echo json_encode(['success' => false, 'message' => $typeErr]);
+                exit;
+            }
+            
+            if ($id === null) {
+                $idErr = 'ID is required for remove action';
+                echo json_encode(['success' => false, 'message' => $idErr]);
+                exit;
+            }
+            
+            if($Cart->removeItem($type, $id)) {
+                echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to remove item']);
+            }
+            break;
+            
+        case 'clear':
+            if($Cart->clearCart()) {
+                echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to clear cart']);
+            }
+            break;
+            
+        case 'get':
+            echo json_encode(['success' => true, 'cart' => $Cart->getCart()]);
+            break;
+            
+        case 'validate':
+            $errors = $Cart->validateCart();
+            if (empty($errors)) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'errors' => $errors]);
+            }
+            break;
+            
+        default:
+            $actionErr = 'Invalid action';
+            echo json_encode(['success' => false, 'message' => $actionErr]);
+    }
+    exit;
+}
+
+function clean_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
+?>

@@ -4,6 +4,21 @@ require_once __DIR__ . '/../../config.php';
 
 class Services_class{
 
+    // Properties for membership
+    public $membership_plan_id = '';
+    public $start_date = '';
+    public $end_date = '';
+    public $total_amount = '';
+    
+    // Properties for program
+    public $program_id = '';
+    public $coach_id = '';
+    public $program_price = '';
+    
+    // Properties for rental
+    public $rental_id = '';
+    public $rental_price = '';
+
     protected $db;
 
     function __construct(){
@@ -77,41 +92,21 @@ class Services_class{
         return $stmt->fetch();
     }
 
-    public function saveMembership($user_id, $membership_plan_id, $total_amount) {
+    public function saveMembership($user_id, $membership_plan_id, $start_date, $end_date, $total_amount) {
         $conn = $this->db->connect();
         try {
-            // Begin transaction
-            $conn->beginTransaction();
-
-            // Calculate end date based on duration and duration type
-            $plan = $this->fetchGymrate($membership_plan_id);
-            $duration = $plan['duration'];
-            $duration_type = $plan['duration_type'];
-            
-            $start_date = date('Y-m-d'); // Today
-            
-            // Calculate end date based on duration type
-            if ($duration_type == 'days') {
-                $end_date = date('Y-m-d', strtotime("+$duration days"));
-            } elseif ($duration_type == 'months') {
-                $end_date = date('Y-m-d', strtotime("+$duration months"));
-            } else { // years
-                $end_date = date('Y-m-d', strtotime("+$duration years"));
-            }
-
-            // Insert into memberships table
             $sql = "INSERT INTO memberships (user_id, membership_plan_id, start_date, end_date, 
-                    total_amount, status_id) VALUES (?, ?, ?, ?, ?, 1)";
+                    total_amount, status) VALUES (?, ?, ?, ?, ?, 'active')";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$user_id, $membership_plan_id, $start_date, $end_date, $total_amount]);
-
-            // Commit transaction
-            $conn->commit();
+            $stmt->execute([
+                $user_id,
+                $membership_plan_id,
+                $start_date,
+                $end_date,
+                $total_amount
+            ]);
             return true;
-
         } catch (Exception $e) {
-            // Rollback transaction on error
-            $conn->rollBack();
             return false;
         }
     }
@@ -156,5 +151,73 @@ class Services_class{
         $stmt = $conn->prepare($sql);
         $stmt->execute([$rental_id]);
         return $stmt->fetch();
+    }
+
+    public function saveProgram($membership_id, $program_id, $coach_id, $start_date, $end_date, $price) {
+        $conn = $this->db->connect();
+        try {
+            $conn->beginTransaction();
+
+            // Verify coach exists and is active
+            $verify_coach = "SELECT id FROM users 
+                            WHERE id = ? AND is_active = 1 
+                            AND role_id = (SELECT id FROM roles WHERE role_name = 'coach')";
+            $stmt = $conn->prepare($verify_coach);
+            $stmt->execute([$coach_id]);
+            if (!$stmt->fetch()) {
+                return false;
+            }
+
+            $sql = "INSERT INTO program_subscriptions (membership_id, program_id, coach_id, 
+                    start_date, end_date, price, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, 'active')";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$membership_id, $program_id, $coach_id, $start_date, $end_date, $price]);
+
+            $conn->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $conn->rollBack();
+            return false;
+        }
+    }
+
+    public function saveRental($membership_id, $rental_id, $start_date, $end_date, $price) {
+        $conn = $this->db->connect();
+        try {
+            $conn->beginTransaction();
+
+            // Check available slots
+            $check_slots = "SELECT available_slots FROM rental_services WHERE id = ?";
+            $stmt = $conn->prepare($check_slots);
+            $stmt->execute([$rental_id]);
+            $result = $stmt->fetch();
+            
+            if ($result['available_slots'] < 1) {
+                return false;
+            }
+
+            // Insert rental subscription
+            $sql = "INSERT INTO rental_subscriptions (membership_id, rental_service_id,
+                    start_date, end_date, price, status) 
+                    VALUES (?, ?, ?, ?, ?, 'active')";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$membership_id, $rental_id, $start_date, $end_date, $price]);
+
+            // Update available slots
+            $update_sql = "UPDATE rental_services 
+                          SET available_slots = available_slots - 1 
+                          WHERE id = ?";
+            $stmt = $conn->prepare($update_sql);
+            $stmt->execute([$rental_id]);
+
+            $conn->commit();
+            return true;
+
+        } catch (Exception $e) {
+            $conn->rollBack();
+            return false;
+        }
     }
 }

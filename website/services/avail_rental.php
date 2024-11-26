@@ -1,70 +1,100 @@
 <?php
-    session_start();
-    require_once 'services.class.php';
-    require_once 'cart.class.php';
+session_start();
+require_once 'services.class.php';
+require_once 'cart.class.php';
 
-    $Obj = new Services_Class();
-    $Cart = new Cart();
-    
-    // Handle POST request for adding to cart
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
-        if (isset($_SESSION['user_id'])) {
-            // Add validation for start date
-            if (empty($_POST['start_date'])) {
-                $_SESSION['error'] = "Please select a start date.";
-                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['rental_id']);
-                exit();
-            }
+if (!isset($_SESSION['user_id'])) {
+    header('location: ../../login/login.php');
+    exit;
+}
 
-            try {
-                $item = [
-                    'id' => $_POST['rental_id'],
-                    'name' => $_POST['service_name'],
-                    'price' => $_POST['price'],
-                    'validity' => $_POST['validity'],
-                    'start_date' => $_POST['start_date'],
-                    'end_date' => $_POST['end_date']
-                ];
-                
-                $Cart->addRental($item);
-                
-                $_SESSION['success'] = "Rental service added to cart successfully!";
-                header("Location: ../services.php");
-                exit();
-            } catch (Exception $e) {
-                $_SESSION['error'] = $e->getMessage();
-                header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $_POST['rental_id']);
-                exit();
-            }
+// Initialize variables
+$rental_id = $service_name = $price = $duration = $duration_type = $available_slots = $description = '';
+$start_date = $end_date = '';
+
+// Error variables
+$rental_idErr = $start_dateErr = $end_dateErr = $priceErr = '';
+
+$Services = new Services_Class();
+
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    if (isset($_GET['id'])) {
+        $rental_id = $_GET['id'];
+        $record = $Services->fetchRental($rental_id);
+        if (!empty($record)) {
+            $service_name = $record['service_name'];
+            $price = $record['price'];
+            $duration = $record['duration'];
+            $duration_type = $record['duration_type'];
+            $available_slots = $record['available_slots'];
+            $description = $record['description'];
         } else {
-            $_SESSION['error'] = "Please login to add items to cart.";
-            header("Location: ../../login/login.php");
-            exit();
-        }
-    }
-    
-    // Handle GET request
-    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        if (isset($_GET['id'])) {
-            $rental_id = $_GET['id'];
-            $record = $Obj->fetchRental($rental_id);
-            if (!empty($record)) {
-                $service_name = $record['service_name'];
-                $price = $record['price'];
-                $duration = $record['duration'];
-                $duration_type = $record['duration_type'];
-                $available_slots = $record['available_slots'];
-                $description = $record['description'];
-            } else {
-                echo 'No rental service found';
-                exit;
-            }
-        } else {
-            echo 'No rental service id found';
+            echo 'No rental service found';
             exit;
         }
+    } else {
+        echo 'No rental service id found';
+        exit;
     }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $rental_id = clean_input($_POST['rental_id']);
+    $service_name = clean_input($_POST['service_name']);
+    $start_date = clean_input($_POST['start_date']);
+    $end_date = clean_input($_POST['end_date']);
+    $price = clean_input($_POST['price']);
+
+    // Get validity directly from the record
+    $record = $Services->fetchRental($rental_id);
+    $validity = $record['duration'] . ' ' . $record['duration_type'];
+
+    if(empty($start_date)) {
+        $start_dateErr = 'Start date is required';
+    }
+
+    if(empty($rental_id)) {
+        $rental_idErr = 'Rental service is required';
+    }
+
+    if(empty($start_dateErr) && empty($rental_idErr)) {
+        $Cart = new Cart();
+        try {
+            $item = [
+                'id' => $rental_id,
+                'name' => $service_name,
+                'price' => $price,
+                'validity' => $validity,
+                'start_date' => $start_date,
+                'end_date' => $end_date
+            ];
+            
+            if($Cart->addRental($item)) {
+                header('location: ../services.php');
+                exit;
+            } else {
+                echo "<script>
+                    alert('Failed to add to cart.');
+                    window.location.href = '../services.php';
+                </script>";
+            }
+        } catch (Exception $e) {
+            echo "<script>
+                alert('" . addslashes($e->getMessage()) . "');
+                window.location.href = '../services.php';
+            </script>";
+        }
+    }
+}
+
+function clean_input($data) {
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data);
+    return $data;
+}
 ?>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <style>
     .bg-custom-red {
@@ -102,21 +132,30 @@
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
                     <h3 class="fs-5 fw-bold mb-4"><?= $service_name ?></h3>
                     <div class="mb-3 p-2 border rounded">
+                        <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                    </div>
+                    <div class="mb-3 p-2 border rounded">
                         <label for="start_date" class="form-label">Start Date:</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" 
                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
-                               value="<?= date('Y-m-d') ?>"
+                               value="<?= $start_date ?>"
                                required
-                               onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $record['duration_type'] ?>')">
+                               onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
+                        <?php if(!empty($start_dateErr)): ?>
+                            <span class="text-danger"><?= $start_dateErr ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="mb-3 p-2 border rounded">
                         <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
+                        <?php if(!empty($end_dateErr)): ?>
+                            <span class="text-danger"><?= $end_dateErr ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="mb-3 p-2 border rounded">
                         <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
-                    </div>
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Available Slots: <?= $available_slots ?></p>
+                        <?php if(!empty($priceErr)): ?>
+                            <span class="text-danger"><?= $priceErr ?></span>
+                        <?php endif; ?>
                     </div>
                     <?php if (!empty($description)) { ?>
                         <div class="mb-3 p-2 border rounded">
@@ -170,7 +209,7 @@ function validateForm() {
     
     // Update hidden fields before submission
     document.getElementById('hidden_start_date').value = startDate;
-    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $record['duration_type'] ?>');
+    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $duration_type ?>');
     document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
     
     return true;
