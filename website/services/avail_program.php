@@ -23,21 +23,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (isset($_GET['id'])) {
         $program_id = $_GET['id'];
         $record = $Services->fetchProgram($program_id);
-        if (!empty($record)) {
-            $program_name = $record['program_name'];
-            $program_type = $record['program_type'];
-            $duration = $record['duration'];
-            $duration_type = $record['duration_type'];
-            $description = $record['description'];
-            
-            // Fetch available coaches
-            $coaches = $Services->fetchProgramCoaches($program_id);
-        } else {
-            echo 'No program found';
+        
+        if (!$record) {
+            $_SESSION['error'] = 'Program not found';
+            header('location: ../services.php');
+            exit;
+        }
+        
+        $program_name = $record['program_name'];
+        $program_type = $record['program_type'];
+        $duration = $record['duration'];
+        $duration_type = $record['duration_type'];
+        $description = $record['description'];
+        
+        // Fetch available coaches
+        $coaches = $Services->fetchProgramCoaches($program_id);
+        if (empty($coaches)) {
+            $_SESSION['error'] = 'No coaches available for this program';
+            header('location: ../services.php');
             exit;
         }
     } else {
-        echo 'No program id found';
+        header('location: ../services.php');
         exit;
     }
 }
@@ -53,14 +60,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Get validity directly from the record
     $record = $Services->fetchProgram($program_id);
+    if (!$record) {
+        $_SESSION['error'] = 'Invalid program';
+        header('location: ../services.php');
+        exit;
+    }
+
     $validity = $record['duration'] . ' ' . $record['duration_type'];
 
+    // Validate inputs
     if(empty($start_date)) {
         $start_dateErr = 'Start date is required';
+    } else {
+        // Validate start date is not in the past
+        $today = new DateTime();
+        $start = new DateTime($start_date);
+        if ($start < $today) {
+            $start_dateErr = 'Start date cannot be in the past';
+        }
     }
 
     if(empty($coach_id)) {
         $coach_idErr = 'Please select a coach';
+    } else {
+        // Verify coach is still available
+        $coaches = $Services->fetchProgramCoaches($program_id);
+        $coach_found = false;
+        foreach ($coaches as $coach) {
+            if ($coach['coach_id'] == $coach_id) {
+                $coach_found = true;
+                break;
+            }
+        }
+        if (!$coach_found) {
+            $coach_idErr = 'Selected coach is no longer available';
+        }
     }
 
     if(empty($start_dateErr) && empty($coach_idErr)) {
@@ -78,22 +112,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ];
             
             if($Cart->addProgram($item)) {
-                echo "<script>
-                    alert('Added to cart successfully!');
-                    window.location.href = '../services.php';
-                </script>";
+                header('location: ../services.php');
                 exit;
             } else {
-                echo "<script>
-                    alert('Failed to add to cart.');
-                    window.location.href = '../services.php';
-                </script>";
+                throw new Exception('Failed to add program to cart');
             }
         } catch (Exception $e) {
-            echo "<script>
-                alert('" . addslashes($e->getMessage()) . "');
-                window.location.href = '../services.php';
-            </script>";
+            $_SESSION['error'] = $e->getMessage();
+            header('location: ../services.php');
+            exit;
         }
     }
 }

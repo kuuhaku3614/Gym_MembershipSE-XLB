@@ -7,57 +7,77 @@ if (!isset($_GET['id'])) {
     exit();
 }
 
-$membership_id = $_GET['id'];
+$transaction_id = $_GET['id'];
 $Services = new Services_Class();
 
 // Initialize variables
-$membership = $programs = $rentals = [];
-$membershipErr = $programsErr = $rentalsErr = '';
+$transaction = $memberships = $programs = $rentals = [];
+$transactionErr = $membershipErr = $programsErr = $rentalsErr = '';
 
 $db = new Database();
 $conn = $db->connect();
 
 try {
-    // Fetch membership details
-    $sql = "SELECT m.*, mp.plan_name, pd.first_name, pd.last_name 
-            FROM memberships m
-            JOIN membership_plans mp ON m.membership_plan_id = mp.id
-            JOIN users u ON m.user_id = u.id
+    // Fetch transaction details with user info
+    $sql = "SELECT t.*, CONCAT(pd.first_name, ' ', pd.last_name) as customer_name 
+            FROM transactions t
+            JOIN users u ON t.user_id = u.id
             JOIN personal_details pd ON u.id = pd.user_id
-            WHERE m.id = ?";
+            WHERE t.id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->execute([$membership_id]);
-    $membership = $stmt->fetch();
+    $stmt->execute([$transaction_id]);
+    $transaction = $stmt->fetch();
 
-    if (!$membership) {
-        $membershipErr = 'Membership not found';
+    if (!$transaction) {
+        throw new Exception('Transaction not found');
     }
 
+    // Fetch membership details
+    $sql = "SELECT m.*, mp.plan_name, mp.price
+            FROM memberships m
+            JOIN membership_plans mp ON m.membership_plan_id = mp.id
+            WHERE m.transaction_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([$transaction_id]);
+    $memberships = $stmt->fetchAll();
+
     // Fetch program subscriptions
-    $sql = "SELECT ps.*, p.program_name, CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
+    $sql = "SELECT ps.*, p.program_name, p.price,
+            CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
             FROM program_subscriptions ps
             JOIN programs p ON ps.program_id = p.id
             JOIN users u ON ps.coach_id = u.id
             JOIN personal_details pd ON u.id = pd.user_id
-            WHERE ps.membership_id = ?
-            AND u.role_id = (SELECT id FROM roles WHERE role_name = 'coach')";
+            WHERE ps.transaction_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->execute([$membership_id]);
+    $stmt->execute([$transaction_id]);
     $programs = $stmt->fetchAll();
 
     // Fetch rental subscriptions
-    $sql = "SELECT rs.*, r.service_name
+    $sql = "SELECT rs.*, r.service_name, r.price
             FROM rental_subscriptions rs
             JOIN rental_services r ON rs.rental_service_id = r.id
-            WHERE rs.membership_id = ?";
+            WHERE rs.transaction_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->execute([$membership_id]);
+    $stmt->execute([$transaction_id]);
     $rentals = $stmt->fetchAll();
 
 } catch (Exception $e) {
-    $_SESSION['error'] = "Error fetching availed services: " . $e->getMessage();
+    $_SESSION['error'] = "Error fetching transaction details: " . $e->getMessage();
     header("Location: ../services.php");
     exit();
+}
+
+// Calculate total amount
+$total_amount = 0;
+foreach ($memberships as $membership) {
+    $total_amount += $membership['price'];
+}
+foreach ($programs as $program) {
+    $total_amount += $program['price'];
+}
+foreach ($rentals as $rental) {
+    $total_amount += $rental['price'];
 }
 ?>
 
@@ -104,16 +124,25 @@ try {
                         <i class="fas fa-check-circle success-icon"></i>
                         <h5 class="mb-4">Thank you for availing our services!</h5>
                         
-                        <?php if (!empty($membershipErr)): ?>
-                            <div class="alert alert-danger"><?= $membershipErr ?></div>
-                        <?php else: ?>
-                            <!-- Membership Details -->
+                        <div class="text-start mb-4">
+                            <h6 class="fw-bold">Transaction Details:</h6>
+                            <p class="mb-1">Transaction ID: <?= $transaction_id ?></p>
+                            <p class="mb-1">Customer: <?= htmlspecialchars($transaction['customer_name']) ?></p>
+                            <p class="mb-1">Date: <?= date('m/d/Y', strtotime($transaction['created_at'])) ?></p>
+                        </div>
+
+                        <!-- Membership Details -->
+                        <?php if (!empty($memberships)): ?>
                             <div class="text-start mb-4">
-                                <h6 class="fw-bold">Membership Plan:</h6>
-                                <p class="mb-1">Plan: <?= htmlspecialchars($membership['plan_name']) ?></p>
-                                <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($membership['start_date'])) ?></p>
-                                <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($membership['end_date'])) ?></p>
-                                <p class="mb-1">Amount: ₱<?= number_format($membership['total_amount'], 2) ?></p>
+                                <h6 class="fw-bold">Membership Plans:</h6>
+                                <?php foreach ($memberships as $membership): ?>
+                                    <div class="mb-3">
+                                        <p class="mb-1">Plan: <?= htmlspecialchars($membership['plan_name']) ?></p>
+                                        <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($membership['start_date'])) ?></p>
+                                        <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($membership['end_date'])) ?></p>
+                                        <p class="mb-1">Amount: ₱<?= number_format($membership['price'], 2) ?></p>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
 
@@ -147,6 +176,11 @@ try {
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>
+
+                        <!-- Total Amount -->
+                        <div class="text-start mb-4">
+                            <h6 class="fw-bold">Total Amount: ₱<?= number_format($total_amount, 2) ?></h6>
+                        </div>
 
                         <div class="mt-4">
                             <a href="../services.php" class="btn btn-custom-red">Back to Services</a>

@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Initialize variables
 $membership_plan_id = $plan_name = $plan_type = $price = $duration = $duration_type = $description = '';
 $start_date = $end_date = '';
 
@@ -18,21 +19,30 @@ $Services = new Services_Class();
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (isset($_GET['id'])) {
-        $membership_plan_id = $_GET['id'];
+        $membership_plan_id = clean_input($_GET['id']);
         $record = $Services->fetchGymrate($membership_plan_id);
-        if (!empty($record)) {
-            $plan_name = $record['plan_name'];
-            $plan_type = $record['plan_type'];
-            $price = $record['price'];
-            $duration = $record['duration'];
-            $duration_type = $record['duration_type'];
-            $description = $record['description'];
-        } else {
-            echo 'No membership plan found';
+        
+        if (!$record) {
+            $_SESSION['error'] = 'Membership plan not found';
+            header('location: ../services.php');
             exit;
         }
+        
+        // Check if plan is still active
+        if ($record['status_id'] != 1) {
+            $_SESSION['error'] = 'This membership plan is no longer available';
+            header('location: ../services.php');
+            exit;
+        }
+        
+        $plan_name = $record['plan_name'];
+        $plan_type = $record['plan_type'];
+        $price = $record['price'];
+        $duration = $record['duration'];
+        $duration_type = $record['duration_type'];
+        $description = $record['description'];
     } else {
-        echo 'No membership plan id found';
+        header('location: ../services.php');
         exit;
     }
 }
@@ -46,23 +56,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Get validity directly from the record
     $record = $Services->fetchGymrate($membership_plan_id);
+    if (!$record) {
+        $_SESSION['error'] = 'Invalid membership plan';
+        header('location: ../services.php');
+        exit;
+    }
+
     $validity = $record['duration'] . ' ' . $record['duration_type'];
 
     // Validate inputs
-    if(empty($membership_plan_id)) {
-        $membership_plan_idErr = 'Membership plan is required';
-    }
-
     if(empty($start_date)) {
         $start_dateErr = 'Start date is required';
+    } else {
+        // Validate start date is not in the past
+        $today = new DateTime();
+        $start = new DateTime($start_date);
+        if ($start < $today) {
+            $start_dateErr = 'Start date cannot be in the past';
+        }
     }
 
-    if(empty($end_date)) {
-        $end_dateErr = 'End date is required';
-    }
-
-    // If no errors, add to cart
-    if(empty($membership_plan_idErr) && empty($start_dateErr) && empty($end_dateErr)) {
+    if(empty($start_dateErr)) {
         $Cart = new Cart();
         try {
             $item = [
@@ -75,22 +89,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ];
             
             if($Cart->addMembership($item)) {
-                echo "<script>
-                    alert('Added to cart successfully!');
-                    window.location.href = '../services.php';
-                </script>";
+                header('location: ../services.php');
                 exit;
             } else {
-                echo "<script>
-                    alert('Failed to add to cart.');
-                    window.location.href = '../services.php';
-                </script>";
+                throw new Exception('Failed to add membership to cart');
             }
         } catch (Exception $e) {
-            echo "<script>
-                alert('" . addslashes($e->getMessage()) . "');
-                window.location.href = '../services.php';
-            </script>";
+            $_SESSION['error'] = $e->getMessage();
+            header('location: ../services.php');
+            exit;
         }
     }
 }
@@ -104,32 +111,29 @@ function clean_input($data) {
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <style>
-        .bg-custom-red {
-            background-color: #ff0000;
-        }
-        .card-header, .btn-custom-red {
-            background-color: #ff0000;
-            color: white;
-        }
-        .card-header {
-            background-color: #ff0000;
-            border-bottom: 2px solid #ff0000;
-            padding: 1rem;
-        }
-        .card-body {
-            border: 2px solid #ff0000;
-        }
-        .card-body {
-            border: 1px solid #ff0000;
-        }
-    </style>
+<style>
+    .bg-custom-red {
+        background-color: #ff0000;
+    }
+    .card-header, .btn-custom-red {
+        background-color: #ff0000;
+        color: white;
+    }
+    .card-header {
+        background-color: #ff0000;
+        border-bottom: 2px solid #ff0000;
+        padding: 1rem;
+    }
+    .card-body {
+        border: 2px solid #ff0000;
+    }
+</style>
 
 <div class="avail-membership-page">
     <div class="container-fluid p-0">
         <!-- Header -->
         <div class="bg-custom-red text-white p-3 d-flex align-items-center">
-            <button class="btn text-white me-3">
+            <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
@@ -138,7 +142,7 @@ function clean_input($data) {
         <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
             <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
                 <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $plan_type ?> rates</h2>
+                    <h2 class="fs-4 fw-bold mb-0"><?= $plan_type ?> Membership</h2>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
                     <h3 class="fs-5 fw-bold mb-4"><?= $plan_name ?></h3>
@@ -149,31 +153,34 @@ function clean_input($data) {
                         <label for="start_date" class="form-label">Start Date:</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" 
                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
-                               value="<?= date('Y-m-d') ?>"
+                               value="<?= $start_date ?>"
                                required
-                               onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $record['duration_type'] ?>')">
+                               onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
+                        <?php if(!empty($start_dateErr)): ?>
+                            <span class="text-danger"><?= $start_dateErr ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="mb-3 p-2 border rounded">
                         <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
                     </div>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Price : ₱<?= number_format($price, 2) ?></p>
+                        <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
                     </div>
                     <?php if (!empty($description)) { ?>
                         <div class="mb-3 p-2 border rounded">
-                            <p class="mb-0">Description: <?= htmlspecialchars($description) ?></p>
+                            <p class="mb-0">Description: <?= nl2br(htmlspecialchars($description)) ?></p>
                         </div>
                     <?php } ?>
                     <div class="d-flex justify-content-between mt-4">
                         <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
                         <?php if (isset($_SESSION['user_id'])) { ?>
                             <form method="POST" style="width: 48%;" onsubmit="return validateForm()">
-                                <input type="hidden" name="membership_plan_id" value="<?= htmlspecialchars($membership_plan_id) ?>">
-                                <input type="hidden" name="plan_name" value="<?= htmlspecialchars($plan_name) ?>">
-                                <input type="hidden" name="price" value="<?= htmlspecialchars($price) ?>">
+                                <input type="hidden" name="membership_plan_id" value="<?= $membership_plan_id ?>">
+                                <input type="hidden" name="plan_name" value="<?= $plan_name ?>">
+                                <input type="hidden" name="price" value="<?= $price ?>">
                                 <input type="hidden" name="start_date" id="hidden_start_date">
                                 <input type="hidden" name="end_date" id="hidden_end_date">
-                                <button type="submit" name="add_to_cart" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
+                                <button type="submit" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
                             </form>
                         <?php } else { ?>
                             <a href="../../login/login.php" class="btn btn-custom-red btn-lg" style="width: 48%;">Login to Add</a>
@@ -185,21 +192,6 @@ function clean_input($data) {
     </div>
 </div>
 
-<!-- Add status messages -->
-<?php if (isset($_SESSION['error'])): ?>
-    <div class="alert alert-danger mt-3">
-        <?= $_SESSION['error']; ?>
-        <?php unset($_SESSION['error']); ?>
-    </div>
-<?php endif; ?>
-
-<?php if (isset($_SESSION['success'])): ?>
-    <div class="alert alert-success mt-3">
-        <?= $_SESSION['success']; ?>
-        <?php unset($_SESSION['success']); ?>
-    </div>
-<?php endif; ?>
-
 <script>
 function validateForm() {
     const startDate = document.getElementById('start_date').value;
@@ -210,7 +202,7 @@ function validateForm() {
     
     // Update hidden fields before submission
     document.getElementById('hidden_start_date').value = startDate;
-    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $record['duration_type'] ?>');
+    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $duration_type ?>');
     document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
     
     return true;
@@ -247,5 +239,3 @@ function formatDate(date) {
     return `${month}/${day}/${year}`;
 }
 </script>
-</body>
-</html>

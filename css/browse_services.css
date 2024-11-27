@@ -117,12 +117,6 @@
     }
 }
 
-.services-page .card-header {
-    /* Remove this gradient style that's causing the red color */
-    /* background: linear-gradient(135deg, #ff4646, #ff0000); */
-    /* animation: gradient 15s ease infinite; */
-}
-
 /* Add responsive adjustments for card sizes */
 @media (max-width: 768px) {
     .services-page .card {

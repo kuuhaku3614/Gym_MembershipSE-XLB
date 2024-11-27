@@ -38,71 +38,81 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if(empty($membership_plan_idErr) && empty($start_dateErr) && 
        empty($end_dateErr) && empty($total_amountErr)) {
         
-        // Save membership
-        if ($Services->saveMembership($_SESSION['user_id'], $membership_plan_id, 
-                                    $start_date, $end_date, $total_amount)) {
-            $membership_id = $conn->lastInsertId();
-            
-            // Save programs if any
-            if (!empty($_POST['programs'])) {
-                foreach ($_POST['programs'] as $program) {
-                    // Validate program inputs
-                    if(empty($program['id'])) {
-                        $program_idErr = 'Program is required';
-                        break;
-                    }
-                    if(empty($program['coach_id'])) {
-                        $coach_idErr = 'Coach is required';
-                        break;
-                    }
+        $conn = $db->connect();
+        try {
+            $conn->beginTransaction();
+            // Save membership
+            if ($Services->saveMembership($_SESSION['user_id'], $membership_plan_id, 
+                                        $start_date, $end_date, $total_amount)) {
+                $membership_id = $conn->lastInsertId();
+                
+                // Save programs if any
+                if (!empty($_POST['programs'])) {
+                    foreach ($_POST['programs'] as $program) {
+                        // Validate program inputs
+                        if(empty($program['id'])) {
+                            $program_idErr = 'Program is required';
+                            break;
+                        }
+                        if(empty($program['coach_id'])) {
+                            $coach_idErr = 'Coach is required';
+                            break;
+                        }
 
-                    if(empty($program_idErr) && empty($coach_idErr)) {
-                        if (!$Services->saveProgram(
-                            $membership_id,
-                            $program['id'],
-                            $program['coach_id'],
-                            $program['start_date'],
-                            $program['end_date'],
-                            $program['price']
-                        )) {
-                            $_SESSION['error'] = "Failed to save program";
-                            header("Location: ../services.php");
-                            exit();
+                        if(empty($program_idErr) && empty($coach_idErr)) {
+                            if (!$Services->saveProgram(
+                                $membership_id,
+                                $program['id'],
+                                $program['coach_id'],
+                                $program['start_date'],
+                                $program['end_date'],
+                                $program['price']
+                            )) {
+                                $_SESSION['error'] = "Failed to save program";
+                                header("Location: ../services.php");
+                                exit();
+                            }
                         }
                     }
                 }
-            }
-            
-            // Save rentals if any
-            if (!empty($_POST['rentals'])) {
-                foreach ($_POST['rentals'] as $rental) {
-                    // Validate rental inputs
-                    if(empty($rental['id'])) {
-                        $rental_idErr = 'Rental service is required';
-                        break;
-                    }
+                
+                // Save rentals if any
+                if (!empty($_POST['rentals'])) {
+                    foreach ($_POST['rentals'] as $rental) {
+                        // Validate rental inputs
+                        if(empty($rental['id'])) {
+                            $rental_idErr = 'Rental service is required';
+                            break;
+                        }
 
-                    if(empty($rental_idErr)) {
-                        if (!$Services->saveRental(
-                            $membership_id,
-                            $rental['id'],
-                            $rental['start_date'],
-                            $rental['end_date'],
-                            $rental['price']
-                        )) {
-                            $_SESSION['error'] = "Failed to save rental";
-                            header("Location: ../services.php");
-                            exit();
+                        if(empty($rental_idErr)) {
+                            if (!$Services->saveRental(
+                                $membership_id,
+                                $rental['id'],
+                                $rental['start_date'],
+                                $rental['end_date'],
+                                $rental['price']
+                            )) {
+                                $_SESSION['error'] = "Failed to save rental";
+                                header("Location: ../services.php");
+                                exit();
+                            }
                         }
                     }
                 }
+                
+                $conn->commit();
+                $_SESSION['success'] = "Services availed successfully!";
+                header("Location: avail_success.php?id=" . $membership_id);
+                exit();
+            } else {
+                $_SESSION['error'] = "Failed to save membership";
+                header("Location: ../services.php");
+                exit();
             }
-            
-            $_SESSION['success'] = "Services availed successfully!";
-            header("Location: avail_success.php?id=" . $membership_id);
-            exit();
-        } else {
-            $_SESSION['error'] = "Failed to save membership";
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $_SESSION['error'] = "Failed to save services: " . $e->getMessage();
             header("Location: ../services.php");
             exit();
         }

@@ -126,36 +126,67 @@ class Cart {
 
     public function validateCart() {
         $errors = [];
+        $conn = $this->db->connect();
         
-        // Check if at least one membership plan is selected
-        if (empty($_SESSION['cart']['memberships'])) {
-            $errors[] = "Please select at least one membership plan.";
-        }
-        
-        // Check if programs have valid coaches
-        if (!empty($_SESSION['cart']['programs'])) {
-            foreach ($_SESSION['cart']['programs'] as $program) {
-                if (empty($program['coach_id'])) {
-                    $errors[] = "Please select a coach for program: " . $program['name'];
-                }
+        try {
+            // Check if cart has at least one membership
+            if (empty($_SESSION['cart']['memberships'])) {
+                $errors[] = "Please select at least one membership plan.";
+                return $errors;
             }
-        }
-        
-        // Check if rental services have available slots
-        if (!empty($_SESSION['cart']['rentals'])) {
-            $sql = "SELECT available_slots FROM rental_services WHERE id = ?";
-            $stmt = $this->db->connect()->prepare($sql);
             
-            foreach ($_SESSION['cart']['rentals'] as $rental) {
-                $stmt->execute([$rental['id']]);
-                $result = $stmt->fetch();
-                
-                if ($result && $result['available_slots'] < 1) {
-                    $errors[] = "No available slots for rental service: " . $rental['name'];
+            // Validate each membership plan
+            foreach ($_SESSION['cart']['memberships'] as $membership) {
+                $sql = "SELECT * FROM membership_plans WHERE id = ? AND status_id = 1";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$membership['id']]);
+                if (!$stmt->fetch()) {
+                    $errors[] = "Invalid membership plan selected.";
                 }
             }
+            
+            // Validate programs and coaches
+            if (!empty($_SESSION['cart']['programs'])) {
+                foreach ($_SESSION['cart']['programs'] as $program) {
+                    // Verify program exists and is active
+                    $sql = "SELECT * FROM programs WHERE id = ? AND status_id = 1";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute([$program['id']]);
+                    if (!$stmt->fetch()) {
+                        $errors[] = "Invalid program selected.";
+                    }
+                    
+                    // Verify coach exists and can teach this program
+                    $sql = "SELECT * FROM coach_program_types 
+                            WHERE coach_id = ? AND program_id = ? AND status = 'active'";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute([$program['coach_id'], $program['id']]);
+                    if (!$stmt->fetch()) {
+                        $errors[] = "Selected coach is not available for this program.";
+                    }
+                }
+            }
+            
+            // Validate rental services
+            if (!empty($_SESSION['cart']['rentals'])) {
+                foreach ($_SESSION['cart']['rentals'] as $rental) {
+                    $sql = "SELECT available_slots FROM rental_services 
+                            WHERE id = ? AND status_id = 1";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute([$rental['id']]);
+                    $result = $stmt->fetch();
+                    
+                    if (!$result || $result['available_slots'] < 1) {
+                        $errors[] = "Rental service is not available.";
+                    }
+                }
+            }
+            
+            return $errors;
+            
+        } catch (Exception $e) {
+            $errors[] = "Error validating cart: " . $e->getMessage();
+            return $errors;
         }
-        
-        return $errors;
     }
 } 

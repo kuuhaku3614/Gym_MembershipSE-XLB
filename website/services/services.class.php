@@ -81,15 +81,20 @@ class Services_class{
         return $stmt->fetchAll();
     }
 
-    public function fetchGymrate($membership_plan_id){
+    public function fetchGymrate($membership_plan_id) {
         $conn = $this->db->connect();
-        $sql = "SELECT mp.*, dt.type_name as duration_type 
-                FROM membership_plans mp
-                LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
-                WHERE mp.id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([$membership_plan_id]);
-        return $stmt->fetch();
+        try {
+            $sql = "SELECT mp.*, dt.type_name as duration_type 
+                    FROM membership_plans mp
+                    LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                    WHERE mp.id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$membership_plan_id]);
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            // Log error or handle it
+            return null; // Return null if there's an error
+        }
     }
 
     public function saveMembership($user_id, $membership_plan_id, $start_date, $end_date, $total_amount) {
@@ -256,5 +261,36 @@ class Services_class{
         $stmt = $conn->prepare($sql);
         $stmt->execute([$plan_id]);
         return $stmt->fetch();
+    }
+
+    public function checkActiveMembership($user_id) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "SELECT COUNT(*) as count 
+                    FROM memberships m 
+                    JOIN transactions t ON m.transaction_id = t.id 
+                    WHERE t.user_id = ? AND m.status = 'active'";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$user_id]);
+            $result = $stmt->fetch();
+            return $result['count'] > 0;
+        } catch (Exception $e) {
+            throw new Exception('Error checking membership status: ' . $e->getMessage());
+        }
+    }
+
+    public function checkUserRole($user_id) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "SELECT role_id FROM users WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$user_id]);
+            $result = $stmt->fetch();
+            
+            // Check if user is already a member (role_id = 3 for member)
+            return $result['role_id'] == 3;
+        } catch (Exception $e) {
+            throw new Exception('Error checking user role: ' . $e->getMessage());
+        }
     }
 }

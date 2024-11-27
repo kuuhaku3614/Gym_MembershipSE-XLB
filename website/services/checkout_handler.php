@@ -31,122 +31,104 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $conn = $db->connect();
     
     try {
-        // Begin transaction
         $conn->beginTransaction();
         
-        // 1. Create membership records - now handling multiple memberships
+        // First create the transaction record
+        $sql = "INSERT INTO transactions (staff_id, user_id) VALUES (NULL, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$_SESSION['user_id']]);
+        $transaction_id = $conn->lastInsertId();
+        
+        // Check if the user has an active membership
+        $hasActiveMembership = $Services->checkActiveMembership($_SESSION['user_id']);
+        
+        // Then create membership records
         foreach ($cart['memberships'] as $membership) {
-            $sql = "INSERT INTO memberships (user_id, membership_plan_id, staff_id, start_date, end_date, 
-                    total_amount, status) VALUES (?, ?, NULL, ?, ?, ?, 'active')";
+            $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, 
+                    start_date, end_date, status, is_paid) 
+                    VALUES (?, ?, ?, ?, 'active', 0)";
             
             $stmt = $conn->prepare($sql);
-            if (!$stmt->execute([
-                $_SESSION['user_id'],
+            $stmt->execute([
+                $transaction_id,
                 $membership['id'],
                 $membership['start_date'],
-                $membership['end_date'],
-                $membership['price']
-            ])) {
-                throw new Exception("Failed to create membership record");
-            }
+                $membership['end_date']
+            ]);
             
             $membership_id = $conn->lastInsertId();
-            
-            // 2. Create program subscriptions if any
-            if (!empty($cart['programs'])) {
-                $sql = "INSERT INTO program_subscriptions (membership_id, program_id, coach_id, staff_id,
-                        start_date, end_date, price, status) 
-                        VALUES (?, ?, ?, NULL, ?, ?, ?, 'active')";
-                
-                foreach ($cart['programs'] as $program) {
-                    // Verify coach exists and is active
-                    $verify_coach = "SELECT id FROM users 
-                                    WHERE id = ? AND is_active = 1 
-                                    AND role_id = (SELECT id FROM roles WHERE role_name = 'coach')";
-                    $stmt = $conn->prepare($verify_coach);
-                    $stmt->execute([$program['coach_id']]);
-                    if (!$stmt->fetch()) {
-                        throw new Exception("Selected coach is no longer available");
-                    }
+        }
 
-                    $stmt = $conn->prepare($sql);
-                    if (!$stmt->execute([
-                        $membership_id,
-                        $program['id'],
-                        $program['coach_id'],
-                        $program['start_date'],
-                        $program['end_date'],
-                        $program['price']
-                    ])) {
-                        throw new Exception("Failed to create program subscription");
-                    }
-                }
-            }
-            
-            // 3. Create rental subscriptions if any
-            if (!empty($cart['rentals'])) {
-                $sql = "INSERT INTO rental_subscriptions (membership_id, rental_service_id, staff_id,
-                        start_date, end_date, price, status) 
-                        VALUES (?, ?, NULL, ?, ?, ?, 'active')";
+        // Create program subscriptions
+        if (!empty($cart['programs'])) {
+            foreach ($cart['programs'] as $program) {
+                $sql = "INSERT INTO program_subscriptions (transaction_id, program_id, 
+                        coach_id, start_date, end_date, status, is_paid) 
+                        VALUES (?, ?, ?, ?, ?, 'active', 0)";
                 
-                foreach ($cart['rentals'] as $rental) {
-                    $stmt = $conn->prepare($sql);
-                    if (!$stmt->execute([
-                        $membership_id,
-                        $rental['id'],
-                        $rental['start_date'],
-                        $rental['end_date'],
-                        $rental['price']
-                    ])) {
-                        throw new Exception("Failed to create rental subscription");
-                    }
-                    
-                    // Update available slots for rental services
-                    $update_sql = "UPDATE rental_services 
-                                 SET available_slots = available_slots - 1 
-                                 WHERE id = ? AND available_slots >= 1";
-                    $stmt = $conn->prepare($update_sql);
-                    $stmt->execute([$rental['id']]);
-                    
-                    if ($stmt->rowCount() === 0) {
-                        throw new Exception("Not enough available slots for rental service: " . $rental['name']);
-                    }
-                }
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([
+                    $transaction_id,
+                    $program['id'],
+                    $program['coach_id'],
+                    $program['start_date'],
+                    $program['end_date']
+                ]);
             }
-            
-            // 4. Create transaction record
-            $sql = "INSERT INTO transactions (membership_id, total_amount) 
-                    VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            if (!$stmt->execute([
-                $membership_id,
-                $cart['total']
-            ])) {
-                throw new Exception("Failed to create transaction record");
+        }
+
+        // Create rental subscriptions
+        if (!empty($cart['rentals'])) {
+            foreach ($cart['rentals'] as $rental) {
+                // Check if the rental is included in the membership plan or program
+                $sql = "SELECT * FROM memberships m 
+                        JOIN membership_plans mp ON m.membership_plan_id = mp.id 
+                        WHERE m.user_id = ? AND mp.id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$_SESSION['user_id'], $rental['id']]);
+                $rental_included = $stmt->fetch();
+
+                // If the user does not have an active membership, check if they are availing a membership or program
+                if (!$hasActiveMembership && !$rental_included) {
+                    $_SESSION['error'] = "You can only avail rentals included in your membership plan or program.";
+                    header("Location: ../services.php");
+                    exit();
+                }
+
+                // Proceed to insert rental subscription
+                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id,
+                        start_date, end_date, status, is_paid) 
+                        VALUES (?, ?, ?, ?, 'active', 0)";
+                
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([
+                    $transaction_id,
+                    $rental['id'],
+                    $rental['start_date'],
+                    $rental['end_date']
+                ]);
+                
+                // Update available slots for rental services
+                $sql = "UPDATE rental_services 
+                       SET available_slots = available_slots - 1 
+                       WHERE id = ? AND available_slots > 0";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$rental['id']]);
             }
         }
         
-        // Commit transaction
         $conn->commit();
-        
-        // Clear the cart after successful checkout
         $Cart->clearCart();
         
         echo json_encode([
             'success' => true,
             'message' => 'Checkout completed successfully!',
-            'redirect' => '../profile.php'
+            'redirect' => 'avail_success.php?id=' . $transaction_id
         ]);
-        exit();
         
     } catch (Exception $e) {
-        // Rollback transaction on error
         $conn->rollBack();
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
-        exit();
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
 }
 ?> 

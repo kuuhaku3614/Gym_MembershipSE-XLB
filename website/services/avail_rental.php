@@ -21,19 +21,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (isset($_GET['id'])) {
         $rental_id = $_GET['id'];
         $record = $Services->fetchRental($rental_id);
-        if (!empty($record)) {
-            $service_name = $record['service_name'];
-            $price = $record['price'];
-            $duration = $record['duration'];
-            $duration_type = $record['duration_type'];
-            $available_slots = $record['available_slots'];
-            $description = $record['description'];
-        } else {
-            echo 'No rental service found';
+        
+        if (!$record) {
+            $_SESSION['error'] = 'Rental service not found';
+            header('location: ../services.php');
             exit;
         }
+        
+        if ($record['available_slots'] < 1) {
+            $_SESSION['error'] = 'No available slots for this service';
+            header('location: ../services.php');
+            exit;
+        }
+        
+        $service_name = $record['service_name'];
+        $price = $record['price'];
+        $duration = $record['duration'];
+        $duration_type = $record['duration_type'];
+        $available_slots = $record['available_slots'];
+        $description = $record['description'];
     } else {
-        echo 'No rental service id found';
+        header('location: ../services.php');
         exit;
     }
 }
@@ -47,15 +55,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Get validity directly from the record
     $record = $Services->fetchRental($rental_id);
+    if (!$record) {
+        $_SESSION['error'] = 'Invalid rental service';
+        header('location: ../services.php');
+        exit;
+    }
+
     $validity = $record['duration'] . ' ' . $record['duration_type'];
 
+    // Validate inputs
     if(empty($start_date)) {
         $start_dateErr = 'Start date is required';
+    } else {
+        // Validate start date is not in the past
+        $today = new DateTime();
+        $start = new DateTime($start_date);
+        if ($start < $today) {
+            $start_dateErr = 'Start date cannot be in the past';
+        }
     }
 
     if(empty($rental_id)) {
         $rental_idErr = 'Rental service is required';
     }
+
+    // Check if service still has available slots
+    if ($record['available_slots'] < 1) {
+        $rental_idErr = 'No available slots for this service';
+    }
+
+    // Check if user has an active membership
+    // try {
+    //     if (!$Services->checkActiveMembership($_SESSION['user_id'])) {
+    //         $_SESSION['error'] = 'You must have an active membership to avail rental services.';
+    //         header('location: ../services.php');
+    //         exit;
+    //     }
+    // } catch (Exception $e) {
+    //     $_SESSION['error'] = $e->getMessage();
+    //     header('location: ../services.php');
+    //     exit;
+    // }
 
     if(empty($start_dateErr) && empty($rental_idErr)) {
         $Cart = new Cart();
@@ -73,16 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 header('location: ../services.php');
                 exit;
             } else {
-                echo "<script>
-                    alert('Failed to add to cart.');
-                    window.location.href = '../services.php';
-                </script>";
+                throw new Exception('Failed to add rental to cart');
             }
         } catch (Exception $e) {
-            echo "<script>
-                alert('" . addslashes($e->getMessage()) . "');
-                window.location.href = '../services.php';
-            </script>";
+            $_SESSION['error'] = $e->getMessage();
+            header('location: ../services.php');
+            exit;
         }
     }
 }
