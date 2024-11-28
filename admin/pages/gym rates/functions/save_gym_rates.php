@@ -2,6 +2,21 @@
 require_once '../../../../config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate required fields
+    $requiredFields = ['promoName', 'promoType', 'duration', 'durationType', 'activationDate', 'deactivationDate', 'price'];
+    $missingFields = [];
+
+    foreach ($requiredFields as $field) {
+        if (empty($_POST[$field])) {
+            $missingFields[] = $field;
+        }
+    }
+
+    if (!empty($missingFields)) {
+        echo "Error: Missing required fields: " . implode(', ', $missingFields);
+        exit;
+    }
+
     $promoName = $_POST['promoName'];
     $promoType = $_POST['promoType'];
     $duration = $_POST['duration'];
@@ -11,11 +26,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = $_POST['price']; 
     $description = isset($_POST['description']) ? $_POST['description'] : null;
     
-    // Get duration_type_id from duration_types table
+    // Get duration_type_id from duration_types table with error handling
     $durationTypeQuery = "SELECT id FROM duration_types WHERE type_name = :type_name";
     $stmt = $pdo->prepare($durationTypeQuery);
     $stmt->execute([':type_name' => $durationType]);
     $durationTypeId = $stmt->fetchColumn();
+
+    if ($durationTypeId === false) {
+        echo "Error: Invalid duration type. Duration type not found in database.";
+        exit;
+    }
     
     // Set default status as active (1)
     $statusId = 1;
@@ -62,4 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (PDOException $e) {
         echo "Error: " . $e->getMessage();
     }
+} else {
+    echo "Error: Invalid request method.";
 }

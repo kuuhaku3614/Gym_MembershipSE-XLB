@@ -135,13 +135,6 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <input type="number" class="form-control" id="price" name="price" required min="0" step="0.01">
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="membershipFee" class="form-label">Membership Fee (Optional)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">₱</span>
-                                    <input type="number" class="form-control" id="membershipFee" name="membershipFee" min="0" step="0.01">
-                                </div>
-                            </div>
                         </div>
                         <!-- Full Width Description -->
                         <div class="col-12">
@@ -151,7 +144,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                             <!-- Total Price Display -->
                             <div class="alert alert-info" id="totalPriceDisplay" style="display: none;">
-                                Total Price (including membership fee): ₱<span id="totalPriceValue">0.00</span>
+                                Total Price: ₱<span id="totalPriceValue">0.00</span>
                             </div>
                         </div>
                     </div>
@@ -166,38 +159,50 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-
-    const table = $("#gymRatesTable").DataTable({
-      pageLength: 10,
-      ordering: false,
-      responsive: true,
-      dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
-    });
-    
-// Initialize the datepicker with today's date as minimum
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('activationDate').min = today;
-    document.getElementById('deactivationDate').min = today;
-});
-
-// Ensure deactivation date is after activation date
-document.getElementById('activationDate').addEventListener('change', function() {
-    document.getElementById('deactivationDate').min = this.value;
-});
-
-// Update total price display
-$('#price, #membershipFee').on('input', function() {
-    var price = parseFloat($('#price').val()) || 0;
-    var membershipFee = parseFloat($('#membershipFee').val()) || 0;
-    var total = price + membershipFee;
-    
-    $('#totalPriceDisplay').show();
-    $('#totalPriceValue').text(total.toFixed(2));
-});
-
-// Save button handler
+// Validate form before submission
 $('#saveGymRateBtn').click(function() {
+    // Clear previous error messages
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+
+    // Create validation function
+    function validateField(fieldId, errorMessage) {
+        const field = $(`#${fieldId}`);
+        const value = field.val().trim();
+        if (!value) {
+            field.addClass('is-invalid');
+            field.after(`<div class="invalid-feedback">${errorMessage}</div>`);
+            return false;
+        }
+        return true;
+    }
+
+    // Validate all required fields
+    const isValid = 
+        validateField('promoName', 'Promo Name is required') &
+        validateField('promoType', 'Promo Type must be selected') &
+        validateField('duration', 'Duration is required') &
+        validateField('durationType', 'Duration Type must be selected') &
+        validateField('activationDate', 'Activation Date is required') &
+        validateField('deactivationDate', 'Deactivation Date is required') &
+        validateField('price', 'Price is required');
+
+    // Check activation and deactivation dates
+    const activationDate = new Date($('#activationDate').val());
+    const deactivationDate = new Date($('#deactivationDate').val());
+    
+    if (activationDate >= deactivationDate) {
+        $('#deactivationDate').addClass('is-invalid');
+        $('#deactivationDate').after('<div class="invalid-feedback">Deactivation date must be after activation date</div>');
+        return false;
+    }
+
+    // If any validation fails, stop submission
+    if (!isValid) {
+        return false;
+    }
+
+    // Proceed with form submission
     var price = parseFloat($('#price').val()) || 0;
     var membershipFee = parseFloat($('#membershipFee').val()) || 0;
     var totalPrice = price + membershipFee;
@@ -219,11 +224,22 @@ $('#saveGymRateBtn').click(function() {
                 $('#addGymRateModal').modal('hide');
                 location.reload();
             } else {
-                alert("Error saving gym rate: " + response);
+                // Display error message
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response,
+                    confirmButtonText: 'OK'
+                });
             }
         },
         error: function(xhr, status, error) {
-            alert("AJAX error: " + error);
+            Swal.fire({
+                icon: 'error',
+                title: 'AJAX Error',
+                text: error,
+                confirmButtonText: 'OK'
+            });
         }
     });
 });
