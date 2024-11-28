@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../../functions/sanitize.php';
 require_once 'services.class.php';
 require_once 'cart.class.php';
 
@@ -19,9 +20,16 @@ $start_dateErr = $coach_idErr = '';
 
 $Services = new Services_Class();
 
+// Check if user has active membership
+// if (!$Services->checkActiveMembership($_SESSION['user_id'])) {
+//     $_SESSION['error'] = 'You need an active membership to avail program services. Please purchase a membership plan first.';
+//     header('location: ../services.php');
+//     exit;
+// }
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (isset($_GET['id'])) {
-        $program_id = $_GET['id'];
+        $program_id = clean_input($_GET['id']);
         $record = $Services->fetchProgram($program_id);
         
         if (!$record) {
@@ -125,12 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-function clean_input($data) {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
-}
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">

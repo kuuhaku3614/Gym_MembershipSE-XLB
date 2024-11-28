@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../../functions/sanitize.php';
 require_once 'services.class.php';
 require_once 'cart.class.php';
 
@@ -19,7 +20,7 @@ $Services = new Services_Class();
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (isset($_GET['id'])) {
-        $rental_id = $_GET['id'];
+        $rental_id = clean_input($_GET['id']);
         $record = $Services->fetchRental($rental_id);
         
         if (!$record) {
@@ -84,19 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $rental_idErr = 'No available slots for this service';
     }
 
-    // Check if user has an active membership
-    // try {
-    //     if (!$Services->checkActiveMembership($_SESSION['user_id'])) {
-    //         $_SESSION['error'] = 'You must have an active membership to avail rental services.';
-    //         header('location: ../services.php');
-    //         exit;
-    //     }
-    // } catch (Exception $e) {
-    //     $_SESSION['error'] = $e->getMessage();
-    //     header('location: ../services.php');
-    //     exit;
-    // }
-
     if(empty($start_dateErr) && empty($rental_idErr)) {
         $Cart = new Cart();
         try {
@@ -123,12 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-function clean_input($data) {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
-}
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">

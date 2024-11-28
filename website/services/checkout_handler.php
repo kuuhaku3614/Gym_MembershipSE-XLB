@@ -1,46 +1,66 @@
 <?php
+// Prevent any output before JSON response
+ob_start();
+
+// Error handling
+error_reporting(0);
+ini_set('display_errors', 0);
+
 session_start();
 require_once 'cart.class.php';
 require_once 'services.class.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('location: ../../login/login.php');
-    exit;
+// Function to send JSON response
+function send_json_response($data, $status = true) {
+    // Clear any output buffers
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['success' => $status, 'data' => $data]);
+    exit();
 }
 
-// Initialize variables
-$membership_id = '';
-$total_amount = '';
+// Handle any uncaught errors
+function exception_handler($e) {
+    send_json_response(['message' => 'An error occurred: ' . $e->getMessage()], false);
+}
+set_exception_handler('exception_handler');
 
-// Error variables
-$membershipErr = $programErr = $rentalErr = '';
+if (!isset($_SESSION['user_id'])) {
+    send_json_response(['message' => 'Not logged in'], false);
+}
 
 $Cart = new Cart();
 $Services = new Services_Class();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Validate cart before proceeding
-    $errors = $Cart->validateCart();
-    if (!empty($errors)) {
-        echo json_encode(['success' => false, 'message' => implode("\n", $errors)]);
-        exit();
-    }
-    
-    $cart = $Cart->getCart();
-    $db = new Database();
-    $conn = $db->connect();
-    
     try {
-        $conn->beginTransaction();
+        // Validate cart before proceeding
+        $Cart->validateCart(); // This will throw an exception if validation fails
         
+        $cart = $Cart->getCart();
+        if (empty($cart)) {
+            throw new Exception('Cart is empty');
+        }
+
+        $db = new Database();
+        $conn = $db->connect();
+        
+        $conn->beginTransaction();
+
         // First create the transaction record
         $sql = "INSERT INTO transactions (staff_id, user_id) VALUES (NULL, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$_SESSION['user_id']]);
         $transaction_id = $conn->lastInsertId();
-        
-        // Check if the user has an active membership
-        $hasActiveMembership = $Services->checkActiveMembership($_SESSION['user_id']);
+
+        // If there's a registration fee, record it
+        if (isset($cart['registration_fee']) && $cart['registration_fee'] !== null) {
+            $sql = "INSERT INTO registration_records (transaction_id, registration_id) VALUES (?, 1)";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$transaction_id]);
+        }
         
         // Then create membership records
         foreach ($cart['memberships'] as $membership) {
@@ -55,8 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $membership['start_date'],
                 $membership['end_date']
             ]);
-            
-            $membership_id = $conn->lastInsertId();
         }
 
         // Create program subscriptions
@@ -80,24 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Create rental subscriptions
         if (!empty($cart['rentals'])) {
             foreach ($cart['rentals'] as $rental) {
-                // Check if the rental is included in the membership plan or program
-                $sql = "SELECT * FROM memberships m 
-                        JOIN membership_plans mp ON m.membership_plan_id = mp.id 
-                        JOIN transactions t ON m.transaction_id = t.id
-                        WHERE t.user_id = ? AND mp.id = ? AND m.status = 'active'";
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([$_SESSION['user_id'], $rental['id']]);
-                $rental_included = $stmt->fetch();
-
-                // If the user does not have an active membership, check if they are availing a membership or program
-                if (!$hasActiveMembership && !$rental_included) {
-                    $_SESSION['error'] = "You can only avail rentals included in your membership plan or program.";
-                    header("Location: ../services.php");
-                    exit();
-                }
-
-                // Proceed to insert rental subscription
-                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id,
+                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_id, 
                         start_date, end_date, status, is_paid) 
                         VALUES (?, ?, ?, ?, 'active', 0)";
                 
@@ -108,28 +109,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $rental['start_date'],
                     $rental['end_date']
                 ]);
-                
-                // Update available slots for rental services
-                $sql = "UPDATE rental_services 
-                       SET available_slots = available_slots - 1 
-                       WHERE id = ? AND available_slots > 0";
+
+                // Update available slots
+                $sql = "UPDATE rental_services SET available_slots = available_slots - 1 
+                        WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([$rental['id']]);
             }
         }
-        
+
         $conn->commit();
+        
+        // Clear the cart after successful transaction
         $Cart->clearCart();
         
-        echo json_encode([
-            'success' => true,
-            'message' => 'Checkout completed successfully!',
-            'redirect' => 'avail_success.php?id=' . $transaction_id
-        ]);
-        
+        send_json_response(['message' => 'Services availed successfully!']);
+
     } catch (Exception $e) {
-        $conn->rollBack();
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        if (isset($conn)) {
+            $conn->rollBack();
+        }
+        error_log("Checkout error: " . $e->getMessage());
+        send_json_response(['message' => 'An error occurred while processing your request. Please try again.'], false);
     }
 }
-?> 
+?>

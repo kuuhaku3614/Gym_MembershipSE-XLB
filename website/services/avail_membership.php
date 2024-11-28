@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../../functions/sanitize.php';
 require_once 'services.class.php';
 require_once 'cart.class.php';
 
@@ -8,106 +9,106 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Initialize variables
-$membership_plan_id = $plan_name = $plan_type = $price = $duration = $duration_type = $description = '';
-$start_date = $end_date = '';
-
-// Error variables
-$membership_plan_idErr = $start_dateErr = $end_dateErr = '';
-
 $Services = new Services_Class();
+$Cart = new Cart();
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    if (isset($_GET['id'])) {
-        $membership_plan_id = clean_input($_GET['id']);
-        $record = $Services->fetchGymrate($membership_plan_id);
-        
-        if (!$record) {
-            $_SESSION['error'] = 'Membership plan not found';
-            header('location: ../services.php');
-            exit;
-        }
-        
-        // Check if plan is still active
-        if ($record['status_id'] != 1) {
-            $_SESSION['error'] = 'This membership plan is no longer available';
-            header('location: ../services.php');
-            exit;
-        }
-        
-        $plan_name = $record['plan_name'];
-        $plan_type = $record['plan_type'];
-        $price = $record['price'];
-        $duration = $record['duration'];
-        $duration_type = $record['duration_type'];
-        $description = $record['description'];
-    } else {
-        header('location: ../services.php');
-        exit;
-    }
+if (!isset($_GET['id'])) {
+    header('location: ../services.php');
+    exit;
 }
+
+$membership_id = clean_input($_GET['id']);
+$membership = $Services->fetchGymrate($membership_id);
+
+if (!$membership) {
+    $_SESSION['error'] = "Invalid membership plan.";
+    header('location: ../services.php');
+    exit;
+}
+
+// Construct validity from duration and duration_type
+$membership['validity'] = $membership['duration'] . ' ' . strtolower($membership['duration_type']);
+
+// Initialize error variables
+$start_dateErr = '';
+$start_date = date('Y-m-d'); // Initialize with today's date
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $membership_plan_id = clean_input($_POST['membership_plan_id']);
-    $start_date = clean_input($_POST['start_date']);
-    $end_date = clean_input($_POST['end_date']);
-    $price = clean_input($_POST['price']);
-    $plan_name = clean_input($_POST['plan_name']);
-
-    // Get validity directly from the record
-    $record = $Services->fetchGymrate($membership_plan_id);
-    if (!$record) {
-        $_SESSION['error'] = 'Invalid membership plan';
-        header('location: ../services.php');
+    try {
+        $membership_id = clean_input($_POST['membership_id']);
+        $start_date = clean_input($_POST['start_date']);
+        
+        if (empty($membership_id)) {
+            throw new Exception("Please select a membership plan.");
+        }
+        
+        if (empty($start_date)) {
+            throw new Exception("Please select a start date.");
+        }
+        
+        $membership = $Services->fetchGymrate($membership_id);
+        if (!$membership) {
+            throw new Exception("Invalid membership plan selected.");
+        }
+        
+        // Construct validity again for the selected membership
+        $membership['validity'] = $membership['duration'] . ' ' . strtolower($membership['duration_type']);
+        
+        // Calculate end date based on validity period
+        $duration = $membership['duration'];
+        $duration_type = strtolower($membership['duration_type']);
+        
+        // Convert duration type to a format strtotime understands
+        switch ($duration_type) {
+            case 'month':
+            case 'months':
+                $interval = $duration . ' month';
+                break;
+            case 'year':
+            case 'years':
+                $interval = $duration . ' year';
+                break;
+            case 'day':
+            case 'days':
+                $interval = $duration . ' day';
+                break;
+            default:
+                throw new Exception("Invalid duration type");
+        }
+        
+        $end_date = date('Y-m-d', strtotime($start_date . ' + ' . $interval));
+        
+        $item = array_merge($membership, [
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'validity' => $membership['validity']
+        ]);
+        
+        error_log("Adding membership to cart: " . print_r($item, true));
+        
+        if ($Cart->addMembership($item)) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Membership added to cart successfully',
+                'redirect' => '../services.php'
+            ]);
+            exit;
+        } else {
+            throw new Exception("Failed to add membership to cart.");
+        }
+        
+    } catch (Exception $e) {
+        error_log("Error in avail_membership.php: " . $e->getMessage());
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
         exit;
     }
-
-    $validity = $record['duration'] . ' ' . $record['duration_type'];
-
-    // Validate inputs
-    if(empty($start_date)) {
-        $start_dateErr = 'Start date is required';
-    } else {
-        // Validate start date is not in the past
-        $today = new DateTime();
-        $start = new DateTime($start_date);
-        if ($start < $today) {
-            $start_dateErr = 'Start date cannot be in the past';
-        }
-    }
-
-    if(empty($start_dateErr)) {
-        $Cart = new Cart();
-        try {
-            $item = [
-                'id' => $membership_plan_id,
-                'name' => $plan_name,
-                'price' => $price,
-                'validity' => $validity,
-                'start_date' => $start_date,
-                'end_date' => $end_date
-            ];
-            
-            if($Cart->addMembership($item)) {
-                header('location: ../services.php');
-                exit;
-            } else {
-                throw new Exception('Failed to add membership to cart');
-            }
-        } catch (Exception $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('location: ../services.php');
-            exit;
-        }
-    }
 }
 
-function clean_input($data) {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
-}
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
@@ -142,12 +143,12 @@ function clean_input($data) {
         <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
             <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
                 <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $plan_type ?> Membership</h2>
+                    <h2 class="fs-4 fw-bold mb-0"><?= $membership['plan_type'] ?> Membership</h2>
                 </div>
                 <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    <h3 class="fs-5 fw-bold mb-4"><?= $plan_name ?></h3>
+                    <h3 class="fs-5 fw-bold mb-4"><?= $membership['plan_name'] ?></h3>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                        <p class="mb-0">Validity: <?= $membership['validity'] ?></p>
                     </div>
                     <div class="mb-3 p-2 border rounded">
                         <label for="start_date" class="form-label">Start Date:</label>
@@ -155,7 +156,7 @@ function clean_input($data) {
                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
                                value="<?= $start_date ?>"
                                required
-                               onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
+                               onchange="updateEndDate(this.value, <?= $membership['duration'] ?>)">
                         <?php if(!empty($start_dateErr)): ?>
                             <span class="text-danger"><?= $start_dateErr ?></span>
                         <?php endif; ?>
@@ -164,20 +165,18 @@ function clean_input($data) {
                         <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
                     </div>
                     <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
+                        <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
                     </div>
-                    <?php if (!empty($description)) { ?>
+                    <?php if (!empty($membership['description'])) { ?>
                         <div class="mb-3 p-2 border rounded">
-                            <p class="mb-0">Description: <?= nl2br(htmlspecialchars($description)) ?></p>
+                            <p class="mb-0">Description: <?= nl2br(htmlspecialchars($membership['description'])) ?></p>
                         </div>
                     <?php } ?>
                     <div class="d-flex justify-content-between mt-4">
                         <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
                         <?php if (isset($_SESSION['user_id'])) { ?>
-                            <form method="POST" style="width: 48%;" onsubmit="return validateForm()">
-                                <input type="hidden" name="membership_plan_id" value="<?= $membership_plan_id ?>">
-                                <input type="hidden" name="plan_name" value="<?= $plan_name ?>">
-                                <input type="hidden" name="price" value="<?= $price ?>">
+                            <form method="POST" style="width: 48%;" onsubmit="return validateForm(event)">
+                                <input type="hidden" name="membership_id" value="<?= $membership_id ?>">
                                 <input type="hidden" name="start_date" id="hidden_start_date">
                                 <input type="hidden" name="end_date" id="hidden_end_date">
                                 <button type="submit" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
@@ -193,23 +192,52 @@ function clean_input($data) {
 </div>
 
 <script>
-function validateForm() {
+function validateForm(event) {
     const startDate = document.getElementById('start_date').value;
     if (!startDate) {
         alert('Please select a start date.');
         return false;
     }
     
-    // Update hidden fields before submission
-    document.getElementById('hidden_start_date').value = startDate;
-    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $duration_type ?>');
-    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
+    // Prevent default form submission
+    event.preventDefault();
     
-    return true;
+    // Get form data
+    const form = event.target.closest('form');
+    const formData = new FormData(form);
+    
+    // Update hidden fields
+    document.getElementById('hidden_start_date').value = startDate;
+    const endDate = calculateEndDate(startDate, <?= $membership['duration'] ?>);
+    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
+    formData.set('end_date', document.getElementById('hidden_end_date').value);
+    
+    // Submit form via fetch
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            }
+        } else {
+            alert(data.message || 'An error occurred');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request');
+    });
+    
+    return false;
 }
 
-function updateEndDate(startDate, duration, durationType) {
-    const endDate = calculateEndDate(startDate, duration, durationType);
+function updateEndDate(startDate, duration) {
+    const endDate = calculateEndDate(startDate, duration);
     document.getElementById('end_date').textContent = formatDate(endDate);
     
     // Update hidden input for form submission
@@ -217,16 +245,27 @@ function updateEndDate(startDate, duration, durationType) {
     document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
 }
 
-function calculateEndDate(startDate, duration, durationType) {
+function calculateEndDate(startDate, duration) {
     const start = new Date(startDate);
     let end = new Date(start);
     
-    if (durationType === 'days') {
-        end.setDate(end.getDate() + parseInt(duration));
-    } else if (durationType === 'months') {
-        end.setMonth(end.getMonth() + parseInt(duration));
-    } else if (durationType === 'year') {
-        end.setFullYear(end.getFullYear() + parseInt(duration));
+    // Get the duration type from PHP
+    const durationType = '<?= strtolower($membership['duration_type']) ?>';
+    
+    // Calculate end date based on duration type
+    switch(durationType) {
+        case 'month':
+        case 'months':
+            end.setMonth(end.getMonth() + parseInt(duration));
+            break;
+        case 'year':
+        case 'years':
+            end.setFullYear(end.getFullYear() + parseInt(duration));
+            break;
+        case 'day':
+        case 'days':
+            end.setDate(end.getDate() + parseInt(duration));
+            break;
     }
     
     return end;

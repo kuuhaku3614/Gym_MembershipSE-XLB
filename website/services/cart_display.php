@@ -79,6 +79,33 @@
         </div>
     <?php endif; ?>
 
+    <!-- Registration Fee section -->
+    <?php if (isset($_SESSION['cart']['registration_fee']) && is_array($_SESSION['cart']['registration_fee']) && isset($_SESSION['cart']['registration_fee']['price'])): ?>
+        <div class="cart-section">
+            <h6 class="fw-bold mb-3">One-time Fees</h6>
+            <div class="cart-item">
+                <div class="item-details">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1"><?= htmlspecialchars($_SESSION['cart']['registration_fee']['name']) ?></p>
+                            <p class="price mb-1">₱<?= number_format($_SESSION['cart']['registration_fee']['price'], 2) ?></p>
+                            <p class="text-muted mb-0">One-time registration fee for new members</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Debug information (visible) -->
+    <div class="cart-section text-muted small">
+        <p>Debug Info:</p>
+        <pre><?php 
+            echo "Registration Fee Status: ";
+            var_dump($_SESSION['cart']['registration_fee']);
+        ?></pre>
+    </div>
+
     <!-- Cart summary -->
     <div class="cart-summary mt-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -112,4 +139,4 @@
             <?php unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
-<?php endif; ?> 
+<?php endif; ?>
