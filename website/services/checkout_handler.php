@@ -83,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Check if the rental is included in the membership plan or program
                 $sql = "SELECT * FROM memberships m 
                         JOIN membership_plans mp ON m.membership_plan_id = mp.id 
-                        WHERE m.user_id = ? AND mp.id = ?";
+                        JOIN transactions t ON m.transaction_id = t.id
+                        WHERE t.user_id = ? AND mp.id = ? AND m.status = 'active'";
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([$_SESSION['user_id'], $rental['id']]);
                 $rental_included = $stmt->fetch();
