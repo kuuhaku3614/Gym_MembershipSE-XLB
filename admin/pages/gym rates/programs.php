@@ -1,40 +1,28 @@
 <?php
 require_once '../../../config.php';
 
-// Fetch programs with new normalized schema
+// Fetch programs with additional coach program type information
 $sql = "
     SELECT 
         programs.*, 
-        CONCAT(pd.first_name, ' ', pd.last_name) AS coach_name, 
         pt.type_name AS program_type, 
         dt.type_name AS duration_type, 
-        st.status_name AS status 
+        st.status_name AS status,
+        u.username AS coach_name,
+        cpt.coach_id,
+        cpt.price AS coach_program_price,
+        cpt.description AS coach_program_description,
+        cpt.status AS coach_program_status
     FROM programs
-    JOIN coaches c ON programs.coach_id = c.id
-    JOIN users u ON c.user_id = u.id
-    JOIN personal_details pd ON u.id = pd.user_id
+    LEFT JOIN coach_program_types cpt ON programs.id = cpt.program_id
     JOIN program_types pt ON programs.program_type_id = pt.id
     JOIN duration_types dt ON programs.duration_type_id = dt.id
     JOIN status_types st ON programs.status_id = st.id
+    LEFT JOIN users u ON cpt.coach_id = u.id
 ";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fetch coach details for dropdown
-$coachSql = "
-    SELECT 
-        c.id AS coach_id, 
-        CONCAT(pd.first_name, ' ', pd.last_name) AS coach_name, 
-        pd.phone_number 
-    FROM coaches c
-    JOIN users u ON c.user_id = u.id
-    JOIN personal_details pd ON u.id = pd.user_id
-    WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'coach')
-";
-$coachStmt = $pdo->prepare($coachSql);
-$coachStmt->execute();
-$coaches = $coachStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch program types
 $programTypesSql = "SELECT id, type_name FROM program_types";
@@ -48,6 +36,17 @@ $durationTypesStmt = $pdo->prepare($durationTypesSql);
 $durationTypesStmt->execute();
 $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch coaches (using users table)
+$coachesSql = "
+    SELECT 
+        id, 
+        username 
+    FROM users 
+    WHERE role_id = (SELECT id FROM roles WHERE role_name = 'coach')
+";
+$coachesStmt = $pdo->prepare($coachesSql);
+$coachesStmt->execute();
+$coaches = $coachesStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <h1 class="nav-title">Programs</h1>

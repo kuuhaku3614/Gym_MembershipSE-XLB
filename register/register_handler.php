@@ -125,7 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $pdo->beginTransaction();
                 
                 // Get the member role ID
-                $stmt = $pdo->prepare("SELECT id FROM roles WHERE role_name = 'member'");
+                $stmt = $pdo->prepare("SELECT id FROM roles WHERE role_name = 'user'");
                 $stmt->execute();
                 $roleId = $stmt->fetchColumn();
                 

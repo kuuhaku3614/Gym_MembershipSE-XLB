@@ -1,0 +1,63 @@
+/* Modal Header and Footer */
+.modal-header {
+    border-bottom: 1px solid #ddd;
+    padding: 1rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #ddd;
+    padding: 1rem;
+}
+
+/* Member Photo Styling */
+.member-photo {
+    border: 3px solid #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.member-photo:hover {
+    transform: scale(1.1);
+}
+
+/* Section Styling */
+.info-section {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+}
+
+.info-header {
+    font-size: 1.125rem;
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+/* Member Name */
+.member-name {
+    font-size: 1.25rem;
+    color: #2c3e50;
+}
+
+/* Badge Styling */
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+    .modal-body .row {
+        flex-direction: column;
+    }
+
+    .info-section {
+        margin-bottom: 1rem;
+    }
+}

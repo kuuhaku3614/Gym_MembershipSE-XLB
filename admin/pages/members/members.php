@@ -77,113 +77,72 @@ if (!file_exists($uploadsDir)) {
     mkdir($uploadsDir, 0777, true);
 }
 
-
-$query = "
-        SELECT 
-        u.id AS user_id,
-        u.username,
-        pd.first_name,
-        pd.middle_name,
-        pd.last_name,
-        pd.sex,
-        pd.birthdate,
-        pd.phone_number,
-        COALESCE(pp.photo_path, NULL) AS photo_path,
-        msp.plan_name,
-        ms.start_date AS membership_start,
-        ms.end_date AS membership_end,
-        ms.total_amount AS membership_amount,
-        ms.status AS membership_status,
-        GROUP_CONCAT(DISTINCT prg.program_name SEPARATOR ', ') AS subscribed_programs,
-        GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services
-    FROM users u
-    INNER JOIN memberships ms ON u.id = ms.user_id
-    LEFT JOIN personal_details pd ON u.id = pd.user_id
-    LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
-    LEFT JOIN membership_plans msp ON ms.membership_plan_id = msp.id
-    LEFT JOIN program_subscriptions ps ON ms.id = ps.membership_id
-    LEFT JOIN programs prg ON ps.program_id = prg.id
-    LEFT JOIN rental_subscriptions rs ON ms.id = rs.membership_id
-    LEFT JOIN rental_services rsvc ON rs.rental_service_id = rsvc.id
-    WHERE u.is_active = 1
-    GROUP BY u.id, u.username, pd.first_name, pd.middle_name, pd.last_name, 
-            pd.sex, pd.birthdate, pd.phone_number, pp.photo_path, 
-            msp.plan_name, ms.start_date, ms.end_date, 
-            ms.total_amount, ms.status;
-    ";
+$query = "SELECT 
+    u.id AS user_id, 
+    u.username, 
+    pd.first_name, 
+    pd.middle_name, 
+    pd.last_name, 
+    pd.sex, 
+    pd.birthdate, 
+    pd.phone_number, 
+    COALESCE(pp.photo_path, NULL) AS photo_path, 
+    msp.plan_name, 
+    ms.start_date AS membership_start, 
+    ms.end_date AS membership_end, 
+    ms.status AS membership_status, 
+    t.id AS transaction_id,
+    t.created_at AS transaction_date,
+    GROUP_CONCAT(DISTINCT prg.program_name SEPARATOR ', ') AS subscribed_programs, 
+    GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services
+FROM 
+    users u 
+JOIN 
+    roles r ON u.role_id = r.id AND r.id = 3
+LEFT JOIN 
+    transactions t ON u.id = t.user_id
+LEFT JOIN 
+    memberships ms ON t.id = ms.transaction_id
+LEFT JOIN 
+    personal_details pd ON u.id = pd.user_id 
+LEFT JOIN 
+    profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
+LEFT JOIN 
+    membership_plans msp ON ms.membership_plan_id = msp.id 
+LEFT JOIN 
+    program_subscriptions ps ON t.id = ps.transaction_id 
+LEFT JOIN 
+    programs prg ON ps.program_id = prg.id 
+LEFT JOIN 
+    rental_subscriptions rs ON t.id = rs.transaction_id 
+LEFT JOIN 
+    rental_services rsvc ON rs.rental_service_id = rsvc.id 
+WHERE 
+    u.is_active = 1 
+GROUP BY 
+    u.id, 
+    u.username, 
+    pd.first_name, 
+    pd.middle_name, 
+    pd.last_name, 
+    pd.sex, 
+    pd.birthdate, 
+    pd.phone_number, 
+    pp.photo_path, 
+    msp.plan_name, 
+    ms.start_date, 
+    ms.end_date, 
+    ms.status,
+    t.id,
+    t.created_at;
+";
 
     $stmt = $pdo->prepare($query);
     $stmt->execute();
     $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
-
-    <!-- Styles -->
-    <style>
-    /* Modal Header and Footer */
-    .modal-header {
-        border-bottom: 1px solid #ddd;
-        padding: 1rem;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #ddd;
-        padding: 1rem;
-    }
-
-    /* Member Photo Styling */
-    .member-photo {
-        border: 3px solid #fff;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease;
-    }
-
-    .member-photo:hover {
-        transform: scale(1.1);
-    }
-
-    /* Section Styling */
-    .info-section {
-        padding: 1rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-        background-color: #f8f9fa;
-    }
-
-    .info-header {
-        font-size: 1.125rem;
-        font-weight: bold;
-        color: #495057;
-        margin-bottom: 0.75rem;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 0.5rem;
-    }
-
-    /* Member Name */
-    .member-name {
-        font-size: 1.25rem;
-        color: #2c3e50;
-    }
-
-    /* Badge Styling */
-    .badge {
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 500;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 576px) {
-        .modal-body .row {
-            flex-direction: column;
-        }
-
-        .info-section {
-            margin-bottom: 1rem;
-        }
-    }
-</style>
+<link rel="stylesheet" href="membership.css">
 
 
 <!-- Main Container -->
@@ -217,31 +176,31 @@ $query = "
                     <tbody>
                         <?php if (!empty($members)): ?>
                             <?php foreach ($members as $member): ?>
-                                <tr>
-                                    <td class="align-middle text-center">
-                                        <div class="member-photo-container">
-                                            <img src="../../../<?= htmlspecialchars($member['photo_path']); ?>" 
-                                                class="img-fluid rounded-circle member-photo" 
-                                                style="width: 60px; height: 60px; object-fit: cover;"
-                                                alt="Profile Photo">
-                                        </div>
-                                    </td>
-                                    <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
-                                    <td><?= htmlspecialchars($member['plan_name']) ?: 'No Plan'; ?></td>
-                                    <td><?= htmlspecialchars($member['membership_start']) ?: 'N/A'; ?></td>
-                                    <td><?= htmlspecialchars($member['membership_end']) ?: 'N/A'; ?></td>
-                                    <td><?= htmlspecialchars($member['membership_status']) ?: 'Unknown'; ?></td>
-                                    <td class="align-middle">
-                                        <div class="btn-group" role="group">
-                                            <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger delete-member" data-id="<?= htmlspecialchars($member['user_id']); ?>">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td class="align-middle text-center">
+                                    <div class="member-photo-container">
+                                        <img src="../../../<?= htmlspecialchars($member['photo_path'] ?? 'default-photo.jpg'); ?>" 
+                                            class="img-fluid rounded-circle member-photo" 
+                                            style="width: 60px; height: 60px; object-fit: cover;" 
+                                            alt="Profile Photo">
+                                    </div>
+                                </td>
+                                <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
+                                <td><?= htmlspecialchars($member['plan_name']) ?: 'No Plan'; ?></td>
+                                <td><?= htmlspecialchars($member['membership_start']) ?: 'N/A'; ?></td>
+                                <td><?= htmlspecialchars($member['membership_end']) ?: 'N/A'; ?></td>
+                                <td><?= htmlspecialchars($member['membership_status']) ?: 'Unknown'; ?></td>
+                                <td class="align-middle">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-member" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
@@ -259,12 +218,12 @@ $query = "
 <div class="modal fade" id="addMemberModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Member</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
+        <div class="modal-header">
+            <h5 class="modal-title">Add New Member</h5>
+            <button type="button" class="close" onclick="confirmClose()" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
             <div class="modal-body">
                 <!-- Progress Bar -->
                 <div class="progress mb-4">
@@ -510,10 +469,18 @@ $query = "
         $('#addMemberModal').modal({
             show: false,
             backdrop: 'static',
-            keyboard: false
+            keyboard: false // Prevent default ESC key closing
+        });
+
+        // Handle the close confirmation
+        $('#addMemberModal').on('hide.bs.modal', (e) => {
+            const userConfirmed = confirm('Are you sure you want to exit? Unsaved changes will be lost.');
+            if (!userConfirmed) {
+                e.preventDefault(); // Prevent modal from closing
+            }
         });
     },
-
+    
     bindEvents() {
         // Use event delegation for dynamically loaded content
         $(document).on('click', '#addMemberBtn', (e) => {
@@ -1117,6 +1084,7 @@ $(document).ready(function () {
         const userId = $(this).data('id');
         alert('Edit functionality will be implemented for user ID: ' + userId);
     });
+    
 });
 
 </script>
