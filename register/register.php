@@ -17,7 +17,7 @@
             </div>
             <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
             
-            <form id="registrationForm" method="POST" action="register_handler.php" enctype="multipart/form-data">
+            <form id="registrationForm" method="POST" enctype="multipart/form-data">
                 <div class="form-row">
                     <!-- Profile Photo Upload Section -->
                     <div class="profile-photo-upload">
@@ -143,7 +143,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-      $(document).ready(function() {
+$(document).ready(function() {
     // Custom file upload trigger
     $('.btn-upload-trigger').on('click', function() {
         $('#profile_photo').click();
@@ -194,7 +194,7 @@
         `);
     }
 
-    // File input change handler for preview
+    // Form submission handler
     $('#registrationForm').on('submit', function(e) {
         e.preventDefault();
         
@@ -241,13 +241,17 @@
     $('.btn-verify').click(function() {
         const code = $('.verification-input').val();
         
+        // Get the original form data with file
+        var formData = new FormData($('#registrationForm')[0]);
+        formData.append('action', 'verify');
+        formData.append('code', code);
+        
         $.ajax({
             url: 'register_handler.php',
             type: 'POST',
-            data: {
-                action: 'verify',
-                code: code
-            },
+            data: formData,
+            processData: false,
+            contentType: false,
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
@@ -286,6 +290,6 @@
         return phone.substring(0, 2) + '*'.repeat(phone.length - 4) + phone.slice(-2);
     }
 });
-    </script>
+</script>
 </body>
 </html>
