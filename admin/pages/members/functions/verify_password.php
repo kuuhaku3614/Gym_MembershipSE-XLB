@@ -14,7 +14,7 @@ try {
     $sql = "SELECT u.password 
             FROM users u 
             JOIN personal_details pd ON u.id = pd.user_id 
-            WHERE pd.id = ?";
+            WHERE u.id = ?";
     
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$userId]);

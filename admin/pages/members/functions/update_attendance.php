@@ -22,7 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Check if attendance record exists for today
-        $sql = "SELECT * FROM attendance WHERE user_id = :user_id AND date = :date";
+        $sql = "
+            SELECT * 
+            FROM attendance 
+            WHERE user_id = :user_id 
+            AND date = :date
+            ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':user_id' => $userId, ':date' => $date]);
         $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,15 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($status === 'checked In') {
             // Handle check-in
             if ($existingRecord) {
-                $sql = "UPDATE attendance 
-                        SET time_in = :time, 
-                            status_id = :status_id 
-                        WHERE user_id = :user_id 
-                        AND date = :date";
+                $sql = "UPDATE attendance SET time_in = :time, status_id = :status_id WHERE user_id = :user_id AND date = :date";
             } else {
-                $sql = "INSERT INTO attendance 
-                        (user_id, date, time_in, status_id) 
-                        VALUES (:user_id, :date, :time, :status_id)";
+                $sql = "INSERT INTO attendance (user_id, date, time_in, status_id) VALUES (:user_id, :date, :time, :status_id)";
             }
             
             // Execute attendance update/insert
@@ -69,11 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Handle check-out
             if ($existingRecord && $existingRecord['time_in']) {
                 // Update attendance record with check-out time
-                $sql = "UPDATE attendance 
-                        SET time_out = :time, 
-                            status_id = :status_id 
-                        WHERE user_id = :user_id 
-                        AND date = :date";
+                $sql = "UPDATE attendance SET time_out = :time, status_id = :status_id WHERE user_id = :user_id AND date = :date";
                 
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
@@ -104,9 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Fetch updated attendance record
         $sql = "SELECT a.*, ast.status_name 
-                FROM attendance a
-                JOIN attendance_status ast ON a.status_id = ast.id
-                WHERE a.user_id = :user_id AND a.date = :date";
+        FROM attendance a
+        JOIN attendance_status ast ON a.status_id = ast.id
+        WHERE a.user_id = :user_id AND a.date = :date";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':user_id' => $userId, ':date' => $date]);
         $updatedRecord = $stmt->fetch(PDO::FETCH_ASSOC);

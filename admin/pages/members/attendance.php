@@ -5,18 +5,18 @@ require_once '../../../config.php'; // Navigates up 3 levels dynamically
 // SQL query remains the same
 $sql = "
 SELECT 
-    pd.id AS user_id,
+    u.id AS user_id,
     CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
     u.username,
     pp.photo_path,
     a.time_in,
     a.time_out,
-    ast.status_name as status,
+    LOWER(ast.status_name) as status,
     a.date
 FROM personal_details pd
 JOIN users u ON pd.user_id = u.id
 LEFT JOIN profile_photos pp ON u.id = pp.user_id
-LEFT JOIN attendance a ON pd.id = a.user_id AND a.date = CURRENT_DATE()
+LEFT JOIN attendance a ON u.id = a.user_id AND a.date = CURRENT_DATE()
 LEFT JOIN attendance_status ast ON a.status_id = ast.id
 WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'member')
 AND u.is_active = 1;
@@ -150,16 +150,15 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <tbody>
     <?php foreach ($personalDetails as $detail): ?>
         <?php 
+        // Determine button text and state
         $buttonText = 'Check In';
         $isDisabled = '';
-        
-        if (!empty($detail['status'])) {
-            if ($detail['status'] === 'checked In') {
-                $buttonText = 'Check Out';
-            } else if ($detail['status'] === 'checked out') {
-                $buttonText = 'Check Out';
-                $isDisabled = 'disabled';
-            }
+        $status = strtolower($detail['status'] ?? ''); // Standardize status comparison
+        if ($status === 'checked in') {
+            $buttonText = 'Check Out';
+        } else if ($status === 'checked out') {
+            $buttonText = 'Check Out';
+            $isDisabled = 'disabled';
         }
         ?>
         <tr>
@@ -171,9 +170,9 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <td>
                 <button class="btn btn-primary btn-sm action-btn"
                         data-user-id="<?= htmlspecialchars($detail['user_id']) ?>"
-                        data-current-status="<?= $detail['status'] ?? 'pending' ?>"
+                        data-current-status="<?= htmlspecialchars($detail['status'] ?? 'pending') ?>"
                         <?= $isDisabled ?>>
-                    <?= $buttonText ?>
+                    <?= htmlspecialchars($buttonText) ?>
                 </button>
             </td>
         </tr>
@@ -225,27 +224,28 @@ $(document).ready(function () {
 
     // Function to fetch user data with error handling
     function fetchUserData(userId) {
-        $.ajax({
-            url: '../admin/pages/members/functions/get_user_data.php',
-            type: 'POST',
-            data: { userId: userId },
-            dataType: 'json',
-            success: function(response) {
-                console.log('User data received:', response);
-                if (response.success) {
-                    currentUserData = response.user;
-                    showVerificationModal(response.user);
-                } else {
-                    alert("Error fetching user data: " + response.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error fetching user data:', error);
-                console.error('Server response:', xhr.responseText);
-                alert("Error connecting to server. Please try again.");
+    $.ajax({
+        url: '../admin/pages/members/functions/get_user_data.php',
+        type: 'POST',
+        data: { userId: userId },  // Pass the original userId from the button
+        dataType: 'json',
+        success: function(response) {
+            console.log('User data received:', response);
+            if (response.success) {
+                // Use the user_id from the response, which is now the correct users.id
+                currentUserData = response.user;
+                showVerificationModal(response.user);
+            } else {
+                alert("Error fetching user data: " + response.message);
             }
-        });
-    }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching user data:', error);
+            console.error('Server response:', xhr.responseText);
+            alert("Error connecting to server. Please try again.");
+        }
+    });
+}
 
     // Enhanced verification modal handling
     function showVerificationModal(userData) {
