@@ -36,6 +36,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
     
+    function uploadProfilePhoto($userId, $profilePhoto) {
+        // Validate file upload
+        if (!isset($profilePhoto) || $profilePhoto['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Invalid file upload. Error code: " . 
+                ($profilePhoto['error'] ?? 'Unknown'));
+        }
+    
+        // Allowed file types and max file size
+        $allowedExtensions = ['jpg', 'jpeg', 'png'];
+        $maxFileSize = 5 * 1024 * 1024; // 5MB
+    
+        // Get file extension
+        $fileExtension = strtolower(pathinfo($profilePhoto['name'], PATHINFO_EXTENSION));
+    
+        // Validate file type using extension
+        if (!in_array($fileExtension, $allowedExtensions)) {
+            throw new Exception("Invalid file type. Only JPEG and PNG are allowed.");
+        }
+    
+        if ($profilePhoto['size'] > $maxFileSize) {
+            throw new Exception("File size exceeds 5MB limit.");
+        }
+    
+        // Set upload directory relative to the project root
+        $uploadDir = dirname(__DIR__, 1) . '/uploads'; // Navigate up three levels to reach the project root
+        if (!file_exists($uploadDir)) {
+            if (!mkdir($uploadDir, 0755, true)) {
+                throw new Exception("Failed to create upload directory");
+            }
+        }
+    
+        // Generate unique filename
+        $newFileName = 'profile_' . $userId . '_' . uniqid() . '.' . $fileExtension;
+        $uploadPath = $uploadDir . '/' . $newFileName; // Full file path for saving
+        $relativePath = 'uploads/' . $newFileName; // Relative path for storing in the database
+    
+        // Log additional information for debugging
+        error_log("Photo Upload Debug: " . json_encode([
+            'userId' => $userId,
+            'originalName' => $profilePhoto['name'],
+            'newFileName' => $newFileName,
+            'fullPath' => $uploadPath,
+            'relativePath' => $relativePath
+        ]));
+        
+        // Attempt to move uploaded file
+        if (!move_uploaded_file($profilePhoto['tmp_name'], $uploadPath)) {
+            throw new Exception("Failed to move uploaded file");
+        }
+    
+        return $relativePath;
+    }
+
     // Handle verification code submission
     if (isset($_POST['action']) && $_POST['action'] === 'verify') {
         try {
@@ -66,7 +119,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Get the last inserted user ID
                 $userId = $pdo->lastInsertId();
                 
+                // Handle profile photo upload if a file was submitted
+                $profilePhotoPath = null;
+                if (!empty($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+                    $profilePhotoPath = uploadProfilePhoto($userId, $_FILES['profile_photo']);
+                }
+                
                 // Insert into personal_details table
+                // Update the personal details insertion to remove profile_photo column
                 $stmt = $pdo->prepare("INSERT INTO personal_details (user_id, first_name, middle_name, last_name, sex, birthdate, phone_number) VALUES (?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
                     $userId,
@@ -77,6 +137,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $data['birthday'],
                     $data['phone']
                 ]);
+
+                // If a profile photo was uploaded, insert its path into the profile_photos table
+                if (!empty($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+                    $profilePhotoPath = uploadProfilePhoto($userId, $_FILES['profile_photo']);
+                    
+                    $stmt = $pdo->prepare("INSERT INTO profile_photos (user_id, photo_path) VALUES (?, ?)");
+                    $stmt->execute([$userId, $profilePhotoPath]);
+                }
                 
                 // Commit transaction
                 $pdo->commit();

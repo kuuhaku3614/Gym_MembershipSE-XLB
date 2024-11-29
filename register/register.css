@@ -210,3 +210,143 @@ h1 {
     color: #06D91B;
     margin: 2rem 0;
 }
+.file-upload-container {
+    width: 100%;
+    height: 50px; /* Fixed height */
+    margin-bottom: 15px;
+    overflow: hidden; /* Hide any overflow */
+}
+
+.file-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px dashed #ced4da;
+    transition: all 0.3s ease;
+    width: 100%;
+    height: 100%; /* Ensure it fills the container */
+}
+
+.file-name-display {
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.file-upload-wrapper:hover {
+    border-color: #FF0000;
+    background-color: #fff0f0;
+}
+
+.btn-upload-trigger {
+    background-color: #FF0000;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide any overflow */
+    max-width: max-content; /* Limit width to content */
+}
+
+.btn-upload-trigger i {
+    font-size: 20px;
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.btn-upload-trigger span {
+    flex-shrink: 0; /* Prevent text from shrinking */
+}
+
+.file-name-display {
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+.profile-photo-upload {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.profile-photo-container {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    border: 3px solid #FF0000;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.profile-photo-container:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.profile-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.profile-photo-placeholder i {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.custom-file {
+    position: relative;
+    width: 100%;
+}
+
+.custom-file-input {
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-file-label {
+    position: relative;
+    z-index: 1;
+    background-color: #FF0000;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 15px;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.custom-file-label:hover {
+    background-color: #cc0000;
+}

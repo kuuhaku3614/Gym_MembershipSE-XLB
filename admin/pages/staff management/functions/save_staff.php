@@ -1,13 +1,32 @@
 <?php
 // save_staff.php
 header('Content-Type: application/json');
-require_once '../../../config.php';
+require_once 'config.php';
+
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 try {
     $database = new Database();
     $pdo = $database->connect();
     
     $pdo->beginTransaction();
+
+    // Validate required fields with more specific checks
+    $requiredFields = ['username', 'password', 'role', 'first_name', 'last_name', 'phone_number', 'sex', 'birthdate'];
+    foreach ($requiredFields as $field) {
+        if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
+            throw new PDOException("Missing or empty required field: $field");
+        }
+    }
+
+    // Check username uniqueness
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+    $stmt->execute([$_POST['username']]);
+    if ($stmt->fetchColumn() > 0) {
+        throw new PDOException("Username already exists");
+    }
 
     // Get role ID
     $stmt = $pdo->prepare("SELECT id FROM roles WHERE role_name = ?");
@@ -16,6 +35,11 @@ try {
 
     if (!$role_id) {
         throw new PDOException("Invalid role");
+    }
+
+    // Validate phone number (basic format check)
+    if (!preg_match('/^[0-9]{10,15}$/', $_POST['phone_number'])) {
+        throw new PDOException("Invalid phone number format");
     }
 
     // Insert into users table
@@ -30,50 +54,45 @@ try {
     $user_id = $pdo->lastInsertId();
 
     // Insert into personal_details table
-    $stmt = $pdo->prepare("INSERT INTO personal_details (user_id, first_name, middle_name, last_name, phone_number) 
-                          VALUES (?, ?, ?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO personal_details (
+        user_id, 
+        first_name, 
+        middle_name, 
+        last_name, 
+        sex, 
+        birthdate, 
+        phone_number
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
         $user_id,
         $_POST['first_name'],
-        $_POST['middle_name'],
+        $_POST['middle_name'] ?? null,
         $_POST['last_name'],
+        $_POST['sex'],
+        $_POST['birthdate'],
         $_POST['phone_number']
     ]);
 
-    // If role is coach, insert into coaches table and program types
-    if ($_POST['role'] === 'coach') {
-        // Insert into coaches table
-        $stmt = $pdo->prepare("INSERT INTO coaches (user_id) VALUES (?)");
-        $stmt->execute([$user_id]);
-        $coach_id = $pdo->lastInsertId();
-
-        // Determine which program types to insert
-        $program_types = [];
-        if ($_POST['program_type'] === 'both') {
-            $program_types = ['personal', 'group'];
-        } else {
-            $program_types = [$_POST['program_type']];
-        }
-
-        // Get and insert program types
-        $stmt = $pdo->prepare("SELECT id FROM program_types WHERE type_name = ?");
-        foreach ($program_types as $type) {
-            $stmt->execute([$type]);
-            $program_type_id = $stmt->fetchColumn();
-            
-            if ($program_type_id) {
-                $stmt2 = $pdo->prepare("INSERT INTO coach_program_types (coach_id, program_type_id) VALUES (?, ?)");
-                $stmt2->execute([$coach_id, $program_type_id]);
-            }
-        }
-    }
-
     $pdo->commit();
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => true, 'message' => 'Staff member added successfully']);
 
 } catch (PDOException $e) {
     if (isset($pdo)) {
         $pdo->rollBack();
     }
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    error_log("Staff Save Error: " . $e->getMessage());
+    echo json_encode([
+        'success' => false, 
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+    ]);
+} catch (Exception $e) {
+    error_log("Unexpected Error: " . $e->getMessage());
+    echo json_encode([
+        'success' => false, 
+        'message' => 'An unexpected error occurred',
+        'details' => $e->getMessage()
+    ]);
 }
+?>
