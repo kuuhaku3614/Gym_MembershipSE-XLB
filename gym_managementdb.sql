@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 28, 2024 at 05:18 PM
+-- Generation Time: Nov 29, 2024 at 07:46 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -107,7 +107,8 @@ CREATE TABLE `coach_program_types` (
 --
 
 INSERT INTO `coach_program_types` (`id`, `coach_id`, `program_id`, `price`, `description`, `status`, `created_at`, `updated_at`) VALUES
-(3, 3, 1, 500.00, 'hello', 'active', '2024-11-26 22:09:12', '2024-11-26 22:09:12');
+(3, 3, 1, 500.00, 'hello', 'active', '2024-11-26 22:09:12', '2024-11-26 22:09:12'),
+(4, 4, 1, 400.00, 'world', 'active', '2024-11-29 06:30:28', '2024-11-29 06:30:28');
 
 -- --------------------------------------------------------
 
@@ -204,7 +205,8 @@ CREATE TABLE `personal_details` (
 INSERT INTO `personal_details` (`id`, `user_id`, `first_name`, `middle_name`, `last_name`, `sex`, `birthdate`, `phone_number`, `created_at`, `updated_at`) VALUES
 (1, 1, 'reign', '', 'magno', 'Male', '2004-08-02', '12312312312', '2024-11-24 19:36:54', '2024-11-24 19:36:54'),
 (2, 2, 'admin', '', 'admin', 'Male', '2024-11-25', '12312312312', '2024-11-24 20:25:33', '2024-11-24 20:25:33'),
-(3, 3, 'coach', '', 'coach', 'Male', '2024-11-25', '12312312312', '2024-11-24 20:34:15', '2024-11-24 20:34:15');
+(3, 3, 'coach', '', 'coach', 'Male', '2024-11-25', '12312312312', '2024-11-24 20:34:15', '2024-11-24 20:34:15'),
+(4, 4, 'coach2', '', 'coach2', 'Female', '2024-11-04', '12312312312', '2024-11-29 06:28:45', '2024-11-29 06:28:45');
 
 -- --------------------------------------------------------
 
@@ -232,7 +234,6 @@ CREATE TABLE `programs` (
   `program_type_id` int(11) NOT NULL,
   `duration` int(11) NOT NULL,
   `duration_type_id` int(11) NOT NULL,
-  `price` decimal(10,2) NOT NULL,
   `description` text DEFAULT NULL,
   `status_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -243,8 +244,8 @@ CREATE TABLE `programs` (
 -- Dumping data for table `programs`
 --
 
-INSERT INTO `programs` (`id`, `program_name`, `program_type_id`, `duration`, `duration_type_id`, `price`, `description`, `status_id`, `created_at`, `updated_at`) VALUES
-(1, 'Zumba', 2, 1, 2, 200.00, 'fse cuma mraw  jrf\r\n\r\ncawfni\r\n\r\nfawfa feaf egsgse', 1, '2024-11-24 20:32:19', '2024-11-27 15:12:40');
+INSERT INTO `programs` (`id`, `program_name`, `program_type_id`, `duration`, `duration_type_id`, `description`, `status_id`, `created_at`, `updated_at`) VALUES
+(1, 'Zumba', 2, 1, 2, 'fse cuma mraw  jrf\r\n\r\ncawfni\r\n\r\nfawfa feaf egsgse', 1, '2024-11-24 20:32:19', '2024-11-27 15:12:40');
 
 -- --------------------------------------------------------
 
@@ -435,9 +436,10 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `role_id`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'reign', '$2y$10$XgGnA0dysbupJkW9JQnhaugoVkLlhhCS/oGXkktP2cGR99Fh39iei', 5, 1, '2024-11-24 19:36:54', '2024-11-24 20:25:00'),
+(1, 'reign', '$2y$10$XgGnA0dysbupJkW9JQnhaugoVkLlhhCS/oGXkktP2cGR99Fh39iei', 5, 1, '2024-11-24 19:36:54', '2024-11-28 17:42:52'),
 (2, 'admin', '$2y$10$.vK.8NGNOrYaazQmnDLmtOTRcjTCCHEwleCbIkYfXTWIpyi9l7itq', 1, 1, '2024-11-24 20:25:33', '2024-11-24 20:25:54'),
-(3, 'coach', '$2y$10$dU1Y7grfzBoOg1okhGigReKOr.m223CXmeUIVD5J2.3mqOg1DfONi', 4, 1, '2024-11-24 20:34:15', '2024-11-24 20:35:13');
+(3, 'coach', '$2y$10$dU1Y7grfzBoOg1okhGigReKOr.m223CXmeUIVD5J2.3mqOg1DfONi', 4, 1, '2024-11-24 20:34:15', '2024-11-24 20:35:13'),
+(4, 'coach2', '$2y$10$JIpeS4.87VMKKfQ/DEkZvOXLnWMezb/u8q52p48je.4n.7u5hcWXC', 4, 1, '2024-11-29 06:28:45', '2024-11-29 06:29:02');
 
 --
 -- Indexes for dumped tables
@@ -634,7 +636,7 @@ ALTER TABLE `attendance_status`
 -- AUTO_INCREMENT for table `coach_program_types`
 --
 ALTER TABLE `coach_program_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `duration_types`
@@ -646,7 +648,7 @@ ALTER TABLE `duration_types`
 -- AUTO_INCREMENT for table `memberships`
 --
 ALTER TABLE `memberships`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83;
 
 --
 -- AUTO_INCREMENT for table `membership_plans`
@@ -658,7 +660,7 @@ ALTER TABLE `membership_plans`
 -- AUTO_INCREMENT for table `personal_details`
 --
 ALTER TABLE `personal_details`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `profile_photos`
@@ -676,7 +678,7 @@ ALTER TABLE `programs`
 -- AUTO_INCREMENT for table `program_subscriptions`
 --
 ALTER TABLE `program_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `program_types`
@@ -694,7 +696,7 @@ ALTER TABLE `registration`
 -- AUTO_INCREMENT for table `registration_records`
 --
 ALTER TABLE `registration_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `rental_services`
@@ -724,13 +726,13 @@ ALTER TABLE `status_types`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables

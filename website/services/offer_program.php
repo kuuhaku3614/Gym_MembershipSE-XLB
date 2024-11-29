@@ -2,6 +2,7 @@
 session_start();
 require_once 'services.class.php';
 require_once 'cart.class.php';
+require_once '../../functions/sanitize.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('location: ../../login/login.php');
@@ -105,13 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     }
-}
-
-function clean_input($data) {
-    $data = trim($data);
-    $data = stripslashes($data);
-    $data = htmlspecialchars($data);
-    return $data;
 }
 ?>
 
