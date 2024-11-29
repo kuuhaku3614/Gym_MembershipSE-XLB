@@ -111,7 +111,7 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="modal-body">
                 <table id="historyTable" class="table table-striped table-bordered">
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
                             <th>Full Name</th>
                             <th>Date</th>
@@ -137,7 +137,7 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </button>
 </div>
 <table id="attendanceTable" class="table table-striped table-bordered">
-    <thead>
+    <thead class="table-dark">
         <tr>
             <th>Full Name</th>
             <th>Date</th>
