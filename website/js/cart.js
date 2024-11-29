@@ -1,3 +1,27 @@
+// Function to show alerts
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.alert-container');
+    if (!alertContainer) {
+        console.error('Alert container not found');
+        return;
+    }
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    alertContainer.appendChild(alertDiv);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
 function updateCartDisplay(cart) {
     const cartBody = document.querySelector('.cart-body');
     if (!cartBody) {
@@ -81,6 +105,26 @@ function updateCartDisplay(cart) {
         });
     }
 
+    // Registration Fee section
+    if (cart.registration_fee) {
+        html += `
+            <div class="cart-section">
+                <h6 class="fw-bold mb-3">One-time Fees</h6>
+                <div class="cart-item">
+                    <div class="item-details">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">${cart.registration_fee.name}</p>
+                                <p class="price mb-1">₱${parseFloat(cart.registration_fee.price).toFixed(2)}</p>
+                                <p class="text-muted mb-0">One-time registration fee for new members</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     // Cart summary
     html += `
         <div class="cart-summary mt-3">
@@ -107,24 +151,38 @@ function updateCartDisplay(cart) {
 }
 
 function removeFromCart(type, id) {
-    const formData = new FormData();
+    const formData = new URLSearchParams();
     formData.append('action', 'remove');
     formData.append('type', type);
     formData.append('id', id.toString());
 
     fetch('services/cart_handler.php', {
         method: 'POST',
-        body: formData
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cache-Control': 'no-cache'
+        },
+        body: formData.toString(),
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            updateCartDisplay(data.cart);
+            updateCartDisplay(data.data.cart);
         } else {
-            alert(data.message || 'Failed to remove item');
+            const message = data.data && data.data.message ? data.data.message : 'Failed to remove item';
+            alert(message);
         }
     })
-    .catch(error => console.error('Error removing item:', error));
+    .catch(error => {
+        console.error('Error removing item:', error);
+        alert('Failed to remove item from cart');
+    });
 }
 
 function loadCart() {
@@ -132,37 +190,98 @@ function loadCart() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'Cache-Control': 'no-cache'
         },
-        body: 'action=get'
+        body: 'action=get',
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updateCartDisplay(data.cart);
-        } else {
-            console.error('Failed to load cart:', data.message);
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(text => {
+        if (!text.trim()) {
+            throw new Error('Empty response received');
+        }
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Parse error:', e);
+            throw new Error('Invalid JSON response');
         }
     })
-    .catch(error => console.error('Error loading cart:', error));
+    .then(response => {
+        if (!response) {
+            throw new Error('No response data');
+        }
+        
+        if (response.success) {
+            if (response.data && response.data.cart) {
+                updateCartDisplay(response.data.cart);
+            } else if (response.data && response.data.message) {
+                updateCartDisplay({ memberships: [], programs: [], rentals: [], total: 0 });
+            }
+        } else {
+            const message = response.data && response.data.message ? response.data.message : 'Unknown error';
+            console.error('Server error:', message);
+            if (message === 'Not logged in') {
+                window.location.href = 'login/login.php';
+            } else {
+                updateCartDisplay({ memberships: [], programs: [], rentals: [], total: 0 });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error loading cart:', error);
+        updateCartDisplay({ memberships: [], programs: [], rentals: [], total: 0 });
+    });
 }
 
 function clearCart() {
+    if (!confirm('Are you sure you want to clear your cart?')) {
+        return;
+    }
+
+    console.log('Clearing cart...');
+    const formData = new URLSearchParams();
+    formData.append('action', 'clear');
+
     fetch('services/cart_handler.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'Cache-Control': 'no-cache'
         },
-        body: 'action=clear'
+        body: formData.toString(),
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            console.error('Server responded with status:', response.status);
+            throw new Error(`Server error: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Clear cart response:', data);
         if (data.success) {
-            updateCartDisplay(data.cart);
+            updateCartDisplay(data.data.cart);
+            alert('Cart cleared successfully');
         } else {
-            alert(data.message || 'Failed to clear cart');
+            const message = data.data && data.data.message ? data.data.message : 'Failed to clear cart';
+            console.error('Clear cart failed:', message);
+            alert(message);
+            if (message === 'Not logged in') {
+                window.location.href = 'login/login.php';
+            }
         }
     })
-    .catch(error => console.error('Error clearing cart:', error));
+    .catch(error => {
+        console.error('Error clearing cart:', error);
+        alert('Failed to clear cart. Please try again or refresh the page.');
+    });
 }
 
 function availServices() {
@@ -175,34 +294,37 @@ function availServices() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
+        if (data.success && data.data.showConfirm) {
             proceedWithAvailing();
         } else {
-            alert(data.errors ? data.errors.join('\n') : 'Cart validation failed');
+            alert(data.data.message || 'An error occurred while validating your cart.');
         }
     })
     .catch(error => {
-        console.error('Error validating cart:', error);
-        alert('An error occurred while validating the cart');
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
     });
 }
 
 function proceedWithAvailing() {
     if (confirm('Are you sure you want to avail these services?')) {
         fetch('services/checkout_handler.php', {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = 'profile.php';
+                window.location.href = '/Gym_MembershipSE-XLB/website/profile.php';
             } else {
-                alert(data.message || 'Failed to avail services');
+                alert(data.data.message || 'An error occurred during checkout.');
             }
         })
         .catch(error => {
-            console.error('Error during checkout:', error);
-            alert('An error occurred while processing your request');
+            console.error('Error:', error);
+            alert('An error occurred while processing your request.');
         });
     }
 }

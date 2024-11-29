@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 27, 2024 at 07:44 PM
+-- Generation Time: Nov 28, 2024 at 05:18 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -305,6 +305,19 @@ INSERT INTO `registration` (`id`, `membership_fee`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `registration_records`
+--
+
+CREATE TABLE `registration_records` (
+  `id` int(11) NOT NULL,
+  `transaction_id` int(11) NOT NULL,
+  `registration_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `rental_services`
 --
 
@@ -327,7 +340,7 @@ CREATE TABLE `rental_services` (
 --
 
 INSERT INTO `rental_services` (`id`, `service_name`, `price`, `total_slots`, `available_slots`, `duration`, `duration_type_id`, `description`, `status_id`, `created_at`, `updated_at`) VALUES
-(1, 'Locker', 150.00, 100, 85, 1, 2, 'grrrrdgr\r\n\r\ngseeeedg\r\n\r\nsgesesdfgr\r\n\r\ngserghrrrrrrrrr\r\ngsrdsgsdfg', 1, '2024-11-24 20:33:13', '2024-11-27 17:32:04');
+(1, 'Locker', 150.00, 100, 84, 1, 2, 'grrrrdgr\r\n\r\ngseeeedg\r\n\r\nsgesesdfgr\r\n\r\ngserghrrrrrrrrr\r\ngsrdsgsdfg', 1, '2024-11-24 20:33:13', '2024-11-28 16:16:05');
 
 -- --------------------------------------------------------
 
@@ -536,6 +549,14 @@ ALTER TABLE `registration`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `registration_records`
+--
+ALTER TABLE `registration_records`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `transaction_id` (`transaction_id`),
+  ADD KEY `registration_id` (`registration_id`);
+
+--
 -- Indexes for table `rental_services`
 --
 ALTER TABLE `rental_services`
@@ -625,7 +646,7 @@ ALTER TABLE `duration_types`
 -- AUTO_INCREMENT for table `memberships`
 --
 ALTER TABLE `memberships`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT for table `membership_plans`
@@ -655,7 +676,7 @@ ALTER TABLE `programs`
 -- AUTO_INCREMENT for table `program_subscriptions`
 --
 ALTER TABLE `program_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `program_types`
@@ -670,6 +691,12 @@ ALTER TABLE `registration`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `registration_records`
+--
+ALTER TABLE `registration_records`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `rental_services`
 --
 ALTER TABLE `rental_services`
@@ -679,7 +706,7 @@ ALTER TABLE `rental_services`
 -- AUTO_INCREMENT for table `rental_subscriptions`
 --
 ALTER TABLE `rental_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -697,7 +724,7 @@ ALTER TABLE `status_types`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -771,6 +798,13 @@ ALTER TABLE `program_subscriptions`
   ADD CONSTRAINT `program_subscriptions_ibfk_2` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`),
   ADD CONSTRAINT `program_subscriptions_ibfk_3` FOREIGN KEY (`coach_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `program_subscriptions_ibfk_4` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`id`);
+
+--
+-- Constraints for table `registration_records`
+--
+ALTER TABLE `registration_records`
+  ADD CONSTRAINT `registration_records_ibfk_1` FOREIGN KEY (`transaction_id`) REFERENCES `transactions` (`id`),
+  ADD CONSTRAINT `registration_records_ibfk_2` FOREIGN KEY (`registration_id`) REFERENCES `registration` (`id`);
 
 --
 -- Constraints for table `rental_services`

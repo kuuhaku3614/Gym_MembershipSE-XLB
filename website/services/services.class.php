@@ -25,6 +25,25 @@ class Services_class{
         $this->db = new Database();
     }
 
+    public function checkActiveMembership($user_id) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "SELECT m.* 
+                    FROM memberships m
+                    JOIN transactions t ON m.transaction_id = t.id
+                    WHERE t.user_id = ? 
+                    AND m.status = 'active' 
+                    AND m.end_date >= CURDATE()
+                    AND m.start_date <= CURDATE()
+                    AND m.is_paid = 1";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$user_id]);
+            return $stmt->fetch() ? true : false;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
     public function displayStandardPlans(){
         $conn = $this->db->connect();
         $sql = "SELECT mp.id as plan_id, mp.plan_name, mp.price,
@@ -263,22 +282,6 @@ class Services_class{
         return $stmt->fetch();
     }
 
-    public function checkActiveMembership($user_id) {
-        $conn = $this->db->connect();
-        try {
-            $sql = "SELECT COUNT(*) as count 
-                    FROM memberships m 
-                    JOIN transactions t ON m.transaction_id = t.id 
-                    WHERE t.user_id = ? AND m.status = 'active'";
-            $stmt = $conn->prepare($sql);
-            $stmt->execute([$user_id]);
-            $result = $stmt->fetch();
-            return $result['count'] > 0;
-        } catch (Exception $e) {
-            throw new Exception('Error checking membership status: ' . $e->getMessage());
-        }
-    }
-
     public function checkUserRole($user_id) {
         $conn = $this->db->connect();
         try {
@@ -287,8 +290,8 @@ class Services_class{
             $stmt->execute([$user_id]);
             $result = $stmt->fetch();
             
-            // Check if user is already a member (role_id = 3 for member)
-            return $result['role_id'] == 3;
+            // Check if user is a member (role_id = 4) or a coach (role_id = 3)
+            return $result['role_id'] == 4 || $result['role_id'] == 3;
         } catch (Exception $e) {
             throw new Exception('Error checking user role: ' . $e->getMessage());
         }

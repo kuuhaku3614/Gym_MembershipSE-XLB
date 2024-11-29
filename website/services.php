@@ -40,6 +40,7 @@
 
 <div class="services-page">
     <div class="container-fluid p-0">
+        <div class="alert-container"></div>
         <div class="content-wrapper">
             <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
                 <h2 class="section-heading coach-section">OFFER PROGRAMS</h2>
