@@ -13,19 +13,42 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <h1 class="nav-title">Gym Rates</h1>
 
 <div class="search-section">
-            <div class="row align-items-center">
-                <div class="col-md-6 ">
-                    <div class="search-controls">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGymRateModal">Add Gym Rate</button>
-
-                    </div>
-                </div>
-                <div class="col-md-6 d-flex justify-content-end">
-                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
-                </div>
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <div class="search-controls">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGymRateModal">Add Gym Rate</button>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateRegistrationModal">Update Registration</button>
             </div>
         </div>
+        <div class="col-md-6 d-flex justify-content-end">
+            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+        </div>
+    </div>
+</div>
 
+<!-- Update Registration Modal -->
+<div class="modal fade" id="updateRegistrationModal" tabindex="-1" aria-labelledby="updateRegistrationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateRegistrationModalLabel">Update Registration Fee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateRegistrationForm">
+                    <div class="form-group">
+                        <label for="newRegistrationFee">New Registration Fee</label>
+                        <input type="number" class="form-control" id="newRegistrationFee" name="newRegistrationFee" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveRegistrationFeeBtn">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <div class="table-responsive">
     <table id="gymRatesTable" class="table table-striped table-bordered">
@@ -248,5 +271,61 @@ $('#saveGymRateBtn').click(function() {
 $('#addGymRateModal').on('hidden.bs.modal', function () {
     $('#addGymRateForm')[0].reset();
     $('#totalPriceDisplay').hide();
+});
+// Save new registration fee
+$('#saveRegistrationFeeBtn').click(function() {
+    // Clear previous error messages
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+
+    // Validate the new registration fee
+    const registrationFeeField = $('#newRegistrationFee');
+    const newRegistrationFee = registrationFeeField.val().trim();
+
+    if (!newRegistrationFee || newRegistrationFee <= 0) {
+        registrationFeeField.addClass('is-invalid');
+        registrationFeeField.after('<div class="invalid-feedback">Please enter a valid registration fee.</div>');
+        return false;
+    }
+
+    // Prepare data for submission
+    const formData = $('#updateRegistrationForm').serialize();
+
+    // AJAX call to update the registration fee
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/update_registration_fee.php', // Update with your PHP script URL
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response === "success") {
+                // Close modal and refresh the page
+                $('#updateRegistrationModal').modal('hide');
+                location.reload();
+            } else {
+                // Display error message
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response,
+                    confirmButtonText: 'OK'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'AJAX Error',
+                text: error,
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+});
+
+// Reset form when modal is closed
+$('#updateRegistrationModal').on('hidden.bs.modal', function () {
+    $('#updateRegistrationForm')[0].reset();
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
 });
 </script>
