@@ -1,45 +1,103 @@
 <?php
 require_once '../../../../config.php';
+require_once '../../../../functions/sanitize.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Sanitize input data
-    $programName = $_POST['programName'] ?? null;
-    $programType = $_POST['programType'] ?? null;
-    $coachId = $_POST['coachId'] ?? null;
-    $price = $_POST['price'] ?? null;
-    $duration = $_POST['duration'] ?? null;
-    $durationType = $_POST['durationType'] ?? null;
-    $description = $_POST['description'] ?? null;
+    $action = $_POST['action'] ?? 'save';
 
-    // Validate required fields
-    if (empty($programName) || empty($programType) || empty($coachId) || empty($price) || empty($duration) || empty($durationType)) {
-        echo "Error: All required fields must be filled.";
-        exit;
+    switch ($action) {
+        case 'toggle_status':
+            toggleProgramStatus();
+            break;
+        default:
+            saveProgram();
+            break;
+    }
+}
+
+function toggleProgramStatus() {
+    global $pdo;
+    
+    $id = $_POST['id'] ?? null;
+    $status = $_POST['status'] ?? null;
+
+    if (!$id || !$status) {
+        echo json_encode(['status' => 'error', 'message' => 'Missing required parameters']);
+        return;
     }
 
-    // Insert program into the database
-    $sql = "INSERT INTO programs 
-            (program_name, program_type_id, coach_id, price, duration, duration_type_id, description, status_id)
-            VALUES 
-            (:program_name, :program_type, :coach_id, :price, :duration, :duration_type, :description, 
-             (SELECT id FROM status_types WHERE status_name = 'active'))";
-
     try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':program_name', $programName, PDO::PARAM_STR);
-        $stmt->bindParam(':program_type', $programType, PDO::PARAM_INT);
-        $stmt->bindParam(':coach_id', $coachId, PDO::PARAM_INT);
-        $stmt->bindParam(':price', $price, PDO::PARAM_STR);
-        $stmt->bindParam(':duration', $duration, PDO::PARAM_INT);
-        $stmt->bindParam(':duration_type', $durationType, PDO::PARAM_INT);
-        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
+        // Get status_id based on action
+        $newStatusId = ($status === 'activate') ? 1 : 2; // 1 for Active, 2 for Inactive
 
-        if ($stmt->execute()) {
-            echo "success";
+        // First, check current status
+        $checkSql = "SELECT status_id FROM programs WHERE id = ?";
+        $checkStmt = $pdo->prepare($checkSql);
+        $checkStmt->execute([$id]);
+        $currentStatus = $checkStmt->fetchColumn();
+
+        // Only update if status is different
+        if ($currentStatus != $newStatusId) {
+            $sql = "UPDATE programs SET status_id = ? WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$newStatusId, $id]);
+
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(['status' => 'success']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Failed to update program status']);
+            }
         } else {
-            echo "Database error: Failed to save the program.";
+            echo json_encode(['status' => 'success', 'message' => 'Program is already in desired status']);
         }
     } catch (PDOException $e) {
+        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+    }
+}
+
+function saveProgram() {
+    global $pdo;
+    
+    try {
+        // Sanitize input data
+        $programName = clean_input($_POST['programName'] ?? '');
+        $programType = clean_input($_POST['programType'] ?? '');
+        $duration = clean_input($_POST['duration'] ?? '');
+        $durationType = clean_input($_POST['durationType'] ?? '');
+        $description = clean_input($_POST['description'] ?? '');
+
+        // Validate required fields
+        if (empty($programName) || empty($programType) || empty($duration) || empty($durationType)) {
+            echo "Error: All required fields must be filled.";
+            return;
+        }
+
+        // Begin transaction
+        $pdo->beginTransaction();
+
+        // Insert program into the database
+        $sql = "INSERT INTO programs (program_name, program_type_id, duration, duration_type_id, description, status_id, created_at) 
+                VALUES (:program_name, :program_type, :duration, :duration_type, :description, 1, NOW())";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':program_name' => $programName,
+            ':program_type' => $programType,
+            ':duration' => $duration,
+            ':duration_type' => $durationType,
+            ':description' => $description
+        ]);
+
+        // Commit transaction
+        $pdo->commit();
+        echo "success";
+
+    } catch (PDOException $e) {
+        // Rollback transaction on error
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log("Error adding program: " . $e->getMessage());
         echo "Error: " . $e->getMessage();
     }
 }
