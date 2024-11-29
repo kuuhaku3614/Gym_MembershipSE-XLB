@@ -96,11 +96,19 @@ $query = "
         t.id AS transaction_id,
         t.created_at AS transaction_date,
         GROUP_CONCAT(DISTINCT prg.program_name SEPARATOR ', ') AS subscribed_programs, 
-        GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services
+        GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services,
+        (
+            COALESCE(msp.price, 0) + 
+            COALESCE(SUM(prg.price), 0) + 
+            COALESCE(SUM(rsvc.price), 0) + 
+            COALESCE(reg.membership_fee, 0)
+        ) AS total_price
     FROM 
         users u 
     JOIN 
-        roles r ON u.role_id = r.id AND r.id = 3  -- Only members
+        roles roles ON u.role_id = roles.id AND roles.id = 3  -- Only members
+    CROSS JOIN 
+        registration reg
     LEFT JOIN 
         transactions t ON u.id = t.user_id
     LEFT JOIN 
@@ -136,7 +144,8 @@ $query = "
         ms.end_date, 
         ms.status,
         t.id,
-        t.created_at;
+        t.created_at,
+        reg.membership_fee;
 ";
 $stmt = $pdo->prepare($query);
 $stmt->execute();
@@ -497,7 +506,7 @@ function registration_fee() {
                         <div class="info-section mb-4">
                             <h6 class="info-header">Membership Details</h6>
                             <p><strong>Plan:</strong> <span id="memberPlan"></span></p>
-                            <p><strong>Amount:</strong> <span id="membershipAmount"></span></p>
+                            <p><strong>Total Amount:</strong> <span id="totalAmount" class="text-primary font-weight-bold"></span></p>
                         </div>
                         <div class="info-section mb-4">
                             <h6 class="info-header">Subscription Period</h6>
@@ -1141,6 +1150,10 @@ $(document).ready(function () {
             $('#memberPlan').text(memberData.plan_name);
             $('#membershipStatus').text(memberData.membership_status);
             $('#membershipAmount').text(formatCurrency(memberData.membership_amount));
+            
+            // Add total amount display
+            $('#totalAmount').text(formatCurrency(memberData.total_price));
+            
             $('#membershipStart').text(formatDate(memberData.membership_start));
             $('#membershipEnd').text(formatDate(memberData.membership_end));
             $('#memberPrograms').text(memberData.subscribed_programs || 'None');

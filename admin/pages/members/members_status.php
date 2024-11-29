@@ -6,47 +6,48 @@ $pdo = $database->connect();
 
 // Query to get member subscription details matching your table structure
 $query = "
-    SELECT 
-        CONCAT(pd.first_name, ' ', pd.last_name) as full_name,
-        m.id as membership_id,
-        m.start_date as membership_start,
-        m.end_date as membership_end,
-        CASE 
-            WHEN m.end_date < CURDATE() THEN 'expired'
-            WHEN m.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
-            ELSE 'active'
-        END as membership_status,
-        ps.id as program_id,
-        p.program_name,
-        ps.start_date as program_start,
-        ps.end_date as program_end,
-        CASE 
-            WHEN ps.end_date < CURDATE() THEN 'expired'
-            WHEN ps.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
-            WHEN ps.end_date IS NULL THEN NULL
-            ELSE 'active'
-        END as program_status,
-        rs.id as rental_id,
-        rs.start_date as rental_start,
-        rs.end_date as rental_end,
-        srv.service_name,
-        CASE 
-            WHEN rs.end_date < CURDATE() THEN 'expired'
-            WHEN rs.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
-            WHEN rs.end_date IS NULL THEN NULL
-            ELSE 'active'
-        END as rental_status
-    FROM users u
-    INNER JOIN personal_details pd ON u.id = pd.user_id
-    INNER JOIN memberships m ON u.id = m.user_id
-    LEFT JOIN program_subscriptions ps ON m.id = ps.membership_id 
-        AND (ps.end_date >= CURDATE() OR ps.end_date IS NULL)
-    LEFT JOIN programs p ON ps.program_id = p.id
-    LEFT JOIN rental_subscriptions rs ON m.id = rs.membership_id 
-        AND (rs.end_date >= CURDATE() OR rs.end_date IS NULL)
-    LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
-    WHERE u.is_active = 1
-    ORDER BY pd.last_name, pd.first_name
+SELECT 
+    CONCAT(pd.first_name, ' ', pd.last_name) as full_name,
+    m.id as membership_id,
+    m.start_date as membership_start,
+    m.end_date as membership_end,
+    CASE 
+        WHEN m.end_date < CURDATE() THEN 'expired'
+        WHEN m.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
+        ELSE 'active'
+    END as membership_status,
+    ps.id as program_id,
+    p.program_name,
+    ps.start_date as program_start,
+    ps.end_date as program_end,
+    CASE 
+        WHEN ps.end_date < CURDATE() THEN 'expired'
+        WHEN ps.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
+        WHEN ps.end_date IS NULL THEN NULL
+        ELSE 'active'
+    END as program_status,
+    rs.id as rental_id,
+    rs.start_date as rental_start,
+    rs.end_date as rental_end,
+    srv.service_name,
+    CASE 
+        WHEN rs.end_date < CURDATE() THEN 'expired'
+        WHEN rs.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
+        WHEN rs.end_date IS NULL THEN NULL
+        ELSE 'active'
+    END as rental_status
+FROM users u
+INNER JOIN personal_details pd ON u.id = pd.user_id
+INNER JOIN transactions t ON u.id = t.user_id
+INNER JOIN memberships m ON t.id = m.transaction_id
+LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
+    AND (ps.end_date >= CURDATE() OR ps.end_date IS NULL)
+LEFT JOIN programs p ON ps.program_id = p.id
+LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
+    AND (rs.end_date >= CURDATE() OR rs.end_date IS NULL)
+LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
+WHERE u.is_active = 1
+ORDER BY pd.last_name, pd.first_name
 ";
 
 $stmt = $pdo->prepare($query);

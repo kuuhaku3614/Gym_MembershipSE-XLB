@@ -147,37 +147,47 @@ function insertNewUser($pdo, $data) {
     }
 }
 
-function insertMembership($pdo, $userId, $data) {
+function insertTransaction($pdo, $userId, $staffId) {
     try {
-        // First verify that the user exists in users table
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ?");
-        if (!$stmt->execute([$userId])) {
-            throw new Exception("Failed to verify user existence");
+        $stmt = $pdo->prepare("
+            INSERT INTO transactions (
+                staff_id, 
+                user_id, 
+                created_at
+            ) VALUES (?, ?, NOW())
+        ");
+        
+        if (!$stmt->execute([$staffId, $userId])) {
+            throw new Exception("Failed to insert transaction");
         }
-        if (!$stmt->fetch()) {
-            throw new Exception("User ID not found in users table");
-        }
+        
+        return $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        throw new Exception("Database error during transaction insertion: " . $e->getMessage());
+    }
+}
 
-        // Now insert the membership with verified user_id
+function insertMembership($pdo, $transactionId, $data) {
+    try {
         $stmt = $pdo->prepare("
             INSERT INTO memberships (
-                user_id,               -- Now correctly references users.id
+                transaction_id,
                 membership_plan_id,
-                staff_id,
                 start_date,
                 end_date,
-                total_amount,
-                status
-            ) VALUES (?, ?, ?, ?, ?, ?, 'active')
+                status,
+                is_paid,
+                payment_date
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
         ");
         
         if (!$stmt->execute([
-            $userId,
+            $transactionId,
             $data['membership_plan'],
-            $data['staff_id'],
             $data['start_date'],
             $data['end_date'],
-            $data['total_amount']
+            'active',
+            1 // Paid
         ])) {
             throw new Exception("Failed to insert membership");
         }
@@ -188,7 +198,7 @@ function insertMembership($pdo, $userId, $data) {
     }
 }
 
-function insertProgramSubscriptions($pdo, $membershipId, $data) {
+function insertProgramSubscriptions($pdo, $transactionId, $data) {
     if (!isset($data['programs'])) {
         return;
     }
@@ -203,28 +213,30 @@ function insertProgramSubscriptions($pdo, $membershipId, $data) {
 
         $stmt = $pdo->prepare("
             INSERT INTO program_subscriptions (
-                membership_id, 
+                transaction_id,
                 program_id,
                 coach_id,
                 start_date,
                 end_date,
-                price,
-                status
-            ) VALUES (?, ?, ?, ?, ?, ?, 'active')
+                status,
+                is_paid,
+                payment_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         
         $stmt->execute([
-            $membershipId,
+            $transactionId,
             $program['id'],
             $program['coach_id'] ?? 1,
             $data['start_date'],
             $data['end_date'],
-            $program['price']
+            'active',
+            1 // Paid
         ]);
     }
 }
 
-function insertRentalSubscriptions($pdo, $membershipId, $data) {
+function insertRentalSubscriptions($pdo, $transactionId, $data) {
     if (!isset($data['rentals'])) {
         return;
     }
@@ -239,110 +251,27 @@ function insertRentalSubscriptions($pdo, $membershipId, $data) {
 
         $stmt = $pdo->prepare("
             INSERT INTO rental_subscriptions (
-                membership_id, 
+                transaction_id,
                 rental_service_id,
                 start_date,
                 end_date,
-                price,
-                status
-            ) VALUES (?, ?, ?, ?, ?, 'active')
+                status,
+                is_paid,
+                payment_date
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
         ");
         
         $stmt->execute([
-            $membershipId,
+            $transactionId,
             $rental['id'],
             $data['start_date'],
             $data['end_date'],
-            $rental['price']
+            'active',
+            1 // Paid
         ]);
     }
 }
-function insertTransactions($pdo, $staffId, $membershipId, $programSubs, $rentalSubs, $totalAmount) {
-    // Insert main membership transaction
-    $stmt = $pdo->prepare("
-        INSERT INTO transactions (
-            staff_id,
-            membership_id,
-            total_amount,
-            payment_date
-        ) VALUES (?, ?, ?, NOW())
-    ");
-    $stmt->execute([
-        $staffId,
-        $membershipId,
-        $totalAmount
-    ]);
 
-    // Insert program subscription transactions
-    $programs = json_decode($programSubs, true) ?? [];
-    if (is_array($programs)) {
-        foreach ($programs as $program) {
-            if (isset($program['id'])) {
-                // Get the program subscription ID
-                $stmt = $pdo->prepare("
-                    SELECT id FROM program_subscriptions 
-                    WHERE membership_id = ? AND program_id = ?
-                    ORDER BY id DESC LIMIT 1
-                ");
-                $stmt->execute([$membershipId, $program['id']]);
-                $programSubId = $stmt->fetchColumn();
-
-                if ($programSubId) {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO transactions (
-                            staff_id,
-                            membership_id,
-                            program_subscription_id,
-                            total_amount,
-                            payment_date
-                        ) VALUES (?, ?, ?, ?, NOW())
-                    ");
-                    $stmt->execute([
-                        $staffId,
-                        $membershipId,
-                        $programSubId,
-                        $program['price']
-                    ]);
-                }
-            }
-        }
-    }
-
-    // Insert rental subscription transactions
-    $rentals = json_decode($rentalSubs, true) ?? [];
-    if (is_array($rentals)) {
-        foreach ($rentals as $rental) {
-            if (isset($rental['id'])) {
-                // Get the rental subscription ID
-                $stmt = $pdo->prepare("
-                    SELECT id FROM rental_subscriptions 
-                    WHERE membership_id = ? AND rental_service_id = ?
-                    ORDER BY id DESC LIMIT 1
-                ");
-                $stmt->execute([$membershipId, $rental['id']]);
-                $rentalSubId = $stmt->fetchColumn();
-
-                if ($rentalSubId) {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO transactions (
-                            staff_id,
-                            membership_id,
-                            rental_subscription_id,
-                            total_amount,
-                            payment_date
-                        ) VALUES (?, ?, ?, ?, NOW())
-                    ");
-                    $stmt->execute([
-                        $staffId,
-                        $membershipId,
-                        $rentalSubId,
-                        $rental['price']
-                    ]);
-                }
-            }
-        }
-    }
-}
 try {
     // Validate required fields
     $required_fields = [
@@ -382,29 +311,22 @@ try {
     // Begin transaction
     $pdo->beginTransaction();
 
-    // Process user and membership
+    // Process user and get user ID
     $userId = ($_POST['user_type'] === 'new') 
         ? insertNewUser($pdo, $_POST) 
         : $_POST['existing_user_id'];
 
+    // Insert transaction first
+    $transactionId = insertTransaction($pdo, $userId, $_POST['staff_id']);
+
     // Insert membership
-    $membershipId = insertMembership($pdo, $userId, $_POST);
+    $membershipId = insertMembership($pdo, $transactionId, $_POST);
 
     // Insert program subscriptions
-    insertProgramSubscriptions($pdo, $membershipId, $_POST);
+    insertProgramSubscriptions($pdo, $transactionId, $_POST);
 
     // Insert rental subscriptions
-    insertRentalSubscriptions($pdo, $membershipId, $_POST);
-
-    // Insert transactions
-    insertTransactions(
-        $pdo,
-        $_POST['staff_id'],
-        $membershipId,
-        $_POST['programs'] ?? '[]',
-        $_POST['rentals'] ?? '[]',
-        $_POST['total_amount']
-    );
+    insertRentalSubscriptions($pdo, $transactionId, $_POST);
 
     $pdo->commit();
 
