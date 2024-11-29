@@ -4,34 +4,36 @@ require_once '../../../config.php';
 // Fetch programs with additional coach program type information
 $sql = "
     SELECT 
-        programs.*, 
-        pt.type_name AS program_type, 
-        dt.type_name AS duration_type, 
+        p.*,
+        pt.type_name AS program_type,
+        dt.type_name AS duration_type,
         st.status_name AS status,
-        u.username AS coach_name,
-        cpt.coach_id,
-        cpt.price AS coach_program_price,
-        cpt.description AS coach_program_description,
-        cpt.status AS coach_program_status
-    FROM programs
-    LEFT JOIN coach_program_types cpt ON programs.id = cpt.program_id
-    JOIN program_types pt ON programs.program_type_id = pt.id
-    JOIN duration_types dt ON programs.duration_type_id = dt.id
-    JOIN status_types st ON programs.status_id = st.id
+        GROUP_CONCAT(u.username ORDER BY u.username) as coaches,
+        GROUP_CONCAT(cpt.price ORDER BY u.username) as prices,
+        GROUP_CONCAT(IFNULL(cpt.description, '') ORDER BY u.username) as descriptions,
+        COUNT(u.id) as coach_count
+    FROM programs p
+    LEFT JOIN coach_program_types cpt ON p.id = cpt.program_id
     LEFT JOIN users u ON cpt.coach_id = u.id
+    JOIN program_types pt ON p.program_type_id = pt.id
+    JOIN duration_types dt ON p.duration_type_id = dt.id
+    JOIN status_types st ON p.status_id = st.id
+    WHERE cpt.status = 'active' OR cpt.status IS NULL
+    GROUP BY p.id
+    ORDER BY p.id
 ";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch program types
-$programTypesSql = "SELECT id, type_name FROM program_types";
+$programTypesSql = "SELECT id, type_name FROM program_types WHERE status = 'active' ORDER BY type_name";
 $programTypesStmt = $pdo->prepare($programTypesSql);
 $programTypesStmt->execute();
 $programTypes = $programTypesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch duration types
-$durationTypesSql = "SELECT id, type_name FROM duration_types";
+$durationTypesSql = "SELECT id, type_name FROM duration_types WHERE status = 'active' ORDER BY type_name";
 $durationTypesStmt = $pdo->prepare($durationTypesSql);
 $durationTypesStmt->execute();
 $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -48,7 +50,6 @@ $coachesStmt = $pdo->prepare($coachesSql);
 $coachesStmt->execute();
 $coaches = $coachesStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <h1 class="nav-title">Programs</h1>
 
 <div class="search-section">
@@ -65,15 +66,16 @@ $coaches = $coachesStmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
     <div class="table-responsive">
-        <table id="programsTable" class="table table-striped table-bordered">
+        <table id="programsTable" class="table table-bordered">
             <thead class="table-dark">
                 <tr>
                     <th>No.</th>
                     <th>Program Name</th>
                     <th>Program Type</th>
-                    <th>Coach Name</th> 
                     <th>Duration</th>
+                    <th>Coach</th>
                     <th>Price</th>
+                    <th>Description</th>
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
@@ -83,115 +85,97 @@ $coaches = $coachesStmt->fetchAll(PDO::FETCH_ASSOC);
         $count = 1;
         if (!empty($result)) {
             foreach ($result as $row) {
+                // Split the concatenated values into arrays
+                $coaches = explode(',', $row['coaches']);
+                $prices = explode(',', $row['prices']);
+                $descriptions = explode(',', $row['descriptions']);
+                $rowCount = count($coaches);
+
+                // First row with program details
                 echo "<tr>";
-                echo "<td>" . $count . "</td>";
-                echo "<td>" . $row['program_name'] . "</td>";
-                echo "<td>" . $row['program_type'] . "</td>";
-                echo "<td>" . $row['coach_name'] . "</td>";
-                echo "<td>" . $row['duration'] . " " . $row['duration_type'] . "</td>";
-                echo "<td>₱" . number_format($row['price'], 2) . "</td>";
-                echo "<td>" . $row['status'] . "</td>";
-                echo "<td>
+                echo "<td rowspan='{$rowCount}' style='vertical-align: middle;'>" . $count . "</td>";
+                echo "<td rowspan='{$rowCount}' style='vertical-align: middle;'>" . htmlspecialchars($row['program_name']) . "</td>";
+                echo "<td rowspan='{$rowCount}' style='vertical-align: middle;'>" . htmlspecialchars($row['program_type']) . "</td>";
+                echo "<td rowspan='{$rowCount}' style='vertical-align: middle;'>" . htmlspecialchars($row['duration']) . " " . htmlspecialchars($row['duration_type']) . "</td>";
+                
+                // First coach's details
+                echo "<td>" . htmlspecialchars($coaches[0]) . "</td>";
+                echo "<td style='text-align:right;'>₱" . number_format($prices[0], 2) . "</td>";
+                echo "<td>" . htmlspecialchars($descriptions[0]) . "</td>";
+                
+                echo "<td rowspan='{$rowCount}' style='vertical-align: middle;'>" . htmlspecialchars($row['status']) . "</td>";
+                echo "<td rowspan='{$rowCount}' style='vertical-align: middle;'>
                         <button class='btn btn-warning btn-sm status-btn' data-id='" . $row['id'] . "'>Deactivate</button>
                         <button class='btn btn-primary btn-sm edit-btn' data-id='" . $row['id'] . "'>Edit</button>
                         <button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>
                     </td>";
                 echo "</tr>";
+
+                // Additional rows for other coaches
+                for ($i = 1; $i < $rowCount; $i++) {
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars($coaches[$i]) . "</td>";
+                    echo "<td style='text-align:right;'>₱" . number_format($prices[$i], 2) . "</td>";
+                    echo "<td>" . htmlspecialchars($descriptions[$i]) . "</td>";
+                    echo "</tr>";
+                }
                 $count++;
             }
         } else {
-            echo "<tr><td colspan='8'>No data available</td></tr>";
+            echo "<tr><td colspan='9'>No data available</td></tr>";
         }
         ?>
     </tbody>
 </table>
 </div>
 
-<div class="modal fade" id="addProgramModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal fade" id="addProgramModal" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="addProgramModalLabel">Add Program</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="addProgramForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="programName" class="form-label">Program Name</label>
-                                <input type="text" class="form-control" id="programName" name="programName" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="programType" class="form-label">Program Type</label>
-                                <select class="form-select" id="programType" name="programType" required>
-                                    <option value="">Select Program Type</option>
-                                    <?php
-                                    foreach ($programTypes as $type) {
-                                        echo "<option value='" . $type['id'] . "'>" . $type['type_name'] . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="coachId" class="form-label">Coach Name</label>
-                                <select class="form-select" id="coachId" name="coachId" required>
-                                    <option value="">Select Coach</option>
-                                    <?php
-                                    foreach ($coaches as $coach) {
-                                        echo "<option value='" . $coach['coach_id'] . "' data-phone='" . $coach['phone_number'] . "'>" 
-                                            . $coach['coach_name'] . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
+                    <div class="mb-3">
+                        <label for="programName" class="form-label">Program Name</label>
+                        <input type="text" class="form-control" id="programName" name="programName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="programType" class="form-label">Program Type</label>
+                        <select class="form-control" id="programType" name="programType" required>
+                            <option value="">Select Program Type</option>
+                            <?php foreach ($programTypes as $type): ?>
+                                <option value="<?= htmlspecialchars($type['id']) ?>">
+                                    <?= htmlspecialchars($type['type_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Duration</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="duration" name="duration" min="1" required>
+                            <select class="form-control" id="durationType" name="durationType" required>
+                                <option value="">Select Duration Type</option>
+                                <?php foreach ($durationTypes as $type): ?>
+                                    <option value="<?= htmlspecialchars($type['id']) ?>">
+                                        <?= htmlspecialchars($type['type_name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="price" class="form-label">Price</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">₱</span>
-                                    <input type="number" class="form-control" id="price" name="price" required min="0" step="0.01">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="contactNo" class="form-label">Contact No.</label>
-                                <input type="text" class="form-control" id="contactNo" name="contactNo" readonly>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="duration" class="form-label">Duration</label>
-                                        <input type="number" class="form-control" id="duration" name="duration" required min="1" value="1">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="durationType" class="form-label">Duration Type</label>
-                                        <select class="form-select" id="durationType" name="durationType" required>
-                                            <option value="">Select Type</option>
-                                            <?php
-                                            foreach ($durationTypes as $type) {
-                                                echo "<option value='" . $type['id'] . "'>" . htmlspecialchars($type['type_name'], ENT_QUOTES, 'UTF-8') . "</option>";
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                            </div>
-                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="saveProgramBtn">Save</button>
+                <button type="button" class="btn btn-primary" id="saveProgram">Save Program</button>
             </div>
         </div>
     </div>
@@ -199,13 +183,23 @@ $coaches = $coachesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function () {
-
     const table = $("#programsTable").DataTable({
-            pageLength: 10,
-            ordering: false,
-            responsive: true,
-            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
-            });
+        pageLength: 10,
+        ordering: true,
+        responsive: true,
+        dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+        columnDefs: [
+            {
+                targets: [4, 5, 6], // Coach, Price, Description columns
+                orderable: true
+            },
+            {
+                targets: [8], // Action column
+                orderable: false,
+                searchable: false
+            }
+        ]
+    });
 
     // Fetch coaches dynamically when program type is selected
     $('#programType').change(function () {
@@ -244,25 +238,65 @@ $(document).ready(function () {
         $('#contactNo').val(phoneNumber || '');
     });
     
-    $('#saveProgramBtn').click(function () {
-    var formData = $('#addProgramForm').serialize();
+    $('#saveProgram').click(function() {
+        var formData = {
+            programName: $('#programName').val().trim(),
+            programType: $('#programType').val(),
+            duration: $('#duration').val(),
+            durationType: $('#durationType').val(),
+            description: $('#description').val().trim()
+        };
 
-    $.ajax({
-        url: '../admin/pages/gym rates/functions/save_programs.php',
-        type: 'POST',
-        data: formData,
-        success: function (response) {
-            if (response.trim() === "success") {
-                $('#addProgramModal').modal('hide');
-                location.reload();
-            } else {
-                alert("Error saving program: " + response);
+        // Validate form
+        if (!$('#addProgramForm')[0].checkValidity()) {
+            $('#addProgramForm')[0].reportValidity();
+            return;
+        }
+
+        // Additional validation
+        if (!formData.programName) {
+            alert('Please enter a program name');
+            return;
+        }
+        if (!formData.programType) {
+            alert('Please select a program type');
+            return;
+        }
+        if (!formData.duration || formData.duration < 1) {
+            alert('Please enter a valid duration');
+            return;
+        }
+        if (!formData.durationType) {
+            alert('Please select a duration type');
+            return;
+        }
+
+        $.ajax({
+            url: 'programs_crud.php',
+            type: 'POST',
+            data: {
+                action: 'add',
+                ...formData
+            },
+            success: function(response) {
+                try {
+                    var result = JSON.parse(response);
+                    if (result.status === 'success') {
+                        $('#addProgramModal').modal('hide');
+                        $('#addProgramForm')[0].reset();
+                        // Refresh the table
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (result.message || 'Unknown error occurred'));
+                    }
+                } catch (e) {
+                    alert('Error processing response from server');
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error occurred while saving the program: ' + error);
             }
-        },
-        error: function (xhr, status, error) {
-            alert("AJAX error: " + error);
-        },
+        });
     });
-});
 });
 </script>
