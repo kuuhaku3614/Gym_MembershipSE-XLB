@@ -216,6 +216,47 @@ function registration_fee() {
         border-radius: 20px;
         font-weight: 500;
     }
+    .card-body#programsContainer,
+    .card-body#rentalsContainer {
+        max-height: 320px; /* Adjust the height as needed */
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    }
+
+    /* WebKit browsers (Chrome, Safari) */
+    .card-body#programsContainer::-webkit-scrollbar,
+    .card-body#rentalsContainer::-webkit-scrollbar {
+        display: none;
+    }
+
+    .service-box {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+
+    .service-box:hover {
+        background-color: #f8f9fa;
+        border-color: #007bff;
+    }
+
+    .service-box.selected {
+        background-color: #e9ecef;
+        border-color: #007bff;
+        position: relative;
+    }
+
+    .service-box.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        color: #28a745;
+        font-weight: bold;
+    }
 
     /* Responsive Design */
     @media (max-width: 576px) {
@@ -420,15 +461,13 @@ function registration_fee() {
 
                     <!-- Phase 2: Services -->
                     <div id="phase2" class="phase-content" style="display: none;">
-                        <div class="row">
-                            <!-- Availed Services Container -->
-                            <div class="col-md-12 mb-4">
+                        <!-- Availed Services Container -->
+                        <div class="col-md-12 mt-4">
                                 <div class="card availed-container">
                                     <div class="card-header">
                                         <h6>Membership Summary</h6>
                                     </div>
                                     <div class="card-body">
-
                                         <!-- Regular services visible to both -->
                                         <div class="staff-only">
                                             <div class="membership-details mb-3">
@@ -443,6 +482,30 @@ function registration_fee() {
                                                 <h6>Total Amount: <span id="total_amount">₱0.00</span></h6>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>          
+                        <div class="row">
+                            <!-- Programs Section -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6>Available Programs</h6>
+                                    </div>
+                                    <div class="card-body" id="programsContainer">
+                                        <!-- Programs will be dynamically loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rentals Section -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6>Available Rental Services</h6>
+                                    </div>
+                                    <div class="card-body" id="rentalsContainer">
+                                        <!-- Rentals will be dynamically loaded here -->
                                     </div>
                                 </div>
                             </div>
@@ -555,29 +618,29 @@ function registration_fee() {
         
         this.bindEvents();
         this.loadMembershipPlans();
+        this.loadMembershipServices(); // New method to load services
         this.initializeModal();
     },
 
     initializeModal() {
-    $('#addMemberModal').modal({
-        show: false,
-        backdrop: 'static',
-        keyboard: false
-    });
+        $('#addMemberModal').modal({
+            show: false,
+            backdrop: 'static',
+            keyboard: false
+        });
 
-    // Optional: Add explicit close event handling
-    $('#addMemberModal').on('click', '[data-dismiss="modal"]', function() {
-        $('#addMemberModal').modal('hide');
-    });
-},
+        // Optional: Add explicit close event handling
+        $('#addMemberModal').on('click', '[data-dismiss="modal"]', function() {
+            $('#addMemberModal').modal('hide');
+        });
+    },
     bindEvents() {
-        // Use event delegation for dynamically loaded content
+        // Existing event bindings
         $(document).on('click', '#addMemberBtn', (e) => {
             e.preventDefault();
             this.resetAndShowModal();
         });
 
-        // Other event bindings
         $(document).on('change', '#membership_plan', () => this.handlePlanChange());
         $(document).on('change', '#start_date', () => {
             if ($('#membership_plan').val()) {
@@ -592,13 +655,122 @@ function registration_fee() {
         this.bindFileUpload();
         this.bindDeleteMember();
         
-        // Form change handler
         $('#membershipForm').on('change', 'input, select', (e) => {
             this.updateFormData(e.target);
         });
 
-        // Handle role-specific UI elements
         this.handleRoleBasedAccess();
+    },
+    loadMembershipServices() {
+        // Load Programs
+        $.get('../../../get_program_details.php', (response) => {
+            $('#programsContainer').html(response);
+            
+            // Bind click events for adding programs
+            $('.program').on('click', (e) => {
+                const $program = $(e.currentTarget);
+                const programId = $program.data('id');
+                const programName = $program.find('.program-name').text();
+                const programPrice = parseFloat($program.find('.program-price').text().replace('₱', ''));
+
+                // Check if program is already added
+                const exists = this.state.selectedPrograms.some(p => p.id === programId);
+                if (!exists) {
+                    this.state.selectedPrograms.push({
+                        id: programId,
+                        name: programName,
+                        price: programPrice
+                    });
+
+                    $program.addClass('selected');
+                    this.updateTotalAmount();
+                    this.updateSelectedServices();
+                } else {
+                    // Remove program if already added
+                    this.state.selectedPrograms = this.state.selectedPrograms.filter(p => p.id !== programId);
+                    $program.removeClass('selected');
+                    this.updateTotalAmount();
+                    this.updateSelectedServices();
+                }
+            });
+        });
+
+        // Load Rentals
+        $.get('../../../get_rental_details.php', (response) => {
+            $('#rentalsContainer').html(response);
+            
+            // Bind click events for adding rentals
+            $('.rental').on('click', (e) => {
+                const $rental = $(e.currentTarget);
+                const rentalId = $rental.data('id');
+                const rentalName = $rental.find('.rental-name').text();
+                const rentalPrice = parseFloat($rental.find('.rental-price').text().replace('₱', ''));
+
+                // Check if rental is already added
+                const exists = this.state.selectedRentals.some(r => r.id === rentalId);
+                if (!exists) {
+                    this.state.selectedRentals.push({
+                        id: rentalId,
+                        name: rentalName,
+                        price: rentalPrice
+                    });
+
+                    $rental.addClass('selected');
+                    this.updateTotalAmount();
+                    this.updateSelectedServices();
+                } else {
+                    // Remove rental if already added
+                    this.state.selectedRentals = this.state.selectedRentals.filter(r => r.id !== rentalId);
+                    $rental.removeClass('selected');
+                    this.updateTotalAmount();
+                    this.updateSelectedServices();
+                }
+            });
+        });
+    },
+    updateTotalAmount() {
+        const planOption = $('#membership_plan option:selected');
+        const planPrice = parseFloat(planOption.data('price')) || 0;
+
+        const programsTotal = this.state.selectedPrograms.reduce((sum, program) => sum + program.price, 0);
+        const rentalsTotal = this.state.selectedRentals.reduce((sum, rental) => sum + rental.price, 0);
+
+        this.state.totalAmount = planPrice + programsTotal + rentalsTotal;
+        
+        $('#total_amount').text('₱' + this.state.totalAmount.toFixed(2));
+    },
+    updateSelectedServices() {
+        const planOption = $('#membership_plan option:selected');
+        const planName = planOption.text();
+        const planPrice = parseFloat(planOption.data('price')) || 0;
+
+        let servicesHtml = `
+            <div class="service-item">
+                <span>Membership Plan: ${planName}</span>
+                <span class="float-right">₱${planPrice.toFixed(2)}</span>
+            </div>
+        `;
+
+        this.state.selectedPrograms.forEach(program => {
+            servicesHtml += `
+                <div class="service-item">
+                    <span>${program.name}</span>
+                    <span class="float-right">₱${program.price.toFixed(2)}</span>
+                </div>
+            `;
+        });
+
+        this.state.selectedRentals.forEach(rental => {
+            servicesHtml += `
+                <div class="service-item">
+                    <span>${rental.name}</span>
+                    <span class="float-right">₱${rental.price.toFixed(2)}</span>
+                </div>
+            `;
+        });
+
+        $('#selected_services').html(servicesHtml);
+        $('#total_amount').text('₱' + this.state.totalAmount.toFixed(2));
     },
     handleRoleBasedAccess() {
         const userRole = $('#userRole').val();
@@ -708,11 +880,18 @@ function registration_fee() {
         $('#prevBtn').hide();
         $('#nextBtn').text('Next').show();
         
+        // Reset service selection
+        $('#programsContainer .program, #rentalsContainer .rental').removeClass('selected');
+        $('#selected_services').empty();
+        $('#total_amount').text('₱0.00');
+        
         // Show modal
         $('#addMemberModal').modal('show');
         
-        // Load membership plans
+        // Load membership plans and services
         this.loadMembershipPlans();
+        this.loadMembershipServices();
+        this.initializeModal();
     },
 
     handlePlanChange() {
@@ -835,47 +1014,47 @@ function registration_fee() {
         $('.is-invalid').removeClass('is-invalid');
         $('.invalid-feedback').remove();
         
-        if (phase === 1) {
-            // Required fields for phase 1
-            const requiredFields = {
-                'first_name': 'First Name',
-                'last_name': 'Last Name',
-                'sex': 'Sex',
-                'birthdate': 'Birthdate',
-                'phone': 'Phone Number',
-                'username': 'Username',
-                'password': 'Password',
-                'membership_plan': 'Membership Plan',
-                'start_date': 'Start Date'
-            };
+        // if (phase === 1) {
+        //     // Required fields for phase 1
+        //     const requiredFields = {
+        //         'first_name': 'First Name',
+        //         'last_name': 'Last Name',
+        //         'sex': 'Sex',
+        //         'birthdate': 'Birthdate',
+        //         'phone': 'Phone Number',
+        //         'username': 'Username',
+        //         'password': 'Password',
+        //         'membership_plan': 'Membership Plan',
+        //         'start_date': 'Start Date'
+        //     };
 
-            for (const [fieldName, label] of Object.entries(requiredFields)) {
-                const field = $(`[name="${fieldName}"]`);
-                if (!field.val() || field.val().trim() === '') {
-                    isValid = false;
-                    field.addClass('is-invalid');
-                    field.after(`<div class="invalid-feedback">${label} is required.</div>`);
-                }
-            }
-        } else if (phase === 2) {
-            // Validate total amount is greater than 0
-            if (this.state.totalAmount <= 0) {
-                isValid = false;
-                $('#total_amount').addClass('is-invalid');
-                $('#total_amount').after('<div class="invalid-feedback">Total amount must be greater than 0</div>');
-            }
-        } else if (phase === 3) {
-            const inputCode = $('.verification-input').val();
-            if (!inputCode) {
-                isValid = false;
-                $('.verification-input').addClass('is-invalid');
-                $('.verification-input').after('<div class="invalid-feedback">Verification code is required</div>');
-            } else if (inputCode !== this.state.VERIFICATION_CODE) {
-                isValid = false;
-                $('.verification-input').addClass('is-invalid');
-                $('.verification-input').after('<div class="invalid-feedback">Invalid verification code</div>');
-            }
-        }
+        //     for (const [fieldName, label] of Object.entries(requiredFields)) {
+        //         const field = $(`[name="${fieldName}"]`);
+        //         if (!field.val() || field.val().trim() === '') {
+        //             isValid = false;
+        //             field.addClass('is-invalid');
+        //             field.after(`<div class="invalid-feedback">${label} is required.</div>`);
+        //         }
+        //     }
+        // } else if (phase === 2) {
+        //     // Validate total amount is greater than 0
+        //     if (this.state.totalAmount <= 0) {
+        //         isValid = false;
+        //         $('#total_amount').addClass('is-invalid');
+        //         $('#total_amount').after('<div class="invalid-feedback">Total amount must be greater than 0</div>');
+        //     }
+        // } else if (phase === 3) {
+        //     const inputCode = $('.verification-input').val();
+        //     if (!inputCode) {
+        //         isValid = false;
+        //         $('.verification-input').addClass('is-invalid');
+        //         $('.verification-input').after('<div class="invalid-feedback">Verification code is required</div>');
+        //     } else if (inputCode !== this.state.VERIFICATION_CODE) {
+        //         isValid = false;
+        //         $('.verification-input').addClass('is-invalid');
+        //         $('.verification-input').after('<div class="invalid-feedback">Invalid verification code</div>');
+        //     }
+        // }
 
         return isValid;
     },
@@ -933,80 +1112,65 @@ function registration_fee() {
         return true;
     },
 
-    // 1. First, let's add debugging to see what data is being sent
-processMembership() {
-    // Ensure we have staff_id and role
-    const staffId = document.getElementById('userId').value;
-    const userRole = document.getElementById('userRole').value;
-    
-    if (!staffId || !userRole) {
-        alert('Session error: Missing staff credentials');
-        return false;
-    }
+    processMembership() {
+        // Existing method with modifications to include selected services
+        const staffId = document.getElementById('userId').value;
+        const userRole = document.getElementById('userRole').value;
+        
+        if (!staffId || !userRole) {
+            alert('Session error: Missing staff credentials');
+            return false;
+        }
 
-    // Debug log 1: Check staff credentials
-    console.log('Staff Credentials:', { staffId, userRole });
+        const formData = this.state.formData;
+        formData.set('staff_id', staffId);
+        formData.set('user_role', userRole);
+        formData.set('user_type', 'new');
+        formData.set('total_amount', this.state.totalAmount);
 
-    // Update formData with final values
-    const formData = this.state.formData;
-    formData.set('staff_id', staffId);
-    formData.set('user_role', userRole);
-    formData.set('user_type', 'new');
-    formData.set('total_amount', this.state.totalAmount);
+        // Add programs and rentals if any
+        if (this.state.selectedPrograms.length > 0) {
+            formData.set('programs', JSON.stringify(this.state.selectedPrograms));
+        }
+        if (this.state.selectedRentals.length > 0) {
+            formData.set('rentals', JSON.stringify(this.state.selectedRentals));
+        }
 
-    // Add programs and rentals if any
-    if (this.state.selectedPrograms.length > 0) {
-        formData.set('programs', JSON.stringify(this.state.selectedPrograms));
-    }
-    if (this.state.selectedRentals.length > 0) {
-        formData.set('rentals', JSON.stringify(this.state.selectedRentals));
-    }
-
-    // Debug log 2: Check all form data
-    const formDataDebug = {};
-    for (let pair of formData.entries()) {
-        formDataDebug[pair[0]] = pair[1];
-    }
-    console.log('Form Data Being Sent:', formDataDebug);
-
-    $.ajax({
-        url: '../admin/pages/members/process_membership.php',
-        method: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        dataType: 'json',
-        success: (response) => {
-            console.log('Server Response:', response);
-            if (response.success) {
-                alert('Membership created successfully!');
-                $('#addMemberModal').modal('hide');
-                window.location.reload();
-            } else {
-                alert('Error: ' + (response.message || 'Unknown error occurred'));
-            }
-        },
-        error: (xhr, status, error) => {
-            console.error('AJAX Error:', {
-                status: status,
-                error: error,
-                responseText: xhr.responseText
-            });
-            try {
-                // Try to parse error response
-                const response = JSON.parse(xhr.responseText);
-                alert('Error: ' + (response.message || 'Server error occurred'));
-            } catch (e) {
-                // If parsing fails, check if it's a PHP error
-                if (xhr.responseText.includes('Fatal error')) {
-                    alert('Server error occurred. Please check the error logs.');
+        $.ajax({
+            url: '../admin/pages/members/process_membership.php',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: (response) => {
+                if (response.success) {
+                    alert('Membership created successfully!');
+                    $('#addMemberModal').modal('hide');
+                    window.location.reload();
                 } else {
-                    alert('Error processing membership. Please try again.');
+                    alert('Error: ' + (response.message || 'Unknown error occurred'));
+                }
+            },
+            error: (xhr, status, error) => {
+                console.error('AJAX Error:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert('Error: ' + (response.message || 'Server error occurred'));
+                } catch (e) {
+                    if (xhr.responseText.includes('Fatal error')) {
+                        alert('Server error occurred. Please check the error logs.');
+                    } else {
+                        alert('Error processing membership. Please try again.');
+                    }
                 }
             }
-        }
-    });
-},
+        });
+    },
 
     deleteMember(memberId) {
         $.ajax({
@@ -1081,7 +1245,7 @@ processMembership() {
 };
 
 // Initialize the MembershipManager when document is ready
-$(document).ready(() => {
+$(document).ready(function() {
     MembershipManager.init();
 });
 
