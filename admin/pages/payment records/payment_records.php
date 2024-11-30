@@ -5,8 +5,13 @@ require_once 'config.php';
 $query = "
     SELECT 
     t.id AS transaction_id,
-    t.total_amount,
-    t.payment_date,
+    (
+        COALESCE(mp.price, 0) + 
+        COALESCE(p.price, 0) + 
+        COALESCE(r.price, 0) + 
+        COALESCE(reg.membership_fee, 0)
+    ) AS total_amount,
+    t.created_at AS payment_date,
     staff_u.username AS staff_name,
     CONCAT(member_pd.first_name, ' ', member_pd.last_name) AS member_name,
     pp.photo_path AS member_photo,
@@ -17,30 +22,32 @@ $query = "
     p.program_name,
     ps.start_date AS program_start_date,
     ps.end_date AS program_end_date,
-    ps.price AS program_price,
+    p.price AS program_price,
     rs.start_date AS rental_start_date,
     rs.end_date AS rental_end_date,
-    rs.price AS rental_price,
+    r.price AS rental_price,
     r.service_name AS rental_service_name,
     p.duration AS program_duration,
     dt_p.type_name AS program_duration_type,
     r.duration AS rental_duration,
     dt_r.type_name AS rental_duration_type,
-    mp.price AS membership_price
+    mp.price AS membership_price,
+    reg.membership_fee AS registration_fee
 FROM transactions t
 LEFT JOIN users staff_u ON t.staff_id = staff_u.id
-LEFT JOIN memberships m ON t.membership_id = m.id
-LEFT JOIN users member_u ON m.user_id = member_u.id
+LEFT JOIN memberships m ON t.id = m.transaction_id
+LEFT JOIN users member_u ON t.user_id = member_u.id
 LEFT JOIN personal_details member_pd ON member_u.id = member_pd.user_id
-LEFT JOIN profile_photos pp ON member_u.id = pp.user_id AND pp.is_active = TRUE
+LEFT JOIN profile_photos pp ON member_u.id = pp.user_id AND pp.is_active = 1
 LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
-LEFT JOIN program_subscriptions ps ON t.program_subscription_id = ps.id
+LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
 LEFT JOIN programs p ON ps.program_id = p.id
 LEFT JOIN duration_types dt_p ON p.duration_type_id = dt_p.id
-LEFT JOIN rental_subscriptions rs ON t.rental_subscription_id = rs.id
+LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
 LEFT JOIN rental_services r ON rs.rental_service_id = r.id
 LEFT JOIN duration_types dt_r ON r.duration_type_id = dt_r.id
-ORDER BY t.payment_date DESC
+CROSS JOIN registration reg
+ORDER BY t.created_at DESC
 ";
 
 try {
@@ -107,7 +114,7 @@ try {
                             <span><?php echo htmlspecialchars($row['member_name']); ?></span>
                         </div>
                     </td>
-                    <td>$<?php echo number_format($row['total_amount'], 2); ?></td>
+                    <td>₱<?php echo number_format($row['total_amount'], 2); ?></td>
                     <td><?php echo date('M d, Y H:i', strtotime($row['payment_date'])); ?></td>
                     <td><?php echo htmlspecialchars($row['staff_name']); ?></td>
                     <td>
@@ -163,25 +170,25 @@ try {
                                         <p>Plan Name: <?php echo $row['plan_name'] ?: 'N/A'; ?></p>
                                         <p>Duration: <?php echo $row['membership_start_date'] . ' - ' . $row['membership_end_date']; ?></p>
                                         <p>Status: <?php echo ucfirst($row['membership_status']); ?></p>
-                                        <p>Price: $<?php echo number_format($row['membership_price'], 2); ?></p>
+                                        <p>Price: ₱<?php echo number_format($row['membership_price'], 2); ?></p>
 
                                         <!-- Program Subscription -->
                                         <h5 class="text-primary">Program Subscription</h5>
                                         <p>Program Name: <?php echo $row['program_name'] ?: 'N/A'; ?></p>
                                         <p>Duration: <?php echo $row['program_duration'] . ' ' . $row['program_duration_type']; ?></p>
                                         <p>Period: <?php echo $row['program_start_date'] . ' - ' . $row['program_end_date']; ?></p>
-                                        <p>Price: $<?php echo number_format($row['program_price'], 2); ?></p>
+                                        <p>Price: ₱<?php echo number_format($row['program_price'], 2); ?></p>
 
                                         <!-- Rental Service -->
                                         <h5 class="text-primary">Rental Service</h5>
                                         <p>Service Name: <?php echo $row['rental_service_name'] ?: 'N/A'; ?></p>
                                         <p>Duration: <?php echo $row['rental_duration'] . ' ' . $row['rental_duration_type']; ?></p>
                                         <p>Period: <?php echo $row['rental_start_date'] . ' - ' . $row['rental_end_date']; ?></p>
-                                        <p>Price: $<?php echo number_format($row['rental_price'], 2); ?></p>
+                                        <p>Price: ₱<?php echo number_format($row['rental_price'], 2); ?></p>
 
                                         <!-- Total Amount -->
                                         <h5 class="text-primary">Total Amount</h5>
-                                        <p class="total-amount">$<?php echo number_format($row['total_amount'], 2); ?></p>
+                                        <p class="total-amount">₱<?php echo number_format($row['total_amount'], 2); ?></p>
 
                                         <!-- Staff -->
                                         <h5 class="text-primary">Processed by</h5>
