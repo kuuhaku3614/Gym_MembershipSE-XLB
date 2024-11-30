@@ -4,14 +4,16 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in
-$isLoggedIn = isset($_SESSION['user_id']);
+// Check if user is logged in and has valid session data
+$isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['role']);
 
 // Handle logout logic
 if (isset($_GET['logout'])) {
+    // Clear all session data
+    session_unset();
     session_destroy();
-    header('Location: website.php');
-    exit(); // Ensure the script stops after redirecting
+    header('Location: ../website/website.php');
+    exit();
 }
 
 // If user is logged in but personal_details is not set, fetch them
@@ -24,7 +26,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 // Function to ensure login
 function requireLogin() {
-    if (!isset($_SESSION['user_id'])) {
+    if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
         header('Location: ../login/login.php');
         exit(); // Prevent further execution
     }
@@ -101,7 +103,7 @@ function getFullName() {
                 <button class="dropbtn" aria-label="User Menu" title="User Menu">
                 </button>
                 <div class="dropdown-content">
-                    <a href="profile.php" class="username"><?php echo getFullName();?></a>
+                    <a href="profile.php" class="username"><?php echo getFullName(); ?></a>
                     <hr>
                     <a href="#"> Notifications</a>
                     <a href="?logout=1"> Logout</a>

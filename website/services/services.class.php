@@ -50,7 +50,7 @@ class Services_class{
                 CONCAT(mp.duration, ' ', dt.type_name) as validity
                 FROM membership_plans mp
                 LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
-                WHERE mp.status_id = 1 
+                WHERE mp.status = 'active' 
                 AND (mp.plan_type = 'standard' OR mp.plan_type = 'walk-in')
                 ORDER BY mp.price";
         $stmt = $conn->prepare($sql);
@@ -64,7 +64,7 @@ class Services_class{
                 CONCAT(mp.duration, ' ', dt.type_name) as validity
                 FROM membership_plans mp
                 LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
-                WHERE mp.status_id = 1 AND mp.plan_type = 'special'
+                WHERE mp.status = 'active' AND mp.plan_type = 'special'
                 ORDER BY mp.price";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
@@ -79,7 +79,7 @@ class Services_class{
                 FROM programs p
                 LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
                 LEFT JOIN program_types pt ON p.program_type_id = pt.id
-                WHERE p.status_id = 1
+                WHERE p.status = 'active'
                 ORDER BY p.program_type_id";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
@@ -93,7 +93,7 @@ class Services_class{
                 rs.available_slots
                 FROM rental_services rs
                 LEFT JOIN duration_types dt ON rs.duration_type_id = dt.id
-                WHERE rs.status_id = 1 AND rs.available_slots > 0
+                WHERE rs.status = 'active' AND rs.available_slots > 0
                 ORDER BY rs.price";
         $stmt = $conn->prepare($sql);
         $stmt->execute();

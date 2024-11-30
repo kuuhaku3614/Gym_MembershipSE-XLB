@@ -219,7 +219,6 @@ CREATE TABLE `programs` (
   `program_type_id` int(11) NOT NULL,
   `duration` int(11) NOT NULL,
   `duration_type_id` int(11) NOT NULL,
-  `price` decimal(10,2) NOT NULL,
   `description` text DEFAULT NULL,
   `status` enum('active','inactive') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
