@@ -99,14 +99,14 @@ $query = "
         GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services,
         (
             COALESCE(msp.price, 0) + 
-            COALESCE(SUM(prg.price), 0) + 
+            COALESCE(SUM(cpt.price), 0) + 
             COALESCE(SUM(rsvc.price), 0) + 
             COALESCE(reg.membership_fee, 0)
         ) AS total_price
     FROM 
         users u 
     JOIN 
-        roles roles ON u.role_id = roles.id AND roles.id = 3  -- Only members
+        roles roles ON u.role_id = roles.id AND roles.id = 3 
     CROSS JOIN 
         registration reg
     LEFT JOIN 
@@ -123,6 +123,8 @@ $query = "
         program_subscriptions ps ON t.id = ps.transaction_id 
     LEFT JOIN 
         programs prg ON ps.program_id = prg.id 
+    LEFT JOIN 
+        coach_program_types cpt ON prg.id = cpt.program_id
     LEFT JOIN 
         rental_subscriptions rs ON t.id = rs.transaction_id 
     LEFT JOIN 
