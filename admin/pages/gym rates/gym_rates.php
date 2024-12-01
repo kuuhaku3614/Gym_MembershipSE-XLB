@@ -4,6 +4,7 @@ require_once '../../../config.php';
 $sql = "SELECT mp.*, dt.type_name as duration_type, mp.description 
         FROM membership_plans mp
         LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
+        WHERE is_removed = 0
         ORDER BY mp.created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
@@ -479,9 +480,33 @@ $('#editGymRateModal').on('hidden.bs.modal', function () {
     $('.invalid-feedback').remove();
 });
 
-
-
-
+// Handle remove button click
+$(document).on('click', '.remove-btn', function() {
+    const gymRateId = $(this).data('id');
+    
+    if (confirm('Are you sure you want to remove this gym rate?')) {
+        $.ajax({
+            url: '../admin/pages/gym rates/functions/edit_gym_rates.php',
+            type: 'POST',
+            data: {
+                action: 'remove',
+                id: gymRateId
+            },
+            success: function(response) {
+                const data = JSON.parse(response);
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error occurred while removing gym rate: ' + error);
+            }
+        });
+    }
+});
 
 // Save new registration fee
 $('#saveRegistrationFeeBtn').click(function() {
@@ -583,4 +608,9 @@ $('.toggle-status-btn').click(function() {
         });
     }
 });
+
+// Refresh button handler
+$('#refreshBtn').click(function() {
+        location.reload();
+    });
 </script>
