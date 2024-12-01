@@ -1,10 +1,9 @@
 <?php
 require_once '../../../config.php';
-$baseUrl = 'http://localhost/Gym_MembershipSE-XLB';
+$baseUrl = 'Gym_MembershipSE-XLB';
 
 // Fetch data for display
-$sql = "
-    SELECT 
+$sql = "SELECT 
         rs.id,
         rs.service_name,
         rs.price,

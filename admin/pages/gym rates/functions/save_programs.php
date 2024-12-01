@@ -11,6 +11,37 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
+    // Handle toggle status action
+    if (isset($_POST['action']) && $_POST['action'] === 'toggle_status') {
+        $id = filter_var($_POST['id'] ?? 0, FILTER_VALIDATE_INT);
+        $newStatus = $_POST['new_status'] ?? '';
+
+        if ($id <= 0) {
+            throw new Exception('Invalid program ID');
+        }
+
+        if (!in_array($newStatus, ['active', 'inactive'])) {
+            throw new Exception('Invalid status value');
+        }
+
+        $sql = "UPDATE programs SET status = :status WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $result = $stmt->execute([
+            ':status' => $newStatus,
+            ':id' => $id
+        ]);
+
+        if ($result) {
+            $response['status'] = 'success';
+            $response['message'] = 'Program status updated successfully';
+        } else {
+            throw new Exception('Failed to update program status');
+        }
+        
+        echo json_encode($response);
+        exit;
+    }
+
     // Retrieve and sanitize input values
     $programName = trim($_POST['programName'] ?? '');
     $programType = filter_var($_POST['programType'] ?? 0, FILTER_VALIDATE_INT);
@@ -35,9 +66,6 @@ try {
     }
     if ($durationType <= 0) {
         $errors['durationType'] = 'Valid duration type must be selected';
-    }
-    if (empty($description)) {
-        $errors['description'] = 'Description is required';
     }
 
     if (!empty($errors)) {

@@ -5,8 +5,7 @@ require_once '../../../config.php';
 $baseUrl = '/Gym_MembershipSE-XLB/admin/pages/gym rates';
 
 // Fetch programs with additional coach program type information
-$sql = "
-    SELECT 
+$sql = "SELECT 
         p.*,
         pt.type_name AS program_type,
         dt.type_name AS duration_type,
@@ -19,8 +18,9 @@ $sql = "
     LEFT JOIN users u ON cpt.coach_id = u.id
     JOIN program_types pt ON p.program_type_id = pt.id
     JOIN duration_types dt ON p.duration_type_id = dt.id
+    WHERE p.is_removed = 0
     GROUP BY p.id
-    ORDER BY p.id
+    ORDER BY p.id;
 ";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
@@ -53,8 +53,9 @@ foreach ($programs as $program) {
                                 <i class="fas fa-ban"></i> Deactivate</button>
                             <button class="btn btn-primary btn-sm edit-btn" data-id="' . $program['id'] . '">
                                 <i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn btn-danger btn-sm delete-btn" data-id="' . $program['id'] . '">
-                                <i class="fas fa-trash"></i> Delete</button>
+                            <button class="btn btn-danger btn-sm remove-btn" data-id="' . $program['id'] . '" title="Remove Program">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>'
         ];
         
@@ -91,8 +92,9 @@ foreach ($programs as $program) {
                                 <i class="fas fa-ban"></i> Deactivate</button>
                             <button class="btn btn-primary btn-sm edit-btn" data-id="' . $program['id'] . '">
                                 <i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn btn-danger btn-sm delete-btn" data-id="' . $program['id'] . '">
-                                <i class="fas fa-trash"></i> Delete</button>
+                            <button class="btn btn-danger btn-sm remove-btn" data-id="' . $program['id'] . '" title="Remove Program">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>'
         ];
     }
@@ -126,9 +128,6 @@ foreach ($programs as $program) {
         .btn-group .btn {
             margin: 0 2px;
         }
-        .modal-lg {
-            max-width: 90%;
-        }
         .table td {
             white-space: normal !important;
             word-wrap: break-word;
@@ -153,8 +152,8 @@ foreach ($programs as $program) {
         }
         
         /* Modal styles */
-        .custom-modal {
-            max-width: 90%;
+        .modal-dialog.modal-lg {
+            max-width: 800px;
             margin: 1.75rem auto;
         }
         
@@ -163,6 +162,10 @@ foreach ($programs as $program) {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 1rem;
+        }
+
+        #coachesTableContainer{
+            box-shadow: none;
         }
         
         .coach-details-table th,
@@ -260,9 +263,9 @@ foreach ($programs as $program) {
                     echo "<button class='btn btn-info btn-sm view-coaches-btn' data-coaches='" . $coachDataJson . "' 
                             data-program-name='" . htmlspecialchars($program['program_name'], ENT_QUOTES) . "'>View Coaches</button> ";
                     if ($program['status'] === 'active') {
-                        echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $program['id'] . "'>Deactivate</button>";
+                        echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='inactive'>Deactivate</button>";
                     } else {
-                        echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . $program['id'] . "'>Activate</button>";
+                        echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='active'>Activate</button>";
                     }
                     echo " <button class='btn btn-primary btn-sm edit-btn' data-id='" . $program['id'] . "'>Edit</button>";
                     echo " <button class='btn btn-danger btn-sm remove-btn' data-id='" . $program['id'] . "'>Remove</button>";
@@ -277,7 +280,7 @@ foreach ($programs as $program) {
 
     <!-- Coaches Modal -->
     <div class="modal fade" id="viewCoachesModal" tabindex="-1" aria-labelledby="viewCoachesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="viewCoachesModalLabel">Program Coaches</h5>
@@ -285,7 +288,7 @@ foreach ($programs as $program) {
                 </div>
                 <div class="modal-body">
                     <h6 class="program-name-display mb-3"></h6>
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="coachesTableContainer">
                         <table class="table table-bordered table-hover">
                             <thead class="table-dark">
                                 <tr class="text-center">
@@ -326,6 +329,14 @@ foreach ($programs as $program) {
                                     <div class="invalid-feedback"></div>
                                 </div>
                                 <div class="mb-3">
+                                    <label for="duration" class="form-label">Duration</label>
+                                    <input type="number" class="form-control" id="duration" name="duration" min="1" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label for="programType" class="form-label">Program Type</label>
                                     <select class="form-select" id="programType" name="programType" required>
                                         <option value="">Select Program Type</option>
@@ -343,49 +354,113 @@ foreach ($programs as $program) {
                                     </select>
                                     <div class="invalid-feedback"></div>
                                 </div>
-                            </div>
-                            <!-- Right Column -->
-                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="duration" class="form-label">Duration</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" id="duration" name="duration" min="1" required>
-                                        <select class="form-select" id="durationType" name="durationType" required>
-                                            <option value="">Select Duration Type</option>
-                                            <?php 
-                                            // Fetch duration types
-                                            $durationTypesSql = "SELECT id, type_name FROM duration_types";
-                                            $durationTypesStmt = $pdo->prepare($durationTypesSql);
-                                            $durationTypesStmt->execute();
-                                            $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
-                                            foreach ($durationTypes as $type): ?>
-                                                <option value="<?= htmlspecialchars($type['id']) ?>">
-                                                    <?= htmlspecialchars($type['type_name']) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
+                                    <label for="durationType" class="form-label">Duration Type</label>
+                                    <select class="form-select" id="durationType" name="durationType" required>
+                                        <option value="">Select Type</option>
+                                        <?php 
+                                        // Fetch duration types
+                                        $durationTypesSql = "SELECT id, type_name FROM duration_types";
+                                        $durationTypesStmt = $pdo->prepare($durationTypesSql);
+                                        $durationTypesStmt->execute();
+                                        $durationTypes = $durationTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($durationTypes as $type): ?>
+                                            <option value="<?= htmlspecialchars($type['id']) ?>">
+                                                <?= htmlspecialchars($type['type_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                     <div class="invalid-feedback"></div>
                                 </div>
+                            </div>
+                            <!-- Full Width Description -->
+                            <div class="col-12">
                                 <div class="mb-3">
                                     <label for="description" class="form-label">Description</label>
-                                    <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveProgram">Save Program</button>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveProgramBtn">Save</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <div class="modal fade" id="editProgramModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editProgramModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editProgramModalLabel">Edit Program</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProgramForm">
+                        <input type="hidden" id="editProgramId" name="programId">
+                        <div class="row">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editProgramName" class="form-label">Program Name</label>
+                                    <input type="text" class="form-control" id="editProgramName" name="programName" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editDuration" class="form-label">Duration</label>
+                                    <input type="number" class="form-control" id="editDuration" name="duration" min="1" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editProgramType" class="form-label">Program Type</label>
+                                    <select class="form-select" id="editProgramType" name="programType" required>
+                                        <option value="">Select Program Type</option>
+                                        <?php foreach ($programTypes as $type): ?>
+                                            <option value="<?= htmlspecialchars($type['id']) ?>">
+                                                <?= htmlspecialchars($type['type_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editDurationType" class="form-label">Duration Type</label>
+                                    <select class="form-select" id="editDurationType" name="durationType" required>
+                                        <option value="">Select Type</option>
+                                        <?php foreach ($durationTypes as $type): ?>
+                                            <option value="<?= htmlspecialchars($type['id']) ?>">
+                                                <?= htmlspecialchars($type['type_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <!-- Full Width Description -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="editDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateProgramBtn">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
     $(document).ready(function() {
@@ -418,7 +493,7 @@ foreach ($programs as $program) {
         }
 
         // Save program handler
-        $('#saveProgram').click(function() {
+        $('#saveProgramBtn').click(function() {
             // Clear previous validation states
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').text('');
@@ -428,8 +503,7 @@ foreach ($programs as $program) {
                 validateField('programName', 'Program name is required') &
                 validateField('programType', 'Program type must be selected') &
                 validateField('duration', 'Duration must be greater than 0') &
-                validateField('durationType', 'Duration type must be selected') &
-                validateField('description', 'Description is required');
+                validateField('durationType', 'Duration type must be selected');
 
             // If any validation fails, stop submission
             if (!isValid) {
@@ -494,42 +568,13 @@ foreach ($programs as $program) {
             $('.invalid-feedback').text('');
         });
 
-        // Handle Deactivate button click
-        $(document).on('click', '.deactivate-btn', function() {
-            var programId = $(this).data('id');
-            if (confirm('Are you sure you want to deactivate this program?')) {
-                $.ajax({
-                    url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
-                    type: 'POST',
-                    data: { 
-                        action: 'deactivate',
-                        id: programId 
-                    },
-                    success: function(response) {
-                        try {
-                            var result = JSON.parse(response);
-                            if (result.status === 'success') {
-                                alert('Program deactivated successfully!');
-                                location.reload();
-                            } else {
-                                alert('Error occurred: ' + result.message);
-                            }
-                        } catch (e) {
-                            alert('Error processing response');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error occurred: ' + error);
-                    }
-                });
-            }
-        });
 
-        // Handle toggle status button click
+        // Toggle status button handler
         $(document).on('click', '.toggle-status-btn', function() {
-            var programId = $(this).data('id');
-            var status = $(this).data('status');
-            var actionText = status === 'activate' ? 'activate' : 'deactivate';
+            const btn = $(this);
+            const programId = btn.data('id');
+            const newStatus = btn.data('new-status');
+            const actionText = newStatus === 'active' ? 'activate' : 'deactivate';
             
             if (confirm('Are you sure you want to ' + actionText + ' this program?')) {
                 $.ajax({
@@ -537,27 +582,28 @@ foreach ($programs as $program) {
                     type: 'POST',
                     data: { 
                         action: 'toggle_status',
-                        id: programId, 
-                        status: status 
+                        id: programId,
+                        new_status: newStatus
                     },
+                    dataType: 'json',
                     success: function(response) {
-                        try {
-                            var result = JSON.parse(response);
-                            if (result.status === 'success') {
-                                location.reload();
-                            } else {
-                                alert('Error: ' + (result.message || 'Unknown error occurred'));
-                            }
-                        } catch (e) {
-                            alert('Error processing response: ' + e.message);
-                            console.error('Response:', response);
+                        if (response.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
                         }
                     },
                     error: function(xhr, status, error) {
-                        alert('Error: ' + error);
+                        alert('Error occurred while updating status. Please try again.');
+                        console.error('Error:', error);
                     }
                 });
             }
+        });
+
+        // Refresh button handler
+        $('#refreshBtn').click(function() {
+            location.reload();
         });
 
         // View Coaches button click handler
@@ -603,7 +649,150 @@ foreach ($programs as $program) {
                 alert('Error loading coach data. Please try again.');
             }
         });
+        
+        // Edit button click handler
+        $(document).on('click', '.edit-btn', function() {
+            const programId = $(this).data('id');
+            
+            // Fetch program details
+            $.ajax({
+                url: '<?php echo $baseUrl; ?>/functions/edit_programs.php',
+                type: 'GET',
+                data: { id: programId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        const program = response.data;
+                        
+                        // Set values in the edit modal
+                        $('#editProgramId').val(program.id);
+                        $('#editProgramName').val(program.program_name);
+                        $('#editDuration').val(program.duration);
+                        
+                        // Set program type dropdown
+                        $('#editProgramType option').each(function() {
+                            if ($(this).text().trim() === program.program_type.trim()) {
+                                $(this).prop('selected', true);
+                            }
+                        });
+                        
+                        // Set duration type dropdown
+                        $('#editDurationType option').each(function() {
+                            if ($(this).text().trim() === program.duration_type.trim()) {
+                                $(this).prop('selected', true);
+                            }
+                        });
+                        
+                        // Show the modal
+                        $('#editProgramModal').modal('show');
+                    } else {
+                        alert(response.message || "Error fetching program details");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    alert("Error fetching program details. Please try again.");
+                }
+            });
+        });
+
+        // Update program button handler
+        $('#updateProgramBtn').click(function() {
+            // Clear previous validation states
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').text('');
+
+            // Validate all required fields
+            const isValid = 
+                validateField('editProgramName', 'Program name is required') &
+                validateField('editProgramType', 'Program type must be selected') &
+                validateField('editDuration', 'Duration must be greater than 0') &
+                validateField('editDurationType', 'Duration type must be selected');
+
+            // If any validation fails, stop submission
+            if (!isValid) {
+                return false;
+            }
+
+            // Get form data
+            const formData = {
+                programId: $('#editProgramId').val(),
+                programName: $('#editProgramName').val().trim(),
+                programType: $('#editProgramType').val(),
+                duration: parseInt($('#editDuration').val()),
+                durationType: $('#editDurationType').val()
+            };
+
+            // Send AJAX request
+            $.ajax({
+                url: '<?php echo $baseUrl; ?>/functions/edit_programs.php',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        $('#editProgramModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(response.message || "Error updating program");
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        alert(response.message || "Error updating program. Please try again.");
+                    } catch(e) {
+                        alert("Error updating program. Please try again.");
+                    }
+                }
+            });
+        });
+
+        // Reset edit form when modal is closed
+        $('#editProgramModal').on('hidden.bs.modal', function () {
+            $('#editProgramForm')[0].reset();
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').text('');
+        });
+
+        // Remove button click handler
+        $(document).on('click', '.remove-btn', function() {
+            const programId = $(this).data('id');
+            
+            if (confirm('Are you sure you want to remove this program?')) {
+                $.ajax({
+                    url: '<?php echo $baseUrl; ?>/functions/edit_programs.php',
+                    type: 'POST',
+                    data: { 
+                        action: 'remove',
+                        programId: programId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        } else {
+                            alert(response.message || "Error removing program");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error:", status, error);
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            alert(response.message || "Error removing program. Please try again.");
+                        } catch(e) {
+                            alert("Error removing program. Please try again.");
+                        }
+                    }
+                });
+            }
+        });
     });
+
+
     </script>
     
     <!-- Bootstrap JS -->

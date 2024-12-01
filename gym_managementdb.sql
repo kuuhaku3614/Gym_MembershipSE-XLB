@@ -222,6 +222,7 @@ CREATE TABLE `programs` (
   `duration_type_id` int(11) NOT NULL,
   `description` text DEFAULT NULL,
   `status` enum('active','inactive') NOT NULL,
+  `is_removed` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
