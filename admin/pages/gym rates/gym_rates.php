@@ -1,10 +1,9 @@
 <?php
 require_once '../../../config.php';
 // select gym rates
-$sql = "SELECT mp.*, dt.type_name as duration_type, st.status_name as status 
+$sql = "SELECT mp.*, dt.type_name as duration_type, mp.description 
         FROM membership_plans mp
         LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
-        LEFT JOIN status_types st ON mp.status_id = st.id
         ORDER BY mp.created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
@@ -61,6 +60,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <th>Start Date</th>
             <th>Deactivation Date</th>
             <th>Price</th>
+            <th>Description</th>
             <th>Status</th>
             <th>Action</th>
         </tr>
@@ -72,23 +72,33 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($result as $row) {
                 echo "<tr>";
                 echo "<td>" . $count . "</td>";
-                echo "<td>" . $row['plan_name'] . "</td>";
-                echo "<td>" . $row['plan_type'] . "</td>";
-                echo "<td>" . $row['duration'] . " " . $row['duration_type'] . "</td>";
-                echo "<td>" . $row['start_date'] . "</td>";
-                echo "<td>" . $row['end_date'] . "</td>";
-                echo "<td>" . $row['price'] . "</td>";
-                echo "<td>" . $row['status'] . "</td>";
-                echo "<td>
-                        <button class='btn btn-warning btn-sm edit-btn' data-id='" . $row['id'] . "'>Deactivate</button>
-                        <button class='btn btn-primary btn-sm edit-btn' data-id='" . $row['id'] . "'>Edit</button>
-                        <button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>
-                    </td>";
+                echo "<td>" . htmlspecialchars($row['plan_name']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['plan_type']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['duration']) . " " . htmlspecialchars($row['duration_type']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['start_date']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['end_date']) . "</td>";
+                echo "<td>₱" . number_format($row['price'], 2) . "</td>";
+                echo "<td>";
+                $description = $row['description'] ?: 'N/A';
+                echo strlen($description) > 50 ? 
+                    htmlspecialchars(substr($description, 0, 50) . '...') : 
+                    htmlspecialchars($description);
+                echo "</td>";
+                echo "<td>" . htmlspecialchars($row['status']) . "</td>";
+                echo "<td>";
+                if ($row['status'] === 'active') {
+                    echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $row['id'] . "'>Deactivate</button>";
+                } else {
+                    echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . $row['id'] . "'>Activate</button>";
+                }
+                echo " <button class='btn btn-primary btn-sm edit-btn' data-id='" . $row['id'] . "'>Edit</button>";
+                echo " <button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>";
+                echo "</td>";
                 echo "</tr>";
                 $count++;
             }
         } else {
-            echo "<tr><td colspan='9'>No data available</td></tr>";
+            echo "<tr><td colspan='10'>No data available</td></tr>";
         }
         ?>
     </tbody>
@@ -243,26 +253,16 @@ $('#saveGymRateBtn').click(function() {
         type: 'POST',
         data: $.param(updatedFormData),
         success: function(response) {
-            if (response === "success") {
+            if (response.trim() === "success") {
+                alert("Gym rate has been successfully added!");
                 $('#addGymRateModal').modal('hide');
                 location.reload();
             } else {
-                // Display error message
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: response,
-                    confirmButtonText: 'OK'
-                });
+                alert("Error: " + response);
             }
         },
         error: function(xhr, status, error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'AJAX Error',
-                text: error,
-                confirmButtonText: 'OK'
-            });
+            alert("AJAX error: " + error);
         }
     });
 });
@@ -272,52 +272,40 @@ $('#addGymRateModal').on('hidden.bs.modal', function () {
     $('#addGymRateForm')[0].reset();
     $('#totalPriceDisplay').hide();
 });
+
 // Save new registration fee
 $('#saveRegistrationFeeBtn').click(function() {
     // Clear previous error messages
     $('.is-invalid').removeClass('is-invalid');
     $('.invalid-feedback').remove();
 
-    // Validate the new registration fee
-    const registrationFeeField = $('#newRegistrationFee');
-    const newRegistrationFee = registrationFeeField.val().trim();
-
-    if (!newRegistrationFee || newRegistrationFee <= 0) {
-        registrationFeeField.addClass('is-invalid');
-        registrationFeeField.after('<div class="invalid-feedback">Please enter a valid registration fee.</div>');
-        return false;
+    // Get the new fee value
+    var newFee = $('#newRegistrationFee').val();
+    
+    // Basic validation
+    if (!newFee || newFee <= 0) {
+        alert('Please enter a valid registration fee amount');
+        return;
     }
 
-    // Prepare data for submission
-    const formData = $('#updateRegistrationForm').serialize();
-
-    // AJAX call to update the registration fee
+    // Send AJAX request
     $.ajax({
-        url: '../admin/pages/gym rates/functions/update_registration_fee.php', // Update with your PHP script URL
+        url: '../members/update_registration_fee.php',
         type: 'POST',
-        data: formData,
+        data: {
+            newRegistrationFee: newFee
+        },
         success: function(response) {
-            if (response === "success") {
-                // Close modal and refresh the page
+            if (response.trim() === 'success') {
+                alert('Registration fee updated successfully!');
                 $('#updateRegistrationModal').modal('hide');
                 location.reload();
             } else {
-                // Display error message
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: response,
-                    confirmButtonText: 'OK'
-                });
+                alert('Error updating registration fee: ' + response);
             }
         },
         error: function(xhr, status, error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'AJAX Error',
-                text: error,
-                confirmButtonText: 'OK'
-            });
+            alert('Error occurred while updating registration fee: ' + error);
         }
     });
 });

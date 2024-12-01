@@ -2,45 +2,98 @@
 require_once '../../../../config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Retrieve and sanitize input values
-    $serviceName = $_POST['serviceName'] ?? null;
-    $price = $_POST['price'] ?? null;
-    $totalSlots = $_POST['slots'] ?? null;
-    $duration = $_POST['duration'] ?? null;
-    $durationType = $_POST['durationType'] ?? null;
-    $description = $_POST['description'] ?? null;
-    $status = $_POST['status'] ?? 1; // Default to "active" (status_id = 1)
+    // Validate required fields
+    $requiredFields = ['serviceName', 'duration', 'durationType', 'totalSlots', 'price'];
+    $missingFields = [];
 
-    $availableSlots = $totalSlots;
+    foreach ($requiredFields as $field) {
+        if (empty($_POST[$field])) {
+            $missingFields[] = $field;
+        }
+    }
 
-    if (empty($serviceName) || empty($price) || empty($totalSlots) || empty($duration) || empty($durationType)) {
-        echo "Error: All required fields must be filled.";
+    if (!empty($missingFields)) {
+        echo "Error: Missing required fields: " . implode(', ', $missingFields);
         exit;
     }
 
-    $sql = "INSERT INTO rental_services 
-            (service_name, price, total_slots, available_slots, duration, duration_type_id, description, status_id)
-            VALUES 
-            (:service_name, :price, :total_slots, :available_slots, :duration, :duration_type, :description, :status_id)";
-    
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':service_name', $serviceName, PDO::PARAM_STR);
-        $stmt->bindParam(':price', $price, PDO::PARAM_STR);
-        $stmt->bindParam(':total_slots', $totalSlots, PDO::PARAM_INT);
-        $stmt->bindParam(':available_slots', $availableSlots, PDO::PARAM_INT);
-        $stmt->bindParam(':duration', $duration, PDO::PARAM_INT);
-        $stmt->bindParam(':duration_type', $durationType, PDO::PARAM_INT);
-        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
-        $stmt->bindParam(':status_id', $status, PDO::PARAM_INT);
+    // Get and sanitize input values
+    $serviceName = trim($_POST['serviceName']);
+    $price = (float)$_POST['price'];
+    $totalSlots = (int)$_POST['totalSlots'];
+    $duration = (int)$_POST['duration'];
+    $durationType = $_POST['durationType'];
+    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
 
-        if ($stmt->execute()) {
-            echo "success";
-        } else {
-            echo "Database error: Could not execute query.";
-        }
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+    // Validate numeric fields
+    if ($price <= 0) {
+        echo "Error: Price must be greater than 0";
+        exit;
     }
+    if ($totalSlots <= 0) {
+        echo "Error: Total slots must be greater than 0";
+        exit;
+    }
+    if ($duration <= 0) {
+        echo "Error: Duration must be greater than 0";
+        exit;
+    }
+
+    // Get duration_type_id from duration_types table
+    $durationTypeQuery = "SELECT id FROM duration_types WHERE id = :id";
+    $stmt = $pdo->prepare($durationTypeQuery);
+    $stmt->execute([':id' => $durationType]);
+    $durationTypeId = $stmt->fetchColumn();
+
+    if ($durationTypeId === false) {
+        echo "Error: Invalid duration type selected";
+        exit;
+    }
+
+    try {
+        // Set default status and available slots
+        $status = 'active';
+        $availableSlots = $totalSlots;
+
+        // Insert the rental service
+        $sql = "INSERT INTO rental_services (
+                    service_name,
+                    price,
+                    total_slots,
+                    available_slots,
+                    duration,
+                    duration_type_id,
+                    description,
+                    status
+                ) VALUES (
+                    :service_name,
+                    :price,
+                    :total_slots,
+                    :available_slots,
+                    :duration,
+                    :duration_type_id,
+                    :description,
+                    :status
+                )";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':service_name' => $serviceName,
+            ':price' => $price,
+            ':total_slots' => $totalSlots,
+            ':available_slots' => $availableSlots,
+            ':duration' => $duration,
+            ':duration_type_id' => $durationTypeId,
+            ':description' => $description,
+            ':status' => $status
+        ]);
+
+        echo "success";
+
+    } catch (PDOException $e) {
+        error_log("Error in save_rentals.php: " . $e->getMessage());
+        echo "Error: Failed to save rental service. Please try again.";
+    }
+} else {
+    echo "Error: Invalid request method";
 }
-?>

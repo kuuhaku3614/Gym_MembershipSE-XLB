@@ -1,104 +1,103 @@
 <?php
 require_once '../../../../config.php';
-require_once '../../../../functions/sanitize.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'save';
+header('Content-Type: application/json');
+$response = ['status' => 'error', 'message' => ''];
 
-    switch ($action) {
-        case 'toggle_status':
-            toggleProgramStatus();
-            break;
-        default:
-            saveProgram();
-            break;
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $response['message'] = 'Invalid request method';
+    echo json_encode($response);
+    exit;
 }
 
-function toggleProgramStatus() {
-    global $pdo;
+try {
+    // Retrieve and sanitize input values
+    $programName = trim($_POST['programName'] ?? '');
+    $programType = filter_var($_POST['programType'] ?? 0, FILTER_VALIDATE_INT);
+    $duration = filter_var($_POST['duration'] ?? 0, FILTER_VALIDATE_INT);
+    $durationType = filter_var($_POST['durationType'] ?? 0, FILTER_VALIDATE_INT);
+    $description = trim($_POST['description'] ?? '');
+    $status = 'active';
+
+    // Debug log
+    error_log("Received data - Name: $programName, Type: $programType, Duration: $duration, DurationType: $durationType");
+
+    // Validate required fields
+    $errors = [];
+    if (empty($programName)) {
+        $errors['programName'] = 'Program name is required';
+    }
+    if ($programType <= 0) {
+        $errors['programType'] = 'Valid program type must be selected';
+    }
+    if ($duration <= 0) {
+        $errors['duration'] = 'Duration must be greater than 0';
+    }
+    if ($durationType <= 0) {
+        $errors['durationType'] = 'Valid duration type must be selected';
+    }
+    if (empty($description)) {
+        $errors['description'] = 'Description is required';
+    }
+
+    if (!empty($errors)) {
+        $response['message'] = 'Please correct the errors below';
+        $response['errors'] = $errors;
+        echo json_encode($response);
+        exit;
+    }
+
+    // Validate program type exists
+    $typeQuery = "SELECT id FROM program_types WHERE id = :id";
+    $stmt = $pdo->prepare($typeQuery);
+    $stmt->execute([':id' => $programType]);
+    if (!$stmt->fetch()) {
+        $response['message'] = 'Invalid program type selected';
+        echo json_encode($response);
+        exit;
+    }
+
+    // Validate duration type exists
+    $durationTypeQuery = "SELECT id FROM duration_types WHERE id = :id";
+    $stmt = $pdo->prepare($durationTypeQuery);
+    $stmt->execute([':id' => $durationType]);
+    if (!$stmt->fetch()) {
+        $response['message'] = 'Invalid duration type selected';
+        echo json_encode($response);
+        exit;
+    }
+
+    // Insert the new program
+    $sql = "INSERT INTO programs 
+            (program_name, program_type_id, duration, duration_type_id, description, status)
+            VALUES 
+            (:program_name, :program_type_id, :duration, :duration_type_id, :description, :status)";
     
-    $id = $_POST['id'] ?? null;
-    $status = $_POST['status'] ?? null;
-
-    if (!$id || !$status) {
-        echo json_encode(['status' => 'error', 'message' => 'Missing required parameters']);
-        return;
-    }
-
-    try {
-        // Get status_id based on action
-        $newStatusId = ($status === 'activate') ? 1 : 2; // 1 for Active, 2 for Inactive
-
-        // First, check current status
-        $checkSql = "SELECT status_id FROM programs WHERE id = ?";
-        $checkStmt = $pdo->prepare($checkSql);
-        $checkStmt->execute([$id]);
-        $currentStatus = $checkStmt->fetchColumn();
-
-        // Only update if status is different
-        if ($currentStatus != $newStatusId) {
-            $sql = "UPDATE programs SET status_id = ? WHERE id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$newStatusId, $id]);
-
-            if ($stmt->rowCount() > 0) {
-                echo json_encode(['status' => 'success']);
-            } else {
-                echo json_encode(['status' => 'error', 'message' => 'Failed to update program status']);
-            }
-        } else {
-            echo json_encode(['status' => 'success', 'message' => 'Program is already in desired status']);
-        }
-    } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
-    }
-}
-
-function saveProgram() {
-    global $pdo;
+    $params = [
+        ':program_name' => $programName,
+        ':program_type_id' => $programType,
+        ':duration' => $duration,
+        ':duration_type_id' => $durationType,
+        ':description' => $description,
+        ':status' => $status
+    ];
     
-    try {
-        // Sanitize input data
-        $programName = clean_input($_POST['programName'] ?? '');
-        $programType = clean_input($_POST['programType'] ?? '');
-        $duration = clean_input($_POST['duration'] ?? '');
-        $durationType = clean_input($_POST['durationType'] ?? '');
-        $description = clean_input($_POST['description'] ?? '');
-
-        // Validate required fields
-        if (empty($programName) || empty($programType) || empty($duration) || empty($durationType)) {
-            echo "Error: All required fields must be filled.";
-            return;
-        }
-
-        // Begin transaction
-        $pdo->beginTransaction();
-
-        // Insert program into the database
-        $sql = "INSERT INTO programs (program_name, program_type_id, duration, duration_type_id, description, status_id, created_at) 
-                VALUES (:program_name, :program_type, :duration, :duration_type, :description, 1, NOW())";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':program_name' => $programName,
-            ':program_type' => $programType,
-            ':duration' => $duration,
-            ':duration_type' => $durationType,
-            ':description' => $description
-        ]);
-
-        // Commit transaction
-        $pdo->commit();
-        echo "success";
-
-    } catch (PDOException $e) {
-        // Rollback transaction on error
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        error_log("Error adding program: " . $e->getMessage());
-        echo "Error: " . $e->getMessage();
+    $stmt = $pdo->prepare($sql);
+    if (!$stmt->execute($params)) {
+        $error = $stmt->errorInfo();
+        throw new PDOException("Database error: " . $error[2]);
     }
+
+    $response['status'] = 'success';
+    $response['message'] = 'Program added successfully';
+
+} catch (PDOException $e) {
+    error_log("PDO Exception in save_programs.php: " . $e->getMessage());
+    $response['message'] = 'Database error occurred: ' . $e->getMessage();
+    $response['debug'] = ['sql_error' => $e->getMessage()];
+} catch (Exception $e) {
+    error_log("General Exception in save_programs.php: " . $e->getMessage());
+    $response['message'] = 'An unexpected error occurred: ' . $e->getMessage();
 }
-?>
+
+echo json_encode($response);

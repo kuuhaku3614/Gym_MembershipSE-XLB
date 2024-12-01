@@ -37,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    // Set default status as active (1)
-    $statusId = 1;
+    // Set default status as active
+    $status = 'active';
 
     $sql = "INSERT INTO membership_plans (
                 plan_name, 
@@ -49,30 +49,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 end_date, 
                 price, 
                 description,
-                status_id
+                status
             ) VALUES (
-                :plan_name, 
-                :plan_type, 
-                :duration, 
+                :plan_name,
+                :plan_type,
+                :duration,
                 :duration_type_id,
-                :start_date, 
-                :end_date, 
-                :price, 
+                :start_date,
+                :end_date,
+                :price,
                 :description,
-                :status_id
+                :status
             )";
-    
+
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':plan_name', $promoName);
         $stmt->bindParam(':plan_type', $promoType);
-        $stmt->bindParam(':duration', $duration, PDO::PARAM_INT);
-        $stmt->bindParam(':duration_type_id', $durationTypeId, PDO::PARAM_INT);
+        $stmt->bindParam(':duration', $duration);
+        $stmt->bindParam(':duration_type_id', $durationTypeId);
         $stmt->bindParam(':start_date', $activationDate);
         $stmt->bindParam(':end_date', $deactivationDate);
         $stmt->bindParam(':price', $price);
         $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':status_id', $statusId, PDO::PARAM_INT);
+        $stmt->bindParam(':status', $status);
         
         if ($stmt->execute()) {
             echo "success";
