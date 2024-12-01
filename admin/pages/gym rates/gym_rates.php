@@ -90,11 +90,11 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 echo "<td>" . htmlspecialchars($row['status']) . "</td>";
                 echo "<td>";
                 if ($row['status'] === 'active') {
-                    echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $row['id'] . "'>Deactivate</button>";
+                    echo "<button class='btn btn-sm btn-warning toggle-status-btn' data-id='" . $row['id'] . "'>Deactivate</button>";
                 } else {
-                    echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . $row['id'] . "'>Activate</button>";
+                    echo "<button class='btn btn-sm btn-success toggle-status-btn' data-id='" . $row['id'] . "'>Activate</button>";
                 }
-                echo " <button class='btn btn-primary btn-sm edit-btn' data-id='" . $row['id'] . "'>Edit</button>";
+                echo "<button class='btn btn-sm btn-primary edit-gym-rate' data-id='" . $row['id'] . "'>Edit</button>";
                 echo " <button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>";
                 echo "</td>";
                 echo "</tr>";
@@ -194,6 +194,93 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+
+
+
+<!-- Edit Gym Rate Modal -->
+<div class="modal fade" id="editGymRateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editGymRateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editGymRateModalLabel">Edit Gym Rate</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editGymRateForm">
+                    <input type="hidden" id="editGymRateId" name="id">
+                    <div class="row">
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editPromoName" class="form-label">Promo Name</label>
+                                <input type="text" class="form-control" id="editPromoName" name="promoName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPromoType" class="form-label">Promo Type</label>
+                                <select class="form-select" id="editPromoType" name="promoType" required>
+                                    <option value="">Select Promo Type</option>
+                                    <option value="standard">Standard</option>
+                                    <option value="special">Special</option>
+                                    <option value="walk-in">Walk-in</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editDuration" class="form-label">Duration</label>
+                                        <input type="number" class="form-control" id="editDuration" name="duration" required min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="editDurationType" class="form-label">Duration Type</label>
+                                        <select class="form-select" id="editDurationType" name="durationType" required>
+                                            <option value="">Select Type</option>
+                                            <option value="days">Days</option>
+                                            <option value="months">Months</option>
+                                            <option value="year">Year</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editActivationDate" class="form-label">Activation Date</label>
+                                <input type="date" class="form-control" id="editActivationDate" name="activationDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editDeactivationDate" class="form-label">Deactivation Date</label>
+                                <input type="date" class="form-control" id="editDeactivationDate" name="deactivationDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPrice" class="form-label">Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₱</span>
+                                    <input type="number" class="form-control" id="editPrice" name="price" required min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Full Width Description -->
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="editDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateGymRateBtn">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
 // Validate form before submission
 $('#saveGymRateBtn').click(function() {
@@ -275,6 +362,126 @@ $('#addGymRateModal').on('hidden.bs.modal', function () {
     $('#addGymRateForm')[0].reset();
     $('#totalPriceDisplay').hide();
 });
+
+
+
+
+
+// Add click handler for edit buttons
+$(document).on('click', '.edit-gym-rate', function() {
+    const gymRateId = $(this).data('id');
+    
+    // Fetch gym rate details
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/edit_gym_rates.php',
+        type: 'GET',
+        data: { id: gymRateId },
+        success: function(response) {
+            const data = JSON.parse(response);
+            if (data.status === 'success') {
+                const gymRate = data.data;
+                
+                // Populate the form
+                $('#editGymRateId').val(gymRate.id);
+                $('#editPromoName').val(gymRate.plan_name);
+                $('#editPromoType').val(gymRate.plan_type);
+                $('#editDuration').val(gymRate.duration);
+                $('#editDurationType').val(gymRate.duration_type);
+                $('#editActivationDate').val(gymRate.start_date);
+                $('#editDeactivationDate').val(gymRate.end_date);
+                $('#editPrice').val(gymRate.price);
+                $('#editDescription').val(gymRate.description);
+                
+                // Show the modal
+                $('#editGymRateModal').modal('show');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Error occurred while fetching gym rate details: ' + error);
+        }
+    });
+});
+
+// Handle form submission for editing
+$('#updateGymRateBtn').click(function() {
+    // Clear previous error messages
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+
+    // Create validation function
+    function validateField(fieldId, errorMessage) {
+        const field = $(`#${fieldId}`);
+        const value = field.val().trim();
+        if (!value) {
+            field.addClass('is-invalid');
+            field.after(`<div class="invalid-feedback">${errorMessage}</div>`);
+            return false;
+        }
+        return true;
+    }
+
+    // Validate all required fields
+    const isValid = 
+        validateField('editPromoName', 'Promo Name is required') &
+        validateField('editPromoType', 'Promo Type must be selected') &
+        validateField('editDuration', 'Duration is required') &
+        validateField('editDurationType', 'Duration Type must be selected') &
+        validateField('editActivationDate', 'Activation Date is required') &
+        validateField('editDeactivationDate', 'Deactivation Date is required') &
+        validateField('editPrice', 'Price is required');
+
+    // Check activation and deactivation dates
+    const activationDate = new Date($('#editActivationDate').val());
+    const deactivationDate = new Date($('#editDeactivationDate').val());
+    
+    if (activationDate >= deactivationDate) {
+        $('#editDeactivationDate').addClass('is-invalid');
+        $('#editDeactivationDate').after('<div class="invalid-feedback">Deactivation date must be after activation date</div>');
+        return false;
+    }
+
+    if (!isValid) {
+        return false;
+    }
+
+    // Submit form data
+    const formData = new FormData($('#editGymRateForm')[0]);
+    formData.append('action', 'update');
+
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/edit_gym_rates.php',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            const data = JSON.parse(response);
+            if (data.status === 'success') {
+                alert('Gym rate updated successfully!');
+                $('#editGymRateModal').modal('hide');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Error occurred while updating gym rate: ' + error);
+        }
+    });
+});
+
+// Reset form when edit modal is closed
+$('#editGymRateModal').on('hidden.bs.modal', function () {
+    $('#editGymRateForm')[0].reset();
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+});
+
+
+
+
 
 // Save new registration fee
 $('#saveRegistrationFeeBtn').click(function() {
