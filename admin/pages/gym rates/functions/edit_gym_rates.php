@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            $sql = "UPDATE membership_plans SET is_removed = 1 WHERE id = :id";
+            $sql = "UPDATE membership_plans SET is_removed = 1, status = 'inactive' WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $result = $stmt->execute([':id' => $_POST['id']]);
 

@@ -2,6 +2,42 @@
 require_once '../../../../config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle toggle status action
+    if (isset($_POST['action']) && $_POST['action'] === 'toggle_status') {
+        if (empty($_POST['id']) || empty($_POST['status'])) {
+            echo "Error: Missing required fields for status update";
+            exit;
+        }
+
+        $id = $_POST['id'];
+        $status = $_POST['status'];
+
+        // Validate status value
+        if (!in_array($status, ['active', 'inactive'])) {
+            echo "Error: Invalid status value";
+            exit;
+        }
+
+        try {
+            $sql = "UPDATE rental_services SET status = :status WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':status' => $status,
+                ':id' => $id
+            ]);
+
+            if ($stmt->rowCount() > 0) {
+                echo "success";
+            } else {
+                echo "Error: No changes were made. The record might not exist.";
+            }
+            exit;
+        } catch (PDOException $e) {
+            echo "Error: Database error - " . $e->getMessage();
+            exit;
+        }
+    }
+
     // Validate required fields
     $requiredFields = ['serviceName', 'duration', 'durationType', 'totalSlots', 'price'];
     $missingFields = [];
