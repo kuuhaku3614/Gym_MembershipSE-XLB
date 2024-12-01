@@ -34,6 +34,9 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-info">
+                    Current Registration Fee: ₱<span id="currentRegistrationFee">0.00</span>
+                </div>
                 <form id="updateRegistrationForm">
                     <div class="form-group">
                         <label for="newRegistrationFee">New Registration Fee</label>
@@ -284,13 +287,14 @@ $('#saveRegistrationFeeBtn').click(function() {
     
     // Basic validation
     if (!newFee || newFee <= 0) {
-        alert('Please enter a valid registration fee amount');
+        $('#newRegistrationFee').addClass('is-invalid');
+        $('#newRegistrationFee').after('<div class="invalid-feedback">Please enter a valid registration fee amount</div>');
         return;
     }
 
     // Send AJAX request
     $.ajax({
-        url: '../members/update_registration_fee.php',
+        url: '../admin/pages/gym rates/functions/update_registration_fee.php',
         type: 'POST',
         data: {
             newRegistrationFee: newFee
@@ -301,13 +305,39 @@ $('#saveRegistrationFeeBtn').click(function() {
                 $('#updateRegistrationModal').modal('hide');
                 location.reload();
             } else {
-                alert('Error updating registration fee: ' + response);
+                alert(response);
             }
         },
         error: function(xhr, status, error) {
             alert('Error occurred while updating registration fee: ' + error);
+            console.log('AJAX Error:', status, error);
         }
     });
+});
+
+// Function to fetch current registration fee
+function fetchCurrentRegistrationFee() {
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/update_registration_fee.php',
+        type: 'GET',
+        success: function(response) {
+            if (!response.startsWith('Error:')) {
+                $('#currentRegistrationFee').text(parseFloat(response).toFixed(2));
+            } else {
+                alert(response);
+                $('#currentRegistrationFee').text('N/A');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('Error:', error);
+            $('#currentRegistrationFee').text('N/A');
+        }
+    });
+}
+
+// Fetch current fee when modal is opened
+$('#updateRegistrationModal').on('show.bs.modal', function() {
+    fetchCurrentRegistrationFee();
 });
 
 // Reset form when modal is closed
@@ -315,5 +345,35 @@ $('#updateRegistrationModal').on('hidden.bs.modal', function () {
     $('#updateRegistrationForm')[0].reset();
     $('.is-invalid').removeClass('is-invalid');
     $('.invalid-feedback').remove();
+});
+
+// Handle status toggle (activate/deactivate)
+$('.toggle-status-btn').click(function() {
+    const btn = $(this);
+    const gymRateId = btn.data('id');
+    const newStatus = btn.text().toLowerCase() === 'activate' ? 'active' : 'inactive';
+    
+    if (confirm('Are you sure you want to ' + btn.text().toLowerCase() + ' this gym rate?')) {
+        $.ajax({
+            url: '../admin/pages/gym rates/functions/save_gym_rates.php',
+            type: 'POST',
+            data: {
+                action: 'toggle_status',
+                id: gymRateId,
+                status: newStatus
+            },
+            success: function(response) {
+                if (response.trim() === 'success') {
+                    location.reload();
+                } else {
+                    alert('Error: ' + response);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error occurred while updating status: ' + error);
+                console.log('AJAX Error:', status, error);
+            }
+        });
+    }
 });
 </script>

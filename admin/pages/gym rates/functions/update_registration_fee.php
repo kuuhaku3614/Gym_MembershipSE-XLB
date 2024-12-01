@@ -4,35 +4,49 @@ require_once '../../../../config.php';
 
 // Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Retrieve the new registration fee from the POST data
-    $newRegistrationFee = isset($_POST['newRegistrationFee']) ? $_POST['newRegistrationFee'] : '';
+    // Validate required fields
+    if (empty($_POST['newRegistrationFee'])) {
+        echo "Error: Registration fee is required";
+        exit;
+    }
 
-    // Validate the new registration fee
-    if (empty($newRegistrationFee) || !is_numeric($newRegistrationFee) || $newRegistrationFee <= 0) {
-        echo "Invalid registration fee.";
+    $newRegistrationFee = $_POST['newRegistrationFee'];
+
+    // Validate numeric value and positive amount
+    if (!is_numeric($newRegistrationFee) || $newRegistrationFee <= 0) {
+        echo "Error: Please enter a valid positive number for the registration fee";
         exit;
     }
 
     try {
         // Prepare the SQL query to update the registration fee
-        $query = "UPDATE registration SET membership_fee = :newFee WHERE id = 1"; // Adjust the table and condition as necessary
-        $stmt = $pdo->prepare($query);
-
-        // Bind the parameter and execute the query
-        $stmt->bindParam(':newFee', $newRegistrationFee, PDO::PARAM_STR);
-        $stmt->execute();
+        $sql = "UPDATE registration SET membership_fee = :newFee WHERE id = 1";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':newFee' => $newRegistrationFee]);
 
         // Check if the update was successful
         if ($stmt->rowCount() > 0) {
             echo "success";
         } else {
-            echo "No changes were made.";
+            echo "Error: No changes were made. The fee might be the same as the current fee.";
         }
     } catch (PDOException $e) {
         // Handle database errors
-        echo "Database error: " . $e->getMessage();
+        echo "Error: Database error - " . $e->getMessage();
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Handle GET request to fetch current registration fee
+    try {
+        $sql = "SELECT membership_fee FROM registration WHERE id = 1";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        
+        $currentFee = $stmt->fetchColumn();
+        echo $currentFee !== false ? $currentFee : "Error: Fee not found";
+    } catch (PDOException $e) {
+        echo "Error: Database error - " . $e->getMessage();
     }
 } else {
-    echo "Invalid request method.";
+    echo "Error: Invalid request method";
 }
 ?>
