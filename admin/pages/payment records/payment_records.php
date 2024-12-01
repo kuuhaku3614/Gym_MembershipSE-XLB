@@ -7,7 +7,7 @@ $query = "
     t.id AS transaction_id,
     (
         COALESCE(mp.price, 0) + 
-        COALESCE(p.price, 0) + 
+        COALESCE(cpt.price, 0) + 
         COALESCE(r.price, 0) + 
         COALESCE(reg.membership_fee, 0)
     ) AS total_amount,
@@ -22,7 +22,7 @@ $query = "
     p.program_name,
     ps.start_date AS program_start_date,
     ps.end_date AS program_end_date,
-    p.price AS program_price,
+    cpt.price AS program_price,
     rs.start_date AS rental_start_date,
     rs.end_date AS rental_end_date,
     r.price AS rental_price,
@@ -32,7 +32,11 @@ $query = "
     r.duration AS rental_duration,
     dt_r.type_name AS rental_duration_type,
     mp.price AS membership_price,
-    reg.membership_fee AS registration_fee
+    reg.membership_fee AS registration_fee,
+    ps.status AS program_subscription_status,
+    ps.is_paid AS program_is_paid,
+    rs.status AS rental_subscription_status,
+    rs.is_paid AS rental_is_paid
 FROM transactions t
 LEFT JOIN users staff_u ON t.staff_id = staff_u.id
 LEFT JOIN memberships m ON t.id = m.transaction_id
@@ -42,6 +46,7 @@ LEFT JOIN profile_photos pp ON member_u.id = pp.user_id AND pp.is_active = 1
 LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
 LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
 LEFT JOIN programs p ON ps.program_id = p.id
+LEFT JOIN coach_program_types cpt ON p.id = cpt.program_id AND ps.coach_id = cpt.coach_id
 LEFT JOIN duration_types dt_p ON p.duration_type_id = dt_p.id
 LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
 LEFT JOIN rental_services r ON rs.rental_service_id = r.id
@@ -49,7 +54,6 @@ LEFT JOIN duration_types dt_r ON r.duration_type_id = dt_r.id
 CROSS JOIN registration reg
 ORDER BY t.created_at DESC
 ";
-
 try {
     $stmt = $pdo->prepare($query);
     $stmt->execute();
@@ -93,7 +97,7 @@ try {
                     <th>Total Amount</th>
                     <th>Payment Date</th>
                     <th>Processed By</th>
-                    <th>Services</th>
+                    <th>Availed</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
