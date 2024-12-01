@@ -606,7 +606,8 @@ function registration_fee() {
         totalAmount: 0,
         VERIFICATION_CODE: '123456',
         formData: new FormData(),
-        isInitialized: false
+        isInitialized: false,
+        selectedCoaches: {} // New object to track coaches for selected programs
     },
 
     init() {
@@ -620,7 +621,7 @@ function registration_fee() {
         
         this.bindEvents();
         this.loadMembershipPlans();
-        this.loadMembershipServices(); // New method to load services
+        this.loadMembershipServices();
         this.initializeModal();
     },
 
@@ -664,38 +665,68 @@ function registration_fee() {
         this.handleRoleBasedAccess();
     },
     loadMembershipServices() {
-        // Load Programs
-        $.get('../../../get_program_details.php', (response) => {
-            $('#programsContainer').html(response);
-            
-            // Bind click events for adding programs
-            $('.program').on('click', (e) => {
-                const $program = $(e.currentTarget);
-                const programId = $program.data('id');
-                const programName = $program.find('.program-name').text();
-                const programPrice = parseFloat($program.find('.program-price').text().replace('₱', ''));
+    // Load Programs
+    $.get('../../../get_program_details.php', (response) => {
+        $('#programsContainer').html(response);
+        
+        // Bind click events for adding programs
+        $('.program').on('click', (e) => {
+            const $program = $(e.currentTarget);
+            const programId = $program.data('id');
+            const programName = $program.find('.program-name').text();
+            const $coachSelect = $program.find('.default-coach-id');
+            const programPrice = parseFloat($program.find('.program-price').text().replace('₱', ''));
 
-                // Check if program is already added
-                const exists = this.state.selectedPrograms.some(p => p.id === programId);
-                if (!exists) {
+            // Check if program is already added
+            const exists = this.state.selectedPrograms.some(p => p.id === programId);
+            
+            if (!exists) {
+                // If no coaches available, show an alert or use default coach
+                if ($coachSelect.length === 0) {
+                    alert('No coaches available for this program.');
+                    return;
+                }
+
+                // Show coach selection modal
+                $('#coachSelectionModal').remove(); // Remove any existing modal
+                const modalHtml = this.createCoachSelectionModal($program);
+                $('body').append(modalHtml);
+                $('#coachSelectionModal').modal('show');
+
+                // Bind confirm button in modal
+                $('#confirmCoachSelection').off('click').on('click', () => {
+                    const selectedCoachId = $('#coachSelectionModal select').val();
+                    const selectedCoachName = $('#coachSelectionModal select option:selected').text();
+
                     this.state.selectedPrograms.push({
                         id: programId,
                         name: programName,
-                        price: programPrice
+                        price: programPrice,
+                        coachId: selectedCoachId,
+                        coachName: selectedCoachName
                     });
+
+                    // Store selected coach for this program
+                    this.state.selectedCoaches[programId] = {
+                        coachId: selectedCoachId,
+                        coachName: selectedCoachName
+                    };
 
                     $program.addClass('selected');
                     this.updateTotalAmount();
                     this.updateSelectedServices();
-                } else {
-                    // Remove program if already added
-                    this.state.selectedPrograms = this.state.selectedPrograms.filter(p => p.id !== programId);
-                    $program.removeClass('selected');
-                    this.updateTotalAmount();
-                    this.updateSelectedServices();
-                }
-            });
+                    $('#coachSelectionModal').modal('hide');
+                });
+            } else {
+                // Remove program if already added
+                this.state.selectedPrograms = this.state.selectedPrograms.filter(p => p.id !== programId);
+                delete this.state.selectedCoaches[programId];
+                $program.removeClass('selected');
+                this.updateTotalAmount();
+                this.updateSelectedServices();
+            }
         });
+    });
 
         // Load Rentals
         $.get('../../../get_rental_details.php', (response) => {
@@ -741,6 +772,36 @@ function registration_fee() {
         
         $('#total_amount').text('₱' + this.state.totalAmount.toFixed(2));
     },
+    createCoachSelectionModal(programElement) {
+        const programName = programElement.find('.program-name').text();
+        const coachSelect = programElement.find('.coach-select').clone();
+        
+        return `
+            <div class="modal fade" id="coachSelectionModal" tabindex="-1" role="dialog">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Select Coach for ${programName}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="coachSelection">Choose a Coach:</label>
+                                ${coachSelect[0].outerHTML}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="confirmCoachSelection">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
     updateSelectedServices() {
         const planOption = $('#membership_plan option:selected');
         const planName = planOption.text();
@@ -756,7 +817,7 @@ function registration_fee() {
         this.state.selectedPrograms.forEach(program => {
             servicesHtml += `
                 <div class="service-item">
-                    <span>${program.name}</span>
+                    <span>${program.name} (Coach: ${program.coachName})</span>
                     <span class="float-right">₱${program.price.toFixed(2)}</span>
                 </div>
             `;
