@@ -86,44 +86,44 @@ function isUsernameExists($username) {
     }
 }
 
-function createUser($userData) {
-    global $pdo;
+// function createUser($userData) {
+//     global $pdo;
     
-    try {
-        // First get the role_id
-        $roleQuery = "SELECT id FROM roles WHERE role_name = :role_name";
-        $roleStmt = $pdo->prepare($roleQuery);
-        $roleStmt->bindParam(':role_name', $userData['role'], PDO::PARAM_STR);
-        $roleStmt->execute();
-        $roleId = $roleStmt->fetchColumn();
+//     try {
+//         // First get the role_id
+//         $roleQuery = "SELECT id FROM roles WHERE role_name = :role_name";
+//         $roleStmt = $pdo->prepare($roleQuery);
+//         $roleStmt->bindParam(':role_name', $userData['role'], PDO::PARAM_STR);
+//         $roleStmt->execute();
+//         $roleId = $roleStmt->fetchColumn();
         
-        if (!$roleId) {
-            throw new Exception("Invalid role specified");
-        }
+//         if (!$roleId) {
+//             throw new Exception("Invalid role specified");
+//         }
 
-        $sql = "INSERT INTO users (username, password, role_id, is_active) 
-                VALUES (:username, :password, :role_id, 1)";
+//         $sql = "INSERT INTO users (username, password, role_id, is_active) 
+//                 VALUES (:username, :password, :role_id, 1)";
         
-        $stmt = $pdo->prepare($sql);
+//         $stmt = $pdo->prepare($sql);
         
-        $hashedPassword = password_hash($userData['password'], PASSWORD_DEFAULT);
+//         $hashedPassword = password_hash($userData['password'], PASSWORD_DEFAULT);
         
-        $stmt->bindParam(':username', $userData['username'], PDO::PARAM_STR);
-        $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
-        $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
+//         $stmt->bindParam(':username', $userData['username'], PDO::PARAM_STR);
+//         $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+//         $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
         
-        if ($stmt->execute()) {
-            $userId = $pdo->lastInsertId();
-            // Create empty personal details record
-            $personalDetailsSql = "INSERT INTO personal_details (user_id, first_name, last_name, sex, birthdate) 
-                                 VALUES (:user_id, '', '', 'Male', CURRENT_DATE)";
-            $pdStmt = $pdo->prepare($personalDetailsSql);
-            $pdStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            return $pdStmt->execute();
-        }
-        return false;
-    } catch (PDOException $e) {
-        error_log("Error creating user: " . $e->getMessage());
-        return false;
-    }
-}
+//         if ($stmt->execute()) {
+//             $userId = $pdo->lastInsertId();
+//             // Create empty personal details record
+//             $personalDetailsSql = "INSERT INTO personal_details (user_id, first_name, last_name, sex, birthdate) 
+//                                  VALUES (:user_id, '', '', 'Male', CURRENT_DATE)";
+//             $pdStmt = $pdo->prepare($personalDetailsSql);
+//             $pdStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+//             return $pdStmt->execute();
+//         }
+//         return false;
+//     } catch (PDOException $e) {
+//         error_log("Error creating user: " . $e->getMessage());
+//         return false;
+//     }
+// }

@@ -1,41 +1,5 @@
 <?php
 require_once '../../../config.php';
-// Handle form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
-    $response = ["status" => "error", "message" => "An error occurred."];
-
-    if ($_POST['action'] === 'add') {
-        $message = $conn->real_escape_string($_POST['message'] ?? '');
-        $date = $conn->real_escape_string($_POST['date'] ?? '');
-
-        if (!$message || !$date) {
-            $response['message'] = "Message and date are required.";
-        } else {
-            $sql = "INSERT INTO announcements (message, applied_date, is_active) VALUES ('$message', '$date', 1)";
-            if ($conn->query($sql)) {
-                $response = ["status" => "success", "message" => "Announcement added successfully!"];
-            } else {
-                $response['message'] = "Database error: " . $conn->error;
-            }
-        }
-    } elseif ($_POST['action'] === 'remove') {
-        $id = (int)($_POST['id'] ?? 0);
-
-        if ($id <= 0) {
-            $response['message'] = "Invalid announcement ID.";
-        } else {
-            $sql = "UPDATE announcements SET is_active = 0 WHERE id = $id";
-            if ($conn->query($sql)) {
-                $response = ["status" => "success", "message" => "Announcement removed successfully!"];
-            } else {
-                $response['message'] = "Database error: " . $conn->error;
-            }
-        }
-    }
-
-    echo json_encode($response);
-    exit();
-}
 
 $sql = "
 SELECT id, applied_date, applied_time, message, announcement_type 
