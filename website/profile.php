@@ -11,6 +11,7 @@
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
     $searchDate = isset($_GET['search_date']) ? $_GET['search_date'] : null;
     $array = $profile->fetchAttendanceLog($searchDate);
+    $avail_array = $profile->fetchAvailedServices();
 
     $_SESSION['personal_details'] = $userDetails;
 
@@ -32,17 +33,96 @@
     </header>
 
     <section>
-        <div id="availed">
-            <h4>Current availed services</h4>
-            <table id="availed_table">
-                <tr>
-                    <td>Type: <span>1 month</span></td>
-                    <td>Duration: <span>1 month</span></td>
-                    <td>Expiry date: <span>1 month</span></td>
-                </tr>
-            </table>
-        </div>
+        <div id="availed_services">
+            <h4>Current Membership Plan</h4>
+            <?php if (!empty($avail_array['memberships'])) { ?>
+                <div class="subscription-cards">
+                    <?php foreach ($avail_array['memberships'] as $membership) { ?>
+                        <div class="subscription-card">
+                            <div class="card-content">
+                                <div class="card-info">
+                                    <div class="info-row">
+                                        <span class="label">Type:</span>
+                                        <span class="value"><?= $membership['name'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Duration:</span>
+                                        <span class="value"><?= $membership['duration'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Expiry Date:</span>
+                                        <span class="value"><?= $membership['end_date'] ?></span>
+                                    </div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    <?php } ?>
+                </div>
+            <?php } ?>
 
+            <?php if (!empty($avail_array['programs'])) { ?>
+                <div class="subscription-cards">
+                    <?php foreach ($avail_array['programs'] as $program) { ?>
+                        <div class="subscription-card">
+                            <div class="card-content">
+                                <div class="card-info">
+                                    <div class="info-row">
+                                        <span class="label">Type:</span>
+                                        <span class="value"><?= $program['name'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Duration:</span>
+                                        <span class="value"><?= $program['duration'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Expiry Date:</span>
+                                        <span class="value"><?= $program['end_date'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Coach:</span>
+                                        <span class="value"><?= $program['coach'] ?></span>
+                                    </div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    <?php } ?>
+                </div>
+            <?php } ?>
+
+            <?php if (!empty($avail_array['rentals'])) { ?>
+                <div class="subscription-cards">
+                    <?php foreach ($avail_array['rentals'] as $rental) { ?>
+                        <div class="subscription-card">
+                            <div class="card-content">
+                                <div class="card-info">
+                                    <div class="info-row">
+                                        <span class="label">Type:</span>
+                                        <span class="value"><?= $rental['name'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Duration:</span>
+                                        <span class="value"><?= $rental['duration'] ?></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Expiry Date:</span>
+                                        <span class="value"><?= $rental['end_date'] ?></span>
+                                    </div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    <?php } ?>
+                </div>
+            <?php } ?>
+        </div>
 
         <div id="log">
             <div class="log-header">
@@ -132,7 +212,7 @@
             flex-wrap: wrap!important;
         }
 
-        section #availed {
+        section #availed_services {
             width: 30%!important;
             margin-right: 3%!important;
             box-shadow: 0px 1px 3px gray!important;
@@ -148,7 +228,7 @@
             -ms-overflow-style: none!important;
         }
 
-        section #availed::-webkit-scrollbar {
+        section #availed_services::-webkit-scrollbar {
             display: none!important;
         }
 
@@ -166,30 +246,29 @@
             display: none!important;
         }
 
-        #availed_table {
-            width: 100%!important;
-            background-color: white!important;
-            color: white!important;
-            border-collapse: separate!important;
-            border-spacing: 0!important;
+        .subscription-table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
         }
 
-        #availed_table tr {
-            padding: 1rem!important;
-            border-radius: 10px!important;
-            background-color: var(--red)!important;
-            display: flex!important;
-            flex-direction: column!important;
-            margin-bottom: 1rem!important;
+        .subscription-table tr {
+            border-bottom: 1px solid #eee;
         }
 
-        #availed_table td span {
-            font-weight: 900!important;
+        .subscription-table tr:last-child {
+            border-bottom: none;
         }
 
-        #log {
-            max-width: 1000px;
-            margin: 0 auto;
+        .subscription-table td {
+            padding: 12px;
+            color: #666;
+        }
+
+        .subscription-table span {
+            color: #333;
+            font-weight: 500;
+            margin-left: 5px;
         }
 
         .log-header {
@@ -338,14 +417,75 @@
             section {
                 flex-direction: column!important;
             }
-            section #availed, section #log {
+            section #availed_services, section #log {
                 width: 100%!important;
                 margin-right: 0!important;
                 margin-bottom: 2rem!important;
             }
-            section #availed {
+            section #availed_services {
                 max-height: none!important;
                 height: auto!important;
+            }
+        }
+
+        #availed_services {
+            padding: 20px;
+        }
+        
+        #availed_services h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .subscription-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .subscription-card {
+            background-color: #ff3b30;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .card-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-info {
+            flex-grow: 1;
+        }
+
+        .info-row {
+            margin-bottom: 5px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-row .label {
+            font-weight: normal;
+            margin-right: 10px;
+        }
+
+        .info-row .value {
+            font-weight: bold;
+        }
+
+        .card-icon {
+            font-size: 24px;
+            margin-left: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .subscription-card {
+                width: 100%;
             }
         }
     </style>

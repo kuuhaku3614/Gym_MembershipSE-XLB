@@ -296,5 +296,4 @@ class Services_class{
             throw new Exception('Error checking user role: ' . $e->getMessage());
         }
     }
-
 }

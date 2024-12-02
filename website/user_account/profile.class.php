@@ -94,4 +94,75 @@ class Profile_class{
         
         return $results;
     }
+
+    public function fetchAvailedServices() {
+        $conn = $this->db->connect();
+        
+        // Fetch memberships
+        $membership_query = "SELECT 
+            'membership' as type,
+            mp.plan_name as name,
+            CONCAT(mp.duration, ' ', dt.type_name) as duration,
+            DATE_FORMAT(m.end_date, '%M %d, %Y') as end_date,
+            NULL as coach
+        FROM transactions t
+        JOIN memberships m ON t.id = m.transaction_id
+        JOIN membership_plans mp ON m.membership_plan_id = mp.id
+        JOIN duration_types dt ON mp.duration_type_id = dt.id
+        WHERE t.user_id = :user_id AND m.status = 'active'";
+
+        // Fetch programs
+        $program_query = "SELECT 
+            'program' as type,
+            p.program_name as name,
+            CONCAT(p.duration, ' ', dt.type_name) as duration,
+            DATE_FORMAT(ps.end_date, '%M %d, %Y') as end_date,
+            CONCAT(pd.first_name, ' ', pd.last_name) as coach
+        FROM transactions t
+        JOIN program_subscriptions ps ON t.id = ps.transaction_id
+        JOIN programs p ON ps.program_id = p.id
+        JOIN duration_types dt ON p.duration_type_id = dt.id
+        JOIN users u ON ps.coach_id = u.id
+        JOIN personal_details pd ON u.id = pd.user_id
+        WHERE t.user_id = :user_id AND ps.status = 'active'";
+
+        // Fetch rentals
+        $rental_query = "SELECT 
+            'rental' as type,
+            r.service_name as name,
+            CONCAT(r.duration, ' ', dt.type_name) as duration,
+            DATE_FORMAT(rs.end_date, '%M %d, %Y') as end_date,
+            NULL as coach
+        FROM transactions t
+        JOIN rental_subscriptions rs ON t.id = rs.transaction_id
+        JOIN rental_services r ON rs.rental_service_id = r.id
+        JOIN duration_types dt ON r.duration_type_id = dt.id
+        WHERE t.user_id = :user_id AND rs.status = 'active'";
+        
+        $result = [
+            'memberships' => [],
+            'programs' => [],
+            'rentals' => []
+        ];
+
+        // Execute membership query
+        $stmt = $conn->prepare($membership_query);
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
+        $stmt->execute();
+        $result['memberships'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Execute program query
+        $stmt = $conn->prepare($program_query);
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
+        $stmt->execute();
+        $result['programs'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Execute rental query
+        $stmt = $conn->prepare($rental_query);
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
+        $stmt->execute();
+        $result['rentals'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return $result;
+    }
 }

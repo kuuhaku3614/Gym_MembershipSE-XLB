@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Create rental subscriptions
         if (!empty($cart['rentals'])) {
             foreach ($cart['rentals'] as $rental) {
-                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_id, 
+                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, 
                         start_date, end_date, status, is_paid) 
                         VALUES (?, ?, ?, ?, 'active', 0)";
                 
