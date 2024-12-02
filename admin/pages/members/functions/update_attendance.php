@@ -10,16 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo->beginTransaction();
         
-        // Get status ID
-        $statusId = null;
-        $statusSql = "SELECT id FROM attendance_status WHERE status_name = :status";
-        $statusStmt = $pdo->prepare($statusSql);
-        $statusStmt->execute([':status' => strtolower($status)]);
-        $statusId = $statusStmt->fetchColumn();
-        
-        if (!$statusId) {
-            throw new Exception("Invalid status");
-        }
+        // Remove status ID lookup as we're using ENUM now
+        $status = strtolower($status) === 'checked in' ? 'checked_in' : 'checked_out';
         
         // Check if attendance record exists for today
         $sql = "
@@ -32,12 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([':user_id' => $userId, ':date' => $date]);
         $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($status === 'checked In') {
+        if ($status === 'checked_in') {
             // Handle check-in
             if ($existingRecord) {
-                $sql = "UPDATE attendance SET time_in = :time, status_id = :status_id WHERE user_id = :user_id AND date = :date";
+                $sql = "UPDATE attendance SET time_in = :time, status = :status WHERE user_id = :user_id AND date = :date";
             } else {
-                $sql = "INSERT INTO attendance (user_id, date, time_in, status_id) VALUES (:user_id, :date, :time, :status_id)";
+                $sql = "INSERT INTO attendance (user_id, date, time_in, status) VALUES (:user_id, :date, :time, :status)";
             }
             
             // Execute attendance update/insert
@@ -46,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':user_id' => $userId,
                 ':date' => $date,
                 ':time' => $currentTime,
-                ':status_id' => $statusId
+                ':status' => $status
             ]);
             
             // Get the attendance record ID
@@ -54,41 +46,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Insert into attendance history
             $historySQL = "INSERT INTO attendance_history 
-                          (attendance_id, time_in, status_id) 
-                          VALUES (:attendance_id, :time_in, :status_id)";
+                          (attendance_id, time_in, status) 
+                          VALUES (:attendance_id, :time_in, :status)";
             
             $stmt = $pdo->prepare($historySQL);
             $stmt->execute([
                 ':attendance_id' => $attendanceId,
                 ':time_in' => $currentTime,
-                ':status_id' => $statusId
+                ':status' => $status
             ]);
             
-        } else if ($status === 'checked out') {
+        } else if ($status === 'checked_out') {
             // Handle check-out
             if ($existingRecord && $existingRecord['time_in']) {
                 // Update attendance record with check-out time
-                $sql = "UPDATE attendance SET time_out = :time, status_id = :status_id WHERE user_id = :user_id AND date = :date";
+                $sql = "UPDATE attendance SET time_out = :time, status = :status WHERE user_id = :user_id AND date = :date";
                 
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
                     ':user_id' => $userId,
                     ':date' => $date,
                     ':time' => $currentTime,
-                    ':status_id' => $statusId
+                    ':status' => $status
                 ]);
                 
                 // Insert into attendance history
                 $historySQL = "INSERT INTO attendance_history 
-                              (attendance_id, time_in, time_out, status_id) 
-                              VALUES (:attendance_id, :time_in, :time_out, :status_id)";
+                              (attendance_id, time_in, time_out, status) 
+                              VALUES (:attendance_id, :time_in, :time_out, :status)";
                 
                 $stmt = $pdo->prepare($historySQL);
                 $stmt->execute([
                     ':attendance_id' => $existingRecord['id'],
                     ':time_in' => $existingRecord['time_in'],
                     ':time_out' => $currentTime,
-                    ':status_id' => $statusId
+                    ':status' => $status
                 ]);
             } else {
                 throw new Exception("Cannot check out without a valid check-in record");
@@ -98,10 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->commit();
         
         // Fetch updated attendance record
-        $sql = "SELECT a.*, ast.status_name 
-        FROM attendance a
-        JOIN attendance_status ast ON a.status_id = ast.id
-        WHERE a.user_id = :user_id AND a.date = :date";
+        $sql = "SELECT * FROM attendance
+        WHERE user_id = :user_id AND date = :date";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':user_id' => $userId, ':date' => $date]);
         $updatedRecord = $stmt->fetch(PDO::FETCH_ASSOC);

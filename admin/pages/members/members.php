@@ -486,7 +486,8 @@ function registration_fee() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>          
+                            </div>
+                            <br>          
                         <div class="row">
                             <!-- Programs Section -->
                             <div class="col-md-6">
@@ -810,7 +811,6 @@ function registration_fee() {
         let servicesHtml = `
             <div class="service-item">
                 <span>Membership Plan: ${planName}</span>
-                <span class="float-right">₱${planPrice.toFixed(2)}</span>
             </div>
         `;
 

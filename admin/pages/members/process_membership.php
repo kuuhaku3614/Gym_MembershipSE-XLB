@@ -249,6 +249,20 @@ function insertRentalSubscriptions($pdo, $transactionId, $data) {
     foreach ($rentals as $rental) {
         if (!isset($rental['id'])) continue;
 
+        // Check available slots before inserting
+        $stmt = $pdo->prepare("
+            SELECT available_slots 
+            FROM rental_services 
+            WHERE id = ? AND available_slots > 0
+        ");
+        $stmt->execute([$rental['id']]);
+        $rentalService = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$rentalService) {
+            throw new Exception("No available slots for rental service ID: " . $rental['id']);
+        }
+
+        // Insert rental subscription
         $stmt = $pdo->prepare("
             INSERT INTO rental_subscriptions (
                 transaction_id,
@@ -269,6 +283,14 @@ function insertRentalSubscriptions($pdo, $transactionId, $data) {
             'active',
             1 // Paid
         ]);
+
+        // Reduce available slots
+        $stmt = $pdo->prepare("
+            UPDATE rental_services 
+            SET available_slots = available_slots - 1 
+            WHERE id = ?
+        ");
+        $stmt->execute([$rental['id']]);
     }
 }
 

@@ -5,7 +5,7 @@ try {
     $pdo->beginTransaction();
     
     // Get missed status ID
-    $missedStatusSql = "SELECT id FROM attendance_status WHERE status_name = 'missed'";
+    $missedStatusSql = "SELECT id FROM attendance WHERE status = 'missed'";
     $missedStatusStmt = $pdo->prepare($missedStatusSql);
     $missedStatusStmt->execute();
     $missedStatusId = $missedStatusStmt->fetchColumn();
@@ -39,7 +39,7 @@ try {
     $sql = "UPDATE attendance 
             SET time_in = NULL, 
                 time_out = NULL, 
-                status_id = :missed_status_id
+                status = :missed_status_id
             WHERE date = CURRENT_DATE()";
     $resetStmt = $pdo->prepare($sql);
     $resetStmt->execute([':missed_status_id' => $missedStatusId]);

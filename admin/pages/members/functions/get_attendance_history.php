@@ -13,13 +13,12 @@ SELECT
     a.date,
     ah.time_in,
     ah.time_out,
-    LOWER(ast.status_name) AS status,
+    ah.status,
     ah.created_at AS history_timestamp
 FROM attendance_history ah
 JOIN attendance a ON ah.attendance_id = a.id
 JOIN users u ON a.user_id = u.id
 JOIN personal_details pd ON u.id = pd.user_id
-LEFT JOIN attendance_status ast ON ah.status_id = ast.id
 ORDER BY ah.created_at DESC;
 ";
         

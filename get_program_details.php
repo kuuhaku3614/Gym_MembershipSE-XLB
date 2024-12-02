@@ -5,21 +5,21 @@ require_once 'config.php';
 $programId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 $query = "
-    SELECT 
+    SELECT DISTINCT
         p.*, 
         pt.type_name, 
         cpt.id AS coach_program_id,
         cpt.price AS coach_program_price,
+        cpt.status AS coach_program_status,
         u.username AS coach_username,
         u.id AS coach_id,
         r.role_name AS coach_role
     FROM programs p 
     JOIN program_types pt ON p.program_type_id = pt.id
-    JOIN status_types st ON p.status_id = st.id
-    LEFT JOIN coach_program_types cpt ON p.id = cpt.program_id AND cpt.status = 'active'
+    LEFT JOIN coach_program_types cpt ON p.id = cpt.program_id
     LEFT JOIN users u ON cpt.coach_id = u.id
     LEFT JOIN roles r ON u.role_id = r.id
-    WHERE st.status_name = 'active'
+    WHERE p.status = 'active'
 ";
 
 if ($programId) {
@@ -60,7 +60,8 @@ foreach ($programsRaw as $row) {
                 'coach_id' => $row['coach_id'],
                 'coach_username' => $row['coach_username'],
                 'coach_role' => $row['coach_role'],
-                'coach_program_price' => $row['coach_program_price']
+                'coach_program_price' => $row['coach_program_price'],
+                'coach_program_status' => $row['coach_program_status']
             ];
         }
     }
@@ -71,8 +72,14 @@ foreach ($programsRaw as $row) {
     $programDetails = $program['program_details'];
     $coaches = $program['coaches'];
     
-    // Default price (first coach's price or original program price)
-    $price = !empty($coaches) ? $coaches[0]['coach_program_price'] : $programDetails['price'];
+    // Default price from first active coach or set to 0 if no active coach found
+    $activeCoaches = array_filter($coaches, function($coach) {
+        return $coach['coach_program_status'] === 'active';
+    });
+    
+    $price = !empty($activeCoaches) 
+        ? reset($activeCoaches)['coach_program_price'] 
+        : 0;
 ?>
     <div class="service-box program" data-id="<?= $programDetails['id'] ?>">
         <h6 class="program-name"><?= htmlspecialchars($programDetails['program_name']) ?></h6>
@@ -89,10 +96,12 @@ foreach ($programsRaw as $row) {
                     <?php foreach ($coaches as $coach): ?>
                         <option 
                             value="<?= $coach['coach_id'] ?>" 
-                            data-price="<?= $coach['coach_program_price'] ?? $programDetails['price'] ?>"
+                            data-price="<?= $coach['coach_program_price'] ?? 0 ?>"
+                            <?= $coach['coach_program_status'] !== 'active' ? 'disabled' : '' ?>
                         >
                             <?= htmlspecialchars($coach['coach_username']) ?> 
-                            (<?= htmlspecialchars($coach['coach_role']) ?>)
+                            (<?= htmlspecialchars($coach['coach_role']) ?>) 
+                            <?= $coach['coach_program_status'] !== 'active' ? '- Inactive' : '' ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -104,7 +113,7 @@ foreach ($programsRaw as $row) {
         </p>
         
         <input type="hidden" class="program-id" value="<?= $programDetails['id'] ?>">
-        <input type="hidden" class="default-coach-id" value="<?= !empty($coaches) ? $coaches[0]['coach_id'] : '' ?>">
+        <input type="hidden" class="default-coach-id" value="<?= !empty($activeCoaches) ? reset($activeCoaches)['coach_id'] : '' ?>">
     </div>
 <?php endforeach; ?>
 
