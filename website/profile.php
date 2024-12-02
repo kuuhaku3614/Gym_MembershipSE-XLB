@@ -9,6 +9,8 @@
 
     $profile = new Profile_class();
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
+    $searchDate = isset($_GET['search_date']) ? $_GET['search_date'] : null;
+    $array = $profile->fetchAttendanceLog($searchDate);
 
     $_SESSION['personal_details'] = $userDetails;
 
@@ -38,31 +40,49 @@
                     <td>Duration: <span>1 month</span></td>
                     <td>Expiry date: <span>1 month</span></td>
                 </tr>
-                <tr>
-                    <td>Type:</td>
-                    <td>Duration:</td>
-                    <td>Expiry date:</td>
-                </tr>
             </table>
         </div>
 
+
         <div id="log">
-            <table id="log_table">
-                <tr>
-                    <td style="font-style:italic; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">Logged in</td>
-                    <td>1:00 pm</td>
-                    <td style="font-style:italic">Logged out</td>
-                    <td>3:00 pm</td>
-                    <td style="font-size: 0.875rem; font-weight: bold; border-top-right-radius: 10px; border-bottom-right-radius: 10px;">3 days ago</td>
-                </tr>
-                <tr>
-                    <td style="font-style:italic; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">Logged in</td>
-                    <td>1:00 pm</td>
-                    <td style="font-style:italic">Logged out</td>
-                    <td>3:00 pm</td>
-                    <td style="font-size: 0.875rem; font-weight: bold; border-top-right-radius: 10px; border-bottom-right-radius: 10px;">3 days ago</td>
-                </tr>
-            </table>
+            <div class="log-header">
+                <h2 class="attendance-title">Attendance Log</h2>
+                <div class="search-container">
+                    <form method="GET" class="log-filter">
+                        <div class="search-wrapper">
+                            <div class="date-input-wrapper">
+                                <input type="date" name="search_date" class="form-control date-input" value="<?= isset($_GET['search_date']) ? htmlspecialchars($_GET['search_date']) : '' ?>">
+                            </div>
+                            <div class="button-group">
+                                <button type="submit" class="search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <?php if (isset($_GET['search_date'])): ?>
+                                    <a href="profile.php" class="clear-btn">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="attendance-cards">
+                <?php foreach ($array as $arr) { ?>
+                    <div class="attendance-card">
+                        <div class="log-item">
+                            <span class="log-label">Logged in</span>
+                            <span class="log-time"><?= $arr['time_in'] ?></span>
+                        </div>
+                        <div class="log-item">
+                            <span class="log-label">Logged out</span>
+                            <span class="log-time"><?= $arr['time_out'] ?></span>
+                        </div>
+                        <div class="log-time-ago"><?= $arr['created_at'] ?></div>
+                    </div>
+                <?php } ?>
+            </div>
         </div>
     </section>
 
@@ -133,6 +153,7 @@
         }
 
         section #log {
+            padding-top: 5px!important;
             width: 67%!important;
             background-color: whitesmoke!important;
             height: 70vh!important;
@@ -143,27 +164,6 @@
 
         section #log::-webkit-scrollbar {
             display: none!important;
-        }
-
-        #log_table {
-            width: 100%!important;
-            height: auto!important;
-            border-collapse: separate!important;
-            border-spacing: 0px 1rem!important;
-            padding: 0.1rem!important;
-        }
-
-        #log_table tr {
-            box-shadow: 0px 1px 3px gray!important;
-            border-radius: 10px!important;
-            background-color: white!important;
-        }
-
-        #log_table td {
-            text-align: center!important;
-            padding: 1rem!important;
-            font-weight: 500!important;
-            font-size: 1rem!important;
         }
 
         #availed_table {
@@ -187,6 +187,144 @@
             font-weight: 900!important;
         }
 
+        #log {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .attendance-title {
+            color: #ff3b30;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .date-input-wrapper {
+            background: #fff;
+            border-radius: 25px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 200px;
+        }
+
+        .date-input {
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            outline: none;
+            background: transparent;
+            width: 100%;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-btn, .clear-btn {
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn {
+            background: #ff3b30;
+        }
+
+        .search-btn:hover {
+            background: #ff1a1a;
+            transform: translateY(-2px);
+        }
+
+        .clear-btn {
+            background: #6c757d;
+            text-decoration: none;
+        }
+
+        .clear-btn:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .attendance-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .attendance-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .log-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .log-label {
+            color: #666;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .log-time {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .log-time-ago {
+            color: #666;
+            font-size: 14px;
+            text-align: right;
+            min-width: 120px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .attendance-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .log-time-ago {
+                align-self: flex-end;
+            }
+        }
+
         @media (max-width: 768px) {
             #title {
                 padding: 1.5rem 0!important;
@@ -208,10 +346,6 @@
             section #availed {
                 max-height: none!important;
                 height: auto!important;
-            }
-            #log_table td {
-                font-size: 0.875rem!important;
-                padding: 0.!important;
             }
         }
     </style>
