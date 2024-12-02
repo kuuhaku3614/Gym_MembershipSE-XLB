@@ -33,13 +33,13 @@
                         <td>1</td>
                         <td>2024-10-09 08:15:00</td>
                         <td>Gerby</td>
-                        <td>Added new member</td>
+                        <td>---</td>
                     </tr>
                     <tr>
                         <td>2</td>
                         <td>2024-10-09 08:15:00</td>
                         <td>Reign</td>
-                        <td>Checked in gym member</td>
+                        <td>---</td>
                     </tr>
                 </tbody>
             </table>
