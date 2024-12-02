@@ -7,9 +7,8 @@ $rentalId = isset($_GET['id']) ? intval($_GET['id']) : null;
 $query = "
     SELECT rs.*, dt.type_name as duration_type
     FROM rental_services rs 
-    JOIN status_types st ON rs.status_id = st.id
     JOIN duration_types dt ON rs.duration_type_id = dt.id
-    WHERE st.status_name = 'active'
+    WHERE rs.status = 'active'
 ";
 
 if ($rentalId) {

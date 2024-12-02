@@ -12,7 +12,7 @@ try {
             dt.type_name as duration_type
         FROM membership_plans mp
         JOIN duration_types dt ON mp.duration_type_id = dt.id
-        WHERE mp.status_id = 1
+        WHERE mp.status = 'active'
         ORDER BY mp.plan_name
     ");
     

@@ -312,7 +312,7 @@ $(document).ready(function () {
 
         // Send AJAX request
         $.ajax({
-            url: '<?php echo $baseUrl; ?>/admin/pages/gym rates/functions/save_rentals.php',
+            url: '../admin/pages/gym rates/functions/save_rentals.php',
             type: 'POST',
             data: formData,
             success: function(response) {
