@@ -15,6 +15,14 @@
 
     $_SESSION['personal_details'] = $userDetails;
 
+    // Handle AJAX request for expired services
+    if(isset($_GET['fetch_expired'])) {
+        header('Content-Type: application/json');
+        $expired_services = $profile->fetchExpiredServices();
+        echo json_encode($expired_services);
+        exit;
+    }
+
     include('includes/header.php');
 ?>
 
@@ -34,94 +42,105 @@
 
     <section>
         <div id="availed_services">
-            <h4>Current Membership Plan</h4>
-            <?php if (!empty($avail_array['memberships'])) { ?>
-                <div class="subscription-cards">
-                    <?php foreach ($avail_array['memberships'] as $membership) { ?>
-                        <div class="subscription-card">
-                            <div class="card-content">
-                                <div class="card-info">
-                                    <div class="info-row">
-                                        <span class="label">Type:</span>
-                                        <span class="value"><?= $membership['name'] ?></span>
+            <div class="section-header">
+                <h4>Current Membership Plan</h4>
+                <button type="button" class="icon-button" id="history-btn" onclick="toggleHistory()">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
+            <div id="current_services" style="display: block;">
+                <?php if (!empty($avail_array['memberships'])) { ?>
+                    <div class="subscription-cards">
+                        <?php foreach ($avail_array['memberships'] as $membership) { ?>
+                            <div class="subscription-card">
+                                <div class="card-content">
+                                    <div class="card-info">
+                                        <div class="info-row">
+                                            <span class="label">Type:</span>
+                                            <span class="value"><?= $membership['name'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Duration:</span>
+                                            <span class="value"><?= $membership['duration'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Expiry Date:</span>
+                                            <span class="value"><?= $membership['end_date'] ?></span>
+                                        </div>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="label">Duration:</span>
-                                        <span class="value"><?= $membership['duration'] ?></span>
+                                    <div class="card-icon">
+                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="label">Expiry Date:</span>
-                                        <span class="value"><?= $membership['end_date'] ?></span>
-                                    </div>
-                                </div>
-                                <div class="card-icon">
-                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
                             </div>
-                        </div>
-                    <?php } ?>
-                </div>
-            <?php } ?>
+                        <?php } ?>
+                    </div>
+                <?php } ?>
 
-            <?php if (!empty($avail_array['programs'])) { ?>
-                <div class="subscription-cards">
-                    <?php foreach ($avail_array['programs'] as $program) { ?>
-                        <div class="subscription-card">
-                            <div class="card-content">
-                                <div class="card-info">
-                                    <div class="info-row">
-                                        <span class="label">Type:</span>
-                                        <span class="value"><?= $program['name'] ?></span>
+                <?php if (!empty($avail_array['programs'])) { ?>
+                    <div class="subscription-cards">
+                        <?php foreach ($avail_array['programs'] as $program) { ?>
+                            <div class="subscription-card">
+                                <div class="card-content">
+                                    <div class="card-info">
+                                        <div class="info-row">
+                                            <span class="label">Type:</span>
+                                            <span class="value"><?= $program['name'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Duration:</span>
+                                            <span class="value"><?= $program['duration'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Expiry Date:</span>
+                                            <span class="value"><?= $program['end_date'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Coach:</span>
+                                            <span class="value"><?= $program['coach'] ?></span>
+                                        </div>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="label">Duration:</span>
-                                        <span class="value"><?= $program['duration'] ?></span>
+                                    <div class="card-icon">
+                                        <i class="fas fa-dumbbell"></i>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="label">Expiry Date:</span>
-                                        <span class="value"><?= $program['end_date'] ?></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="label">Coach:</span>
-                                        <span class="value"><?= $program['coach'] ?></span>
-                                    </div>
-                                </div>
-                                <div class="card-icon">
-                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
                             </div>
-                        </div>
-                    <?php } ?>
-                </div>
-            <?php } ?>
+                        <?php } ?>
+                    </div>
+                <?php } ?>
 
-            <?php if (!empty($avail_array['rentals'])) { ?>
-                <div class="subscription-cards">
-                    <?php foreach ($avail_array['rentals'] as $rental) { ?>
-                        <div class="subscription-card">
-                            <div class="card-content">
-                                <div class="card-info">
-                                    <div class="info-row">
-                                        <span class="label">Type:</span>
-                                        <span class="value"><?= $rental['name'] ?></span>
+                <?php if (!empty($avail_array['rentals'])) { ?>
+                    <div class="subscription-cards">
+                        <?php foreach ($avail_array['rentals'] as $rental) { ?>
+                            <div class="subscription-card">
+                                <div class="card-content">
+                                    <div class="card-info">
+                                        <div class="info-row">
+                                            <span class="label">Type:</span>
+                                            <span class="value"><?= $rental['name'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Duration:</span>
+                                            <span class="value"><?= $rental['duration'] ?></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Expiry Date:</span>
+                                            <span class="value"><?= $rental['end_date'] ?></span>
+                                        </div>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="label">Duration:</span>
-                                        <span class="value"><?= $rental['duration'] ?></span>
+                                    <div class="card-icon">
+                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
-                                    <div class="info-row">
-                                        <span class="label">Expiry Date:</span>
-                                        <span class="value"><?= $rental['end_date'] ?></span>
-                                    </div>
-                                </div>
-                                <div class="card-icon">
-                                    <i class="fas fa-calendar-alt"></i>
                                 </div>
                             </div>
-                        </div>
-                    <?php } ?>
-                </div>
-            <?php } ?>
+                        <?php } ?>
+                    </div>
+                <?php } ?>
+            </div>
+
+            <div id="expired_services" style="display: none;">
+                <div id="expired_services_content"></div>
+            </div>
         </div>
 
         <div id="log">
@@ -440,7 +459,7 @@
         .subscription-cards {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
 
         .subscription-card {
@@ -488,7 +507,265 @@
                 width: 100%;
             }
         }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h4 {
+            color: #333;
+            margin: 0;
+        }
+
+        .icon-button {
+            min-width: 35px;
+            max-width: 35px;
+            min-height: 35px;
+            max-height: 35px;
+            border-radius: 50%;
+            background-color: #ff3b30;
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .icon-button:hover {
+            background-color: #ff1f1f;
+        }
+
+        .icon-button i {
+            font-size: 16px;
+        }
+
+        #history-btn{
+            background-color: #00000070;
+        }
+
+        .expired-card {
+            background-color: #00000070 !important;
+        }
+
+        .transaction-group {
+            margin-bottom: 15px;
+        }
+        .transaction-group h6 {
+            margin: 0 0 10px 0;
+            color: #666;
+        }
+        .transaction-group .subscription-cards {
+            margin: 0;
+            gap: 10px;
+        }
+        .transaction-group .subscription-cards .subscription-card {
+            margin: 0;
+        }
     </style>
+    
+    <script>
+    let showingHistory = false;
+
+    function toggleHistory() {
+        const currentServices = document.getElementById('current_services');
+        const expiredServices = document.getElementById('expired_services');
+        const historyBtn = document.getElementById('history-btn');
+        const sectionHeader = document.querySelector('.section-header h4');
+
+        if (!showingHistory) {
+            // Show expired services
+            fetch('profile.php?fetch_expired=1')
+                .then(response => response.json())
+                .then(data => {
+                    const expiredContent = document.getElementById('expired_services_content');
+                    expiredContent.innerHTML = generateExpiredServicesHTML(data);
+                    currentServices.style.display = 'none';
+                    expiredServices.style.display = 'block';
+                    historyBtn.style.backgroundColor = '#ff3b30';
+                    sectionHeader.textContent = 'Expired Membership Plan';
+                })
+                .catch(error => console.error('Error:', error));
+        } else {
+            // Show current services
+            currentServices.style.display = 'block';
+            expiredServices.style.display = 'none';
+            historyBtn.style.backgroundColor = '#00000070';
+            sectionHeader.textContent = 'Current Membership Plan';
+        }
+        showingHistory = !showingHistory;
+    }
+
+    function generateExpiredServicesHTML(data) {
+        // Group services by transaction first
+        const transactionGroups = {};
+        
+        // Process memberships
+        if (data.memberships) {
+            data.memberships.forEach(item => {
+                const transId = item.transaction_id;
+                if (!transactionGroups[transId]) {
+                    transactionGroups[transId] = {
+                        date: item.transaction_date,
+                        services: []
+                    };
+                }
+                item.type = 'membership';
+                item.sortOrder = 1;
+                transactionGroups[transId].services.push(item);
+            });
+        }
+        
+        // Process programs
+        if (data.programs) {
+            data.programs.forEach(item => {
+                const transId = item.transaction_id;
+                if (!transactionGroups[transId]) {
+                    transactionGroups[transId] = {
+                        date: item.transaction_date,
+                        services: []
+                    };
+                }
+                item.type = 'program';
+                item.sortOrder = 2;
+                transactionGroups[transId].services.push(item);
+            });
+        }
+        
+        // Process rentals
+        if (data.rentals) {
+            data.rentals.forEach(item => {
+                const transId = item.transaction_id;
+                if (!transactionGroups[transId]) {
+                    transactionGroups[transId] = {
+                        date: item.transaction_date,
+                        services: []
+                    };
+                }
+                item.type = 'rental';
+                item.sortOrder = 3;
+                transactionGroups[transId].services.push(item);
+            });
+        }
+
+        // Sort transaction groups by ID (descending order - newest first)
+        const sortedTransactionIds = Object.keys(transactionGroups).sort((a, b) => b - a);
+
+        let html = '';
+        
+        // Generate HTML for each transaction group
+        sortedTransactionIds.forEach(transId => {
+            const group = transactionGroups[transId];
+            
+            // Sort services within the group
+            group.services.sort((a, b) => a.sortOrder - b.sortOrder);
+
+            html += `<div class="transaction-group">
+                        <h6>Transaction Date: ${group.date}</h6>
+                        <div class="subscription-cards">`;
+            
+            // Generate HTML for each service in the group
+            group.services.forEach(service => {
+                if (service.type === 'membership') {
+                    html += `
+                        <div class="subscription-card expired-card">
+                            <div class="card-content">
+                                <div class="card-info">
+                                    <div class="info-row">
+                                        <span class="label">Plan:</span>
+                                        <span class="value">${service.plan_name}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Duration:</span>
+                                        <span class="value">${service.duration_name}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Start Date:</span>
+                                        <span class="value">${service.formatted_start_date}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">End Date:</span>
+                                        <span class="value">${service.formatted_end_date}</span>
+                                    </div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                            </div>
+                        </div>`;
+                } else if (service.type === 'program') {
+                    html += `
+                        <div class="subscription-card expired-card">
+                            <div class="card-content">
+                                <div class="card-info">
+                                    <div class="info-row">
+                                        <span class="label">Program:</span>
+                                        <span class="value">${service.program_name}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Duration:</span>
+                                        <span class="value">${service.duration_name}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Start Date:</span>
+                                        <span class="value">${service.formatted_start_date}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">End Date:</span>
+                                        <span class="value">${service.formatted_end_date}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Coach:</span>
+                                        <span class="value">${service.coach_name || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="fas fa-dumbbell"></i>
+                                </div>
+                            </div>
+                        </div>`;
+                } else if (service.type === 'rental') {
+                    html += `
+                        <div class="subscription-card expired-card">
+                            <div class="card-content">
+                                <div class="card-info">
+                                    <div class="info-row">
+                                        <span class="label">Service:</span>
+                                        <span class="value">${service.rental_name}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Duration:</span>
+                                        <span class="value">${service.duration_name}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Start Date:</span>
+                                        <span class="value">${service.formatted_start_date}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">End Date:</span>
+                                        <span class="value">${service.formatted_end_date}</span>
+                                    </div>
+                                </div>
+                                <div class="card-icon">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            });
+            
+            html += `</div></div>`;
+        });
+
+        return html || '<p>No expired services found.</p>';
+    }
+    </script>
     
 </body>
 </html>

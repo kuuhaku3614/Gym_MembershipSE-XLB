@@ -165,4 +165,80 @@ class Profile_class{
         
         return $result;
     }
+
+    public function fetchExpiredServices() {
+        try {
+            $expired_services = array();
+
+            // Fetch expired memberships
+            $membership_query = "SELECT m.*, mp.plan_name, mp.description, 
+                CONCAT(mp.duration, ' ', dt.type_name) as duration_name,
+                DATE_FORMAT(m.start_date, '%M %d, %Y') as formatted_start_date,
+                DATE_FORMAT(m.end_date, '%M %d, %Y') as formatted_end_date,
+                DATE_FORMAT(t.created_at, '%M %d, %Y') as transaction_date,
+                t.created_at as raw_transaction_date,
+                t.id as transaction_id
+                FROM memberships m
+                LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
+                LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
+                LEFT JOIN transactions t ON m.transaction_id = t.id
+                WHERE t.user_id = :user_id AND m.end_date < CURDATE()
+                AND m.status = 'expired'
+                ORDER BY t.id DESC";
+            
+            $stmt = $this->db->connect()->prepare($membership_query);
+            $stmt->bindParam(':user_id', $_SESSION['user_id']);
+            $stmt->execute();
+            $expired_services['memberships'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Fetch expired programs
+            $program_query = "SELECT ps.*, p.program_name, p.description, 
+                CONCAT(p.duration, ' ', dt.type_name) as duration_name,
+                DATE_FORMAT(ps.start_date, '%M %d, %Y') as formatted_start_date,
+                DATE_FORMAT(ps.end_date, '%M %d, %Y') as formatted_end_date,
+                DATE_FORMAT(t.created_at, '%M %d, %Y') as transaction_date,
+                t.created_at as raw_transaction_date,
+                t.id as transaction_id,
+                CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
+                FROM program_subscriptions ps
+                LEFT JOIN programs p ON ps.program_id = p.id
+                LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
+                LEFT JOIN transactions t ON ps.transaction_id = t.id
+                LEFT JOIN users u ON ps.coach_id = u.id
+                LEFT JOIN personal_details pd ON u.id = pd.user_id
+                WHERE t.user_id = :user_id AND ps.end_date < CURDATE()
+                AND ps.status = 'expired'
+                ORDER BY t.id DESC";
+            
+            $stmt = $this->db->connect()->prepare($program_query);
+            $stmt->bindParam(':user_id', $_SESSION['user_id']);
+            $stmt->execute();
+            $expired_services['programs'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Fetch expired rentals
+            $rental_query = "SELECT rs.*, r.service_name as rental_name, r.description,
+                CONCAT(r.duration, ' ', dt.type_name) as duration_name,
+                DATE_FORMAT(rs.start_date, '%M %d, %Y') as formatted_start_date,
+                DATE_FORMAT(rs.end_date, '%M %d, %Y') as formatted_end_date,
+                DATE_FORMAT(t.created_at, '%M %d, %Y') as transaction_date,
+                t.created_at as raw_transaction_date,
+                t.id as transaction_id
+                FROM rental_subscriptions rs
+                LEFT JOIN rental_services r ON rs.rental_service_id = r.id
+                LEFT JOIN duration_types dt ON r.duration_type_id = dt.id
+                LEFT JOIN transactions t ON rs.transaction_id = t.id
+                WHERE t.user_id = :user_id AND rs.end_date < CURDATE()
+                AND rs.status = 'expired'
+                ORDER BY t.id DESC";
+            
+            $stmt = $this->db->connect()->prepare($rental_query);
+            $stmt->bindParam(':user_id', $_SESSION['user_id']);
+            $stmt->execute();
+            $expired_services['rentals'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $expired_services;
+        } catch (Exception $e) {
+            return array();
+        }
+    }
 }
