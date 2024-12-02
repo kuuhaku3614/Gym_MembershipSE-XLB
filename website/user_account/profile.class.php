@@ -100,6 +100,7 @@ class Profile_class{
         
         // Fetch memberships
         $membership_query = "SELECT 
+            m.id,
             'membership' as type,
             mp.plan_name as name,
             CONCAT(mp.duration, ' ', dt.type_name) as duration,
@@ -113,6 +114,7 @@ class Profile_class{
 
         // Fetch programs
         $program_query = "SELECT 
+            ps.id,
             'program' as type,
             p.program_name as name,
             CONCAT(p.duration, ' ', dt.type_name) as duration,
@@ -128,6 +130,7 @@ class Profile_class{
 
         // Fetch rentals
         $rental_query = "SELECT 
+            rs.id,
             'rental' as type,
             r.service_name as name,
             CONCAT(r.duration, ' ', dt.type_name) as duration,
@@ -239,6 +242,63 @@ class Profile_class{
             return $expired_services;
         } catch (Exception $e) {
             return array();
+        }
+    }
+
+    public function fetchServiceDetails($serviceId, $serviceType) {
+        try {
+            $query = "";
+            
+            switch($serviceType) {
+                case 'membership':
+                    $query = "SELECT m.*, mp.plan_name, mp.plan_type, mp.description,
+                            CONCAT(mp.duration, ' ', dt.type_name) as duration_type,
+                            t.created_at as transaction_date
+                            FROM memberships m
+                            JOIN membership_plans mp ON m.membership_plan_id = mp.id
+                            JOIN duration_types dt ON mp.duration_type_id = dt.id
+                            JOIN transactions t ON m.transaction_id = t.id
+                            WHERE m.id = :service_id";
+                    break;
+                    
+                case 'program':
+                    $query = "SELECT ps.*, p.program_name, p.description,
+                            pt.type_name as program_type,
+                            CONCAT(p.duration, ' ', dt.type_name) as duration_type,
+                            t.created_at as transaction_date,
+                            pd.first_name as coach_fname, pd.last_name as coach_lname
+                            FROM program_subscriptions ps
+                            JOIN programs p ON ps.program_id = p.id
+                            JOIN program_types pt ON p.program_type_id = pt.id
+                            JOIN duration_types dt ON p.duration_type_id = dt.id
+                            JOIN transactions t ON ps.transaction_id = t.id
+                            LEFT JOIN users u ON ps.coach_id = u.id
+                            LEFT JOIN personal_details pd ON u.id = pd.user_id
+                            WHERE ps.id = :service_id";
+                    break;
+                    
+                case 'rental':
+                    $query = "SELECT rs.*, r.service_name, r.description,
+                            CONCAT(r.duration, ' ', dt.type_name) as duration_type,
+                            t.created_at as transaction_date
+                            FROM rental_subscriptions rs
+                            JOIN rental_services r ON rs.rental_service_id = r.id
+                            JOIN duration_types dt ON r.duration_type_id = dt.id
+                            JOIN transactions t ON rs.transaction_id = t.id
+                            WHERE rs.id = :service_id";
+                    break;
+                    
+                default:
+                    return null;
+            }
+            
+            $stmt = $this->db->connect()->prepare($query);
+            $stmt->bindParam(':service_id', $serviceId);
+            $stmt->execute();
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            return null;
         }
     }
 }
