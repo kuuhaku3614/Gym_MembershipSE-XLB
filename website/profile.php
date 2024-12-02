@@ -49,92 +49,98 @@
                 </button>
             </div>
             <div id="current_services" style="display: block;">
-                <?php if (!empty($avail_array['memberships'])) { ?>
-                    <div class="subscription-cards">
-                        <?php foreach ($avail_array['memberships'] as $membership) { ?>
-                            <div class="subscription-card">
-                                <div class="card-content">
-                                    <div class="card-info">
-                                        <div class="info-row">
-                                            <span class="label">Type:</span>
-                                            <span class="value"><?= $membership['name'] ?></span>
+                <?php if (empty($avail_array['memberships']) && empty($avail_array['programs']) && empty($avail_array['rentals'])) { ?>
+                    <div class="no-services-message">
+                        <p>You haven't availed any services yet</p>
+                    </div>
+                <?php } else { ?>
+                    <?php if (!empty($avail_array['memberships'])) { ?>
+                        <div class="subscription-cards">
+                            <?php foreach ($avail_array['memberships'] as $membership) { ?>
+                                <div class="subscription-card">
+                                    <div class="card-content">
+                                        <div class="card-info">
+                                            <div class="info-row">
+                                                <span class="label">Type:</span>
+                                                <span class="value"><?= $membership['name'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Duration:</span>
+                                                <span class="value"><?= $membership['duration'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Expiry Date:</span>
+                                                <span class="value"><?= $membership['end_date'] ?></span>
+                                            </div>
                                         </div>
-                                        <div class="info-row">
-                                            <span class="label">Duration:</span>
-                                            <span class="value"><?= $membership['duration'] ?></span>
+                                        <div class="card-icon">
+                                            <i class="fas fa-receipt"></i>
                                         </div>
-                                        <div class="info-row">
-                                            <span class="label">Expiry Date:</span>
-                                            <span class="value"><?= $membership['end_date'] ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="card-icon">
-                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
                                 </div>
-                            </div>
-                        <?php } ?>
-                    </div>
-                <?php } ?>
+                            <?php } ?>
+                        </div>
+                    <?php } ?>
 
-                <?php if (!empty($avail_array['programs'])) { ?>
-                    <div class="subscription-cards">
-                        <?php foreach ($avail_array['programs'] as $program) { ?>
-                            <div class="subscription-card">
-                                <div class="card-content">
-                                    <div class="card-info">
-                                        <div class="info-row">
-                                            <span class="label">Type:</span>
-                                            <span class="value"><?= $program['name'] ?></span>
+                    <?php if (!empty($avail_array['programs'])) { ?>
+                        <div class="subscription-cards">
+                            <?php foreach ($avail_array['programs'] as $program) { ?>
+                                <div class="subscription-card">
+                                    <div class="card-content">
+                                        <div class="card-info">
+                                            <div class="info-row">
+                                                <span class="label">Type:</span>
+                                                <span class="value"><?= $program['name'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Duration:</span>
+                                                <span class="value"><?= $program['duration'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Expiry Date:</span>
+                                                <span class="value"><?= $program['end_date'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Coach:</span>
+                                                <span class="value"><?= $program['coach'] ?></span>
+                                            </div>
                                         </div>
-                                        <div class="info-row">
-                                            <span class="label">Duration:</span>
-                                            <span class="value"><?= $program['duration'] ?></span>
+                                        <div class="card-icon">
+                                            <i class="fas fa-receipt"></i>
                                         </div>
-                                        <div class="info-row">
-                                            <span class="label">Expiry Date:</span>
-                                            <span class="value"><?= $program['end_date'] ?></span>
-                                        </div>
-                                        <div class="info-row">
-                                            <span class="label">Coach:</span>
-                                            <span class="value"><?= $program['coach'] ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="card-icon">
-                                        <i class="fas fa-dumbbell"></i>
                                     </div>
                                 </div>
-                            </div>
-                        <?php } ?>
-                    </div>
-                <?php } ?>
+                            <?php } ?>
+                        </div>
+                    <?php } ?>
 
-                <?php if (!empty($avail_array['rentals'])) { ?>
-                    <div class="subscription-cards">
-                        <?php foreach ($avail_array['rentals'] as $rental) { ?>
-                            <div class="subscription-card">
-                                <div class="card-content">
-                                    <div class="card-info">
-                                        <div class="info-row">
-                                            <span class="label">Type:</span>
-                                            <span class="value"><?= $rental['name'] ?></span>
+                    <?php if (!empty($avail_array['rentals'])) { ?>
+                        <div class="subscription-cards">
+                            <?php foreach ($avail_array['rentals'] as $rental) { ?>
+                                <div class="subscription-card">
+                                    <div class="card-content">
+                                        <div class="card-info">
+                                            <div class="info-row">
+                                                <span class="label">Type:</span>
+                                                <span class="value"><?= $rental['name'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Duration:</span>
+                                                <span class="value"><?= $rental['duration'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Expiry Date:</span>
+                                                <span class="value"><?= $rental['end_date'] ?></span>
+                                            </div>
                                         </div>
-                                        <div class="info-row">
-                                            <span class="label">Duration:</span>
-                                            <span class="value"><?= $rental['duration'] ?></span>
+                                        <div class="card-icon">
+                                            <i class="fas fa-receipt"></i>
                                         </div>
-                                        <div class="info-row">
-                                            <span class="label">Expiry Date:</span>
-                                            <span class="value"><?= $rental['end_date'] ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="card-icon">
-                                        <i class="fas fa-calendar-alt"></i>
                                     </div>
                                 </div>
-                            </div>
-                        <?php } ?>
-                    </div>
+                            <?php } ?>
+                        </div>
+                    <?php } ?>
                 <?php } ?>
             </div>
 
@@ -568,6 +574,12 @@
         .transaction-group .subscription-cards .subscription-card {
             margin: 0;
         }
+
+        .no-services-message {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
     </style>
     
     <script>
@@ -695,7 +707,7 @@
                                     </div>
                                 </div>
                                 <div class="card-icon">
-                                    <i class="fas fa-calendar"></i>
+                                    <i class="fas fa-receipt"></i>
                                 </div>
                             </div>
                         </div>`;
@@ -726,7 +738,7 @@
                                     </div>
                                 </div>
                                 <div class="card-icon">
-                                    <i class="fas fa-dumbbell"></i>
+                                    <i class="fas fa-receipt"></i>
                                 </div>
                             </div>
                         </div>`;
@@ -753,7 +765,7 @@
                                     </div>
                                 </div>
                                 <div class="card-icon">
-                                    <i class="fas fa-key"></i>
+                                    <i class="fas fa-receipt"></i>
                                 </div>
                             </div>
                         </div>`;
