@@ -11,13 +11,12 @@ SELECT
     pp.photo_path,
     a.time_in,
     a.time_out,
-    LOWER(ast.status_name) as status,
+    a.status,
     a.date
 FROM personal_details pd
 JOIN users u ON pd.user_id = u.id
 LEFT JOIN profile_photos pp ON u.id = pp.user_id
 LEFT JOIN attendance a ON u.id = a.user_id AND a.date = CURRENT_DATE()
-LEFT JOIN attendance_status ast ON a.status_id = ast.id
 WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'member')
 AND u.is_active = 1;
 ";
@@ -154,9 +153,9 @@ $personalDetails = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $buttonText = 'Check In';
         $isDisabled = '';
         $status = strtolower($detail['status'] ?? ''); // Standardize status comparison
-        if ($status === 'checked in') {
+        if ($status === 'checked_in') {
             $buttonText = 'Check Out';
-        } else if ($status === 'checked out') {
+        } else if ($status === 'checked_out') {
             $buttonText = 'Check Out';
             $isDisabled = 'disabled';
         }

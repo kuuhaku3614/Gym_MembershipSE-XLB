@@ -521,7 +521,7 @@ foreach ($programs as $program) {
 
             // Send AJAX request
             $.ajax({
-                url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
+                url: '../admin/pages/gym rates/functions/save_programs.php',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
@@ -656,7 +656,7 @@ foreach ($programs as $program) {
             
             // Fetch program details
             $.ajax({
-                url: '<?php echo $baseUrl; ?>/functions/edit_programs.php',
+                url: '../admin/pages/gym rates/functions/edit_programs.php',
                 type: 'GET',
                 data: { id: programId },
                 dataType: 'json',
@@ -725,7 +725,7 @@ foreach ($programs as $program) {
 
             // Send AJAX request
             $.ajax({
-                url: '<?php echo $baseUrl; ?>/functions/edit_programs.php',
+                url: '../admin/pages/gym rates/functions/edit_programs.php',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
@@ -763,7 +763,7 @@ foreach ($programs as $program) {
             
             if (confirm('Are you sure you want to remove this program?')) {
                 $.ajax({
-                    url: '<?php echo $baseUrl; ?>/functions/edit_programs.php',
+                    url: '../admin/pages/gym rates/functions/edit_programs.php',
                     type: 'POST',
                     data: { 
                         action: 'remove',

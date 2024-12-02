@@ -1,6 +1,5 @@
 <?php
 require_once '../../../config.php';
-$baseUrl = 'Gym_MembershipSE-XLB';
 
 // Fetch data for display
 $sql = "SELECT 
@@ -56,7 +55,7 @@ try {
 </div>
 
 <div class="table-responsive">
-    <table class="table table-bordered table-hover" id="rentalsTable">
+    <table class="table table-bordered table-hover">
         <thead class="table-dark">
             <tr class="text-center">
                 <th>No.</th>
@@ -84,12 +83,12 @@ try {
                     $toggleBtnClass = $rental['status'] === 'active' ? 'btn-warning' : 'btn-success';
                 ?>
                 <tr>
-                    <td class="text-center"><?php echo $count++; ?></td>
-                    <td><?php echo htmlspecialchars($rental['service_name']); ?></td>
-                    <td class="text-center"><?php echo $rental['duration'] . ' ' . $rental['duration_type']; ?></td>
-                    <td class="text-end">₱<?php echo number_format($rental['price'], 2); ?></td>
-                    <td class="text-center"><?php echo $rental['total_slots']; ?></td>
-                    <td class="text-center"><?php echo $rental['available_slots']; ?></td>
+                    <td class="text-center"><?= $count++ ?></td>
+                    <td><?= htmlspecialchars($rental['service_name']) ?></td>
+                    <td class="text-center"><?= $rental['duration'] . ' ' . $rental['duration_type'] ?></td>
+                    <td class="text-end">₱<?= number_format($rental['price'], 2) ?></td>
+                    <td class="text-center"><?= $rental['total_slots'] ?></td>
+                    <td class="text-center"><?= $rental['available_slots'] ?></td>
                     <td><?php 
                         $description = $rental['description'] ?: 'N/A';
                         echo strlen($description) > 50 ? 
@@ -97,17 +96,17 @@ try {
                             htmlspecialchars($description);
                     ?></td>
                     <td class="text-center">
-                        <span class="badge <?php echo $statusBadgeClass; ?>">
-                            <?php echo ucfirst($rental['status']); ?>
+                        <span class="badge <?= $statusBadgeClass ?>">
+                            <?= ucfirst($rental['status']) ?>
                         </span>
                     </td>
                     <td class="text-center">
-                        <button class="btn btn-sm <?php echo $toggleBtnClass; ?> toggle-status" 
-                                data-id="<?php echo $rental['id']; ?>" data-status="<?php echo $rental['status']; ?>">
-                            <?php echo $toggleBtnText; ?>
+                        <button class="btn btn-sm <?= $toggleBtnClass ?> toggle-status" 
+                                data-id="<?= $rental['id'] ?>" data-status="<?= $rental['status'] ?>">
+                            <?= $toggleBtnText ?>
                         </button>
-                        <button class="btn btn-sm btn-primary edit-btn" data-id="<?php echo $rental['id']; ?>">Edit</button>
-                        <button class="btn btn-sm btn-danger remove-btn" data-id="<?php echo $rental['id']; ?>">Remove</button>
+                        <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>">Edit</button>
+                        <button class="btn btn-sm btn-danger remove-btn" data-id="<?= $rental['id'] ?>">Remove</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -269,18 +268,7 @@ try {
 
 <script>
 $(document).ready(function () {
-    // Initialize DataTable
-    $('#rentalsTable').DataTable({
-        "ordering": false,
-        "searching": true,
-        "responsive": true,
-        "lengthChange": true,
-        "pageLength": 10,
-        "language": {
-            "emptyTable": "No rentals available"
-        }
-    });
-
+    
     // Save button handler
     $('#saveServiceBtn').click(function () {
         // Clear previous validation states
