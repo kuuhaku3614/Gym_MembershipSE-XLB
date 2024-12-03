@@ -1,5 +1,5 @@
 <?php
-// Start the session at the very beginning
+// Ensure session is started only once
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -16,50 +16,55 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
+// Avoid redeclaring functions if already included
+if (!function_exists('requireLogin')) {
+    // Function to ensure login
+    function requireLogin() {
+        if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+            header('Location: ../login/login.php');
+            exit(); // Prevent further execution
+        }
+    }
+}
+
+if (!function_exists('getFullName')) {
+    // Function to get the full name of the user
+    function getFullName() {
+        if (isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])) {
+            $userId = (int)$_SESSION['user_id'];
+
+            // Database connection
+            $conn = new mysqli('localhost', 'root', '', 'gym_managementdb');
+            if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+            }
+
+            // Fetch first and last name
+            $stmt = $conn->prepare("SELECT first_name, last_name FROM personal_details WHERE user_id = ?");
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                $stmt->close();
+                $conn->close();
+                return htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
+            }
+
+            // Close connections
+            $stmt->close();
+            $conn->close();
+        }
+        return 'Guest';
+    }
+}
+
 // If user is logged in but personal_details is not set, fetch them
 if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     require_once __DIR__ . '/../user_account/profile.class.php';
     $profile = new Profile_class();
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
     $_SESSION['personal_details'] = $userDetails;
-}
-
-// Function to ensure login
-function requireLogin() {
-    if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-        header('Location: ../login/login.php');
-        exit(); // Prevent further execution
-    }
-}
-
-// Function to get the full name of the user
-function getFullName() {
-    if (isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])) {
-        $userId = (int)$_SESSION['user_id'];
-
-        // Database connection
-        $conn = new mysqli('localhost', 'root', '', 'gym_managementdb');
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
-
-        // Fetch first and last name
-        $stmt = $conn->prepare("SELECT first_name, last_name FROM personal_details WHERE user_id = ?");
-        $stmt->bind_param("i", $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            $conn->close();
-            return htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
-        }
-
-        // Close connections
-        $stmt->close();
-        $conn->close();
-    }
-    return 'Guest';
 }
 ?>
 
