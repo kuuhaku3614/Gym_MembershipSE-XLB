@@ -1015,7 +1015,7 @@
                                         <div class="card-info">
                                             <div class="info-row">
                                                 <span class="label">Type:</span>
-                                                <span class="value">${rental.service_name}</span>
+                                                <span class="value">${rental.rental_name}</span>
                                             </div>
                                             <div class="info-row">
                                                 <span class="label">Duration:</span>

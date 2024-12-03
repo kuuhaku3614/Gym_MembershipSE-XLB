@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $conn->beginTransaction();
 
         // First create the transaction record
-        $sql = "INSERT INTO transactions (staff_id, user_id) VALUES (NULL, ?)";
+        $sql = "INSERT INTO transactions (staff_id, user_id, status) VALUES (NULL, ?, 'pending')";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$_SESSION['user_id']]);
         $transaction_id = $conn->lastInsertId();
@@ -64,25 +64,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Then create membership records
         foreach ($cart['memberships'] as $membership) {
+            // Get membership plan price
+            $sql = "SELECT price FROM membership_plans WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$membership['id']]);
+            $plan_price = $stmt->fetchColumn();
+
             $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, 
-                    start_date, end_date, status, is_paid) 
-                    VALUES (?, ?, ?, ?, 'active', 0)";
+                    start_date, end_date, status, is_paid, amount) 
+                    VALUES (?, ?, ?, ?, 'active', 0, ?)";
             
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 $transaction_id,
                 $membership['id'],
                 $membership['start_date'],
-                $membership['end_date']
+                $membership['end_date'],
+                $plan_price
             ]);
         }
 
         // Create program subscriptions
         if (!empty($cart['programs'])) {
             foreach ($cart['programs'] as $program) {
+                // Get program price from coach_program_types
+                $sql = "SELECT price FROM coach_program_types 
+                        WHERE program_id = ? AND coach_id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$program['id'], $program['coach_id']]);
+                $program_price = $stmt->fetchColumn();
+
+                if ($program_price === false) {
+                    throw new Exception('Could not find price for the selected program and coach');
+                }
+
                 $sql = "INSERT INTO program_subscriptions (transaction_id, program_id, 
-                        coach_id, start_date, end_date, status, is_paid) 
-                        VALUES (?, ?, ?, ?, ?, 'active', 0)";
+                        coach_id, start_date, end_date, status, is_paid, amount) 
+                        VALUES (?, ?, ?, ?, ?, 'active', 0, ?)";
                 
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([
@@ -90,7 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $program['id'],
                     $program['coach_id'],
                     $program['start_date'],
-                    $program['end_date']
+                    $program['end_date'],
+                    $program_price
                 ]);
             }
         }
@@ -98,16 +117,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Create rental subscriptions
         if (!empty($cart['rentals'])) {
             foreach ($cart['rentals'] as $rental) {
+                // Get rental service price
+                $sql = "SELECT price FROM rental_services WHERE id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$rental['id']]);
+                $rental_price = $stmt->fetchColumn();
+
                 $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, 
-                        start_date, end_date, status, is_paid) 
-                        VALUES (?, ?, ?, ?, 'active', 0)";
+                        start_date, end_date, status, is_paid, amount) 
+                        VALUES (?, ?, ?, ?, 'active', 0, ?)";
                 
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([
                     $transaction_id,
                     $rental['id'],
                     $rental['start_date'],
-                    $rental['end_date']
+                    $rental['end_date'],
+                    $rental_price
                 ]);
 
                 // Update available slots
