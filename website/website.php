@@ -2,86 +2,45 @@
 // Configuration and Database Connection
 require_once '../config.php';
 
-// Modify getImagePath to return a web-accessible path
+// Function to dynamically fetch image paths
 function getImagePath($imageName) {
-  error_log('Attempting to load image: ' . $imageName);
-  // If the image name is already a full web-relative path, return it directly
-  if (strpos($imageName, 'cms_img/') === 0) {
-      return '../' . $imageName;
-  }
-
-  // Fallback option if just the filename is provided
-  $possibleSubdirectories = ['products', 'gallery', 'offers', 'staff', ''];
-  
-  foreach ($possibleSubdirectories as $subdir) {
-      $potentialPath = '../cms_img/' . ($subdir ? $subdir . '/' : '') . $imageName;
-      
-      if (file_exists($potentialPath)) {
-          return $potentialPath;
-      }
-  }
-
-  // If no image found, return default
-  return '../img/default.jpg';
-  error_log('Final image path: ' . $finalPath);
-    return $finalPath;
+    if (strpos($imageName, 'cms_img/') === 0) {
+        return '../' . $imageName; // Already a valid path
+    }
+    $possibleSubdirectories = ['products', 'gallery', 'offers', 'staff'];
+    foreach ($possibleSubdirectories as $subdir) {
+        $potentialPath = '../cms_img/' . $subdir . '/' . $imageName;
+        if (file_exists($potentialPath)) {
+            return $potentialPath;
+        }
+    }
+    return '../cms_img/default.jpg'; // Default fallback
 }
 
-// Centralized database query function with error handling
-function executeQuery($query, $params = [], $fetchMode = PDO::FETCH_ASSOC) {
+// Centralized function for querying the database
+function executeQuery($query, $params = []) {
     global $pdo;
     try {
         $stmt = $pdo->prepare($query);
         $stmt->execute($params);
-        return $stmt->fetchAll($fetchMode);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        // Log error or handle as appropriate
         error_log('Database query error: ' . $e->getMessage());
         return [];
     }
 }
 
-// Content retrieval functions
-function getDynamicContent($section) {
-    $query = "SELECT * FROM website_content WHERE section = :section";
-    $result = executeQuery($query, ['section' => $section]);
-    return !empty($result) ? $result[0] : [];
-}
+// Fetch specific content for sections
+$welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
+$offersContent = executeQuery("SELECT * FROM website_content WHERE section = 'offers'")[0] ?? [];
+$aboutUsContent = executeQuery("SELECT * FROM website_content WHERE section = 'about_us'")[0] ?? [];
+$contactContent = executeQuery("SELECT * FROM website_content WHERE section = 'contact'")[0] ?? [];
 
-function getOffers($limit = 4) {
-    $query = "SELECT * FROM gym_offers LIMIT :limit";
-    return executeQuery($query, ['limit' => $limit]);
-}
-
-function getProducts($limit = 8) {
-    $query = "SELECT * FROM products LIMIT :limit";
-    return executeQuery($query, ['limit' => $limit]);
-}
-
-function getStaffMembers() {
-    $query = "SELECT * FROM staff";
-    return executeQuery($query);
-}
-
-function getGalleryImages($limit = 4) {
-    $query = "SELECT * FROM gallery_images LIMIT :limit";
-    return executeQuery($query, ['limit' => $limit]);
-}
-
-// Session start and header inclusion
+$offers = executeQuery("SELECT * FROM gym_offers LIMIT 4");
+$products = executeQuery("SELECT * FROM products LIMIT 8");
+$galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
+$staffMembers = executeQuery("SELECT * FROM staff");
 include('includes/header.php');
-
-// Fetch dynamic content
-$welcomeContent = getDynamicContent('welcome');
-$offersContent = getDynamicContent('offers');
-$aboutUsContent = getDynamicContent('about_us');
-$contactContent = getDynamicContent('contact');
-
-// Fetch data for sections
-$offers = getOffers();
-$products = getProducts();
-$staffMembers = getStaffMembers();
-$galleryImages = getGalleryImages();
 ?>
 
   <!-- Suggested CSS to be added to your stylesheet -->
@@ -160,6 +119,149 @@ $galleryImages = getGalleryImages();
       border-radius: 5px;
       margin-top: 10px;
     }
+    /* Global Image Container Styles */
+    .fixed-image-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .image-card {
+      width: 250px;
+      height: 350px;
+      background-color: #f4f4f4;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .image-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .image-card img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .image-card-content {
+      padding: 15px;
+      text-align: center;
+    }
+
+    /* Staff Section Specific Styles */
+    .S-Staffs .staff-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .S-Staffs .image-staff {
+      width: 250px;
+      height: 350px;
+      background-color: #f4f4f4;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .S-Staffs .image-staff img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .S-Staffs .image-staff .name {
+      font-weight: bold;
+      margin: 10px 0 5px;
+      text-align: center;
+    }
+
+    .S-Staffs .image-staff .status {
+      color: #666;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    /* Products Section Specific Styles */
+    .S-Products .product-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .S-Products .product-box {
+      width: 250px;
+      height: 350px;
+      background-color: #f4f4f4;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .S-Products .product-box img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .S-Products .product-title {
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 0 5px;
+    }
+
+    .S-Products .product-text {
+      text-align: center;
+      color: #666;
+      padding: 0 15px;
+    }
+
+    /* Gallery Section Specific Styles */
+    .S-AboutUs .image-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .S-AboutUs .image-container img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .S-AboutUs .image-container img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .S-AboutUs .image-container {
+        grid-template-columns: 1fr;
+      }
+
+      .image-card,
+      .S-Staffs .image-staff,
+      .S-Products .product-box {
+        width: 100%;
+        max-width: 350px;
+      }
+    }
   </style>
   <header class="home-header"></header>
 
@@ -181,97 +283,99 @@ $galleryImages = getGalleryImages();
 
         <hr class="home-sectionDivider" />
 
-        <!-- Offers Section -->
-        <section class="S-Offers" id="S-Offers">
-            <div class="offers-text">
-                <h1>Gym Offers</h1>
-                <p><?php 
-                    echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
-                ?></p>
-            </div>
+       <!-- Offers Section -->
+<section class="S-Offers" id="S-Offers">
+    <div class="offers-text">
+        <h1>Gym Offers</h1>
+        <p><?php 
+            echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
+        ?></p>
+    </div>
 
-            <div class="offers-carousel">
-                <div class="carousel-container">
-                    <div class="carousel-wrapper">
-                        <?php foreach ($offers as $index => $offer): ?>
-                            <div class="carousel-slide <?php echo $index === 0 ? 'active' : ''; ?>" data-slide="<?php echo $index; ?>">
-                                <img 
-                                    src="<?php echo htmlspecialchars(getImagePath($product['image_path'])); ?>"
-                                    alt="<?php echo htmlspecialchars($offer['title'] ?? 'Gym Offer'); ?>"
-                                />
-                                <div class="carousel-caption">
-                                    <h2><?php echo htmlspecialchars($offer['title']); ?></h2>
-                                    <p><?php echo htmlspecialchars($offer['description']); ?></p>
-                                    <a href="<?php echo htmlspecialchars($offer['link'] ?? '#'); ?>" class="offer-button">
-                                        Learn More
-                                    </a>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div class="carousel-controls">
-                        <button class="carousel-prev leftButton">
-                            <img src="../icon/less-than-solid.svg" alt="Previous" />
-                        </button>
-                        <div class="carousel-dots">
-                            <?php foreach ($offers as $index => $offer): ?>
-                                <span 
-                                    class="carousel-dot <?php echo $index === 0 ? 'active' : ''; ?>" 
-                                    data-slide="<?php echo $index; ?>"
-                                ></span>
-                            <?php endforeach; ?>
+    <div class="offers-carousel">
+        <div class="carousel-container">
+            <div class="carousel-wrapper">
+                <?php foreach ($offers as $index => $offer): ?>
+                    <div class="carousel-slide <?php echo $index === 0 ? 'active' : ''; ?>" data-slide="<?php echo $index; ?>">
+                        <img 
+                            src="<?php echo htmlspecialchars(getImagePath($offer['image_path'])); ?>"
+                            alt="<?php echo htmlspecialchars($offer['title'] ?? 'Gym Offer'); ?>"
+                        />
+                        <div class="carousel-caption">
+                            <h2><?php echo htmlspecialchars($offer['title']); ?></h2>
+                            <p><?php echo htmlspecialchars($offer['description']); ?></p>
+                            <a href="#">
+                                Learn More
+                            </a>
                         </div>
-                        <button class="carousel-next rightButton">
-                            <img src="../icon/greater-than-solid.svg" alt="Next" />
-                        </button>
                     </div>
-                </div>
+                <?php endforeach; ?>
             </div>
-        </section>
+
+            <div class="carousel-controls">
+                <button class="carousel-prev leftButton">
+                    <img src="../icon/less-than-solid.svg" alt="Previous" />
+                </button>
+                <div class="carousel-dots">
+                    <?php foreach ($offers as $index => $offer): ?>
+                        <span 
+                            class="carousel-dot <?php echo $index === 0 ? 'active' : ''; ?>" 
+                            data-slide="<?php echo $index; ?>"
+                        ></span>
+                    <?php endforeach; ?>
+                </div>
+                <button class="carousel-next rightButton">
+                    <img src="../icon/greater-than-solid.svg" alt="Next" />
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
 
         <hr class="home-sectionDivider" />
 
-        <!-- Products Section -->
-        <section class="S-Products">
-            <h1>Products you may like</h1>
-            <p>Check out our latest fitness products!</p>
+<!-- Products Section -->
+<section class="S-Products">
+    <h1>Products you may like</h1>
+    <p>Check out our latest fitness products!</p>
 
-            <div class="product-container">
-                <?php foreach ($products as $product): ?>
-                    <div class="product-box">
-                        <img 
-                            class="product-image" 
-                            src="<?php echo htmlspecialchars(getImagePath($product['image_path'])); ?>"
-                            alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                        />
-                        <p class="product-title"><?php echo htmlspecialchars($product['name']); ?></p>
-                        <p class="product-text"><?php echo htmlspecialchars($product['description']); ?></p>
-                    </div>
-                <?php endforeach; ?>
+    <div class="product-container">
+        <?php foreach ($products as $product): ?>
+            <div class="product-box">
+                <img 
+                    class="product-image" 
+                    src="<?php echo htmlspecialchars(getImagePath($product['image_path'])); ?>"
+                    alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                />
+                <div class="image-card-content">
+                    <p class="product-title"><?php echo htmlspecialchars($product['name']); ?></p>
+                    <p class="product-text"><?php echo htmlspecialchars($product['description']); ?></p>
+                </div>
             </div>
-        </section>
+        <?php endforeach; ?>
+    </div>
+</section>
 
         <!-- About Us/gallery Section -->
-        <section class="S-AboutUs">
-            <div class="image-container">
-                <?php 
-                $imageClasses = ['img1', 'img2', 'img3', 'img4'];
-                foreach ($galleryImages as $index => $image): 
-                ?>
-                    <img 
-                        class="<?php echo htmlspecialchars($imageClasses[$index] ?? 'gallery-image'); ?>" 
-                        src="<?php echo htmlspecialchars(getImagePath($product['image_path'])); ?>"
-                        alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>" 
-                    />
-                <?php endforeach; ?>
-            </div>
+<section class="S-AboutUs">
+    <div class="image-container">
+        <?php 
+        $imageClasses = ['img1', 'img2', 'img3', 'img4'];
+        foreach ($galleryImages as $index => $image): 
+        ?>
+            <img 
+                class="<?php echo htmlspecialchars($imageClasses[$index] ?? 'gallery-image'); ?>" 
+                src="<?php echo htmlspecialchars(getImagePath($image['image_path'])); ?>"
+                alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>" 
+            />
+        <?php endforeach; ?>
+    </div>
 
-            <div class="aboutUs-text">
-                <h1>About Us</h1>
-                <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
-            </div>
-        </section>
+    <div class="aboutUs-text">
+        <h1>About Us</h1>
+        <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
+    </div>
+</section>
         <!-- tagline section -->
         <section class="S-Tagline">
           <h1>Go Home or Go Hard</h1>
@@ -281,26 +385,28 @@ $galleryImages = getGalleryImages();
             </button>
           </a>
         </section>
-        <!-- Staff Section -->
-        <section class="S-Staffs">
-            <h1>Gym Staffs</h1>
-            <div class="staff-container">
-                <?php if (!empty($staffMembers)) : ?>
-                    <?php foreach ($staffMembers as $staff): ?>
-                        <div class="image-staff">
-                            <img 
-                                src="<?php echo htmlspecialchars(getImagePath($product['image_path'])); ?>"
-                                alt="<?php echo htmlspecialchars($staff['name']); ?>" 
-                            />
-                            <p class="name"><?php echo htmlspecialchars($staff['name']); ?></p>
-                            <p class="status"><?php echo htmlspecialchars($staff['status']); ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p class="no-staff">No added Staff</p>
-                <?php endif; ?>
-            </div>
-        </section>
+       <!-- Staff Section -->
+<section class="S-Staffs">
+    <h1>Gym Staffs</h1>
+    <div class="staff-container">
+        <?php if (!empty($staffMembers)) : ?>
+            <?php foreach ($staffMembers as $staff): ?>
+                <div class="image-staff">
+                    <img 
+                        src="<?php echo htmlspecialchars(getImagePath($staff['image_path'])); ?>"
+                        alt="<?php echo htmlspecialchars($staff['name']); ?>" 
+                    />
+                    <div class="image-card-content">
+                        <p class="name"><?php echo htmlspecialchars($staff['name']); ?></p>
+                        <p class="status"><?php echo htmlspecialchars($staff['status']); ?></p>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p class="no-staff">No added Staff</p>
+        <?php endif; ?>
+    </div>
+</section>
 
         <!-- Contact Section -->
         <section class="S-ContactUs">
