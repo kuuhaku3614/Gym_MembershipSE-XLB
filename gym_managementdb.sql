@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 03, 2024 at 12:44 PM
+-- Generation Time: Dec 03, 2024 at 03:08 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -148,19 +148,18 @@ INSERT INTO `duration_types` (`id`, `type_name`) VALUES
 CREATE TABLE `gallery_images` (
   `id` int(11) NOT NULL,
   `image_path` varchar(255) NOT NULL,
-  `alt_text` varchar(255) DEFAULT NULL,
-  `display_order` int(11) DEFAULT 0
+  `alt_text` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `gallery_images`
 --
 
-INSERT INTO `gallery_images` (`id`, `image_path`, `alt_text`, `display_order`) VALUES
-(5, 'cms_img/gallery/674eea5fcefdd_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image', 0),
-(6, 'cms_img/gallery/674eea67340d3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 2', 0),
-(7, 'cms_img/gallery/674eea6d46d28_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 3', 0),
-(8, 'cms_img/gallery/674eea7452fb3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 4', 0);
+INSERT INTO `gallery_images` (`id`, `image_path`, `alt_text`) VALUES
+(5, 'cms_img/gallery/674eea5fcefdd_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image'),
+(6, 'cms_img/gallery/674eea67340d3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 2'),
+(7, 'cms_img/gallery/674eea6d46d28_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 3'),
+(8, 'cms_img/gallery/674eea7452fb3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 4');
 
 -- --------------------------------------------------------
 
@@ -284,19 +283,18 @@ CREATE TABLE `products` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
-  `image_path` varchar(255) DEFAULT NULL,
-  `price` decimal(10,2) DEFAULT NULL
+  `image_path` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`id`, `name`, `description`, `image_path`, `price`) VALUES
-(6, 'product', '100', 'cms_img/products/674ee9eb68c0e_206268.jpg', NULL),
-(7, 'product 2', '100', 'cms_img/products/674ee9fa55ac3_1805129.jpg', NULL),
-(8, 'product 3', '100', 'cms_img/products/674eea0eb8ef8_peakpx2.jpg', NULL),
-(9, 'product 4', '100', 'cms_img/products/674eea2122479_pexels-caleboquendo-7772559.jpg', NULL);
+INSERT INTO `products` (`id`, `name`, `description`, `image_path`) VALUES
+(6, 'product', '100', 'cms_img/products/674ee9eb68c0e_206268.jpg'),
+(7, 'product 2', '100', 'cms_img/products/674ee9fa55ac3_1805129.jpg'),
+(8, 'product 3', '100', 'cms_img/products/674eea0eb8ef8_peakpx2.jpg'),
+(9, 'product 4', '100', 'cms_img/products/674eea2122479_pexels-caleboquendo-7772559.jpg');
 
 -- --------------------------------------------------------
 
