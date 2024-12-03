@@ -45,7 +45,7 @@ foreach ($programs as $program) {
             'description' => isset($coachDescriptions[0]) ? $coachDescriptions[0] : '',
             'status' => $program['status'],
             'actions' => '<div class="btn-group" role="group">
-                            <button class="btn btn-info btn-sm view-coaches-btn" data-coaches=\'' . htmlspecialchars(json_encode(array_map(function($coach, $price, $description) {
+                            <button class="btn btn-info btn-sm view-coaches-btn" data-id="' . $program['id'] . '" data-coaches=\'' . htmlspecialchars(json_encode(array_map(function($coach, $price, $description) {
                                 return ['coach' => $coach, 'price' => $price, 'description' => $description];
                             }, $coaches, $prices, $coachDescriptions)), ENT_QUOTES, 'UTF-8') . '\' data-program-name="' . htmlspecialchars($program['program_name'], ENT_QUOTES) . '">
                                 <i class="fas fa-users"></i> View Coaches</button> 
@@ -86,7 +86,7 @@ foreach ($programs as $program) {
             'description' => '-',
             'status' => $program['status'],
             'actions' => '<div class="btn-group" role="group">
-                            <button class="btn btn-info btn-sm view-coaches-btn" data-coaches=\'' . htmlspecialchars(json_encode(array()), ENT_QUOTES, 'UTF-8') . '\' data-program-name="' . htmlspecialchars($program['program_name'], ENT_QUOTES) . '">
+                            <button class="btn btn-info btn-sm view-coaches-btn" data-id="' . $program['id'] . '" data-coaches=\'' . htmlspecialchars(json_encode(array()), ENT_QUOTES, 'UTF-8') . '\' data-program-name="' . htmlspecialchars($program['program_name'], ENT_QUOTES) . '">
                                 <i class="fas fa-users"></i> View Coaches</button> 
                             <button class="btn btn-warning btn-sm deactivate-btn" data-id="' . $program['id'] . '">
                                 <i class="fas fa-ban"></i> Deactivate</button>
@@ -260,7 +260,7 @@ foreach ($programs as $program) {
                     echo "</td>";
                     echo "<td>" . htmlspecialchars($program['status']) . "</td>";
                     echo "<td>";
-                    echo "<button class='btn btn-info btn-sm view-coaches-btn' data-coaches='" . $coachDataJson . "' 
+                    echo "<button class='btn btn-info btn-sm view-coaches-btn' data-id='" . $program['id'] . "' data-coaches='" . $coachDataJson . "' 
                             data-program-name='" . htmlspecialchars($program['program_name'], ENT_QUOTES) . "'>View Coaches</button> ";
                     if ($program['status'] === 'active') {
                         echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='inactive'>Deactivate</button>";
@@ -305,12 +305,72 @@ foreach ($programs as $program) {
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-primary add-coach-btn" data-program-id="">Add Coach</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Add Coach Modal -->
+    <div class="modal fade" id="addCoachModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addCoachModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addCoachModalLabel">Add Coach to Program</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCoachForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="coachSelect" class="form-label">Select Coach</label>
+                                    <select class="form-select" id="coachSelect" name="coach_id" required>
+                                        <option value="">Select a Coach</option>
+                                        <?php 
+                                        // Fetch users who are coaches (role_id = 4)
+                                        $coachesSql = "SELECT u.id, CONCAT(pd.first_name, ' ', pd.last_name) as full_name 
+                                                      FROM users u 
+                                                      JOIN personal_details pd ON u.id = pd.user_id 
+                                                      WHERE u.role_id = 4";
+                                        $coachesStmt = $pdo->prepare($coachesSql);
+                                        $coachesStmt->execute();
+                                        $coaches = $coachesStmt->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($coaches as $coach): ?>
+                                            <option value="<?= htmlspecialchars($coach['id']) ?>">
+                                                <?= htmlspecialchars($coach['full_name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="coachPrice" class="form-label">Price</label>
+                                    <input type="number" class="form-control" id="coachPrice" name="price" step="0.01" min="0" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="coachDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="coachDescription" name="description" rows="4"></textarea>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <input type="hidden" id="programId" name="program_id">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveCoachBtn">Save Coach</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Program Modal -->
     <div class="modal fade" id="addProgramModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -612,9 +672,13 @@ foreach ($programs as $program) {
                 const coachesData = $(this).data('coaches');
                 const coaches = typeof coachesData === 'string' ? JSON.parse(coachesData) : coachesData;
                 const programName = $(this).data('program-name');
+                const programId = $(this).data('id'); // Get program ID
                 
                 // Update modal title with program name
                 $('.program-name-display').text('Coaches for: ' + programName);
+                
+                // Set program ID on Add Coach button
+                $('.add-coach-btn').data('program-id', programId);
                 
                 // Clear existing table content
                 const tbody = $('#coachesTableBody');
@@ -789,6 +853,96 @@ foreach ($programs as $program) {
                     }
                 });
             }
+        });
+
+        // Add Coach Button Click
+        $(document).on('click', '.add-coach-btn', function() {
+            $('#viewCoachesModal').modal('hide');
+            $('#programId').val($(this).data('program-id'));
+            $('#addCoachModal').modal('show');
+        });
+
+        // Add Coach Form Submission
+        $('#saveCoachBtn').on('click', function() {
+            // Clear previous validation states
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').text('');
+
+            // Validate all required fields
+            const isValid = validateCoachForm();
+            
+            if (!isValid) return;
+
+            const formData = new FormData($('#addCoachForm')[0]);
+            
+            // Log form data for debugging
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            $.ajax({
+                url: '../admin/pages/gym rates/functions/add_coaches.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    const data = JSON.parse(response);
+                    if (data.status === 'success') {
+                        alert('Coach added successfully!');
+                        $('#addCoachModal').modal('hide');
+                        location.reload(); // Reload the page after successful addition
+                    } else {
+                        // Show error message in the appropriate field
+                        handleCoachFormError(data.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    handleCoachFormError('Error adding coach: ' + error);
+                }
+            });
+        });
+
+        function validateCoachForm() {
+            let isValid = true;
+            
+            // Validate coach selection
+            if (!$('#coachSelect').val()) {
+                $('#coachSelect').addClass('is-invalid');
+                $('#coachSelect').siblings('.invalid-feedback').text('Please select a coach');
+                isValid = false;
+            }
+
+            // Validate price
+            const price = $('#coachPrice').val();
+            if (!price || price <= 0) {
+                $('#coachPrice').addClass('is-invalid');
+                $('#coachPrice').siblings('.invalid-feedback').text('Please enter a valid price');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function handleCoachFormError(errorMessage) {
+            // Check if error message contains specific keywords to determine which field to show error on
+            if (errorMessage.toLowerCase().includes('coach')) {
+                $('#coachSelect').addClass('is-invalid');
+                $('#coachSelect').siblings('.invalid-feedback').text(errorMessage);
+            } else if (errorMessage.toLowerCase().includes('price')) {
+                $('#coachPrice').addClass('is-invalid');
+                $('#coachPrice').siblings('.invalid-feedback').text(errorMessage);
+            } else {
+                // If no specific field error, show on description as general error
+                $('#coachDescription').addClass('is-invalid');
+                $('#coachDescription').siblings('.invalid-feedback').text(errorMessage);
+            }
+        }
+
+        // Clear validation on modal close
+        $('#addCoachModal').on('hidden.bs.modal', function () {
+            $('.is-invalid').removeClass('is-invalid');
+            $('.invalid-feedback').text('');
         });
     });
 
