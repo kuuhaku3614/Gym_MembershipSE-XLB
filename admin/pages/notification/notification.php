@@ -2,12 +2,57 @@
     require_once(__DIR__ . '/../../../config.php');
     require_once(__DIR__ . '/functions/notifications.class.php');
     $notificationsObj = new Notifications();
+
+    // Handle AJAX requests
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $jsonData = file_get_contents('php://input');
+        $data = json_decode($jsonData, true);
+        
+        $response = ['success' => false, 'message' => 'Unknown error occurred'];
+        
+        if ($data && isset($data['action'])) {
+            switch ($data['action']) {
+                case 'confirm':
+                    if (!empty($data['transactionId']) && !empty($data['userId'])) {
+                        if ($notificationsObj->confirmTransaction($data['transactionId'], $data['userId'])) {
+                            $response = ['success' => true, 'message' => 'Transaction confirmed successfully'];
+                        } else {
+                            $response = ['success' => false, 'message' => 'Failed to confirm transaction'];
+                        }
+                    } else {
+                        $response = ['success' => false, 'message' => 'Missing transaction or user ID'];
+                    }
+                    break;
+
+                case 'cancel':
+                    if (!empty($data['transactionId'])) {
+                        if ($notificationsObj->cancelTransaction($data['transactionId'])) {
+                            $response = ['success' => true, 'message' => 'Transaction cancelled successfully'];
+                        } else {
+                            $response = ['success' => false, 'message' => 'Failed to cancel transaction'];
+                        }
+                    } else {
+                        $response = ['success' => false, 'message' => 'Missing transaction ID'];
+                    }
+                    break;
+
+                default:
+                    $response = ['success' => false, 'message' => 'Invalid action'];
+                    break;
+            }
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+
     $notifications = $notificationsObj->getAllNotifications();
 ?>
 
 
     <div class="container mt-4">
-        <h1 class="nav-title">Notification</h1>
+        <h1 class="nav-title">Notifications</h1>
 
         <div class="notification-container">
             <?php if (empty($notifications)): ?>
@@ -93,7 +138,7 @@
 
                     <!-- Rental Details -->
                     <div id="rentalSection" class="section-card mb-4" style="display: none;">
-                        <h6 class="section-title">Rental Service</h6>
+                        <h6 class="section-title">Rental Details</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Service:</strong> <span id="serviceName"></span></p>
@@ -106,8 +151,8 @@
                         </div>
                     </div>
 
-                    <!-- Registration Fee Section -->
-                    <div class="section-card mb-4" id="registrationSection" style="display: none;">
+                    <!-- Registration Fee -->
+                    <div id="registrationSection" class="section-card mb-4" style="display: none;">
                         <h6 class="section-title">Registration</h6>
                         <div class="row">
                             <div class="col-md-12">
@@ -121,19 +166,170 @@
                         <h6 class="section-title">Total Amount</h6>
                         <div class="row">
                             <div class="col-12">
-                                <h4>₱ <span id="totalAmount">0.00</span></h4>
+                                <h4>₱<span id="totalAmount">0.00</span></h4>
                             </div>
                         </div>
                     </div>
-
                     <p class="text-muted mt-3"><small>Request received: <span id="requestDate"></span></small></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" onclick="confirmTransaction()">Confirm</button>
+                    <button type="button" class="btn btn-danger" onclick="cancelTransaction()">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentTransactionId = null;
+        let currentUserId = null;
+
+        function showNotificationDetails(details) {
+            // Store the transaction and user IDs
+            currentTransactionId = details.transaction_id;
+            currentUserId = details.user_id;
+
+            // Update member information
+            document.getElementById('memberName').textContent = details.member_name;
+            document.getElementById('phoneNumber').textContent = details.phone_number;
+            document.getElementById('sex').textContent = details.sex;
+            document.getElementById('age').textContent = details.age;
+            document.getElementById('requestDate').textContent = details.request_date;
+
+            // Set profile picture
+            const profilePic = document.getElementById('memberProfilePic');
+            if (details.profile_picture) {
+                profilePic.src = '/Gym_MembershipSE-XLB/' + details.profile_picture;
+            } else {
+                profilePic.src = '/Gym_MembershipSE-XLB/assets/images/default-profile.png';
+            }
+
+            // Calculate total amount
+            let totalAmount = 0;
+
+            // Handle membership details
+            const membershipSection = document.getElementById('membershipSection');
+            if (details.membership) {
+                membershipSection.style.display = 'block';
+                document.getElementById('planName').textContent = details.membership.plan_name;
+                document.getElementById('membershipAmount').textContent = details.membership.amount;
+                document.getElementById('membershipStart').textContent = details.membership.start_date;
+                document.getElementById('membershipEnd').textContent = details.membership.end_date;
+                totalAmount += parseFloat(details.membership.amount.replace(/,/g, '')) || 0;
+            } else {
+                membershipSection.style.display = 'none';
+            }
+
+            // Handle program details
+            const programSection = document.getElementById('programSection');
+            if (details.program) {
+                programSection.style.display = 'block';
+                document.getElementById('programName').textContent = details.program.name;
+                document.getElementById('programType').textContent = details.program.type;
+                document.getElementById('programAmount').textContent = details.program.amount;
+                document.getElementById('coachName').textContent = details.program.coach;
+                document.getElementById('programStart').textContent = details.program.start_date;
+                document.getElementById('programEnd').textContent = details.program.end_date;
+                totalAmount += parseFloat(details.program.amount.replace(/,/g, '')) || 0;
+            } else {
+                programSection.style.display = 'none';
+            }
+
+            // Handle rental details
+            const rentalSection = document.getElementById('rentalSection');
+            if (details.rental) {
+                rentalSection.style.display = 'block';
+                document.getElementById('serviceName').textContent = details.rental.service_name;
+                document.getElementById('rentalAmount').textContent = details.rental.amount;
+                document.getElementById('rentalStart').textContent = details.rental.start_date;
+                document.getElementById('rentalEnd').textContent = details.rental.end_date;
+                totalAmount += parseFloat(details.rental.amount.replace(/,/g, '')) || 0;
+            } else {
+                rentalSection.style.display = 'none';
+            }
+
+            // Handle registration fee
+            const registrationSection = document.getElementById('registrationSection');
+            if (details.registration_fee) {
+                registrationSection.style.display = 'block';
+                document.getElementById('registrationFee').textContent = details.registration_fee;
+                totalAmount += parseFloat(details.registration_fee.replace(/,/g, '')) || 0;
+            } else {
+                registrationSection.style.display = 'none';
+            }
+
+            // Update total amount
+            document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+            modal.show();
+        }
+
+        function confirmTransaction() {
+            if (!currentTransactionId || !currentUserId) {
+                alert('Error: Transaction details not found');
+                return;
+            }
+
+            fetch('/Gym_MembershipSE-XLB/admin/pages/notification/notification.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'confirm',
+                    transactionId: currentTransactionId,
+                    userId: currentUserId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Transaction confirmed successfully!');
+                    location.reload();
+                } else {
+                    alert('Error confirming transaction: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('An error occurred while processing the transaction');
+            });
+        }
+
+        function cancelTransaction() {
+            if (!currentTransactionId) {
+                alert('Error: Transaction details not found');
+                return;
+            }
+
+            fetch('/Gym_MembershipSE-XLB/admin/pages/notification/notification.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'cancel',
+                    transactionId: currentTransactionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Transaction cancelled successfully!');
+                    location.reload();
+                } else {
+                    alert('Error cancelling transaction: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('An error occurred while processing the transaction');
+            });
+        }
+    </script>
 
 <style>
     .notification-container {
@@ -217,95 +413,3 @@
         max-width: 800px;
     }
 </style>
-
-<script>
-function showNotificationDetails(details) {
-        // Calculate total amount
-        let totalAmount = 0;
-        
-        if (details.membership) {
-            totalAmount += parseFloat(details.membership.amount) || 0;
-        }
-        if (details.program) {
-            totalAmount += parseFloat(details.program.amount) || 0;
-        }
-        if (details.rental) {
-            totalAmount += parseFloat(details.rental.amount) || 0;
-        }
-        if (details.registration_fee) {
-            totalAmount += parseFloat(details.registration_fee) || 0;
-        }
-    
-        // Display total amount with 2 decimal places
-        document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
-    
-        // Handle registration fee section
-        const registrationSection = document.getElementById('registrationSection');
-        if (details.registration_fee) {
-            registrationSection.style.display = 'block';
-            document.getElementById('registrationFee').textContent = details.registration_fee;
-        } else {
-            registrationSection.style.display = 'none';
-        }
-    
-        // Rest of the existing code...
-
-
-    // Update member information
-    document.getElementById('memberName').textContent = details.member_name;
-    document.getElementById('phoneNumber').textContent = details.phone_number;
-    document.getElementById('sex').textContent = details.sex;
-    document.getElementById('age').textContent = details.age;
-    document.getElementById('requestDate').textContent = details.request_date;
-
-    // Set profile picture
-    const profilePic = document.getElementById('memberProfilePic');
-    if (details.profile_picture) {
-        profilePic.src = '/Gym_MembershipSE-XLB/' + details.profile_picture;
-    } else {
-        profilePic.src = '/Gym_MembershipSE-XLB/assets/images/default-profile.png';
-    }
-
-    // Handle membership details
-    const membershipSection = document.getElementById('membershipSection');
-    if (details.membership) {
-        membershipSection.style.display = 'block';
-        document.getElementById('planName').textContent = details.membership.plan_name;
-        document.getElementById('membershipAmount').textContent = details.membership.amount;
-        document.getElementById('membershipStart').textContent = details.membership.start_date;
-        document.getElementById('membershipEnd').textContent = details.membership.end_date;
-    } else {
-        membershipSection.style.display = 'none';
-    }
-
-    // Handle program details
-    const programSection = document.getElementById('programSection');
-    if (details.program) {
-        programSection.style.display = 'block';
-        document.getElementById('programName').textContent = details.program.name;
-        document.getElementById('programType').textContent = details.program.type;
-        document.getElementById('programAmount').textContent = details.program.amount;
-        document.getElementById('coachName').textContent = details.program.coach;
-        document.getElementById('programStart').textContent = details.program.start_date;
-        document.getElementById('programEnd').textContent = details.program.end_date;
-    } else {
-        programSection.style.display = 'none';
-    }
-
-    // Handle rental details
-    const rentalSection = document.getElementById('rentalSection');
-    if (details.rental) {
-        rentalSection.style.display = 'block';
-        document.getElementById('serviceName').textContent = details.rental.service_name;
-        document.getElementById('rentalAmount').textContent = details.rental.amount;
-        document.getElementById('rentalStart').textContent = details.rental.start_date;
-        document.getElementById('rentalEnd').textContent = details.rental.end_date;
-    } else {
-        rentalSection.style.display = 'none';
-    }
-
-    // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('notificationModal'));
-    modal.show();
-}
-</script>

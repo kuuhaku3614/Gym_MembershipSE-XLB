@@ -70,7 +70,7 @@
                 <a href="notification" id="notification-link" class="nav-item has-subnav">
                     <div class="nav-item-content">
                         <i class="fas fa-bell"></i>
-                        Notification
+                        Notifications
                     </div>
                     <i class="fas fa-chevron-down dropdown-icon"></i>
                 </a>

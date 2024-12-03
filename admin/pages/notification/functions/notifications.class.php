@@ -12,6 +12,7 @@ class Notifications {
     public function getMembershipRequests() {
         $query = "SELECT 
                     t.id as transaction_id,
+                    u.id as user_id,
                     CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) as full_name,
                     mp.plan_name,
                     m.amount as membership_amount,
@@ -67,6 +68,8 @@ class Notifications {
         $birthDate = new DateTime($request['birthdate']);
         
         $details = [
+            'transaction_id' => $request['transaction_id'],
+            'user_id' => $request['user_id'],
             'member_name' => $request['full_name'],
             'phone_number' => $request['phone_number'],
             'sex' => $request['sex'],
@@ -139,5 +142,107 @@ class Notifications {
         }
         
         return $notifications;
+    }
+
+    public function confirmTransaction($transactionId, $userId) {
+        try {
+            if (!$this->db) {
+                return false;
+            }
+
+            $this->db->beginTransaction();
+
+            // Verify transaction exists and is pending
+            $checkQuery = "SELECT status FROM transactions WHERE id = ?";
+            $checkStmt = $this->db->prepare($checkQuery);
+            $checkStmt->execute([$transactionId]);
+            $transaction = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$transaction) {
+                return false;
+            }
+
+            if ($transaction['status'] !== 'pending') {
+                return false;
+            }
+
+            // Update transaction status
+            $query = "UPDATE transactions SET status = 'confirmed' WHERE id = ?";
+            $stmt = $this->db->prepare($query);
+            $result = $stmt->execute([$transactionId]);
+
+            if (!$result) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            // Verify user exists
+            $checkUserQuery = "SELECT id FROM users WHERE id = ?";
+            $checkUserStmt = $this->db->prepare($checkUserQuery);
+            $checkUserStmt->execute([$userId]);
+            
+            if (!$checkUserStmt->fetch()) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            // Update user role to member (role_id = 3)
+            $query = "UPDATE users SET role_id = 3 WHERE id = ?";
+            $stmt = $this->db->prepare($query);
+            $result = $stmt->execute([$userId]);
+
+            if (!$result) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            return false;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
+    }
+
+    public function cancelTransaction($transactionId) {
+        try {
+            if (!$this->db) {
+                return false;
+            }
+
+            // Verify transaction exists and is pending
+            $checkQuery = "SELECT status FROM transactions WHERE id = ?";
+            $checkStmt = $this->db->prepare($checkQuery);
+            $checkStmt->execute([$transactionId]);
+            $transaction = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$transaction) {
+                return false;
+            }
+
+            if ($transaction['status'] !== 'pending') {
+                return false;
+            }
+
+            // Update transaction status
+            $query = "UPDATE transactions SET status = 'cancelled' WHERE id = ?";
+            $stmt = $this->db->prepare($query);
+            $result = $stmt->execute([$transactionId]);
+
+            if (!$result) {
+                return false;
+            }
+
+            return true;
+        } catch (PDOException $e) {
+            return false;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }
