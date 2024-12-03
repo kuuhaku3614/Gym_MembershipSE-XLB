@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config.php';
+include '../../pages/modal.php';
 
 // Ensure proper session validation
 function validateSession() {
@@ -534,6 +535,37 @@ function registration_fee() {
         </div>
     </div>
 </div>
+<!-- Success Modal -->
+<!-- <div
+  class="modal fade"
+  id="successModal"
+  tabindex="-1"
+  aria-labelledby="successModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="successModalLabel">Success!</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fas fa-check-circle text-success" style="font-size: 48px"></i>
+        <p class="mt-3">Membership created successfully!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div> -->
 <!-- full details modal -->
 <div class="modal fade" id="memberViewModal" tabindex="-1" role="dialog" aria-labelledby="memberViewModalLabel" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
@@ -876,13 +908,21 @@ function registration_fee() {
     },
 
     bindDeleteMember() {
-        $(document).on('click', '.delete-member', (e) => {
-            const memberId = $(e.target).data('id');
-            if (confirm('Are you sure you want to delete this member?')) {
-                this.deleteMember(memberId);
-            }
-        });
-    },
+    let memberIdToDelete;
+
+    $(document).on('click', '.delete-member', (e) => {
+        memberIdToDelete = $(e.target).data('id');
+        $('#deleteModal').modal('show'); // Show the modal
+    });
+
+    // Handle the confirmation button click
+    $('#confirmDelete').on('click', () => {
+        if (memberIdToDelete) {
+            this.deleteMember(memberIdToDelete);
+            $('#deleteModal').modal('hide'); // Hide the modal after deletion
+        }
+    });
+},
 
     bindServiceEvents() {
         $(document).on('click', '.program', (e) => {
@@ -1208,29 +1248,23 @@ function registration_fee() {
             dataType: 'json',
             success: (response) => {
                 if (response.success) {
-                    alert('Membership created successfully!');
+                    // Hide the add member modal
                     $('#addMemberModal').modal('hide');
-                    window.location.reload();
+                    
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    
+                    // Add event listener for when success modal is hidden
+                    $('#successModal').on('hidden.bs.modal', function () {
+                        window.location.reload();
+                    });
                 } else {
                     alert('Error: ' + (response.message || 'Unknown error occurred'));
                 }
             },
             error: (xhr, status, error) => {
-                console.error('AJAX Error:', {
-                    status: status,
-                    error: error,
-                    responseText: xhr.responseText
-                });
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    alert('Error: ' + (response.message || 'Server error occurred'));
-                } catch (e) {
-                    if (xhr.responseText.includes('Fatal error')) {
-                        alert('Server error occurred. Please check the error logs.');
-                    } else {
-                        alert('Error processing membership. Please try again.');
-                    }
-                }
+                alert('Error: ' + error);
             }
         });
     },

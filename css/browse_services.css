@@ -1,426 +1,427 @@
 /* Scope all styles to only affect elements within services-page */
 .services-page * {
-    margin: 0;
-    padding: 0;
-    border: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: "Poppins", sans-serif;
 }
 
 .services-page body {
-    background: linear-gradient(45deg, #f3f4f6, #ffffff);
-    min-height: 100vh;
+  background: linear-gradient(45deg, #f3f4f6, #ffffff);
+  min-height: 100vh;
 }
 
 .services-page .bg-custom-red {
-    background-color: rgba(255, 0, 0, 0.9);
-    backdrop-filter: blur(10px);
+  background-color: rgba(255, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
 }
 
 .services-page .card {
-    height: 100%;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    min-height: 180px;
-    margin: 10px;
-    border-radius: 15px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.7);
-    border: none;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  margin: 10px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .services-page .card-header {
-    background-color: var(--primary-color) !important;
-    flex: 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    margin: 0;
-    border-radius: 0;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border: none;
+  background-color: var(--primary-color) !important;
+  flex: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: none;
 }
 
 .services-page .card:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 255, 255, 0.8);
-    border: none;
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
 }
 
 .services-page .card-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 0.8rem 1rem;
-    background: rgba(255, 255, 255, 0.5);
-    margin-top: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.5);
+  margin-top: 0;
 }
 
 .services-page .card-header h3 {
-    font-size: 1.5rem !important;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1.5rem !important;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .services-page .card-body p {
-    font-size: 1rem;
-    margin: 0;
-    text-align: center;
-    color: #333;
-    font-weight: 500;
+  font-size: 1rem;
+  margin: 0;
+  text-align: center;
+  color: #333;
+  font-weight: 500;
 }
 
 .services-page .content-wrapper {
-    width: 95%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    position: relative;
+  width: 95%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  position: relative;
 }
 
 .services-page .container-fluid {
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 /* Add subtle glass effect to section headers */
 .services-page .fs-4.fw-bold {
-    color: #333;
-    padding: 10px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(5px);
-    display: inline-block;
-    margin-bottom: 1.5rem;
+  color: #333;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(5px);
+  display: inline-block;
+  margin-bottom: 1.5rem;
 }
 
 /* Price text styling */
 .services-page .card-text.mb-1 {
-    font-weight: 600;
-    color: #ff0000;
-    margin-bottom: 0.5rem !important;
+  font-weight: 600;
+  color: #ff0000;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Add a subtle animation to the gradient */
 @keyframes gradient {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Add responsive adjustments for card sizes */
 @media (max-width: 768px) {
-    .services-page .card {
-        min-height: 160px;
-    }
-    
-    .services-page .card-header h3 {
-        font-size: 1.3rem !important;
-    }
-    
-    .services-page .card-body p {
-        font-size: 0.9rem;
-    }
+  .services-page .card {
+    min-height: 160px;
+  }
+
+  .services-page .card-header h3 {
+    font-size: 1.3rem !important;
+  }
+
+  .services-page .card-body p {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 576px) {
-    .services-page .content-wrapper {
-        width: 100%;
-        padding: 1rem;
-    }
-    
-    .services-page .card {
-        min-height: 150px;
-        margin: 5px;
-    }
+  .services-page .content-wrapper {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .services-page .card {
+    min-height: 150px;
+    margin: 5px;
+  }
 }
 
 /* Add these styles at the end of the file */
 .services-page .program-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    height: 100%;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  height: 100%;
 }
 
 .services-page .program-link:hover {
-    text-decoration: none;
-    color: inherit;
+  text-decoration: none;
+  color: inherit;
 }
 
 .services-page .program-link:hover .card {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.15);
 }
 
 .services-page .section-heading {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 0;
-    padding: 10px;
-    color: #333;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0;
+  padding: 10px;
+  color: #333;
 }
 
 .services-page .row {
-    padding-top: 15px;
+  padding-top: 15px;
 }
 
 /* Cart sidebar styles */
 .cart-sidebar {
-    position: fixed;
-    top: 0;
-    right: -400px;
-    width: 400px;
-    height: 100vh;
-    background: #fff;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-    transition: right 0.3s ease-in-out;
-    z-index: 1001;
-    overflow-y: auto;
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease-in-out;
+  z-index: 1001;
+  overflow-y: auto;
 }
 
 .cart-sidebar.active {
-    right: 0;
+  right: 0;
 }
 
 .cart-header {
-    background: #ff0000;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 2;
+  background: #ff0000;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .cart-header h5 {
-    color: white;
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
+  color: white;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .close-cart {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 5px;
-    transition: transform 0.2s;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s;
 }
 
 .close-cart:hover {
-    transform: scale(1.1);
+  transform: scale(1.1);
 }
 
 .cart-body {
-    padding: 20px;
+  padding: 20px;
 }
 
 .cart-item {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .item-details {
-    font-size: 0.95rem;
+  font-size: 0.95rem;
 }
 
 .item-details p {
-    margin: 5px 0;
+  margin: 5px 0;
 }
 
 .price {
-    color: #ff0000;
-    font-weight: 600;
-    font-size: 1.1rem;
+  color: #ff0000;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
 .remove-item {
-    background: none;
-    border: none;
-    color: #dc3545;
-    cursor: pointer;
-    padding: 5px;
-    transition: transform 0.2s;
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s;
 }
 
 .remove-item:hover {
-    transform: scale(1.1);
+  transform: scale(1.1);
 }
 
 .cart-summary {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 20px 0;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 20px 0;
 }
 
 .cart-summary .text-muted {
-    font-size: 0.9rem;
-    margin-bottom: 10px;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
 }
 
 .cart-summary .d-flex {
-    margin: 8px 0;
-    font-size: 0.95rem;
+  margin: 8px 0;
+  font-size: 0.95rem;
 }
 
 .cart-total {
-    border-top: 2px solid #dee2e6;
-    padding-top: 20px;
-    margin-top: 20px;
+  border-top: 2px solid #dee2e6;
+  padding-top: 20px;
+  margin-top: 20px;
 }
 
 .cart-total .fw-bold {
-    font-size: 1.1rem;
+  font-size: 1.1rem;
 }
 
 .cart-total .btn-danger {
-    padding: 8px 25px;
-    border-radius: 20px;
-    font-weight: 500;
-    transition: transform 0.2s;
+  padding: 8px 25px;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: transform 0.2s;
 }
 
 .cart-total .btn-danger:hover {
-    transform: scale(1.05);
+  transform: scale(1.05);
 }
 
 /* Overlay styles */
 .cart-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease-in-out;
-    z-index: 1000;
-    backdrop-filter: blur(2px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
 }
 
 .cart-overlay.active {
-    opacity: 1;
-    visibility: visible;
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Mobile responsiveness */
 @media (max-width: 576px) {
-    .cart-sidebar {
-        width: 100%;
-        right: -100%;
-    }
-    
-    .cart-body {
-        padding: 15px;
-    }
-    
-    .cart-header {
-        padding: 15px;
-    }
+  .cart-sidebar {
+    width: 100%;
+    right: -100%;
+  }
+
+  .cart-body {
+    padding: 15px;
+  }
+
+  .cart-header {
+    padding: 15px;
+  }
 }
 
 /* Keep the scrollbar hidden but functionality intact */
 .cart-sidebar::-webkit-scrollbar {
-    width: 0;
-    background: transparent;
+  width: 0;
+  background: transparent;
 }
 
 /* Update the cart button styles */
 .cart-btn {
-    background-color: #ff0000;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin-right: 15px;
-    transition: transform 0.2s, background-color 0.2s;
+  background-color: #ff0000;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-right: 15px;
+  transition: transform 0.2s, background-color 0.2s;
 }
 
 .cart-btn:hover {
-    transform: scale(1.1);
-    background-color: #e60000;
+  transform: scale(1.1);
+  background-color: #e60000;
 }
 
 .cart-btn i {
-    font-size: 1.2rem;
-    color: white;
-    line-height: 1;
+  font-size: 1.2rem;
+  color: white;
+  line-height: 1;
 }
 
 /* Make sure the icon stays white */
 .cart-btn .fas {
-    color: white !important;
+  color: white !important;
 }
 
 /* Adjust nav-right to properly align items */
 .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Update or add these styles */
 .services-page .card .card-header {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 1rem;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
 }
 
 .section-heading {
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-weight: bold;
 }
 
 .card {
-    transition: transform 0.3s ease;
-    border: none;
-    margin-bottom: 1rem;
+  transition: transform 0.3s ease;
+  border: none;
+  margin-bottom: 1rem;
 }
 
 .card:hover {
-    transform: translateY(-5px);
+  transform: translateY(-5px);
 }
 
 .card-body {
-    padding: 1rem;
+  padding: 1rem;
 }
 
 .program-link {
-    text-decoration: none;
-    color: inherit;
+  text-decoration: none;
+  color: inherit;
 }
 
 /* Make sure these important rules are applied */
 .card .card-header {
-    background-color: var(--primary-color) !important;
+  background-color: var(--primary-color) !important;
 }
 
 .section-heading {
-    color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
 }
