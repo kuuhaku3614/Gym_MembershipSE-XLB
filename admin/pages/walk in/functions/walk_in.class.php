@@ -65,4 +65,31 @@ class Walk_in_class {
             return false;
         }
     }
+
+    public function getWalkInPrice() {
+        try {
+            $connection = $this->db->connect();
+            $sql = "SELECT price FROM walk_in WHERE id = 1";
+            $query = $connection->prepare($sql);
+            $query->execute();
+            $result = $query->fetch(PDO::FETCH_ASSOC);
+            return $result ? $result['price'] : 0;
+        } catch (PDOException $e) {
+            error_log("Error fetching walk-in price: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function updateWalkInPrice($price) {
+        try {
+            $connection = $this->db->connect();
+            $sql = "UPDATE walk_in SET price = :price WHERE id = 1";
+            $query = $connection->prepare($sql);
+            $result = $query->execute(['price' => $price]);
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Error updating walk-in price: " . $e->getMessage());
+            return false;
+        }
+    }
 }

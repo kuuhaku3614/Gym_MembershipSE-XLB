@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 04, 2024 at 12:23 PM
+-- Generation Time: Dec 04, 2024 at 12:55 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -195,7 +195,7 @@ CREATE TABLE `memberships` (
 CREATE TABLE `membership_plans` (
   `id` int(11) NOT NULL,
   `plan_name` varchar(100) NOT NULL,
-  `plan_type` enum('standard','special','walk-in') NOT NULL,
+  `plan_type` enum('standard','special') NOT NULL,
   `price` decimal(10,2) NOT NULL,
   `duration` int(11) NOT NULL,
   `duration_type_id` int(11) NOT NULL,
@@ -214,8 +214,7 @@ CREATE TABLE `membership_plans` (
 
 INSERT INTO `membership_plans` (`id`, `plan_name`, `plan_type`, `price`, `duration`, `duration_type_id`, `description`, `start_date`, `end_date`, `status`, `is_removed`, `created_at`, `updated_at`) VALUES
 (20, 'Regular', 'standard', 500.00, 1, 2, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.', '2024-12-02', '2024-12-31', 'active', 0, '2024-12-03 14:33:24', '2024-12-03 14:33:24'),
-(21, 'Christmas Promo', 'special', 400.00, 1, 2, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.', '2024-12-03', '2024-12-31', 'active', 0, '2024-12-03 14:33:59', '2024-12-03 14:33:59'),
-(22, 'Walk-in', 'walk-in', 50.00, 1, 1, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.', '2024-12-02', '2024-12-31', 'active', 0, '2024-12-03 14:34:26', '2024-12-03 14:34:26');
+(21, 'Christmas Promo', 'special', 400.00, 1, 2, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.', '2024-12-03', '2024-12-31', 'active', 0, '2024-12-03 14:33:59', '2024-12-03 14:33:59');
 
 -- --------------------------------------------------------
 
@@ -504,7 +503,7 @@ CREATE TABLE `transactions` (
 --
 
 INSERT INTO `transactions` (`id`, `staff_id`, `user_id`, `status`, `created_at`) VALUES
-(48, NULL, NULL, 'confirmed', '2024-12-04 11:21:56');
+(50, NULL, NULL, 'confirmed', '2024-12-04 11:39:06');
 
 -- --------------------------------------------------------
 
@@ -541,6 +540,8 @@ INSERT INTO `users` (`id`, `username`, `password`, `role_id`, `is_active`, `crea
 CREATE TABLE `walk_in` (
   `id` int(11) NOT NULL,
   `price` decimal(10,2) NOT NULL,
+  `duration` int(11) NOT NULL DEFAULT 1,
+  `duration_type_id` int(11) NOT NULL DEFAULT 1,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -548,8 +549,8 @@ CREATE TABLE `walk_in` (
 -- Dumping data for table `walk_in`
 --
 
-INSERT INTO `walk_in` (`id`, `price`, `updated_at`) VALUES
-(1, 50.00, '2024-12-04 09:24:22');
+INSERT INTO `walk_in` (`id`, `price`, `duration`, `duration_type_id`, `updated_at`) VALUES
+(1, 50.00, 1, 1, '2024-12-04 11:55:09');
 
 -- --------------------------------------------------------
 
@@ -575,7 +576,7 @@ CREATE TABLE `walk_in_records` (
 --
 
 INSERT INTO `walk_in_records` (`id`, `transaction_id`, `walk_in_id`, `name`, `phone_number`, `date`, `time_in`, `amount`, `is_paid`, `status`) VALUES
-(2, 48, 1, 'jamal', '12345678901', '0000-00-00', NULL, 50.00, 1, 'walked-in');
+(4, 50, 1, 'jamal', '12312144', '2024-12-04', '19:39:06', 50.00, 1, 'walked-in');
 
 -- --------------------------------------------------------
 
@@ -769,7 +770,8 @@ ALTER TABLE `users`
 -- Indexes for table `walk_in`
 --
 ALTER TABLE `walk_in`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `duration_type_id` (`duration_type_id`);
 
 --
 -- Indexes for table `walk_in_records`
@@ -914,7 +916,7 @@ ALTER TABLE `staff`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -932,7 +934,7 @@ ALTER TABLE `walk_in`
 -- AUTO_INCREMENT for table `walk_in_records`
 --
 ALTER TABLE `walk_in_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `website_content`
@@ -1035,6 +1037,12 @@ ALTER TABLE `transactions`
 --
 ALTER TABLE `users`
   ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
+
+--
+-- Constraints for table `walk_in`
+--
+ALTER TABLE `walk_in`
+  ADD CONSTRAINT `walk_in_ibfk_1` FOREIGN KEY (`duration_type_id`) REFERENCES `duration_types` (`id`);
 
 --
 -- Constraints for table `walk_in_records`
