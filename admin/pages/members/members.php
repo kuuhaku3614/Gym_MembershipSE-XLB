@@ -308,7 +308,7 @@ function registration_fee() {
                                 <tr>
                                     <td class="align-middle text-center">
                                         <div class="member-photo-container">
-                                            <img src="../../../<?= htmlspecialchars($member['photo_path']); ?>" 
+                                            <img src="../<?= htmlspecialchars($member['photo_path']); ?>" 
                                                 class="img-fluid rounded-circle member-photo" 
                                                 style="width: 60px; height: 60px; object-fit: cover;"
                                                 alt="Profile Photo">
@@ -1400,8 +1400,8 @@ $(document).ready(function () {
             $('#memberPhoto').attr(
                 'src', 
                 memberData.photo_path 
-                    ? `../../../${memberData.photo_path}` 
-                    : '../../../uploads/default.png'
+                    ? `../${memberData.photo_path}` 
+                    : '../uploads/default.jpg'
             );
             $('#memberName').text(`${memberData.first_name} ${memberData.middle_name || ''} ${memberData.last_name}`);
             $('#memberUsername').text(memberData.username);
