@@ -13,7 +13,7 @@
     <div class="container d-flex justify-content-center align-items-start">
         <div class="registration-container">
             <div class="logo-placeholder">
-                <img src="../img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
+                <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
             </div>
             <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
             
@@ -115,7 +115,7 @@
 
     <!-- Verification Modal -->
     <div class="verification-modal">
-        <img src="../img/jc_logo_2.png" alt="JC Powerzone Logo" class="modal-logo">
+        <img src="../cms_img/jc_logo_2.png" alt="JC Powerzone Logo" class="modal-logo">
         <h1 class="welcome-text">WELCOME TO<br>JC POWERZONE</h1>
         <p class="verification-text">
             Enter verification code to verify phone number. (123456)<br>
@@ -131,7 +131,7 @@
 
     <!-- Success Modal -->
     <div class="success-modal">
-        <img src="../img/jc_logo1.png" alt="JC Powerzone Logo" class="modal-logo">
+        <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Logo" class="modal-logo">
         <h1 class="welcome-text">WELCOME TO<br>JC POWERZONE</h1>
         <p class="success-message">Account Created Successfully</p>
         <button class="btn-login">Login</button>

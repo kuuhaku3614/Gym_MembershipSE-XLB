@@ -16,8 +16,9 @@ if (!file_exists($uploadDir)) {
 function uploadFile($file, $subDirectory, $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'svg']) {
     global $uploadDir;
 
+    // Check if file was uploaded
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-        return null;
+        throw new Exception("No file uploaded or upload error occurred.");
     }
 
     // Create subdirectory if it doesn't exist
@@ -29,11 +30,20 @@ function uploadFile($file, $subDirectory, $allowedTypes = ['jpg', 'jpeg', 'png',
     }
 
     $fileName = basename($file['name']);
+    $fileType = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
     $targetFilePath = $fullUploadPath . '/' . uniqid() . '_' . $fileName;
-    $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
 
-    // Validate file type
-    if (!in_array($fileType, $allowedTypes)) {
+    // Validate file type using mime type for more robust detection
+    $mimeType = mime_content_type($file['tmp_name']);
+    $validMimeTypes = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml'
+    ];
+
+    if (!in_array($fileType, $allowedTypes) || !array_key_exists($fileType, $validMimeTypes) || $mimeType !== $validMimeTypes[$fileType]) {
         throw new Exception("Invalid file type. Allowed types: " . implode(', ', $allowedTypes));
     }
 
@@ -42,13 +52,19 @@ function uploadFile($file, $subDirectory, $allowedTypes = ['jpg', 'jpeg', 'png',
         throw new Exception("File is too large. Maximum size is 5MB.");
     }
 
+    // Additional check to ensure it's a valid image
+    $imageInfo = getimagesize($file['tmp_name']);
+    if ($imageInfo === false) {
+        throw new Exception("Invalid image file.");
+    }
+
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $targetFilePath)) {
         // Return relative path from project root
         return 'cms_img/' . $subDirectory . '/' . basename($targetFilePath);
     }
 
-    return null;
+    throw new Exception("File upload failed due to an unknown error.");
 }
 
 // Function to delete an image file
@@ -265,18 +281,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Redirect with scroll position preservation
-        $redirectUrl = "content_management.php?success=1";
+    } catch (Exception $e) {
+        // Redirect with error message
+        $redirectUrl = "website_settings.php?error=" . urlencode($e->getMessage());
         
-        // If a specific section was being edited, pass that information
         if (isset($_POST['scroll_to'])) {
             $redirectUrl .= "&scrollTo=" . urlencode($_POST['scroll_to']);
         }
         
         header("Location: " . $redirectUrl);
         exit();
-    } catch (Exception $e) {
-        $error = $e->getMessage();
     }
 }
 
@@ -292,19 +306,7 @@ $products = fetchExistingContent('products');
 $staffMembers = fetchExistingContent('staff');
 $galleryImages = fetchExistingContent('gallery_images');
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Content Management System</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
         .section {
             background-color: #f4f4f4;
             padding: 20px;
@@ -361,66 +363,88 @@ $galleryImages = fetchExistingContent('gallery_images');
                 opacity: 1;
             }
         }
-        .existing-items-container {
-            display: flex;
-            overflow-x: auto;
-            overflow-y: hidden;
-            height: 400px; /* Increased height to accommodate more content */
-            gap: 15px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            white-space: nowrap;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
+    .existing-items-container {
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 15px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        white-space: nowrap;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
 
-        .existing-item {
-            flex: 0 0 auto;
-            width: 250px;
-            height: 380px; /* Fixed height for consistent layout */
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Distribute space evenly */
-        }
+    .existing-items-container::-webkit-scrollbar {
+        height: 8px;
+    }
 
-        .existing-item img {
-            width: 200px;
-            height: 200px;
-            object-fit: contain;
-            align-self: center;
-            margin: 10px 0;
-        }
+    .existing-items-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 4px;
+    }
 
-        .existing-item form {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
+    .existing-item {
+        flex: 0 0 250px; /* Fixed width for consistent layout */
+        height: 450px; /* Increased height */
+        padding: 15px;
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
 
-        .existing-item input[type="submit"] {
-            width: 100%; /* Make delete button full width */
-            padding: 8px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+    .existing-item:hover {
+        transform: scale(1.02);
+    }
 
-        .existing-item input[type="submit"]:hover {
-            background-color: #d32f2f;
-        }
-    </style>
-</head>
-<body>
-    <h1>Content Management System</h1>
+    .existing-item img {
+        width: 220px;
+        height: 220px;
+        object-fit: contain;
+        align-self: center;
+        margin: 10px 0;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+
+    .existing-item .item-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .item-actions input[type="submit"] {
+        flex-grow: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .item-actions .update-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .item-actions .delete-btn {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .item-actions input[type="submit"]:hover {
+        opacity: 0.9;
+    }
+</style>
+
+<h1 class="nav-title">Website Settings</h1>
 
     <div class="message-container" id="message-container">
         <?php if (isset($error)): ?>
@@ -474,34 +498,21 @@ $galleryImages = fetchExistingContent('gallery_images');
         </form>
     </div>
     <div class="section" data-section="manage-gym-offers">
-        <h2>Manage Existing Gym Offers</h2>
-            <div class="existing-items-container">
-                <?php foreach ($gymOffers as $offer): ?>
-                    <div class="existing-item">
-                        <h3><?php echo htmlspecialchars($offer['title']); ?></h3>
-                        <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" alt="<?php echo htmlspecialchars($offer['title']); ?>">
-                    
-                    <!-- Update Offer Form -->
-                    <form method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="offer_id" value="<?php echo $offer['id']; ?>">
-                        
-                        <label>Offer Title:</label>
-                        <input type="text" name="offer_title" value="<?php echo htmlspecialchars($offer['title']); ?>" required>
-                        
-                        <label>Offer Description:</label>
-                        <textarea name="offer_description" required><?php echo htmlspecialchars($offer['description']); ?></textarea>
-                        
-                        <label>Update Image (Optional):</label>
-                        <input type="file" name="offer_image" accept="image/*">
-                        
-                        <input type="submit" name="update_offer" value="Update Offer">
-                        <input type="submit" name="delete_offer" value="Delete Offer" onclick="return confirm('Are you sure you want to delete this offer?');">
-                    </form>
-                </div>
-            <?php endforeach; ?>
-        </div>
+    <h2>Manage Existing Gym Offers</h2>
+    <div class="existing-items-container">
+        <?php foreach ($gymOffers as $offer): ?>
+            <div class="existing-item">
+                <h3><?php echo htmlspecialchars($offer['name'] ?? $offer['title']); ?></h3>
+                <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" alt="<?php echo htmlspecialchars($offer['title']); ?>">
+                
+                <form method="post">
+                    <input type="hidden" name="offer_id" value="<?php echo $offer['id']; ?>">
+                    <input type="submit" name="delete_offer" value="Delete Offer" onclick="return confirm('Are you sure you want to delete this offer?');">
+                </form>
+            </div>
+        <?php endforeach; ?>
     </div>
-
+</div>
     <!-- About Us Section -->
     <div class="section" data-section="about-us">
         <h2>About Us Section</h2>
@@ -653,28 +664,22 @@ $galleryImages = fetchExistingContent('gallery_images');
         });
         // message
         document.addEventListener('DOMContentLoaded', function() {
-        const messageAlerts = document.querySelectorAll('#message-alert');
-        
-        messageAlerts.forEach(messageAlert => {
-            const removeMessage = () => {
-                messageAlert.style.transition = 'opacity 0.5s ease-out';
-                messageAlert.style.opacity = '0';
-                
-                setTimeout(() => {
-                    messageAlert.remove();
-                }, 500);
-            };
+    const messageContainer = document.getElementById('message-container');
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorMessage = urlParams.get('error');
 
-            // Set timeout to remove message
-            setTimeout(removeMessage, 2000); // 5 seconds
+    if (errorMessage) {
+        const errorAlert = document.createElement('div');
+        errorAlert.className = 'error';
+        errorAlert.id = 'message-alert';
+        errorAlert.textContent = decodeURIComponent(errorMessage);
+        messageContainer.appendChild(errorAlert);
 
-            // Optional: Allow manual dismissal by clicking
-            messageAlert.addEventListener('click', removeMessage);
-
-            // Debug logging
-            console.log('Message alert found:', messageAlert);
-        });
-    });
+        setTimeout(() => {
+            errorAlert.style.transition = 'opacity 0.5s ease-out';
+            errorAlert.style.opacity = '0';
+            setTimeout(() => errorAlert.remove(), 500);
+        }, 2000);
+    }
+});
     </script>
-</body>
-</html>

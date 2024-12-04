@@ -597,7 +597,7 @@ function registration_fee() {
         </div>
     </div>
 </div>
-
+</div>
 <script>
     const MembershipManager = {
     state: {

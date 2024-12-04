@@ -1,7 +1,7 @@
 <?php
 session_start();
-require_once '../config.php';
 
+require_once '../config.php';
 // Ensure the session contains the necessary information
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     header('Location: ../login/login.php');
@@ -23,7 +23,6 @@ if (
     die('Access denied.');
 }
 
-// Continue to load the requested page or dashboard
 ?>
 
 

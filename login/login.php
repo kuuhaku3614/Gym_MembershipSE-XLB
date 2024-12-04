@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="login-container text-center">
             <!-- dynamic logo -->
             <div class="logo-placeholder">
-                <img src="../img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
+                <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
             </div>
             <!-- dynamic welcome message -->
             <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
