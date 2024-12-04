@@ -39,6 +39,36 @@
             } else {
                 echo json_encode(['status' => 'error', 'message' => 'Failed to update walk-in price']);
             }
+        } elseif ($_POST['action'] === 'process_walkin') {
+            $id = $_POST['id'] ?? '';
+
+            if (empty($id)) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid walk-in ID']);
+                exit;
+            }
+
+            $result = $Obj->processWalkInRecord($id);
+
+            if ($result) {
+                echo json_encode(['status' => 'success', 'message' => 'Walk-in processed successfully']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Failed to process walk-in']);
+            }
+        } elseif ($_POST['action'] === 'remove_walkin') {
+            $id = $_POST['id'] ?? '';
+
+            if (empty($id)) {
+                echo json_encode(['status' => 'error', 'message' => 'Invalid walk-in ID']);
+                exit;
+            }
+
+            $result = $Obj->removeWalkInRecord($id);
+
+            if ($result) {
+                echo json_encode(['status' => 'success', 'message' => 'Walk-in record removed successfully']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Failed to remove walk-in record']);
+            }
         }
         exit;
     }
@@ -98,11 +128,34 @@
                                 echo "N/A";
                             }
                         ?></td>
-                        <td><?php echo ($row['is_paid'] == 1) ? 'Paid' : 'Unpaid'; ?></td>
-                        <td><?php echo htmlspecialchars($row['status']); ?></td>
+                        <td class="text-center">
+                            <?php if ($row['is_paid'] == 1): ?>
+                                <span class="badge bg-success">Paid</span>
+                            <?php else: ?>
+                                <span class="badge bg-danger">Unpaid</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-center">
+                            <?php 
+                                $status = strtolower($row['status']);
+                                $statusClass = match($status) {
+                                    'pending' => 'bg-warning text-dark',
+                                    'walked-in' => 'bg-success',
+                                    'cancelled' => 'bg-danger',
+                                    default => 'bg-secondary'
+                                };
+                                echo "<span class='badge {$statusClass}'>" . ucfirst($row['status']) . "</span>";
+                            ?>
+                        </td>
                         <td>
-                            <button class="btn btn-primary btn-sm" onclick="editWalkIn(<?php echo $row['id']; ?>)">Edit</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteWalkIn(<?php echo $row['id']; ?>)">Delete</button>
+                            <?php if (strtolower($row['status']) === 'pending'): ?>
+                                <button class="btn btn-success btn-sm" onclick="processWalkIn(<?php echo $row['id']; ?>)">
+                                    Walk-in
+                                </button>
+                                <button class="btn btn-danger btn-sm ms-1" onclick="removeWalkIn(<?php echo $row['id']; ?>)">
+                                    Remove
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php 
@@ -128,25 +181,25 @@
             </div>
             <form id="addWalkInForm">
                 <div class="modal-body">
-                    <div class="alert alert-info mb-4">
-                        <h6 class="alert-heading">Current Walk-in Rate</h6>
-                        <h4 class="mb-0">₱<?php echo number_format($current_price, 2); ?></h4>
-                    </div>
                     <div class="row">
                         <!-- Left Column -->
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
+                            <div class="form-group mb-3">
+                                <label for="name">Name</label>
                                 <input type="text" class="form-control" id="name" name="name" required>
                             </div>
                         </div>
                         <!-- Right Column -->
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="phone_number" class="form-label">Phone Number</label>
-                                <input type="text" class="form-control" id="phone_number" name="phone_number" required>
+                            <div class="form-group mb-3">
+                                <label for="phone_number">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
                             </div>
                         </div>
+                    </div>
+                    <div class="amount-display">
+                        <span class="amount-label">Amount:</span>
+                        <span class="amount-value">₱<?php echo number_format($current_price, 2); ?></span>
                     </div>
                     <input type="hidden" name="action" value="add_walkin">
                 </div>
@@ -184,12 +237,77 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="savePriceBtn">Save changes</button>
+                
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .amount-display {
+        border: 1px solid lightgrey;
+        color: red;
+        border-radius: 4px;
+        padding: 8px 15px;
+        margin: 10px 0;
+        display: inline-block;
+        width: 100%;
+        text-align: right;
+    }
+
+    .amount-label {
+        font-size: 0.9rem;
+        margin-right: 8px;
+    }
+
+    .amount-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 4px;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    /* Modal styling updates */
+    .modal-content {
+        border: none;
+        border-radius: 10px;
+    }
+
+    .modal-header {
+        background-color: var(--danger-color);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 15px 20px;
+    }
+
+    .modal-title {
+        font-weight: 600;
+    }
+
+    .form-group label {
+        color: var(--gray-700);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 4px;
+        border: 1px solid var(--gray-300);
+    }
+
+    .form-control:focus {
+        border-color: var(--danger-color);
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+</style>
 
 <script>
 $(document).ready(function() {
@@ -250,4 +368,58 @@ $(document).ready(function() {
         });
     });
 });
+
+function processWalkIn(id) {
+    if (!confirm('Process this walk-in record?')) {
+        return;
+    }
+
+    $.ajax({
+        url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
+        type: 'POST',
+        data: {
+            action: 'process_walkin',
+            id: id
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Walk-in processed successfully!');
+                location.reload();
+            } else {
+                alert(response.message || 'Failed to process walk-in');
+            }
+        },
+        error: function() {
+            alert('An error occurred while processing the request');
+        }
+    });
+}
+
+function removeWalkIn(id) {
+    if (!confirm('Are you sure you want to remove this walk-in record?')) {
+        return;
+    }
+
+    $.ajax({
+        url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
+        type: 'POST',
+        data: {
+            action: 'remove_walkin',
+            id: id
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('Walk-in record removed successfully!');
+                location.reload();
+            } else {
+                alert(response.message || 'Failed to remove walk-in record');
+            }
+        },
+        error: function() {
+            alert('An error occurred while processing the request');
+        }
+    });
+}
 </script>

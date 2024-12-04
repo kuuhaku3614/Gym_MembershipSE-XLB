@@ -115,7 +115,17 @@ $query = "
             COALESCE(ps.amount, 0) + 
             COALESCE(rs.amount, 0) + 
             COALESCE(rr.Amount, 0)
-        ) AS total_price
+        ) AS total_price,
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 FROM memberships m 
+                JOIN transactions t ON m.transaction_id = t.id
+                WHERE t.user_id = u.id 
+                AND m.status = 'active' 
+                AND m.end_date >= CURDATE()
+            ) THEN 'Active'
+            ELSE 'Inactive'
+        END AS membership_status
     FROM 
         users u 
     JOIN 
@@ -282,7 +292,6 @@ function registration_fee() {
 
 <!-- Main Container -->
 <div class="container-fluid">
-
 <h1 class="nav-title">Members</h1>
 
     <!-- Add Member Button -->
@@ -302,6 +311,7 @@ function registration_fee() {
                         <th class="text-center">Profile</th>
                         <th>Member Name</th>
                         <th>Payment Status</th>
+                        <th>Membership Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -319,6 +329,13 @@ function registration_fee() {
                                 </td>
                                 <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
                                 <td><?= htmlspecialchars($member['payment_status']) ?: 'Unknown'; ?></td>
+                                <td>
+                                    <?php 
+                                        $status = htmlspecialchars($member['membership_status']); 
+                                        $statusClass = $status === 'Active' ? 'text-success' : 'text-danger';
+                                        echo "<span class='$statusClass'>$status</span>";
+                                    ?>
+                                </td>
                                 <td class="align-middle">
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">

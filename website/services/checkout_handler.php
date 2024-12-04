@@ -57,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // If there's a registration fee, record it
         if (isset($cart['registration_fee']) && $cart['registration_fee'] !== null) {
-            $sql = "INSERT INTO registration_records (transaction_id, registration_id) VALUES (?, 1)";
+            $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount) VALUES (?, 1, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$transaction_id]);
+            $stmt->execute([$transaction_id, $cart['registration_fee']['price']]);
         }
         
         // Then create membership records
