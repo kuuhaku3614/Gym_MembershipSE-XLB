@@ -381,7 +381,8 @@ include('includes/header.php');
         <!-- Contact Section -->
         <section class="S-ContactUs">
             <div class="image-location">
-                <img src="<?php echo htmlspecialchars(getImagePath('3months Promo.jpg')); ?>" alt="Location" />
+              <!-- location section -->
+                <img src="" />
             </div>
             <div class="ContactUs-text">
                 <h1>Contact Us:</h1>

@@ -83,11 +83,11 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 <nav class="home-navbar">
     <div class="home-logo">
-        <img src="" alt="logo" />
+        <img src="../../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
     </div>
     <ul class="nav-links">
         <li><a href="website.php">Home</a></li>
-        <li><a href="services.php">Services</a></li>
+        <li><a href="<?php echo $isLoggedIn ? 'services.php' : '../../login/login.php'; ?>">Services</a></li>
         <li><a href="#S-About">About</a></li>
         <li><a href="#S-ContactUs">Contact</a></li>
     </ul>

@@ -177,8 +177,9 @@ function insertMembership($pdo, $transactionId, $data) {
                 end_date,
                 status,
                 is_paid,
-                payment_date
-            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+                payment_date,
+                amount
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
         ");
         
         if (!$stmt->execute([
@@ -187,7 +188,8 @@ function insertMembership($pdo, $transactionId, $data) {
             $data['start_date'],
             $data['end_date'],
             'active',
-            1 // Paid
+            1, // Paid
+            $data['membership_plan_price'] ?? 0
         ])) {
             throw new Exception("Failed to insert membership");
         }
@@ -220,8 +222,9 @@ function insertProgramSubscriptions($pdo, $transactionId, $data) {
                 end_date,
                 status,
                 is_paid,
-                payment_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                payment_date,
+                amount
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
         ");
         
         $stmt->execute([
@@ -231,7 +234,8 @@ function insertProgramSubscriptions($pdo, $transactionId, $data) {
             $data['start_date'],
             $data['end_date'],
             'active',
-            1 // Paid
+            1, // Paid
+            $program['price'] ?? 0
         ]);
     }
 }
@@ -271,8 +275,9 @@ function insertRentalSubscriptions($pdo, $transactionId, $data) {
                 end_date,
                 status,
                 is_paid,
-                payment_date
-            ) VALUES (?, ?, ?, ?, ?, ?, NOW())
+                payment_date,
+                amount
+            ) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
         ");
         
         $stmt->execute([
@@ -281,7 +286,8 @@ function insertRentalSubscriptions($pdo, $transactionId, $data) {
             $data['start_date'],
             $data['end_date'],
             'active',
-            1 // Paid
+            1, // Paid
+            $rental['price'] ?? 0
         ]);
 
         // Reduce available slots
@@ -291,6 +297,26 @@ function insertRentalSubscriptions($pdo, $transactionId, $data) {
             WHERE id = ?
         ");
         $stmt->execute([$rental['id']]);
+    }
+}
+function insertRegistrationRecord($pdo, $transactionId, $registrationFee) {
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO registration_records (
+                transaction_id,
+                registration_id,
+                Amount,
+                created_at
+            ) VALUES (?, 1, ?, NOW())
+        ");
+        
+        if (!$stmt->execute([$transactionId, $registrationFee])) {
+            throw new Exception("Failed to insert registration record");
+        }
+        
+        return $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        throw new Exception("Database error during registration record insertion: " . $e->getMessage());
     }
 }
 
@@ -340,6 +366,10 @@ try {
 
     // Insert transaction first
     $transactionId = insertTransaction($pdo, $userId, $_POST['staff_id']);
+
+    // Insert registration record
+    $registrationFee = $_POST['registration_fee'] ?? 0;
+    insertRegistrationRecord($pdo, $transactionId, $registrationFee);
 
     // Insert membership
     $membershipId = insertMembership($pdo, $transactionId, $_POST);
