@@ -1,16 +1,37 @@
 <?php
-session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Include database connection
 require_once 'config.php';
-require_once 'file_upload.php'; 
-require_once 'content_management.php'; 
-require_once 'database_fetching.php';   
-require_once 'website_function.php';
+// Function to fetch dynamic content
+function getDynamicContent($section) {
+    global $pdo;
+    $query = "SELECT * FROM website_content WHERE section = :section";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute(['section' => $section]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
+// Function to fetch existing content from a table
+function fetchExistingContent($table) {
+    global $pdo;
+    $query = "SELECT * FROM $table";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+// Fetch current content for pre-filling forms
+$welcomeContent = getDynamicContent('welcome');
+$offersContent = getDynamicContent('offers');
+$aboutUsContent = getDynamicContent('about_us');
+$contactContent = getDynamicContent('contact');
+
+// Fetch existing content for management
+$gymOffers = fetchExistingContent('gym_offers');
+$products = fetchExistingContent('products');
+$staffMembers = fetchExistingContent('staff');
+$galleryImages = fetchExistingContent('gallery_images');
 ?>
-    <style>
 
+<style>
         .section {
             background-color: #f4f4f4;
             padding: 20px;
@@ -67,83 +88,122 @@ require_once 'website_function.php';
                 opacity: 1;
             }
         }
-        .existing-items-container {
-            display: flex;
-            overflow-x: auto;
-            overflow-y: hidden;
-            height: 400px; /* Increased height to accommodate more content */
-            gap: 15px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            white-space: nowrap;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
+    .existing-items-container {
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 15px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        white-space: nowrap;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
 
-        .existing-item {
-            flex: 0 0 auto;
-            width: 250px;
-            height: 380px; /* Fixed height for consistent layout */
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Distribute space evenly */
-        }
+    .existing-items-container::-webkit-scrollbar {
+        height: 8px;
+    }
 
-        .existing-item img {
-            width: 200px;
-            height: 200px;
-            object-fit: contain;
-            align-self: center;
-            margin: 10px 0;
-        }
+    .existing-items-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 4px;
+    }
 
-        .existing-item form {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
+    .existing-item {
+        flex: 0 0 250px; /* Fixed width for consistent layout */
+        height: 300px; /* Increased height */
+        padding: 15px;
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
 
-        .existing-item input[type="submit"] {
-            width: 100%; /* Make delete button full width */
-            padding: 8px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+    .existing-item:hover {
+        transform: scale(1.02);
+    }
 
-        .existing-item input[type="submit"]:hover {
-            background-color: #d32f2f;
-        }
-    </style>
-<div class="container-fluid">
+    .existing-item img {
+        width: 220px;
+        height: 220px;
+        object-fit: contain;
+        align-self: center;
+        margin: 10px 0;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+
+    .existing-item .item-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .item-actions input[type="submit"] {
+        flex-grow: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .item-actions .update-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .item-actions .delete-btn {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .item-actions input[type="submit"]:hover {
+        opacity: 0.9;
+    }
+    /* CSS */
+.btn {
+  color: white; /* Set the text color */
+  border: none; /* Remove border */
+  padding: 10px 20px; /* Add padding */
+  text-align: center; /* Center text */
+  text-decoration: none; /* Remove text decoration */
+  display: inline-block; /* Keep the element inline-block */
+  font-size: 16px; /* Set font size */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+.button-link {
+  color: white; /* Set link color */
+  text-decoration: none; /* Remove link underline */
+}
+
+.button-link:hover {
+  color: white; /* Keep link color on hover */
+  text-decoration: none; /* Ensure link underline stays removed */
+}
+
+</style>
+
 <h1 class="nav-title">Website Settings</h1>
-
-    <?php if (isset($_SESSION['message'])): ?>
-        <div class="alert alert-<?php echo $_SESSION['message_type']; ?>">
-            <?php echo htmlspecialchars($_SESSION['message']); ?>
-        </div>
-    <?php endif; ?>
+<!-- HTML -->
+<a class="button-link" href="../../../website/content_management.php"><button type="button" class="btn btn-primary">Update website</button></a>
 
     <!-- Welcome Section Update -->
     <div class="section" data-section="welcome">
         <h2>Welcome Section</h2>
         <form method="post">
             <label>Company Name:</label>
-            <input type="text" name="company_name" value="<?php echo htmlspecialchars($welcomeContent['company_name'] ?? ''); ?>" required>
+            <input type="text" name="company_name" value="<?php echo htmlspecialchars($welcomeContent['company_name'] ?? ''); ?>" readonly>
             
             <label>Welcome Description:</label>
-            <textarea name="welcome_description" required><?php echo htmlspecialchars($welcomeContent['description'] ?? ''); ?></textarea>
-            
-            <input type="submit" name="update_welcome" value="Update Welcome Section">
+            <textarea name="welcome_description" readonly><?php echo htmlspecialchars($welcomeContent['description'] ?? ''); ?></textarea>
         </form>
     </div>
 
@@ -152,53 +212,29 @@ require_once 'website_function.php';
         <h2>Offers Section</h2>
         <form method="post">
             <label>Offers Description:</label>
-            <textarea name="offers_description" required><?php echo htmlspecialchars($offersContent['description'] ?? ''); ?></textarea>
-            
-            <input type="submit" name="update_offers" value="Update Offers Section">
+            <textarea name="offers_description" readonly><?php echo htmlspecialchars($offersContent['description'] ?? ''); ?></textarea>
         </form>
     </div>
 
-    <!-- Add Gym Offer -->
-    <div class="section" data-section="add-gym-offer">
-        <h2>Add New Gym Offer</h2>
-        <form method="post" enctype="multipart/form-data">
-            <label>Offer Title:</label>
-            <input type="text" name="offer_title" required>
-            
-            <label>Offer Description:</label>
-            <textarea name="offer_description" required></textarea>
-            
-            <label>Offer Image:</label>
-            <input type="file" name="offer_image" accept="image/*" required>
-            
-            <input type="submit" name="add_offer" value="Add Gym Offer">
-        </form>
-    </div>
     <div class="section" data-section="manage-gym-offers">
-        <h2>Manage Existing Gym Offers</h2>
-        <div class="existing-items-container">
-            <?php foreach ($gymOffers as $offer): ?>
-                <div class="existing-item">
-                    <h3><?php echo htmlspecialchars($offer['name'] ?? $offer['title']); ?></h3>
-                    <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" alt="<?php echo htmlspecialchars($offer['title']); ?>">
-                    
-                    <form method="post">
-                        <input type="hidden" name="offer_id" value="<?php echo $offer['id']; ?>">
-                        <input type="submit" name="delete_offer" value="Delete Offer" onclick="return confirm('Are you sure you want to delete this offer?');">
-                    </form>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
+    <h2>Manage Existing Gym Offers</h2>
+    <div class="existing-items-container">
+        <?php foreach ($gymOffers as $offer): ?>
+            <div class="existing-item">
+                <h3><?php echo htmlspecialchars($offer['name'] ?? $offer['title']); ?></h3>
+                <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" alt="<?php echo htmlspecialchars($offer['title']); ?>">
 
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
     <!-- About Us Section -->
     <div class="section" data-section="about-us">
         <h2>About Us Section</h2>
         <form method="post">
             <label>About Us Description:</label>
-            <textarea name="about_description" required><?php echo htmlspecialchars($aboutUsContent['description'] ?? ''); ?></textarea>
-            
-            <input type="submit" name="update_about" value="Update About Us Section">
+            <textarea name="about_description" readonly><?php echo htmlspecialchars($aboutUsContent['description'] ?? ''); ?> </textarea>
+
         </form>
     </div>
 
@@ -207,67 +243,32 @@ require_once 'website_function.php';
         <h2>Contact Information</h2>
         <form method="post">
             <label>Location:</label>
-            <input type="text" name="location" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>" required>
+            <input type="text" name="location" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>" readonly>
             
             <label>Phone Number:</label>
-            <input type="tel" name="phone" value="<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>" required>
+            <input type="tel" name="phone" value="<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>" readonly>
             
             <label>Email:</label>
-            <input type="email" name="email" value="<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>" required>
+            <input type="email" name="email" value="<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>" readonly>
             
-            <input type="submit" name="update_contact" value="Update Contact Information">
+
         </form>
     </div>
 
-    <!-- Add New Product -->
-    <div class="section" data-section="add-product">
-        <h2>Add New Product</h2>
-        <form method="post" enctype="multipart/form-data">
-            <label>Product Name:</label>
-            <input type="text" name="product_name" required>
-            
-            <label>Product Description:</label>
-            <textarea name="product_description" required></textarea>
-            
-            <label>Product Image:</label>
-            <input type="file" name="product_image" accept="image/*" required>
-            
-            <input type="submit" name="add_product" value="Add Product">
-        </form>
-    </div>
+
     <div class="section" data-section="products">
-            <h2>Manage Existing Products</h2>
-            <div class="existing-items-container">
-                <?php foreach ($products as $product): ?>
-                    <div class="existing-item">
-                        <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                        <img src="../<?php echo 'cms_img/products/' . basename($product['image_path']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                        
-                <form method="post">
-                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                    <input type="submit" name="delete_product" value="Delete Product" onclick="return confirm('Are you sure you want to delete this product?');">
-                </form>
-            </div>
-        <?php endforeach; ?>
-        </div>
-    </div>
+        <h2>Manage Existing Products</h2>
+        <div class="existing-items-container">
+            <?php foreach ($products as $product): ?>
+                <div class="existing-item">
+                    <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                    <img src="../<?php echo 'cms_img/products/' . basename($product['image_path']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
 
-    <!-- Add Staff Member -->
-        <div class="section" data-section="add-staff">
-            <h2>Add Staff Member</h2>
-            <form method="post" enctype="multipart/form-data">
-                <label>Staff Name:</label>
-                <input type="text" name="staff_name" required>
-                
-                <label>Staff Status (e.g., Trainer, Manager):</label>
-                <input type="text" name="staff_status" required>
-                
-                <label>Staff Image:</label>
-                <input type="file" name="staff_image" accept="image/*" required>
-                
-                <input type="submit" name="add_staff" value="Add Staff Member">
-            </form>
         </div>
+    <?php endforeach; ?>
+    </div>
+</div>
+
     <div class="section" data-section="staff">
         <h2>Manage Staff Members</h2>
         <div class="existing-items-container">
@@ -275,28 +276,11 @@ require_once 'website_function.php';
                 <div class="existing-item">
                     <h3><?php echo htmlspecialchars($staff['name']); ?> (<?php echo htmlspecialchars($staff['status']); ?>)</h3>
                     <img src="../<?php echo 'cms_img/staff/' . basename($staff['image_path']); ?>" alt="<?php echo htmlspecialchars($staff['name']); ?>">
-            
-                    <form method="post">
-                        <input type="hidden" name="staff_id" value="<?php echo $staff['id']; ?>">
-                        <input type="submit" name="delete_staff" value="Delete Staff Member" onclick="return confirm('Are you sure you want to delete this staff member?');">
-                    </form>
-                </div>
-            <?php endforeach; ?>
+
         </div>
-    </div>
-        <!-- Add Gallery Image -->
-    <div class="section" data-section="add-gallery-image">
-        <h2>Add Gallery Image</h2>
-        <form method="post" enctype="multipart/form-data">
-            <label>Gallery Image:</label>
-            <input type="file" name="gallery_image" accept="image/*" required>
-            
-            <label>Alternative Text (Optional):</label>
-            <input type="text" name="gallery_image_alt" placeholder="Describe the image">
-            
-            <input type="submit" name="add_gallery_image" value="Add Gallery Image">
-        </form>
-    </div>
+    <?php endforeach; ?>
+</div>
+
     <div class="section" data-section="gallery">
         <h2>Manage Gallery Images</h2>
         <div class="existing-items-container">
@@ -304,66 +288,7 @@ require_once 'website_function.php';
                 <div class="existing-item">
                     <img src="../<?php echo 'cms_img/gallery/' . basename($image['image_path']); ?>" alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>">
             
-                    <form method="post">
-                        <input type="hidden" name="gallery_image_id" value="<?php echo $image['id']; ?>">
-                        <input type="submit" name="delete_gallery_image" value="Delete Gallery Image" onclick="return confirm('Are you sure you want to delete this gallery image?');">
-                    </form>
-                </div>
-        <?php endforeach; ?>
         </div>
+    <?php endforeach; ?>
     </div>
 </div>
-<script>
-        // Scroll preservation script
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if there's a scroll position to restore
-            const urlParams = new URLSearchParams(window.location.search);
-            const scrollTo = urlParams.get('scrollTo');
-            
-            if (scrollTo) {
-                const element = document.querySelector(`[data-section="${scrollTo}"]`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'auto' });
-                }
-            }
-
-            // Add scroll preservation to forms
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function() {
-                    // Store the section's identifier for scroll preservation
-                    const sectionElement = this.closest('.section');
-                    if (sectionElement) {
-                        const scrollInput = document.createElement('input');
-                        scrollInput.type = 'hidden';
-                        scrollInput.name = 'scroll_to';
-                        scrollInput.value = sectionElement.dataset.section || '';
-                        this.appendChild(scrollInput);
-                    }
-                });
-            });
-        });
-        // message
-        document.addEventListener('DOMContentLoaded', function() {
-        const messageAlerts = document.querySelectorAll('#message-alert');
-        
-        messageAlerts.forEach(messageAlert => {
-            const removeMessage = () => {
-                messageAlert.style.transition = 'opacity 0.5s ease-out';
-                messageAlert.style.opacity = '0';
-                
-                setTimeout(() => {
-                    messageAlert.remove();
-                }, 500);
-            };
-
-            // Set timeout to remove message
-            setTimeout(removeMessage, 2000); // 5 seconds
-
-            // Optional: Allow manual dismissal by clicking
-            messageAlert.addEventListener('click', removeMessage);
-
-            // Debug logging
-            console.log('Message alert found:', messageAlert);
-        });
-    });
-    </script>

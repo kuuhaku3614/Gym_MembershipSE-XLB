@@ -1,4 +1,7 @@
 <?php
+// Start session for message handling
+session_start();
+
 // Include database connection
 require_once '../config.php';
 
@@ -97,6 +100,10 @@ function fetchExistingContent($table) {
 // Handle different content management actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        // Reset any previous messages
+        unset($_SESSION['error_message']);
+        unset($_SESSION['success_message']);
+
         // Handle welcome section update
         if (isset($_POST['update_welcome'])) {
             $stmt = $pdo->prepare("UPDATE website_content SET company_name = :name, description = :desc WHERE section = 'welcome'");
@@ -199,40 +206,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Update Offer Method - Modify image upload
-        if (isset($_POST['update_offer'])) {
-            $offerId = $_POST['offer_id'];
-            $updateData = [
-                ':title' => $_POST['offer_title'],
-                ':desc' => $_POST['offer_description'],
-                ':id' => $offerId
-            ];
-
-            // Check if a new image is uploaded
-            if (isset($_FILES['offer_image']) && $_FILES['offer_image']['error'] === UPLOAD_ERR_OK) {
-                // Fetch and delete the old image
-                $stmt = $pdo->prepare("SELECT image_path FROM gym_offers WHERE id = :id");
-                $stmt->execute([':id' => $offerId]);
-                $oldOffer = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($oldOffer) {
-                    deleteImageFile($oldOffer['image_path']);
-                }
-
-                // Upload new image
-                $imagePath = uploadFile($_FILES['offer_image'], 'offers');
-                $updateData[':img'] = $imagePath;
-                
-                // Prepare statement with image update
-                $stmt = $pdo->prepare("UPDATE gym_offers SET title = :title, description = :desc, image_path = :img WHERE id = :id");
-            } else {
-                // Prepare statement without image update
-                $stmt = $pdo->prepare("UPDATE gym_offers SET title = :title, description = :desc WHERE id = :id");
-            }
-
-            $stmt->execute($updateData);
-        }
-
         // Delete Product
         if (isset($_POST['delete_product'])) {
             $productId = $_POST['product_id'];
@@ -281,17 +254,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-    } catch (Exception $e) {
-        // Redirect with error message
-        $redirectUrl = "website_settings.php?error=" . urlencode($e->getMessage());
+        // Set success message
+        $_SESSION['success_message'] = "Content updated successfully!";
         
+        // If scroll_to is set, preserve it
         if (isset($_POST['scroll_to'])) {
-            $redirectUrl .= "&scrollTo=" . urlencode($_POST['scroll_to']);
+            $_SESSION['scroll_to'] = $_POST['scroll_to'];
         }
+
+    } catch (Exception $e) {
+        // Store error message in session
+        $_SESSION['error_message'] = $e->getMessage();
         
-        header("Location: " . $redirectUrl);
-        exit();
+        // Store scroll position if available
+        if (isset($_POST['scroll_to'])) {
+            $_SESSION['scroll_to'] = $_POST['scroll_to'];
+        }
     }
+
+    // Redirect to prevent form resubmission
+    header("Location: content_management.php");
+    exit();
 }
 
 // Fetch current content for pre-filling forms
@@ -322,47 +305,75 @@ $galleryImages = fetchExistingContent('gallery_images');
             padding: 5px;
         }
         .message-container {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 10px 20px;
-        }
+        position: sticky;
+        top: 10;
+        z-index: 1000;
+        width: 100%;
+        margin-bottom: 20px;
+    }
 
-        .error, .success {
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            animation: slideIn 0.3s ease-out;
-            transition: opacity 0.5s ease-out; /* Added for smooth fade-out */
-        }
+    .message-container .error, 
+    .message-container .success {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #f44336;
+        color: white;
+        position: relative;
+        transition: all 0.5s ease;
+        margin: 0;
+        padding: 10px;
+    }
 
-        .error {
-            background-color: #ffebee;
-            color: #d32f2f;
-            border: 1px solid #d32f2f;
-        }
+    .message-container .success {
+        background-color: #4CAF50;
+    }
 
-        .success {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #2e7d32;
-        }
+    .message-container .dismiss-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0 10px;
+        transition: color 0.3s ease;
+    }
 
-        @keyframes slideIn {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+    .message-container .dismiss-btn:hover {
+        color: rgba(255,255,255,0.7);
+    }
+
+    .message-container .error.hide,
+    .message-container .success.hide {
+        opacity: 0;
+        transform: translateY(-100%);
+        max-height: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    .error, .success {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease-out;
+        transition: opacity 0.5s ease-out;
+        cursor: pointer; /* Indicates it can be clicked to dismiss */
+        opacity: 1;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
         }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
     .existing-items-container {
         display: flex;
         overflow-x: auto;
@@ -442,10 +453,33 @@ $galleryImages = fetchExistingContent('gallery_images');
     .item-actions input[type="submit"]:hover {
         opacity: 0.9;
     }
+        /* CSS */
+.btn {
+    background-color: green;
+  color: white; /* Set the text color */
+  border: none; /* Remove border */
+  padding: 10px 20px; /* Add padding */
+  text-align: center; /* Center text */
+  text-decoration: none; /* Remove text decoration */
+  display: inline-block; /* Keep the element inline-block */
+  font-size: 16px; /* Set font size */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+.button-link {
+  color: white; /* Set link color */
+  text-decoration: none; /* Remove link underline */
+}
+
+.button-link:hover {
+  color: white; /* Keep link color on hover */
+  text-decoration: none; /* Ensure link underline stays removed */
+}
+
 </style>
 
 <h1 class="nav-title">Website Settings</h1>
-
+<a class="button-link" href="../admin/index.php?page=website_settings"><button type="button" class="btn btn-primary">Return</button></a>
     <div class="message-container" id="message-container">
         <?php if (isset($error)): ?>
             <div class="error" id="message-alert"><?php echo htmlspecialchars($error); ?></div>
@@ -634,52 +668,140 @@ $galleryImages = fetchExistingContent('gallery_images');
     </div>
 </div>
 <script>
-        // Scroll preservation script
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if there's a scroll position to restore
-            const urlParams = new URLSearchParams(window.location.search);
-            const scrollTo = urlParams.get('scrollTo');
-            
-            if (scrollTo) {
-                const element = document.querySelector(`[data-section="${scrollTo}"]`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'auto' });
-                }
-            }
-
-            // Add scroll preservation to forms
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function() {
-                    // Store the section's identifier for scroll preservation
-                    const sectionElement = this.closest('.section');
-                    if (sectionElement) {
-                        const scrollInput = document.createElement('input');
-                        scrollInput.type = 'hidden';
-                        scrollInput.name = 'scroll_to';
-                        scrollInput.value = sectionElement.dataset.section || '';
-                        this.appendChild(scrollInput);
-                    }
+document.addEventListener('DOMContentLoaded', function() {
+    // Always try to scroll to the appropriate section
+    function scrollToSection(sectionIdentifier) {
+        const element = document.querySelector(`[data-section="${sectionIdentifier}"]`);
+        if (element) {
+            // Use slight delay to ensure page is fully loaded
+            setTimeout(() => {
+                element.scrollIntoView({ 
+                    behavior: 'auto',  // Changed from 'smooth' to 'auto' for more predictable scrolling
+                    block: 'center' 
                 });
-            });
-        });
-        // message
-        document.addEventListener('DOMContentLoaded', function() {
-    const messageContainer = document.getElementById('message-container');
-    const urlParams = new URLSearchParams(window.location.search);
-    const errorMessage = urlParams.get('error');
-
-    if (errorMessage) {
-        const errorAlert = document.createElement('div');
-        errorAlert.className = 'error';
-        errorAlert.id = 'message-alert';
-        errorAlert.textContent = decodeURIComponent(errorMessage);
-        messageContainer.appendChild(errorAlert);
-
-        setTimeout(() => {
-            errorAlert.style.transition = 'opacity 0.5s ease-out';
-            errorAlert.style.opacity = '0';
-            setTimeout(() => errorAlert.remove(), 500);
-        }, 2000);
+            }, 100);
+        }
     }
+
+    // Check for scroll position from session
+    <?php
+    if (isset($_SESSION['scroll_to'])) {
+        echo "const scrollTo = '" . $_SESSION['scroll_to'] . "';";
+        unset($_SESSION['scroll_to']); // Clear the scroll position
+    } else {
+        echo "const scrollTo = null;";
+    }
+    ?>
+
+    // Scroll to specified section if needed
+    if (scrollTo) {
+        scrollToSection(scrollTo);
+    }
+
+    // Message handling
+    const messageContainer = document.getElementById('message-container');
+    
+    <?php
+    // Handle error messages
+    if (isset($_SESSION['error_message'])) {
+        echo "
+        const errorMessage = '" . addslashes($_SESSION['error_message']) . "';
+        if (errorMessage) {
+            const errorAlert = document.createElement('div');
+            errorAlert.className = 'error';
+            errorAlert.id = 'message-alert';
+            
+            // Create message content div
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = errorMessage;
+            
+            // Create dismiss button
+            const dismissBtn = document.createElement('button');
+            dismissBtn.className = 'dismiss-btn';
+            dismissBtn.innerHTML = '&times;';
+            
+            errorAlert.appendChild(messageContent);
+            errorAlert.appendChild(dismissBtn);
+            messageContainer.appendChild(errorAlert);
+
+            // Dismiss function
+            const dismissError = () => {
+                errorAlert.classList.add('hide');
+                setTimeout(() => errorAlert.remove(), 500);
+            };
+            
+            // Auto-dismiss
+            const dismissTimer = setTimeout(dismissError, 5000);
+            
+            // Click to dismiss
+            dismissBtn.addEventListener('click', () => {
+                clearTimeout(dismissTimer);
+                dismissError();
+            });
+        }";
+        
+        // Clear the error message
+        unset($_SESSION['error_message']);
+    }
+
+    // Handle success messages
+    if (isset($_SESSION['success_message'])) {
+        echo "
+        const successMessage = '" . addslashes($_SESSION['success_message']) . "';
+        if (successMessage) {
+            const successAlert = document.createElement('div');
+            successAlert.className = 'success';
+            successAlert.id = 'message-alert';
+            
+            // Create message content div
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = successMessage;
+            
+            // Create dismiss button
+            const dismissBtn = document.createElement('button');
+            dismissBtn.className = 'dismiss-btn';
+            dismissBtn.innerHTML = '&times;';
+            
+            successAlert.appendChild(messageContent);
+            successAlert.appendChild(dismissBtn);
+            messageContainer.appendChild(successAlert);
+
+            // Dismiss function
+            const dismissSuccess = () => {
+                successAlert.classList.add('hide');
+                setTimeout(() => successAlert.remove(), 500);
+            };
+            
+            // Auto-dismiss
+            const dismissTimer = setTimeout(dismissSuccess, 3000);
+            
+            // Click to dismiss
+            dismissBtn.addEventListener('click', () => {
+                clearTimeout(dismissTimer);
+                dismissSuccess();
+            });
+        }";
+        
+        // Clear the success message
+        unset($_SESSION['success_message']);
+    }
+    ?>
+
+    // Add scroll preservation to forms
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function() {
+            // Store the section's identifier for scroll preservation
+            const sectionElement = this.closest('.section');
+            if (sectionElement) {
+                const scrollInput = document.createElement('input');
+                scrollInput.type = 'hidden';
+                scrollInput.name = 'scroll_to';
+                scrollInput.value = sectionElement.dataset.section || '';
+                this.appendChild(scrollInput);
+            }
+        });
+    });
 });
-    </script>
+</script>
