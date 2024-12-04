@@ -1503,24 +1503,24 @@ $(document).ready(function () {
 
     // Handle Pay Subscription AJAX call
     function handlePaySubscription(userId) {
-        $.ajax({
-            url: '../admin/pages/members/pay_subscription.php',  // You'll need to create this endpoint
-            method: 'POST',
-            data: { user_id: userId },
-            success: function(response) {
-                if (response.success) {
-                    alert('Subscriptions paid successfully!');
-                    // Optionally refresh the page or update the UI
-                    location.reload();
-                } else {
-                    alert('Payment failed: ' + response.message);
-                }
-            },
-            error: function() {
-                alert('An error occurred while processing payment.');
+    $.ajax({
+        url: '../admin/pages/members/pay_subscription.php',
+        method: 'POST',
+        data: { user_id: userId },
+        dataType: 'json',  // Explicitly parse JSON response
+        success: function(response) {
+            if (response && response.success) {
+                alert('Subscriptions paid successfully!');
+                location.reload();
+            } else {
+                alert('Payment failed: ' + (response.message || 'Unknown error'));
             }
-        });
-    }
+        },
+        error: function(xhr, status, error) {
+            alert('An error occurred: ' + error);
+        }
+    });
+}
 
     // Existing helper functions
     function formatDate(date) {
