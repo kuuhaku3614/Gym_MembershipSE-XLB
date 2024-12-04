@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if(empty($start_dateErr) && empty($coach_idErr)) {
-        $Cart = new Cart();
+        $Cart = new Cart_Class();
         try {
             $item = [
                 'id' => $program_id,

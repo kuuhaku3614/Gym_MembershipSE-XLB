@@ -1,4 +1,10 @@
-<?php if (!empty($_SESSION['cart'])): ?>
+<?php 
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!empty($_SESSION['cart'])): ?>
     <!-- Membership section -->
     <?php if (!empty($_SESSION['cart']['memberships'])): ?>
         <div class="cart-section">
@@ -69,6 +75,33 @@
                             </div>
                             <button class="remove-item" 
                                     onclick="removeFromCart('rental', <?= $index ?>)"
+                                    title="Remove item">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+
+    <!-- Walk-in Services section -->
+    <?php
+    if (!empty($_SESSION['cart']['walkins'])): ?>
+        <div class="cart-section">
+            <h6 class="fw-bold mb-3">Walk-in Services</h6>
+            <?php foreach ($_SESSION['cart']['walkins'] as $index => $walkin): ?>
+                <div class="cart-item">
+                    <div class="item-details">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">Walk-in Service</p>
+                                <p class="price mb-1">₱<?= number_format($walkin['price'], 2) ?></p>
+                                <p class="text-muted mb-0">Date: <?= date('m/d/Y', strtotime($walkin['date'])) ?></p>
+                            </div>
+                            <button class="remove-item" 
+                                    onclick="removeFromCart('walkin', <?= $index ?>)"
                                     title="Remove item">
                                 <i class="fas fa-times"></i>
                             </button>

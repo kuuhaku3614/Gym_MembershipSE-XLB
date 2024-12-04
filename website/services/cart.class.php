@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../functions/sanitize.php';
 
-class Cart {
+class Cart_Class {
     protected $db;
 
     function __construct() {
@@ -23,15 +23,14 @@ class Cart {
     }
 
     private function initializeCart() {
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [
-                'memberships' => [],
-                'programs' => [],
-                'rentals' => [],
-                'registration_fee' => null,
-                'total' => 0
-            ];
-        }
+        $_SESSION['cart'] = [
+            'memberships' => [],
+            'programs' => [],
+            'rentals' => [],
+            'walkins' => [],
+            'registration_fee' => null,
+            'total' => 0
+        ];
     }
 
     public function addMembership($item) {
@@ -174,73 +173,101 @@ class Cart {
 
     public function removeItem($type, $id) {
         try {
-            if ($type === 'membership') {
-                $index = intval($id);
-                if (isset($_SESSION['cart']['memberships'][$index])) {
-                    array_splice($_SESSION['cart']['memberships'], $index, 1);
-                    $_SESSION['cart']['memberships'] = array_values($_SESSION['cart']['memberships']);
-                }
-            } else if ($type === 'program') {
-                $index = intval($id);
-                if (isset($_SESSION['cart']['programs'][$index])) {
-                    array_splice($_SESSION['cart']['programs'], $index, 1);
-                    $_SESSION['cart']['programs'] = array_values($_SESSION['cart']['programs']);
-                }
-            } else if ($type === 'rental') {
-                $index = intval($id);
-                if (isset($_SESSION['cart']['rentals'][$index])) {
-                    array_splice($_SESSION['cart']['rentals'], $index, 1);
-                    $_SESSION['cart']['rentals'] = array_values($_SESSION['cart']['rentals']);
-                }
+            switch ($type) {
+                case 'membership':
+                    if (isset($_SESSION['cart']['memberships'][$id])) {
+                        unset($_SESSION['cart']['memberships'][$id]);
+                        $_SESSION['cart']['memberships'] = array_values($_SESSION['cart']['memberships']);
+                        
+                        // If no memberships left, remove registration fee
+                        if (empty($_SESSION['cart']['memberships'])) {
+                            $this->removeRegistrationFee();
+                        }
+                    }
+                    break;
+                    
+                case 'program':
+                    if (isset($_SESSION['cart']['programs'][$id])) {
+                        unset($_SESSION['cart']['programs'][$id]);
+                        $_SESSION['cart']['programs'] = array_values($_SESSION['cart']['programs']);
+                    }
+                    break;
+                    
+                case 'rental':
+                    if (isset($_SESSION['cart']['rentals'][$id])) {
+                        unset($_SESSION['cart']['rentals'][$id]);
+                        $_SESSION['cart']['rentals'] = array_values($_SESSION['cart']['rentals']);
+                    }
+                    break;
+                    
+                case 'walkin':
+                    if (isset($_SESSION['cart']['walkins'][$id])) {
+                        unset($_SESSION['cart']['walkins'][$id]);
+                        $_SESSION['cart']['walkins'] = array_values($_SESSION['cart']['walkins']);
+                    }
+                    break;
             }
+            
             $this->updateTotal();
             return true;
         } catch (Exception $e) {
-            throw new Exception("Failed to remove item from cart");
+            error_log($e->getMessage());
+            return false;
         }
     }
 
-    private function updateTotal() {
-        try {
-            $total = 0;
-            
-            // Add membership totals
-            foreach ($_SESSION['cart']['memberships'] as $item) {
-                $total += $item['price'];
-            }
-            
-            // Add program totals
-            foreach ($_SESSION['cart']['programs'] as $item) {
-                $total += $item['price'];
-            }
-            
-            // Add rental totals
-            foreach ($_SESSION['cart']['rentals'] as $item) {
-                $total += $item['price'];
-            }
+    public function updateTotal() {
+        $total = 0;
 
-            // Add registration fee if present
-            if (isset($_SESSION['cart']['registration_fee']) && $_SESSION['cart']['registration_fee'] !== null) {
-                $total += $_SESSION['cart']['registration_fee']['price'];
+        // Add membership prices
+        if (!empty($_SESSION['cart']['memberships'])) {
+            foreach ($_SESSION['cart']['memberships'] as $membership) {
+                $total += $membership['price'];
             }
-            
-            $_SESSION['cart']['total'] = $total;
-        } catch (Exception $e) {
-            throw new Exception("Failed to update cart total");
         }
+
+        // Add program prices
+        if (!empty($_SESSION['cart']['programs'])) {
+            foreach ($_SESSION['cart']['programs'] as $program) {
+                $total += $program['price'];
+            }
+        }
+
+        // Add rental prices
+        if (!empty($_SESSION['cart']['rentals'])) {
+            foreach ($_SESSION['cart']['rentals'] as $rental) {
+                $total += $rental['price'];
+            }
+        }
+
+        // Add walk-in prices
+        if (!empty($_SESSION['cart']['walkins'])) {
+            foreach ($_SESSION['cart']['walkins'] as $walkin) {
+                $total += $walkin['price'];
+            }
+        }
+
+        // Add registration fee if exists
+        if (isset($_SESSION['cart']['registration_fee']) && !empty($_SESSION['cart']['registration_fee']['price'])) {
+            $total += $_SESSION['cart']['registration_fee']['price'];
+        }
+
+        $_SESSION['cart']['total'] = $total;
     }
 
     public function getCart() {
-        try {
-            if (!isset($_SESSION['cart'])) {
-                $this->initializeCart();
-            }
-            
-            $cart = $_SESSION['cart'];
-            return $cart;
-        } catch (Exception $e) {
-            throw new Exception("Failed to retrieve cart: " . $e->getMessage());
+        if (!isset($_SESSION['cart'])) {
+            $this->initializeCart();
         }
+        
+        // Make sure all arrays exist
+        if (!isset($_SESSION['cart']['memberships'])) $_SESSION['cart']['memberships'] = [];
+        if (!isset($_SESSION['cart']['programs'])) $_SESSION['cart']['programs'] = [];
+        if (!isset($_SESSION['cart']['rentals'])) $_SESSION['cart']['rentals'] = [];
+        if (!isset($_SESSION['cart']['walkins'])) $_SESSION['cart']['walkins'] = [];
+        if (!isset($_SESSION['cart']['total'])) $_SESSION['cart']['total'] = 0;
+        
+        return $_SESSION['cart'];
     }
 
     public function clearCart() {
@@ -249,6 +276,7 @@ class Cart {
                 'memberships' => [],
                 'programs' => [],
                 'rentals' => [],
+                'walkins' => [],
                 'registration_fee' => null,
                 'total' => 0
             ];
@@ -279,7 +307,8 @@ class Cart {
             // Check if cart is empty
             if (empty($_SESSION['cart']['memberships']) && 
                 empty($_SESSION['cart']['programs']) && 
-                empty($_SESSION['cart']['rentals'])) {
+                empty($_SESSION['cart']['rentals']) && 
+                empty($_SESSION['cart']['walkins'])) {
                 throw new Exception('Cart is empty');
             }
 
@@ -291,5 +320,90 @@ class Cart {
 
     public function hasMembershipInCart() {
         return !empty($_SESSION['cart']['memberships']);
+    }
+
+    public function addWalkinToCart($walkin_id, $date) {
+        $conn = $this->db->connect();
+        try {
+            // First, get the walk-in details
+            $sql = "SELECT price FROM walk_in WHERE id = :walkin_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':walkin_id', $walkin_id);
+            $stmt->execute();
+            $walkin = $stmt->fetch();
+
+            if (!$walkin) {
+                return false;
+            }
+
+            // Initialize cart if not exists
+            if (!isset($_SESSION['cart'])) {
+                $this->initializeCart();
+            }
+
+            // Add to session cart
+            $_SESSION['cart']['walkins'][] = array(
+                'id' => $walkin_id,
+                'price' => floatval($walkin['price']),
+                'date' => $date,
+                'type' => 'walkin'
+            );
+
+            // Update cart total
+            $this->updateTotal();
+
+            return true;
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    public function removeWalkin($index) {
+        if (isset($_SESSION['cart']['walkins'][$index])) {
+            unset($_SESSION['cart']['walkins'][$index]);
+            $_SESSION['cart']['walkins'] = array_values($_SESSION['cart']['walkins']);
+            return true;
+        }
+        return false;
+    }
+
+    public function getTotalAmount() {
+        $total = 0;
+
+        // Add membership prices
+        if (!empty($_SESSION['cart']['memberships'])) {
+            foreach ($_SESSION['cart']['memberships'] as $membership) {
+                $total += $membership['price'];
+            }
+        }
+
+        // Add program prices
+        if (!empty($_SESSION['cart']['programs'])) {
+            foreach ($_SESSION['cart']['programs'] as $program) {
+                $total += $program['price'];
+            }
+        }
+
+        // Add rental prices
+        if (!empty($_SESSION['cart']['rentals'])) {
+            foreach ($_SESSION['cart']['rentals'] as $rental) {
+                $total += $rental['price'];
+            }
+        }
+
+        // Add walk-in prices
+        if (!empty($_SESSION['cart']['walkins'])) {
+            foreach ($_SESSION['cart']['walkins'] as $walkin) {
+                $total += $walkin['price'];
+            }
+        }
+
+        // Add registration fee if exists
+        if (isset($_SESSION['cart']['registration_fee']) && !empty($_SESSION['cart']['registration_fee']['price'])) {
+            $total += $_SESSION['cart']['registration_fee']['price'];
+        }
+
+        return $total;
     }
 } 

@@ -100,6 +100,17 @@ class Services_class{
         return $stmt->fetchAll();
     }
 
+    public function displayWalkinServices(){
+        $conn = $this->db->connect();
+        $sql = "SELECT w.id as walkin_id, w.price,
+                CONCAT(w.duration, ' ', dt.type_name) as validity
+                FROM walk_in w
+                LEFT JOIN duration_types dt ON w.duration_type_id = dt.id";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function fetchGymrate($membership_plan_id) {
         $conn = $this->db->connect();
         try {
@@ -280,6 +291,24 @@ class Services_class{
         $stmt = $conn->prepare($sql);
         $stmt->execute([$plan_id]);
         return $stmt->fetch();
+    }
+
+    public function fetchWalkin($walkin_id) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "SELECT w.id, w.price, w.duration,
+                    dt.type_name as duration_type
+                    FROM walk_in w
+                    LEFT JOIN duration_types dt ON w.duration_type_id = dt.id
+                    WHERE w.id = :walkin_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':walkin_id', $walkin_id);
+            $stmt->execute();
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
+            return false;
+        }
     }
 
     public function checkUserRole($user_id) {
