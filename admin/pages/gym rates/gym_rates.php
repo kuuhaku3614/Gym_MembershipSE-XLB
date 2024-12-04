@@ -134,7 +134,6 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <option value="">Select Promo Type</option>
                                     <option value="standard">Standard</option>
                                     <option value="special">Special</option>
-                                    <option value="walk-in">Walk-in</option>
                                 </select>
                             </div>
                             <div class="row">
