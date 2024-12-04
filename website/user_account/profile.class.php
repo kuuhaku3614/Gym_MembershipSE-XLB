@@ -141,11 +141,24 @@ class Profile_class{
         JOIN rental_services r ON rs.rental_service_id = r.id
         JOIN duration_types dt ON r.duration_type_id = dt.id
         WHERE t.user_id = :user_id AND rs.status = 'active' AND t.status = 'confirmed'";
+
+        // Fetch walk-ins
+        $walkin_query = "SELECT 
+            w.id,
+            'walkin' as type,
+            DATE_FORMAT(w.date, '%M %d, %Y') as date,
+            w.time_in,
+            w.amount as price
+        FROM transactions t
+        JOIN walk_in_records w ON t.id = w.transaction_id
+        WHERE t.user_id = :user_id AND t.status = 'confirmed' AND w.date >= CURDATE()
+        ORDER BY w.date DESC";
         
         $result = [
             'memberships' => [],
             'programs' => [],
-            'rentals' => []
+            'rentals' => [],
+            'walkins' => []
         ];
 
         // Execute membership query
@@ -165,7 +178,13 @@ class Profile_class{
         $stmt->bindParam(':user_id', $_SESSION['user_id']);
         $stmt->execute();
         $result['rentals'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
+        // Execute walk-in query
+        $stmt = $conn->prepare($walkin_query);
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
+        $stmt->execute();
+        $result['walkins'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         return $result;
     }
 
@@ -239,8 +258,29 @@ class Profile_class{
             $stmt->execute();
             $expired_services['rentals'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Fetch expired walk-ins (walk-ins older than today)
+            $walkin_query = "SELECT 
+                w.id,
+                DATE_FORMAT(w.date, '%M %d, %Y') as formatted_date,
+                w.amount as price,
+                DATE_FORMAT(t.created_at, '%M %d, %Y') as transaction_date,
+                t.created_at as raw_transaction_date,
+                t.id as transaction_id
+                FROM walk_in_records w
+                LEFT JOIN transactions t ON w.transaction_id = t.id
+                WHERE t.user_id = :user_id 
+                AND w.date < CURDATE()
+                AND t.status = 'confirmed'
+                ORDER BY w.date DESC";
+
+            $stmt = $this->db->connect()->prepare($walkin_query);
+            $stmt->bindParam(':user_id', $_SESSION['user_id']);
+            $stmt->execute();
+            $expired_services['walkins'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
             return $expired_services;
-        } catch (Exception $e) {
+        } catch (PDOException $e) {
+            error_log($e->getMessage());
             return array();
         }
     }
@@ -287,6 +327,24 @@ class Profile_class{
                             JOIN transactions t ON rs.transaction_id = t.id
                             WHERE rs.id = :service_id";
                     break;
+
+                case 'walkin':
+                    $query = "SELECT 
+                            w.*,
+                            DATE_FORMAT(w.date, '%M %d, %Y') as formatted_date,
+                            DATE_FORMAT(w.time_in, '%h:%i %p') as formatted_time,
+                            t.created_at as transaction_date,
+                            DATE_FORMAT(t.created_at, '%M %d, %Y') as formatted_transaction_date,
+                            t.status as transaction_status,
+                            pd.first_name, 
+                            pd.last_name,
+                            pd.phone_number
+                            FROM walk_in_records w
+                            JOIN transactions t ON w.transaction_id = t.id
+                            LEFT JOIN users u ON t.user_id = u.id
+                            LEFT JOIN personal_details pd ON u.id = pd.user_id
+                            WHERE w.id = :service_id";
+                    break;
                     
                 default:
                     return null;
@@ -296,8 +354,18 @@ class Profile_class{
             $stmt->bindParam(':service_id', $serviceId);
             $stmt->execute();
             
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Format additional fields for walk-in
+            if ($serviceType === 'walkin' && $result) {
+                $result['full_name'] = $result['first_name'] . ' ' . $result['last_name'];
+                $result['formatted_amount'] = number_format($result['amount'], 2);
+                $result['payment_status'] = $result['is_paid'] ? 'Paid' : 'Unpaid';
+            }
+            
+            return $result;
         } catch (Exception $e) {
+            error_log("Error fetching service details: " . $e->getMessage());
             return null;
         }
     }

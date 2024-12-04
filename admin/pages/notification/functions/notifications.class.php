@@ -12,7 +12,9 @@ class Notifications {
     public function getMembershipRequests() {
         $query = "SELECT 
                     t.id as transaction_id,
+                    t.status as transaction_status,
                     u.id as user_id,
+                    u.role_id,
                     CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) as full_name,
                     mp.plan_name,
                     m.amount as membership_amount,
@@ -34,10 +36,21 @@ class Notifications {
                     rsub.start_date as rental_start,
                     rsub.end_date as rental_end,
                     rsub.amount as rental_amount,
-                    reg.membership_fee as registration_fee
+                    reg.membership_fee as registration_fee,
+                    CASE 
+                        WHEN m.id IS NOT NULL THEN 'membership'
+                        WHEN w.id IS NOT NULL THEN 'walk-in'
+                        ELSE NULL
+                    END as transaction_type,
+                    w.name as walk_in_name,
+                    w.phone_number as walk_in_phone,
+                    w.date as walk_in_date,
+                    w.time_in as walk_in_time,
+                    w.amount as walk_in_amount,
+                    w.status as walk_in_status
                     FROM transactions t
-                    JOIN users u ON t.user_id = u.id
-                    JOIN personal_details pd ON u.id = pd.user_id
+                    LEFT JOIN users u ON t.user_id = u.id
+                    LEFT JOIN personal_details pd ON u.id = pd.user_id
                     LEFT JOIN profile_photos pp ON u.id = pp.user_id
                     LEFT JOIN memberships m ON t.id = m.transaction_id
                     LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
@@ -49,6 +62,7 @@ class Notifications {
                     LEFT JOIN rental_subscriptions rsub ON t.id = rsub.transaction_id
                     LEFT JOIN rental_services rs ON rsub.rental_service_id = rs.id
                     LEFT JOIN registration reg ON reg.id = (SELECT id FROM registration ORDER BY id DESC LIMIT 1)
+                    LEFT JOIN walk_in_records w ON t.id = w.transaction_id
                     WHERE t.status = 'pending'
                     ORDER BY t.created_at DESC";
 
@@ -65,19 +79,41 @@ class Notifications {
         $programEnd = !empty($request['program_end']) ? new DateTime($request['program_end']) : null;
         $rentalStart = !empty($request['rental_start']) ? new DateTime($request['rental_start']) : null;
         $rentalEnd = !empty($request['rental_end']) ? new DateTime($request['rental_end']) : null;
-        $birthDate = new DateTime($request['birthdate']);
         
         $details = [
             'transaction_id' => $request['transaction_id'],
-            'user_id' => $request['user_id'],
-            'member_name' => $request['full_name'],
-            'phone_number' => $request['phone_number'],
-            'sex' => $request['sex'],
-            'birthdate' => $birthDate->format('F d, Y'),
-            'age' => $request['age'],
-            'request_date' => $requestDate->format('F d, Y, h:i a'),
-            'profile_picture' => $request['profile_picture']
+            'transaction_type' => $request['transaction_type'],
+            'transaction_status' => $request['transaction_status'],
+            'request_date' => $requestDate->format('F d, Y, h:i a')
         ];
+
+        if ($request['transaction_type'] === 'membership') {
+            $birthDate = new DateTime($request['birthdate']);
+            $details += [
+                'user_id' => $request['user_id'],
+                'member_name' => $request['full_name'],
+                'phone_number' => $request['phone_number'],
+                'sex' => $request['sex'],
+                'birthdate' => $birthDate->format('F d, Y'),
+                'age' => $request['age'],
+                'profile_picture' => $request['profile_picture'],
+                'is_member' => ($request['role_id'] == 3) // Check if user is already a member
+            ];
+
+            // Only include registration fee for new members
+            if (!empty($request['registration_fee']) && $request['role_id'] != 3) {
+                $details['registration_fee'] = number_format($request['registration_fee'], 2);
+            }
+        } else if ($request['transaction_type'] === 'walk-in') {
+            $walkInDate = new DateTime($request['walk_in_date']);
+            $details += [
+                'walk_in_name' => $request['walk_in_name'],
+                'walk_in_phone' => $request['walk_in_phone'],
+                'walk_in_date' => $walkInDate->format('F d, Y'),
+                'walk_in_time' => $request['walk_in_time'],
+                'walk_in_amount' => number_format($request['walk_in_amount'], 2)
+            ];
+        }
 
         // Add membership details if present
         if (!empty($request['plan_name'])) {
@@ -111,22 +147,18 @@ class Notifications {
             ];
         }
 
-        // Add registration fee if present
-        if (!empty($request['registration_fee'])) {
-            $details['registration_fee'] = number_format($request['registration_fee'], 2);
-        }
-
-        $message = sprintf(
-            "%s wants to avail services starting %s",
-            $request['full_name'],
-            $membershipStart ? $membershipStart->format('F d, Y') : 
-            ($programStart ? $programStart->format('F d, Y') : 
-            ($rentalStart ? $rentalStart->format('F d, Y') : ''))
-        );
+        $title = $request['transaction_type'] === 'membership' ? 'Membership Request' : 'Walk-in Request';
+        $message = $request['transaction_type'] === 'membership' 
+            ? sprintf("%s wants to avail services starting %s", $request['full_name'],
+                $membershipStart ? $membershipStart->format('F d, Y') : 
+                ($programStart ? $programStart->format('F d, Y') : 
+                ($rentalStart ? $rentalStart->format('F d, Y') : '')))
+            : sprintf("Walk-in request from %s for %s", $request['walk_in_name'], 
+                (new DateTime($request['walk_in_date']))->format('F d, Y'));
         
         return [
             'id' => $request['transaction_id'],
-            'title' => 'New Transaction Request',
+            'title' => $title,
             'message' => $message,
             'timestamp' => $requestDate->format('F d, Y, h:i a'),
             'details' => $details
@@ -144,7 +176,7 @@ class Notifications {
         return $notifications;
     }
 
-    public function confirmTransaction($transactionId, $userId) {
+    public function confirmTransaction($transactionId, $userId = null) {
         try {
             if (!$this->db) {
                 return false;
@@ -153,16 +185,21 @@ class Notifications {
             $this->db->beginTransaction();
 
             // Verify transaction exists and is pending
-            $checkQuery = "SELECT status FROM transactions WHERE id = ?";
+            $checkQuery = "SELECT t.status, CASE WHEN w.id IS NOT NULL THEN 'walk-in' ELSE 'membership' END as type 
+                         FROM transactions t 
+                         LEFT JOIN walk_in_records w ON t.id = w.transaction_id 
+                         WHERE t.id = ?";
             $checkStmt = $this->db->prepare($checkQuery);
             $checkStmt->execute([$transactionId]);
             $transaction = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$transaction) {
+                $this->db->rollBack();
                 return false;
             }
 
             if ($transaction['status'] !== 'pending') {
+                $this->db->rollBack();
                 return false;
             }
 
@@ -176,30 +213,35 @@ class Notifications {
                 return false;
             }
 
-            // Verify user exists
-            $checkUserQuery = "SELECT id FROM users WHERE id = ?";
-            $checkUserStmt = $this->db->prepare($checkUserQuery);
-            $checkUserStmt->execute([$userId]);
-            
-            if (!$checkUserStmt->fetch()) {
-                $this->db->rollBack();
-                return false;
-            }
+            // Only update user role for membership transactions
+            if ($transaction['type'] === 'membership' && $userId) {
+                // Verify user exists
+                $checkUserQuery = "SELECT id FROM users WHERE id = ?";
+                $checkUserStmt = $this->db->prepare($checkUserQuery);
+                $checkUserStmt->execute([$userId]);
+                
+                if (!$checkUserStmt->fetch()) {
+                    $this->db->rollBack();
+                    return false;
+                }
 
-            // Update user role to member (role_id = 3)
-            $query = "UPDATE users SET role_id = 3 WHERE id = ?";
-            $stmt = $this->db->prepare($query);
-            $result = $stmt->execute([$userId]);
+                // Update user role to member (role_id = 3)
+                $query = "UPDATE users SET role_id = 3 WHERE id = ?";
+                $stmt = $this->db->prepare($query);
+                $result = $stmt->execute([$userId]);
 
-            if (!$result) {
-                $this->db->rollBack();
-                return false;
+                if (!$result) {
+                    $this->db->rollBack();
+                    return false;
+                }
             }
 
             $this->db->commit();
             return true;
         } catch (PDOException $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             return false;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {

@@ -67,7 +67,7 @@
                 </button>
             </div>
             <div id="current_services" style="display: block;">
-                <?php if (empty($avail_array['memberships']) && empty($avail_array['programs']) && empty($avail_array['rentals'])) { ?>
+                <?php if (empty($avail_array['memberships']) && empty($avail_array['programs']) && empty($avail_array['rentals']) && empty($avail_array['walkins'])) { ?>
                     <div class="no-services-message">
                         <p>You haven't availed any services yet</p>
                     </div>
@@ -197,6 +197,48 @@
                                         ?>
                                     </div>
                                 </div>
+                                </div>
+                            <?php } ?>
+                        </div>
+                    <?php } ?>
+
+                    <?php if (!empty($avail_array['walkins'])) { ?>
+                        <div class="subscription-cards">
+                            <?php foreach ($avail_array['walkins'] as $walkin) { ?>
+                                <div class="subscription-card">
+                                    <div class="card-content">
+                                        <div class="card-info">
+                                            <div class="info-row">
+                                                <span class="label">Service:</span>
+                                                <span class="value">Walk-in</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Date:</span>
+                                                <span class="value"><?= $walkin['date'] ?></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Amount:</span>
+                                                <span class="value">₱<?= number_format($walkin['price'], 2) ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="card-icon">
+                                            <?php 
+                                            $button_attrs = array(
+                                                'type' => 'button',
+                                                'class' => 'icon-button view-receipt-btn',
+                                                'data-service-type' => 'walkin',
+                                                'data-service-id' => $walkin['id'],
+                                                'data-bs-toggle' => 'modal',
+                                                'data-bs-target' => '#receiptModal'
+                                            );
+                                            echo '<button ';
+                                            foreach($button_attrs as $key => $value) {
+                                                echo $key . '="' . htmlspecialchars($value) . '" ';
+                                            }
+                                            echo '><i class="fas fa-receipt"></i></button>';
+                                            ?>
+                                        </div>
+                                    </div>
                                 </div>
                             <?php } ?>
                         </div>
@@ -1046,6 +1088,47 @@
                         expiredHtml += '</div>';
                     }
                     
+                    // Walk-ins
+                    if (response.walkins && response.walkins.length > 0) {
+                        expiredHtml += '<div class="subscription-cards">';
+                        response.walkins.forEach(function(walkin) {
+                            expiredHtml += `
+                                <div class="subscription-card expired-card">
+                                    <div class="card-content">
+                                        <div class="card-info">
+                                            <div class="info-row">
+                                                <span class="label">Service:</span>
+                                                <span class="value">Walk-in</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Date:</span>
+                                                <span class="value">${walkin.formatted_date}</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Amount:</span>
+                                                <span class="value">₱${walkin.formatted_price || walkin.price}</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="label">Transaction Date:</span>
+                                                <span class="value">${walkin.transaction_date}</span>
+                                            </div>
+                                        </div>
+                                        <div class="card-icon">
+                                            <button type="button" 
+                                                class="icon-button view-receipt-btn"
+                                                data-service-type="walkin"
+                                                data-service-id="${walkin.id}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#receiptModal">
+                                                <i class="fas fa-receipt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        });
+                        expiredHtml += '</div>';
+                    }
+                    
                     if (expiredHtml === '') {
                         expiredHtml = '<div class="no-services-message"><p>No expired services found</p></div>';
                     }
@@ -1093,10 +1176,16 @@
                                         details += `
                                             <p><strong>Service Name:</strong> ${response.service_name}</p>
                                             <p><strong>Duration:</strong> ${response.duration_type}</p>`;
+                                    } else if (serviceType === 'walkin') {
+                                        details += `
+                                            <p><strong>Service:</strong> Walk-in</p>
+                                            <p><strong>Date:</strong> ${response.formatted_date}</p>
+                                            <p><strong>Amount:</strong> ₱${response.formatted_amount || response.amount}</p>
+                                            <p><strong>Payment Status:</strong> ${response.payment_status}</p>
+                                            <p><strong>Transaction Date:</strong> ${response.formatted_transaction_date}</p>`;
                                     }
                                     
                                     details += `
-                                        <p><strong>Transaction Date:</strong> ${new Date(response.transaction_date).toLocaleDateString()}</p>
                                         <p><strong>Status:</strong> ${response.status || 'Active'}</p>
                                     </div>`;
                                 } else {
@@ -1162,6 +1251,11 @@
                         case 'rental':
                             detailsSection.querySelector('.service-name').textContent = data.service_name;
                             break;
+                        case 'walkin':
+                            detailsSection.querySelector('.service-name').textContent = 'Walk-in';
+                            detailsSection.querySelector('.start-date').textContent = data.formatted_date;
+                            detailsSection.querySelector('.amount').textContent = `₱${data.formatted_amount || data.amount}`;
+                            break;
                     }
 
                     // Show modal
@@ -1225,10 +1319,16 @@
                             details += `
                                 <p><strong>Service Name:</strong> ${response.service_name}</p>
                                 <p><strong>Duration:</strong> ${response.duration_type}</p>`;
+                        } else if (serviceType === 'walkin') {
+                            details += `
+                                <p><strong>Service:</strong> Walk-in</p>
+                                <p><strong>Date:</strong> ${response.formatted_date}</p>
+                                <p><strong>Amount:</strong> ₱${response.formatted_amount || response.amount}</p>
+                                <p><strong>Payment Status:</strong> ${response.payment_status}</p>
+                                <p><strong>Transaction Date:</strong> ${response.formatted_transaction_date}</p>`;
                         }
                         
                         details += `
-                            <p><strong>Transaction Date:</strong> ${new Date(response.transaction_date).toLocaleDateString()}</p>
                             <p><strong>Status:</strong> ${response.status || 'Active'}</p>
                         </div>`;
                     } else {
