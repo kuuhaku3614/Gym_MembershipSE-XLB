@@ -469,9 +469,19 @@ $('#updateGymRateBtn').click(function() {
         success: function(response) {
             const data = JSON.parse(response);
             if (data.status === 'success') {
-                alert('Gym rate updated successfully!');
-                $('#editGymRateModal').modal('hide');
-                location.reload();
+                // Update the modal body with the success message
+                $('#updateSuccessModal .modal-body p').text(response.message || "Updated successfully!");
+                    
+                    // Show the success modal
+                    $('#updateSuccessModal').modal('show');
+                    
+                    // Hide the edit modal
+                    $('#editGymRateModal').modal('hide');
+                    
+                    // Reload the page after the modal is hidden
+                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                        location.reload();
+                    });
             } else {
                 alert('Error: ' + data.message);
             }
@@ -538,7 +548,7 @@ $('#saveRegistrationFeeBtn').click(function() {
     }
 
     // Send AJAX request
-    $.ajax({
+        $.ajax({
         url: '../admin/pages/gym rates/functions/update_registration_fee.php',
         type: 'POST',
         data: {
@@ -546,9 +556,8 @@ $('#saveRegistrationFeeBtn').click(function() {
         },
         success: function(response) {
             if (response.trim() === 'success') {
-                alert('Registration fee updated successfully!');
                 $('#updateRegistrationModal').modal('hide');
-                location.reload();
+                $('#updateSuccessModal').modal('show');
             } else {
                 alert(response);
             }
@@ -596,30 +605,72 @@ $('#updateRegistrationModal').on('hidden.bs.modal', function () {
 $('.toggle-status-btn').click(function() {
     const btn = $(this);
     const gymRateId = btn.data('id');
-    const newStatus = btn.text().toLowerCase() === 'activate' ? 'active' : 'inactive';
+    const currentStatus = btn.text().toLowerCase();
     
-    if (confirm('Are you sure you want to ' + btn.text().toLowerCase() + ' this gym rate?')) {
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/save_gym_rates.php',
-            type: 'POST',
-            data: {
-                action: 'toggle_status',
-                id: gymRateId,
-                status: newStatus
-            },
-            success: function(response) {
-                if (response.trim() === 'success') {
-                    location.reload();
-                } else {
-                    alert('Error: ' + response);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert('Error occurred while updating status: ' + error);
-                console.log('AJAX Error:', status, error);
-            }
-        });
+    // Determine which modal to show based on current status
+    if (currentStatus === 'activate') {
+        $('#activateModal').data('id', gymRateId);
+        $('#activateModal').modal('show');
+    } else if (currentStatus === 'deactivate') {
+        $('#deactivateModal').data('id', gymRateId);
+        $('#deactivateModal').modal('show');
     }
+});
+
+// Confirm Activation Handler
+$('#confirmActivate').click(function() {
+    const gymRateId = $('#activateModal').data('id');
+    
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/save_gym_rates.php',
+        type: 'POST',
+        data: {
+            action: 'toggle_status',
+            id: gymRateId,
+            status: 'active'
+        },
+        success: function(response) {
+            if (response.trim() === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + response);
+            }
+            $('#activateModal').modal('hide');
+        },
+        error: function(xhr, status, error) {
+            alert('Error occurred while updating status: ' + error);
+            console.log('AJAX Error:', status, error);
+            $('#activateModal').modal('hide');
+        }
+    });
+});
+
+// Confirm Deactivation Handler
+$('#confirmDeactivate').click(function() {
+    const gymRateId = $('#deactivateModal').data('id');
+    
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/save_gym_rates.php',
+        type: 'POST',
+        data: {
+            action: 'toggle_status',
+            id: gymRateId,
+            status: 'inactive'
+        },
+        success: function(response) {
+            if (response.trim() === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + response);
+            }
+            $('#deactivateModal').modal('hide');
+        },
+        error: function(xhr, status, error) {
+            alert('Error occurred while updating status: ' + error);
+            console.log('AJAX Error:', status, error);
+            $('#deactivateModal').modal('hide');
+        }
+    });
 });
 
 // Refresh button handler
