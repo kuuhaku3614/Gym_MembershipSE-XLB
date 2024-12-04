@@ -125,13 +125,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([':desc' => $_POST['about_description']]);
         }
 
-        // Handle contact information update
+        // In your POST handler, update contact section
         if (isset($_POST['update_contact'])) {
-            $stmt = $pdo->prepare("UPDATE website_content SET location = :loc, phone = :phone, email = :email WHERE section = 'contact'");
+            $stmt = $pdo->prepare("UPDATE website_content SET 
+                location_name = :location_name,
+                phone = :phone, 
+                email = :email,
+                latitude = :lat,
+                longitude = :lon 
+                WHERE section = 'contact'");
             $stmt->execute([
-                ':loc' => $_POST['location'],
+                ':location_name' => $_POST['location_name'] ?? null,
                 ':phone' => $_POST['phone'],
-                ':email' => $_POST['email']
+                ':email' => $_POST['email'],
+                ':lat' => $_POST['latitude'] ?? null,
+                ':lon' => $_POST['longitude'] ?? null
             ]);
         }
 
@@ -289,6 +297,8 @@ $products = fetchExistingContent('products');
 $staffMembers = fetchExistingContent('staff');
 $galleryImages = fetchExistingContent('gallery_images');
 ?>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <style>
         .section {
             background-color: #f4f4f4;
@@ -558,23 +568,146 @@ $galleryImages = fetchExistingContent('gallery_images');
         </form>
     </div>
 
-    <!-- Contact Information -->
     <div class="section" data-section="contact">
         <h2>Contact Information</h2>
-        <form method="post">
-            <label>Location:</label>
-            <input type="text" name="location" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>" required>
-            
+        <form method="post" id="contactForm">
+            <input type="hidden" name="latitude" id="locationLatitude">
+            <input type="hidden" name="longitude" id="locationLongitude">
+            <input type="hidden" name="location_name" id="locationName">
+
             <label>Phone Number:</label>
-            <input type="tel" name="phone" value="<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>" required>
+            <input type="tel" name="phone" required>
             
             <label>Email:</label>
-            <input type="email" name="email" value="<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>" required>
-            
+            <input type="email" name="email" required>
+
+            <div id="mapModalTrigger" class="btn btn-primary">Select Location on Map</div>
+            <br>
             <input type="submit" name="update_contact" value="Update Contact Information">
         </form>
     </div>
 
+<!-- Modal for Map -->
+<div id="locationModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); overflow:auto;">
+    <div style="background:white; margin:5% auto; padding:20px; width:90%; max-width:800px; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1); position:relative;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h2 style="margin:0;">Select Location</h2>
+            <button id="closeLocationModal" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div style="flex:1;">
+                <label style="display:block; margin-bottom:5px;">Selected Location</label>
+                <input type="text" id="selectedLocationDisplay" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" readonly>
+            </div>
+        </div>
+
+        <div id="locationPickerContainer" style="height:450px; width:100%; border:1px solid #ddd; border-radius:4px;">
+            <div id="location-picker-map" style="height:100%; width:100%;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:15px;">
+            <button id="saveLocationButton" style="background-color:#4CAF50; color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Save Location</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalTrigger = document.getElementById('mapModalTrigger');
+    const modal = document.getElementById('locationModal');
+    const closeModalButton = document.getElementById('closeLocationModal');
+    const saveLocationButton = document.getElementById('saveLocationButton');
+    const selectedLocationDisplay = document.getElementById('selectedLocationDisplay');
+    const latInput = document.getElementById('locationLatitude');
+    const lngInput = document.getElementById('locationLongitude');
+    const locationNameInput = document.getElementById('locationName');
+
+    // Pre-fill existing contact info
+    const existingLocation = "<?php echo htmlspecialchars($contactContent['location_name'] ?? ''); ?>";
+    const existingLat = <?php echo $contactContent['latitude'] ?? 6.913126; ?>;
+    const existingLng = <?php echo $contactContent['longitude'] ?? 122.072516; ?>;
+    const existingPhone = "<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>";
+    const existingEmail = "<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>";
+
+    // Pre-fill phone and email if available
+    document.querySelector('input[name="phone"]').value = existingPhone;
+    document.querySelector('input[name="email"]').value = existingEmail;
+
+    // Initial coordinates
+    let initialLat = existingLat;
+    let initialLng = existingLng;
+
+    let map, marker;
+
+    function initMap() {
+        map = L.map('location-picker-map').setView([initialLat, initialLng], 16);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+        selectedLocationDisplay.value = existingLocation || `${initialLat.toFixed(6)}, ${initialLng.toFixed(6)}`;
+
+        marker.on('dragend', function(e) {
+            const { lat, lng } = e.target.getLatLng();
+            updateLocationDetails(lat, lng);
+        });
+
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            marker.setLatLng([lat, lng]);
+            updateLocationDetails(lat, lng);
+        });
+    }
+
+    function updateLocationDetails(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                let locationName = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                selectedLocationDisplay.value = locationName;
+                latInput.value = lat;
+                lngInput.value = lng;
+                locationNameInput.value = locationName;
+            })
+            .catch(error => {
+                console.error('Error fetching location details:', error);
+                selectedLocationDisplay.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                latInput.value = lat;
+                lngInput.value = lng;
+                locationNameInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            });
+    }
+
+    modalTrigger.addEventListener('click', function () {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        if (!map) {
+            initMap();
+        }
+    });
+
+    closeModalButton.addEventListener('click', function () {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    saveLocationButton.addEventListener('click', function() {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    });
+});
+</script>
     <!-- Add New Product -->
     <div class="section" data-section="add-product">
         <h2>Add New Product</h2>

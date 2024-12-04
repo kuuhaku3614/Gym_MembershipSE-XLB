@@ -34,7 +34,12 @@ function executeQuery($query, $params = []) {
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
 $offersContent = executeQuery("SELECT * FROM website_content WHERE section = 'offers'")[0] ?? [];
 $aboutUsContent = executeQuery("SELECT * FROM website_content WHERE section = 'about_us'")[0] ?? [];
+// Fetch contact details with latitude and longitude
 $contactContent = executeQuery("SELECT * FROM website_content WHERE section = 'contact'")[0] ?? [];
+
+// Get coordinates, use default if not set
+$latitude = $contactContent['latitude'] ?? 6.913126;
+$longitude = $contactContent['longitude'] ?? 122.072516;
 
 $offers = executeQuery("SELECT * FROM gym_offers LIMIT 4");
 $products = executeQuery("SELECT * FROM products LIMIT 8");
@@ -378,31 +383,42 @@ include('includes/header.php');
     </div>
 </section>
 
-        <!-- Contact Section -->
-        <section class="S-ContactUs">
-            <div class="image-location">
-              <!-- location section -->
-                <img src="" />
-            </div>
-            <div class="ContactUs-text">
-                <h1>Contact Us:</h1>
-                <p><span>Location: </span><?php echo htmlspecialchars($contactContent['location'] ?? 'Zamboanga City'); ?></p>
-                <p><span>#: </span><?php echo htmlspecialchars($contactContent['phone'] ?? '+639999999999'); ?></p>
-                <p><span>@: </span><?php echo htmlspecialchars($contactContent['email'] ?? 'gymfitness@gmail.com'); ?></p>
-            </div>
-        </section>
+<?php
+// Fetch contact details with latitude and longitude
+$contactContent = executeQuery("SELECT * FROM website_content WHERE section = 'contact'")[0] ?? [];
+
+// Get coordinates, use default if not set
+$latitude = $contactContent['latitude'] ?? 6.913126;
+$longitude = $contactContent['longitude'] ?? 122.072516;
+?>
+
+<section class="S-ContactUs">
+  <div class="image-location">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <div id="map" style="height: 450px; width: 600px;"></div>
+    
+    <script>
+      var map = L.map('map').setView([<?php echo $latitude; ?>, <?php echo $longitude; ?>], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.marker([<?php echo $latitude; ?>, <?php echo $longitude; ?>])
+        .addTo(map)
+        .bindPopup('Gym Location')
+        .openPopup();
+    </script>
+  </div>
+  <div class="ContactUs-text">
+      <h1>Contact Us:</h1>
+      <p><span>Location: </span><?php echo htmlspecialchars($contactContent['location_name'] ?? 'Zamboanga City'); ?></p>
+      <p><span>#: </span><?php echo htmlspecialchars($contactContent['phone'] ?? '+639999999999'); ?></p>
+      <p><span>@: </span><?php echo htmlspecialchars($contactContent['email'] ?? 'gymfitness@gmail.com'); ?></p>
+  </div>
+</section>
     </main>
 
   
 <footer>
-        <div>
-            <ul class="footer-links">
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Services</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#">Contact</a></li>
-            </ul>
-        </div>
         <hr class="home-sectionDivider" />
         <p>&copy; <?php echo date('Y'); ?> Your Website. All rights reserved.</p>
     </footer>
