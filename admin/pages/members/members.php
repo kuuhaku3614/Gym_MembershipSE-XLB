@@ -90,26 +90,36 @@ $query = "
         pd.birthdate, 
         pd.phone_number, 
         COALESCE(pp.photo_path, NULL) AS photo_path, 
-        msp.plan_name, 
-        ms.start_date AS membership_start, 
-        ms.end_date AS membership_end, 
-        ms.status AS membership_status, 
-        t.id AS transaction_id,
-        t.created_at AS transaction_date,
-        GROUP_CONCAT(DISTINCT prg.program_name SEPARATOR ', ') AS subscribed_programs, 
-        GROUP_CONCAT(DISTINCT rsvc.service_name SEPARATOR ', ') AS rental_services,
+        CASE 
+            WHEN ms.is_paid = 1 THEN 'Paid'
+            ELSE 'Pending'
+        END AS payment_status,
+        COALESCE(ms.amount, 0) AS membership_amount,
+        COALESCE(ps.amount, 0) AS program_subscriptions_amount,
+        COALESCE(rs.amount, 0) AS rental_services_amount,
+        COALESCE(rr.Amount, 0) AS registration_fee_paid,
+        GROUP_CONCAT(DISTINCT 
+            CONCAT(prg.program_name, ' (', 
+                CASE WHEN ps.is_paid = 1 THEN 'Paid' ELSE 'Pending' END, 
+            ')') 
+            SEPARATOR ', '
+        ) AS subscribed_programs, 
+        GROUP_CONCAT(DISTINCT 
+            CONCAT(rsvc.service_name, ' (', 
+                CASE WHEN rs.is_paid = 1 THEN 'Paid' ELSE 'Pending' END, 
+            ')') 
+            SEPARATOR ', '
+        ) AS rental_services,
         (
-            COALESCE(msp.price, 0) + 
-            COALESCE(SUM(cpt.price), 0) + 
-            COALESCE(SUM(rsvc.price), 0) + 
-            COALESCE(reg.membership_fee, 0)
+            COALESCE(ms.amount, 0) + 
+            COALESCE(ps.amount, 0) + 
+            COALESCE(rs.amount, 0) + 
+            COALESCE(rr.Amount, 0)
         ) AS total_price
     FROM 
         users u 
     JOIN 
         roles roles ON u.role_id = roles.id AND roles.id = 3 
-    CROSS JOIN 
-        registration reg
     LEFT JOIN 
         transactions t ON u.id = t.user_id
     LEFT JOIN 
@@ -119,17 +129,15 @@ $query = "
     LEFT JOIN 
         profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
     LEFT JOIN 
-        membership_plans msp ON ms.membership_plan_id = msp.id 
-    LEFT JOIN 
         program_subscriptions ps ON t.id = ps.transaction_id 
     LEFT JOIN 
         programs prg ON ps.program_id = prg.id 
     LEFT JOIN 
-        coach_program_types cpt ON prg.id = cpt.program_id
-    LEFT JOIN 
         rental_subscriptions rs ON t.id = rs.transaction_id 
     LEFT JOIN 
         rental_services rsvc ON rs.rental_service_id = rsvc.id 
+    LEFT JOIN 
+        registration_records rr ON t.id = rr.transaction_id
     WHERE 
         u.is_active = 1 
     GROUP BY 
@@ -142,13 +150,11 @@ $query = "
         pd.birthdate, 
         pd.phone_number, 
         pp.photo_path, 
-        msp.plan_name, 
-        ms.start_date, 
-        ms.end_date, 
-        ms.status,
-        t.id,
-        t.created_at,
-        reg.membership_fee;
+        ms.is_paid,
+        ms.amount,
+        ps.amount,
+        rs.amount,
+        rr.Amount;
 ";
 $stmt = $pdo->prepare($query);
 $stmt->execute();
@@ -283,66 +289,60 @@ function registration_fee() {
     <button type="button" class="btn btn-primary mb-4" id="addMemberBtn">
         <i class="fas fa-plus mr-2"></i>Add New Member
     </button>
-    <!-- Members Table -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Members List</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="text-center">Profile</th>
-                            <th>Member Name</th>
-                            <th>Membership Plan</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($members)): ?>
-                            <?php foreach ($members as $member): ?>
-                                <tr>
-                                    <td class="align-middle text-center">
-                                        <div class="member-photo-container">
-                                            <img src="../<?= htmlspecialchars($member['photo_path']); ?>" 
-                                                class="img-fluid rounded-circle member-photo" 
-                                                style="width: 60px; height: 60px; object-fit: cover;"
-                                                alt="Profile Photo">
-                                        </div>
-                                    </td>
-                                    <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
-                                    <td><?= htmlspecialchars($member['plan_name']) ?: 'No Plan'; ?></td>
-                                    <td><?= htmlspecialchars($member['membership_start']) ?: 'N/A'; ?></td>
-                                    <td><?= htmlspecialchars($member['membership_end']) ?: 'N/A'; ?></td>
-                                    <td><?= htmlspecialchars($member['membership_status']) ?: 'Unknown'; ?></td>
-                                    <td class="align-middle">
-                                        <div class="btn-group" role="group">
-                                            <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger delete-member" data-id="<?= htmlspecialchars($member['user_id']); ?>">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
+<!-- Modified Members Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Members List</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Profile</th>
+                        <th>Member Name</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($members)): ?>
+                        <?php foreach ($members as $member): ?>
                             <tr>
-                                <td colspan="7" class="text-center">
-                                    <i class="fas fa-users"></i> No members found
+                                <td class="align-middle text-center">
+                                    <div class="member-photo-container">
+                                        <img src="../<?= htmlspecialchars($member['photo_path'] ?? 'uploads/default.jpg'); ?>" 
+                                            class="img-fluid rounded-circle member-photo" 
+                                            style="width: 60px; height: 60px; object-fit: cover;"
+                                            alt="Profile Photo">
+                                    </div>
+                                </td>
+                                <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['middle_name'] . ' ' . $member['last_name']) ?: 'N/A'; ?></td>
+                                <td><?= htmlspecialchars($member['payment_status']) ?: 'Unknown'; ?></td>
+                                <td class="align-middle">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-info view-member mr-1" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-member" data-id="<?= htmlspecialchars($member['user_id']); ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" class="text-center">
+                                <i class="fas fa-users"></i> No members found
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
     <!-- Add Member Modal -->
 <div class="modal fade" id="addMemberModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
@@ -623,6 +623,7 @@ function registration_fee() {
                 </div>
             </div>
             <div class="modal-footer justify-content-between">
+                <div id="paymentButtonContainer" class="mr-auto"></div>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" id="editMemberBtn">Edit Member</button>
             </div>
@@ -1216,58 +1217,91 @@ function registration_fee() {
     },
 
     processMembership() {
-        // Existing method with modifications to include selected services
-        const staffId = document.getElementById('userId').value;
-        const userRole = document.getElementById('userRole').value;
-        
-        if (!staffId || !userRole) {
-            alert('Session error: Missing staff credentials');
-            return false;
-        }
+    const staffId = document.getElementById('userId').value;
+    const userRole = document.getElementById('userRole').value;
+    
+    if (!staffId || !userRole) {
+        alert('Session error: Missing staff credentials');
+        return false;
+    }
 
-        const formData = this.state.formData;
-        formData.set('staff_id', staffId);
-        formData.set('user_role', userRole);
-        formData.set('user_type', 'new');
-        formData.set('total_amount', this.state.totalAmount);
+    // Fetch registration fee before processing
+    $.ajax({
+        url: '../admin/pages/members/get_registration_fee.php', // Endpoint to fetch registration fee
+        method: 'GET',
+        dataType: 'json',
+        success: (feeResponse) => {
+            const registrationFee = parseFloat(feeResponse.fee) || 0;
 
-        // Add programs and rentals if any
-        if (this.state.selectedPrograms.length > 0) {
-            formData.set('programs', JSON.stringify(this.state.selectedPrograms));
-        }
-        if (this.state.selectedRentals.length > 0) {
-            formData.set('rentals', JSON.stringify(this.state.selectedRentals));
-        }
-
-        $.ajax({
-            url: '../admin/pages/members/process_membership.php',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: (response) => {
-                if (response.success) {
-                    // Hide the add member modal
-                    $('#addMemberModal').modal('hide');
-                    
-                    // Show success modal
-                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                    successModal.show();
-                    
-                    // Add event listener for when success modal is hidden
-                    $('#successModal').on('hidden.bs.modal', function () {
-                        window.location.reload();
-                    });
-                } else {
-                    alert('Error: ' + (response.message || 'Unknown error occurred'));
-                }
-            },
-            error: (xhr, status, error) => {
-                alert('Error: ' + error);
+            const formData = this.state.formData;
+            
+            // Membership Plan Price
+            const planOption = $('#membership_plan option:selected');
+            const membershipPlanPrice = parseFloat(planOption.data('price')) || 0;
+            
+            // Program Prices
+            const programPrices = this.state.selectedPrograms.map(program => ({
+                id: program.id,
+                name: program.name,
+                price: program.price
+            }));
+            
+            // Rental Prices
+            const rentalPrices = this.state.selectedRentals.map(rental => ({
+                id: rental.id,
+                name: rental.name,
+                price: rental.price
+            }));
+            
+            // Set detailed pricing information
+            formData.set('staff_id', staffId);
+            formData.set('user_role', userRole);
+            formData.set('user_type', 'new');
+            formData.set('membership_plan_price', membershipPlanPrice);
+            formData.set('registration_fee', registrationFee);
+            formData.set('total_amount', this.state.totalAmount);
+            
+            // Add programs and their prices
+            if (programPrices.length > 0) {
+                formData.set('programs', JSON.stringify(programPrices));
             }
-        });
-    },
+            
+            // Add rentals and their prices
+            if (rentalPrices.length > 0) {
+                formData.set('rentals', JSON.stringify(rentalPrices));
+            }
+
+            $.ajax({
+                url: '../admin/pages/members/process_membership.php',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: (response) => {
+                    if (response.success) {
+                        $('#addMemberModal').modal('hide');
+                        
+                        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                        successModal.show();
+                        
+                        $('#successModal').on('hidden.bs.modal', function () {
+                            window.location.reload();
+                        });
+                    } else {
+                        alert('Error: ' + (response.message || 'Unknown error occurred'));
+                    }
+                },
+                error: (xhr, status, error) => {
+                    alert('Error: ' + error);
+                }
+            });
+        },
+        error: () => {
+            alert('Error fetching registration fee');
+        }
+    });
+},
 
     deleteMember(memberId) {
         $.ajax({
@@ -1397,28 +1431,32 @@ $(document).ready(function () {
         const memberData = membersData.find((member) => member.user_id == userId);
 
         if (memberData) {
+            // Update photo with default if not available
             $('#memberPhoto').attr(
                 'src', 
                 memberData.photo_path 
                     ? `../${memberData.photo_path}` 
                     : '../uploads/default.jpg'
             );
+
+            // Personal Information
             $('#memberName').text(`${memberData.first_name} ${memberData.middle_name || ''} ${memberData.last_name}`);
             $('#memberUsername').text(memberData.username);
             $('#memberSex').text(memberData.sex);
             $('#memberBirthdate').text(formatDate(memberData.birthdate));
             $('#memberPhone').text(memberData.phone_number);
-            $('#memberPlan').text(memberData.plan_name);
-            $('#membershipStatus').text(memberData.membership_status);
-            $('#membershipAmount').text(formatCurrency(memberData.membership_amount));
-            
-            // Add total amount display
+
+            // Payment and Subscription Details
             $('#totalAmount').text(formatCurrency(memberData.total_price));
-            
-            $('#membershipStart').text(formatDate(memberData.membership_start));
-            $('#membershipEnd').text(formatDate(memberData.membership_end));
-            $('#memberPrograms').text(memberData.subscribed_programs || 'None');
-            $('#memberServices').text(memberData.rental_services || 'None');
+            $('#membershipStatus').text(memberData.payment_status);
+
+            // Programs and Services
+            $('#memberPrograms').html(formatSubscriptions(memberData.subscribed_programs));
+            $('#memberServices').html(formatSubscriptions(memberData.rental_services));
+
+            // Add Pay Button based on payment status
+            updatePaymentButton(memberData);
+
             $('#editMemberBtn').data('id', userId);
             $('#memberViewModal').modal('show');
         } else {
@@ -1426,6 +1464,65 @@ $(document).ready(function () {
         }
     });
 
+    // Helper function to format subscriptions
+    function formatSubscriptions(subscriptionString) {
+        if (!subscriptionString) return 'None';
+        
+        // Convert comma-separated string to HTML list
+        return subscriptionString.split(', ')
+            .map(sub => {
+                const [name, status] = sub.match(/(.+) \((.+)\)/).slice(1);
+                return `<span class="badge badge-${status === 'Paid' ? 'success' : 'warning'} mr-1">${name} (${status})</span>`;
+            })
+            .join(' ');
+    }
+
+    // Update Pay Button functionality
+    function updatePaymentButton(memberData) {
+    // Remove any existing pay button
+    $('#paymentButtonContainer').empty();
+
+    // Create pay button
+    const payButton = $(`
+        <button type="button" class="btn btn-success" id="paySubscriptionBtn" 
+                data-user-id="${memberData.user_id}"
+                ${memberData.payment_status === 'Paid' ? 'disabled' : ''}>
+            Pay
+        </button>
+    `);
+
+    payButton.on('click', function() {
+        if (!$(this).prop('disabled')) {
+            const userId = $(this).data('user-id');
+            handlePaySubscription(userId);
+        }
+    });
+
+    $('#paymentButtonContainer').append(payButton);
+}
+
+    // Handle Pay Subscription AJAX call
+    function handlePaySubscription(userId) {
+        $.ajax({
+            url: '../admin/pages/members/pay_subscription.php',  // You'll need to create this endpoint
+            method: 'POST',
+            data: { user_id: userId },
+            success: function(response) {
+                if (response.success) {
+                    alert('Subscriptions paid successfully!');
+                    // Optionally refresh the page or update the UI
+                    location.reload();
+                } else {
+                    alert('Payment failed: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred while processing payment.');
+            }
+        });
+    }
+
+    // Existing helper functions
     function formatDate(date) {
         return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
@@ -1438,7 +1535,15 @@ $(document).ready(function () {
         const userId = $(this).data('id');
         alert('Edit functionality will be implemented for user ID: ' + userId);
     });
-    
+    // Add new modal close handlers
+    $('#memberViewModal').on('click', '[data-dismiss="modal"]', function() {
+        $('#memberViewModal').modal('hide');
+    });
+
+    // Ensure standard close buttons also work
+    $('.modal-header .close, .modal-footer .close').on('click', function() {
+        $(this).closest('.modal').modal('hide');
+    });
 });
 
 
