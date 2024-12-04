@@ -87,7 +87,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     </div>
     <ul class="nav-links">
         <li><a href="website.php">Home</a></li>
-        <li><a href="services.php">Services</a></li>
+        <li><a href="<?php echo $isLoggedIn ? 'services.php' : '../../login/login.php'; ?>">Services</a></li>
         <li><a href="#S-About">About</a></li>
         <li><a href="#S-ContactUs">Contact</a></li>
     </ul>
