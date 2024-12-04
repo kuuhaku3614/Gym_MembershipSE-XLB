@@ -8,6 +8,7 @@
     $special_plans = $Obj->displaySpecialPlans();
     $programs = $Obj->displayPrograms();
     $rental_services = $Obj->displayRentalServices();
+    $walkin = $Obj->displayWalkinServices();
 ?>
 <link rel="stylesheet" href="../css/browse_services.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -61,6 +62,27 @@
                     <?php } ?>
                 </div>
             <?php endif; ?>
+
+            <!-- Walk in Section -->
+            <h2 class="section-heading">WALK IN</h2>
+            <div class="row g-4 mb-4">
+                <?php foreach ($walkin as $arr){ ?>
+                    <div class="col-sm-6 col-md-6 col-lg-3">
+                        <a href="services/avail_walkin.php?id=<?= $arr['walkin_id'] ?>" class="program-link">
+                            <div class="card shadow">
+                                <div class="card-header text-white text-center">
+                                    <h2 class="fw-bold mb-0">Walk-in</h2>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
+                                    <p class="card-text mb-1">Validity: 1 day</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <?php } ?>
+            </div>
+
 
             <!-- Standard Plans Section -->
             <h2 class="section-heading">GYM RATES</h2>

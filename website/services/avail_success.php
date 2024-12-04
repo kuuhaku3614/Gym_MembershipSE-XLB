@@ -11,7 +11,7 @@ $transaction_id = $_GET['id'];
 $Services = new Services_Class();
 
 // Initialize variables
-$transaction = $memberships = $programs = $rentals = [];
+$transaction = $memberships = $programs = $rentals = $walkin = [];
 $transactionErr = $membershipErr = $programsErr = $rentalsErr = '';
 
 $db = new Database();
@@ -61,6 +61,17 @@ try {
     $stmt = $conn->prepare($sql);
     $stmt->execute([$transaction_id]);
     $rentals = $stmt->fetchAll();
+
+    // Fetch walk-in details
+    if ($transaction['type'] === 'walkin') {
+        $sql = "SELECT w.*, wt.start_date 
+                FROM walkin_transactions wt 
+                JOIN walk_in w ON w.id = wt.walkin_id 
+                WHERE wt.transaction_id = :transaction_id";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':transaction_id' => $transaction_id]);
+        $walkin = $stmt->fetch();
+    }
 
 } catch (Exception $e) {
     $_SESSION['error'] = "Error fetching transaction details: " . $e->getMessage();
@@ -131,6 +142,15 @@ foreach ($rentals as $rental) {
                             <p class="mb-1">Date: <?= date('m/d/Y', strtotime($transaction['created_at'])) ?></p>
                         </div>
 
+                        <?php if ($transaction['type'] === 'walkin' && $walkin): ?>
+                            <div class="text-start mb-4">
+                                <h6 class="fw-bold">Walk-in Service Details:</h6>
+                                <p class="mb-1">Start Date: <?= date('F d, Y', strtotime($walkin['start_date'])) ?></p>
+                                <p class="mb-1">Amount: ₱<?= number_format($transaction['amount'], 2) ?></p>
+                                <p class="mb-1">Status: <?= ucfirst($transaction['status']) ?></p>
+                            </div>
+                        <?php endif; ?>
+
                         <!-- Membership Details -->
                         <?php if (!empty($memberships)): ?>
                             <div class="text-start mb-4">
@@ -191,4 +211,4 @@ foreach ($rentals as $rental) {
         </div>
     </div>
 </body>
-</html> 
+</html>

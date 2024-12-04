@@ -60,7 +60,7 @@ try {
     }
 
     // Initialize cart
-    $Cart = new Cart();
+    $Cart = new Cart_Class();
 
     // Process action
     switch ($action) {
@@ -107,7 +107,7 @@ try {
                 handle_error($e->getMessage());
             }
             break;
-            
+
         case 'validate':
             try {
                 $Cart->validateCart();

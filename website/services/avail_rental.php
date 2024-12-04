@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if(empty($start_dateErr) && empty($rental_idErr)) {
-        $Cart = new Cart();
+        $Cart = new Cart_Class();
         try {
             $item = [
                 'id' => $rental_id,

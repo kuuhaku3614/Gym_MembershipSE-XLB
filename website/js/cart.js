@@ -31,6 +31,31 @@ function updateCartDisplay(cart) {
 
     let html = '';
 
+    // Walk-in section
+    if (cart.walkins && cart.walkins.length > 0) {
+        html += '<div class="cart-section mb-4"><h6 class="fw-bold mb-3">Walk-in Services</h6>';
+        cart.walkins.forEach((walkin, index) => {
+            html += `
+                <div class="cart-item bg-white rounded shadow-sm p-3 mb-3">
+                    <div class="item-details">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Walk-in Service</h6>
+                                <p class="price mb-1 text-danger fw-bold">₱${parseFloat(walkin.price).toFixed(2)}</p>
+                                <p class="text-muted small mb-0">Date: ${formatDate(walkin.date)}</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="removeFromCart('walkin', ${index})">
+                                <i class="fas fa-times"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
     // Memberships section
     if (cart.memberships && cart.memberships.length > 0) {
         cart.memberships.forEach((membership, index) => {

@@ -31,7 +31,7 @@ if (!isset($_SESSION['user_id'])) {
     send_json_response(['message' => 'Not logged in'], false);
 }
 
-$Cart = new Cart();
+$Cart = new Cart_Class();
 $Services = new Services_Class();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -141,6 +141,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([$rental['id']]);
+            }
+        }
+
+        // Create walk-in records
+        if (!empty($cart['walkins'])) {
+            foreach ($cart['walkins'] as $walkin) {
+                // Get personal details for the user
+                $sql = "SELECT first_name, last_name, phone_number FROM personal_details WHERE user_id = ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$_SESSION['user_id']]);
+                $user_details = $stmt->fetch();
+                
+                $name = $user_details['first_name'] . ' ' . $user_details['last_name'];
+                
+                $sql = "INSERT INTO walk_in_records (transaction_id, walk_in_id, name, 
+                        phone_number, date, amount, is_paid, status) 
+                        VALUES (?, 1, ?, ?, ?, ?, 0, 'pending')";
+                
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([
+                    $transaction_id,
+                    $name,
+                    $user_details['phone_number'],
+                    $walkin['date'],
+                    $walkin['price']
+                ]);
             }
         }
 

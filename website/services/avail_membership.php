@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $Services = new Services_Class();
-$Cart = new Cart();
+$Cart = new Cart_Class();
 
 if (!isset($_GET['id'])) {
     header('location: ../services.php');
