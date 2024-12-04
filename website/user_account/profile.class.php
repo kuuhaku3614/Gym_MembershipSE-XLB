@@ -110,7 +110,7 @@ class Profile_class{
         JOIN memberships m ON t.id = m.transaction_id
         JOIN membership_plans mp ON m.membership_plan_id = mp.id
         JOIN duration_types dt ON mp.duration_type_id = dt.id
-        WHERE t.user_id = :user_id AND m.status = 'active'";
+        WHERE t.user_id = :user_id AND m.status = 'active' AND t.status = 'confirmed'";
 
         // Fetch programs
         $program_query = "SELECT 
@@ -126,7 +126,7 @@ class Profile_class{
         JOIN duration_types dt ON p.duration_type_id = dt.id
         JOIN users u ON ps.coach_id = u.id
         JOIN personal_details pd ON u.id = pd.user_id
-        WHERE t.user_id = :user_id AND ps.status = 'active'";
+        WHERE t.user_id = :user_id AND ps.status = 'active' AND t.status = 'confirmed'";
 
         // Fetch rentals
         $rental_query = "SELECT 
@@ -140,7 +140,7 @@ class Profile_class{
         JOIN rental_subscriptions rs ON t.id = rs.transaction_id
         JOIN rental_services r ON rs.rental_service_id = r.id
         JOIN duration_types dt ON r.duration_type_id = dt.id
-        WHERE t.user_id = :user_id AND rs.status = 'active'";
+        WHERE t.user_id = :user_id AND rs.status = 'active' AND t.status = 'confirmed'";
         
         $result = [
             'memberships' => [],
@@ -186,7 +186,7 @@ class Profile_class{
                 LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
                 LEFT JOIN transactions t ON m.transaction_id = t.id
                 WHERE t.user_id = :user_id AND m.end_date < CURDATE()
-                AND m.status = 'expired'
+                AND m.status = 'expired' AND t.status = 'confirmed'
                 ORDER BY t.id DESC";
             
             $stmt = $this->db->connect()->prepare($membership_query);
@@ -210,7 +210,7 @@ class Profile_class{
                 LEFT JOIN users u ON ps.coach_id = u.id
                 LEFT JOIN personal_details pd ON u.id = pd.user_id
                 WHERE t.user_id = :user_id AND ps.end_date < CURDATE()
-                AND ps.status = 'expired'
+                AND ps.status = 'expired' AND t.status = 'confirmed'
                 ORDER BY t.id DESC";
             
             $stmt = $this->db->connect()->prepare($program_query);
@@ -231,7 +231,7 @@ class Profile_class{
                 LEFT JOIN duration_types dt ON r.duration_type_id = dt.id
                 LEFT JOIN transactions t ON rs.transaction_id = t.id
                 WHERE t.user_id = :user_id AND rs.end_date < CURDATE()
-                AND rs.status = 'expired'
+                AND rs.status = 'expired' AND t.status = 'confirmed'
                 ORDER BY t.id DESC";
             
             $stmt = $this->db->connect()->prepare($rental_query);

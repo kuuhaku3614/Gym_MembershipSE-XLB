@@ -1,5 +1,7 @@
 <?php
 require_once '../../../config.php';
+include '../../pages/modal.php';
+
 // select gym rates
 $sql = "SELECT mp.*, dt.type_name as duration_type, mp.description 
         FROM membership_plans mp
@@ -340,22 +342,30 @@ $('#saveGymRateBtn').click(function() {
     });
     
     $.ajax({
-        url: '../admin/pages/gym rates/functions/save_gym_rates.php',
-        type: 'POST',
-        data: $.param(updatedFormData),
-        success: function(response) {
-            if (response.trim() === "success") {
-                alert("Gym rate has been successfully added!");
-                $('#addGymRateModal').modal('hide');
+    url: '../admin/pages/gym rates/functions/save_gym_rates.php',
+    type: 'POST',
+    data: $.param(updatedFormData),
+    success: function(response) {
+        if (response.trim() === "success") {
+            // Hide the add gym rate modal
+            $('#addGymRateModal').modal('hide');
+            
+            // Show success modal
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+            
+            // Add event listener for when success modal is hidden
+            $('#successModal').on('hidden.bs.modal', function () {
                 location.reload();
-            } else {
-                alert("Error: " + response);
-            }
-        },
-        error: function(xhr, status, error) {
-            alert("AJAX error: " + error);
+            });
+        } else {
+            alert("Error: " + response);
         }
-    });
+    },
+    error: function(xhr, status, error) {
+        alert("AJAX error: " + error);
+    }
+});
 });
 
 // Reset form when modal is closed
@@ -484,7 +494,11 @@ $('#editGymRateModal').on('hidden.bs.modal', function () {
 $(document).on('click', '.remove-btn', function() {
     const gymRateId = $(this).data('id');
     
-    if (confirm('Are you sure you want to remove this gym rate?')) {
+    // Show delete confirmation modal
+    $('#deleteModal').modal('show');
+    
+    // Set the action for the delete button in the modal
+    $('#confirmDelete').off('click').on('click', function() {
         $.ajax({
             url: '../admin/pages/gym rates/functions/edit_gym_rates.php',
             type: 'POST',
@@ -495,7 +509,7 @@ $(document).on('click', '.remove-btn', function() {
             success: function(response) {
                 const data = JSON.parse(response);
                 if (data.status === 'success') {
-                    alert(data.message);
+                    // alert(data.message);
                     location.reload();
                 } else {
                     alert('Error: ' + data.message);
@@ -505,7 +519,7 @@ $(document).on('click', '.remove-btn', function() {
                 alert('Error occurred while removing gym rate: ' + error);
             }
         });
-    }
+    });
 });
 
 // Save new registration fee

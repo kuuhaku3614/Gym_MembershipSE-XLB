@@ -46,69 +46,77 @@ include('includes/header.php');
   <!-- Suggested CSS to be added to your stylesheet -->
   <style>
     .offers-carousel {
-      position: relative;
-      width: 100%;
-      overflow: hidden;
-    }
+    position: relative;
+    width: 500px;  /* Fixed width */
+    height: 500px; /* Fixed height */
+    overflow: hidden;
+    margin: 0 auto;
+}
 
-    .carousel-wrapper {
-      display: flex;
-      transition: transform 0.5s ease;
-    }
+.carousel-wrapper {
+    display: flex;
+    transition: transform 0.5s ease;
+}
 
-    .carousel-slide {
-      min-width: 100%;
-      display: none;
-      position: relative;
-    }
+.carousel-slide {
+    min-width: 100%;
+    display: none;
+    position: relative;
+}
 
-    .carousel-slide.active {
-      display: block;
-    }
+.carousel-slide.active {
+    display: block;
+}
 
-    .carousel-slide img {
-      width: 100%;
-      height: auto;
-    }
+.carousel-slide img {
+    width: 100%;  /* Fixed width */
+    height: 100%; /* Fixed height */
+    object-fit: cover; /* This ensures images maintain aspect ratio */
+}
 
-    .carousel-caption {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 15px;
-      border-radius: 5px;
-    }
+.carousel-caption {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+}
 
-    .carousel-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: absolute;
-      top: 50%;
-      width: 100%;
-      transform: translateY(-50%);
-    }
+.carousel-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    bottom: 10px; /* Move controls to bottom */
+    padding: 0 10px;
+}
 
-    .carousel-dots {
-      display: flex;
-      justify-content: center;
-    }
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    bottom: -25px; /* Position dots below the carousel */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+}
 
-    .carousel-dot {
-      height: 10px;
-      width: 10px;
-      background-color: #bbb;
-      border-radius: 50%;
-      display: inline-block;
-      margin: 0 5px;
-      cursor: pointer;
-    }
+.carousel-dot {
+    height: 10px;
+    width: 10px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 5px;
+    cursor: pointer;
+}
 
-    .carousel-dot.active {
-      background-color: #717171;
-    }
+.carousel-dot.active {
+    background-color: #717171;
+}
 
     .offer-button {
       display: inline-block;
@@ -152,42 +160,6 @@ include('includes/header.php');
     .image-card-content {
       padding: 15px;
       text-align: center;
-    }
-
-    /* Staff Section Specific Styles */
-    .S-Staffs .staff-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-    }
-
-    .S-Staffs .image-staff {
-      width: 250px;
-      height: 350px;
-      background-color: #f4f4f4;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .S-Staffs .image-staff img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-    }
-
-    .S-Staffs .image-staff .name {
-      font-weight: bold;
-      margin: 10px 0 5px;
-      text-align: center;
-    }
-
-    .S-Staffs .image-staff .status {
-      color: #666;
-      text-align: center;
-      margin-bottom: 10px;
     }
 
     /* Products Section Specific Styles */
@@ -263,6 +235,7 @@ include('includes/header.php');
       }
     }
   </style>
+  <body>
   <header class="home-header"></header>
 
   <main class="home-main">
@@ -293,25 +266,23 @@ include('includes/header.php');
     </div>
 
     <div class="offers-carousel">
-        <div class="carousel-container">
-            <div class="carousel-wrapper">
-                <?php foreach ($offers as $index => $offer): ?>
-                    <div class="carousel-slide <?php echo $index === 0 ? 'active' : ''; ?>" data-slide="<?php echo $index; ?>">
-                        <img 
-                            src="<?php echo htmlspecialchars(getImagePath($offer['image_path'])); ?>"
-                            alt="<?php echo htmlspecialchars($offer['title'] ?? 'Gym Offer'); ?>"
-                        />
-                        <div class="carousel-caption">
-                            <h2><?php echo htmlspecialchars($offer['title']); ?></h2>
-                            <p><?php echo htmlspecialchars($offer['description']); ?></p>
-                            <a href="#">
-                                Learn More
-                            </a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
+    <div class="carousel-container">
+        <div class="carousel-wrapper">
+            <?php foreach ($offers as $index => $offer): ?>
+                <div class="carousel-slide <?php echo $index === 0 ? 'active' : ''; ?>" data-slide="<?php echo $index; ?>">
+                    <img class="" 
+                        src="<?php echo htmlspecialchars(getImagePath($offer['image_path'])); ?>"
+                        alt="<?php echo htmlspecialchars($offer['title'] ?? 'Gym Offer'); ?>"
+                    />
+                    <!-- <div class="carousel-caption">
+                        <h2><?php echo htmlspecialchars($offer['title']); ?></h2>
+                        <p><?php echo htmlspecialchars($offer['description']); ?></p>
+                        <a href="#">Learn More</a>
+                    </div> -->
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
             <div class="carousel-controls">
                 <button class="carousel-prev leftButton">
                     <img src="../icon/less-than-solid.svg" alt="Previous" />
@@ -328,7 +299,6 @@ include('includes/header.php');
                     <img src="../icon/greater-than-solid.svg" alt="Next" />
                 </button>
             </div>
-        </div>
     </div>
 </section>
 
@@ -422,7 +392,21 @@ include('includes/header.php');
         </section>
     </main>
 
-  <!-- Add JavaScript for Carousel Functionality -->
+  
+<footer>
+        <div>
+            <ul class="footer-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+        <hr class="home-sectionDivider" />
+        <p>&copy; <?php echo date('Y'); ?> Your Website. All rights reserved.</p>
+    </footer>
+
+    <!-- Add JavaScript for Carousel Functionality -->
   <script>
 document.addEventListener('DOMContentLoaded', function() {
     const carousel = document.querySelector('.carousel-wrapper');
@@ -479,17 +463,5 @@ document.addEventListener('DOMContentLoaded', function() {
     showSlide(0);
 });
   </script>
-<footer>
-        <div>
-            <ul class="footer-links">
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Services</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#">Contact</a></li>
-            </ul>
-        </div>
-        <hr class="home-sectionDivider" />
-        <p>&copy; <?php echo date('Y'); ?> Your Website. All rights reserved.</p>
-    </footer>
 </body>
 </html>

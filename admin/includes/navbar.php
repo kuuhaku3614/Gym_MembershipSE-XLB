@@ -1,7 +1,7 @@
 <div class="sidebar" id="sidebar">
         <!-- Logo and Admin Container -->
         <div class="logo-container">
-            <img src="../../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
+            <img src="../../img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
             <div class="admin-text">ADMIN</div>
         </div>
 
@@ -70,7 +70,7 @@
                 <a href="notification" id="notification-link" class="nav-item has-subnav">
                     <div class="nav-item-content">
                         <i class="fas fa-bell"></i>
-                        Notification
+                        Notifications
                     </div>
                     <i class="fas fa-chevron-down dropdown-icon"></i>
                 </a>
