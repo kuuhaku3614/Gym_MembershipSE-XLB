@@ -1,7 +1,7 @@
 <div class="sidebar" id="sidebar">
         <!-- Logo and Admin Container -->
         <div class="logo-container">
-            <img src="../../img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
+            <img src="../../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
             <div class="admin-text">ADMIN</div>
         </div>
 
