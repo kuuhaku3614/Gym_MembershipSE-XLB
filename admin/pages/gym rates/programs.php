@@ -1,5 +1,6 @@
 <?php
 require_once '../../../config.php';
+include '../../pages/modal.php';
 
 // Define base URL for AJAX calls
 $baseUrl = '/Gym_MembershipSE-XLB/admin/pages/gym rates';
@@ -371,7 +372,7 @@ foreach ($programs as $program) {
     </div>
 
     <!-- Add Program Modal -->
-    <div class="modal fade" id="addProgramModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addProgramModal" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
@@ -581,44 +582,51 @@ foreach ($programs as $program) {
 
             // Send AJAX request
             $.ajax({
-                url: '../admin/pages/gym rates/functions/save_programs.php',
-                type: 'POST',
-                data: formData,
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        alert(response.message);
-                        $('#addProgramModal').modal('hide');
+            url: '../admin/pages/gym rates/functions/save_programs.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#addProgramModal').modal('hide');
+                    // Show success modal instead of alert
+                    $('#successModal .modal-body p').text(response.message || 'Program created successfully!');
+                    new bootstrap.Modal(document.getElementById('successModal')).show();
+                    
+                    // Optional: Reload page after a short delay
+                    setTimeout(function() {
                         location.reload();
-                    } else {
-                        if (response.debug) {
-                            console.error('Error details:', response.debug);
-                        }
-                        // Show validation errors if they exist
-                        if (response.errors) {
-                            Object.keys(response.errors).forEach(function(field) {
-                                const fieldElement = $('#' + field);
-                                if (fieldElement.length) {
-                                    fieldElement.addClass('is-invalid');
-                                    fieldElement.next('.invalid-feedback').text(response.errors[field]);
-                                }
-                            });
-                        } else {
-                            alert(response.message || "Error saving program");
-                        }
+                    }, 2000); // 2 second delay to allow user to see success modal
+                } else {
+                    if (response.debug) {
+                        console.error('Error details:', response.debug);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error("AJAX Error:", status, error);
-                    console.log("Response:", xhr.responseText);
-                    try {
-                        var response = JSON.parse(xhr.responseText);
-                        alert(response.message || "Error saving program. Please try again.");
-                    } catch(e) {
-                        alert("Error saving program. Please try again.");
+                    // Show validation errors if they exist
+                    if (response.errors) {
+                        Object.keys(response.errors).forEach(function(field) {
+                            const fieldElement = $('#' + field);
+                            if (fieldElement.length) {
+                                fieldElement.addClass('is-invalid');
+                                fieldElement.next('.invalid-feedback').text(response.errors[field]);
+                            }
+                        });
+                    } else {
+                        // Fallback to alert if no specific error handling
+                        alert(response.message || "Error saving program");
                     }
                 }
-            });
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                console.log("Response:", xhr.responseText);
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    alert(response.message || "Error saving program. Please try again.");
+                } catch(e) {
+                    alert("Error saving program. Please try again.");
+                }
+            }
+        });
         });
 
         // Reset form when modal is closed
@@ -629,36 +637,77 @@ foreach ($programs as $program) {
         });
 
 
-        // Toggle status button handler
-        $(document).on('click', '.toggle-status-btn', function() {
+                $(document).on('click', '.toggle-status-btn', function() {
             const btn = $(this);
             const programId = btn.data('id');
             const newStatus = btn.data('new-status');
-            const actionText = newStatus === 'active' ? 'activate' : 'deactivate';
             
-            if (confirm('Are you sure you want to ' + actionText + ' this program?')) {
-                $.ajax({
-                    url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
-                    type: 'POST',
-                    data: { 
-                        action: 'toggle_status',
-                        id: programId,
-                        new_status: newStatus
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            location.reload();
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error occurred while updating status. Please try again.');
-                        console.error('Error:', error);
-                    }
-                });
+            // Set up the appropriate modal based on the new status
+            if (newStatus === 'active') {
+                $('#activateModal').data('program-id', programId);
+                $('#activateModal').modal('show');
+            } else {
+                $('#deactivateModal').data('program-id', programId);
+                $('#deactivateModal').modal('show');
             }
+        });
+
+        // Handler for activate confirmation
+        $('#confirmActivate').on('click', function() {
+            const programId = $('#activateModal').data('program-id');
+            
+            $.ajax({
+                url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
+                type: 'POST',
+                data: { 
+                    action: 'toggle_status',
+                    id: programId,
+                    new_status: 'active'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                    $('#activateModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    alert('Error occurred while updating status. Please try again.');
+                    console.error('Error:', error);
+                    $('#activateModal').modal('hide');
+                }
+            });
+        });
+
+        // Handler for deactivate confirmation
+        $('#confirmDeactivate').on('click', function() {
+            const programId = $('#deactivateModal').data('program-id');
+            
+            $.ajax({
+                url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
+                type: 'POST',
+                data: { 
+                    action: 'toggle_status',
+                    id: programId,
+                    new_status: 'inactive'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                    $('#deactivateModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    alert('Error occurred while updating status. Please try again.');
+                    console.error('Error:', error);
+                    $('#deactivateModal').modal('hide');
+                }
+            });
         });
 
         // Refresh button handler
@@ -788,31 +837,42 @@ foreach ($programs as $program) {
             };
 
             // Send AJAX request
-            $.ajax({
-                url: '../admin/pages/gym rates/functions/edit_programs.php',
-                type: 'POST',
-                data: formData,
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        alert(response.message);
-                        $('#editProgramModal').modal('hide');
+        $.ajax({
+            url: '../admin/pages/gym rates/functions/edit_programs.php',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Update the modal body with the success message
+                    $('#updateSuccessModal .modal-body p').text(response.message || "Updated successfully!");
+                    
+                    // Show the success modal
+                    $('#updateSuccessModal').modal('show');
+                    
+                    // Hide the edit modal
+                    $('#editProgramModal').modal('hide');
+                    
+                    // Reload the page after the modal is hidden
+                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
                         location.reload();
-                    } else {
-                        alert(response.message || "Error updating program");
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("AJAX Error:", status, error);
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        alert(response.message || "Error updating program. Please try again.");
-                    } catch(e) {
-                        alert("Error updating program. Please try again.");
-                    }
+                    });
+                } else {
+                    // If not successful, show an error alert
+                    alert(response.message || "Error updating program");
                 }
-            });
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert(response.message || "Error updating program. Please try again.");
+                } catch(e) {
+                    alert("Error updating program. Please try again.");
+                }
+            }
         });
+    });
 
         // Reset edit form when modal is closed
         $('#editProgramModal').on('hidden.bs.modal', function () {
@@ -821,38 +881,46 @@ foreach ($programs as $program) {
             $('.invalid-feedback').text('');
         });
 
-        // Remove button click handler
         $(document).on('click', '.remove-btn', function() {
-            const programId = $(this).data('id');
+    const programId = $(this).data('id');
+    $('#deleteModal').data('program-id', programId);
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+});
+
+        // Event listener for the confirm delete button in the modal
+        $(document).on('click', '#confirmDelete', function() {
+            const programId = $('#deleteModal').data('program-id');
             
-            if (confirm('Are you sure you want to remove this program?')) {
-                $.ajax({
-                    url: '../admin/pages/gym rates/functions/edit_programs.php',
-                    type: 'POST',
-                    data: { 
-                        action: 'remove',
-                        programId: programId
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            alert(response.message);
-                            location.reload();
-                        } else {
-                            alert(response.message || "Error removing program");
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("AJAX Error:", status, error);
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            alert(response.message || "Error removing program. Please try again.");
-                        } catch(e) {
-                            alert("Error removing program. Please try again.");
-                        }
+            $.ajax({
+                url: '../admin/pages/gym rates/functions/edit_programs.php',
+                type: 'POST',
+                data: { 
+                    action: 'remove', 
+                    programId: programId 
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message || "Error removing program");
                     }
-                });
-            }
+                    // Close the modal
+                    $('#deleteModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        alert(response.message || "Error removing program. Please try again.");
+                    } catch(e) {
+                        alert("Error removing program. Please try again.");
+                    }
+                    // Close the modal
+                    $('#deleteModal').modal('hide');
+                }
+            });
         });
 
         // Add Coach Button Click

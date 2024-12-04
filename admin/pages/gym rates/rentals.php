@@ -1,5 +1,6 @@
 <?php
 require_once '../../../config.php';
+include '../../pages/modal.php';
 
 // Fetch data for display
 $sql = "SELECT 
@@ -300,22 +301,26 @@ $(document).ready(function () {
 
         // Send AJAX request
         $.ajax({
-            url: '../admin/pages/gym rates/functions/save_rentals.php',
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response.trim() === 'success') {
-                    alert('Rental service added successfully!');
-                    $('#addServiceModal').modal('hide');
+        url: '../admin/pages/gym rates/functions/save_rentals.php',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response.trim() === 'success') {
+                // Show the success modal
+                $('#successModal').modal('show');
+                $('#addServiceModal').modal('hide');
+                // Optionally reload the page after a delay
+                setTimeout(function() {
                     location.reload();
-                } else {
-                    alert(response);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert('Error occurred while saving: ' + error);
+                }, 2000); // Adjust the delay as needed
+            } else {
+                alert(response);
             }
-        });
+        },
+        error: function(xhr, status, error) {
+            alert('Error occurred while saving: ' + error);
+        }
+    });
     });
 
     // Edit button handler
@@ -389,75 +394,108 @@ $(document).ready(function () {
             success: function(response) {
                 const data = JSON.parse(response);
                 if (data.status === 'success') {
-                    alert(data.message);
+                    // Update the modal body with the success message
+                    $('#updateSuccessModal .modal-body p').text(response.message || "Updated successfully!");
+                    
+                    // Show the success modal
+                    $('#updateSuccessModal').modal('show');
+                    
+                    // Hide the edit modal
                     $('#editServiceModal').modal('hide');
-                    location.reload();
+                    
+                    // Reload the page after the modal is hidden
+                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                        location.reload();
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    // Show an error modal (you may want to create this modal)
+                    $('#errorModal').modal('show').find('.modal-body').text('Error: ' + data.message);
                 }
             },
             error: function(xhr, status, error) {
-                alert('Error occurred while updating: ' + error);
+                // Show an error modal (you may want to create this modal)
+                $('#errorModal').modal('show').find('.modal-body').text('Error occurred while updating: ' + error);
             }
         });
     });
 
     // Toggle status button handler
-    $(document).on('click', '.toggle-status', function() {
-        const rentalId = $(this).data('id');
-        const currentStatus = $(this).data('status');
-        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-        const confirmMessage = `Are you sure you want to ${currentStatus === 'active' ? 'deactivate' : 'activate'} this rental service?`;
-        
-        if (confirm(confirmMessage)) {
-            $.ajax({
-                url: '../admin/pages/gym rates/functions/save_rentals.php',
-                type: 'POST',
-                data: {
-                    action: 'toggle_status',
-                    id: rentalId,
-                    status: newStatus
-                },
-                success: function(response) {
-                    if (response === 'success') {
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert('Error occurred while updating status: ' + error);
-                }
-            });
-        }
-    });
+$(document).on('click', '.toggle-status', function() {
+    const rentalId = $(this).data('id');
+    const currentStatus = $(this).data('status');
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
-    // Remove button handler
+    // Show the appropriate modal based on the current status
+    if (currentStatus === 'active') {
+        $('#deactivateModal').modal('show');
+    } else {
+        $('#activateModal').modal('show');
+    }
+
+    // Add click handlers to the modal buttons
+    $('#confirmDeactivate, #confirmActivate').off('click').on('click', function() {
+        $.ajax({
+            url: '../admin/pages/gym rates/functions/save_rentals.php',
+            type: 'POST',
+            data: {
+                action: 'toggle_status',
+                id: rentalId,
+                status: newStatus
+            },
+            success: function(response) {
+                if (response === 'success') {
+                    // Close the modal and reload the page
+                    $('#deactivateModal, #activateModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error occurred while updating status: ' + error);
+            }
+        });
+    });
+});
+
+        // Remove button handler
     $(document).on('click', '.remove-btn', function() {
         const rentalId = $(this).data('id');
         
-        if (confirm('Are you sure you want to remove this rental service? This action cannot be undone.')) {
-            $.ajax({
-                url: '../admin/pages/gym rates/functions/edit_rental_services.php',
-                type: 'POST',
-                data: {
-                    action: 'remove',
-                    id: rentalId
-                },
-                success: function(response) {
-                    const data = JSON.parse(response);
-                    if (data.status === 'success') {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    alert('Error occurred while removing rental service: ' + error);
+        // Show the delete confirmation modal
+        $('#deleteModal').modal('show');
+
+        // Set the rental ID in a data attribute for later use
+        $('#confirmDelete').data('id', rentalId);
+    });
+
+    // Confirm delete button handler
+    $(document).on('click', '#confirmDelete', function() {
+        const rentalId = $(this).data('id');
+
+        $.ajax({
+            url: '../admin/pages/gym rates/functions/edit_rental_services.php',
+            type: 'POST',
+            data: {
+                action: 'remove',
+                id: rentalId
+            },
+            success: function(response) {
+                const data = JSON.parse(response);
+                if (data.status === 'success') {
+                    // alert(data.message); // You can replace this with a success modal if desired
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message); // You can also replace this with an error modal
                 }
-            });
-        }
+            },
+            error: function(xhr, status, error) {
+                alert('Error occurred while removing rental service: ' + error); // Replace with an error modal if desired
+            }
+        });
+
+        // Hide the modal after confirming deletion
+        $('#deleteModal').modal('hide');
     });
 
     // Refresh button handler
