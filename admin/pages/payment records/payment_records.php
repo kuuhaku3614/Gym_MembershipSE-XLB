@@ -1,7 +1,7 @@
 <?php
 require_once 'config.php';
 
-// Execute the query for transaction records
+// Modified query to include staff details using staff_id
 $query = "SELECT 
     t.id AS transaction_id,
     (
@@ -24,7 +24,12 @@ $query = "SELECT
         WHEN ps.id IS NOT NULL THEN p.program_name
         WHEN w.id IS NOT NULL THEN 'Walk-in'
     END AS service_type,
-    -- Additional fields for detailed receipt
+    -- New fields for staff who processed the transaction
+    t.staff_id AS staff_id,
+    staff_pd.first_name AS staff_first_name,
+    staff_pd.last_name AS staff_last_name,
+    staff_u.username AS staff_username,
+    -- Existing detailed fields remain the same
     m.id AS membership_id,
     m.start_date AS membership_start,
     m.end_date AS membership_end,
@@ -48,6 +53,8 @@ $query = "SELECT
     rr.amount AS registration_amount,
     reg.membership_fee AS registration_fee
 FROM transactions t
+LEFT JOIN users staff_u ON t.staff_id = staff_u.id
+LEFT JOIN personal_details staff_pd ON staff_u.id = staff_pd.user_id
 LEFT JOIN memberships m ON t.id = m.transaction_id AND m.is_paid = 1
 LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
 LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id AND rs.is_paid = 1
@@ -213,6 +220,20 @@ try {
                                         </div>
                                     </div>
                                 </div>
+                                 <!-- New section for staff information -->
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <h5 class="receipt-item-label">Transaction Processed By:</h5>
+                                        <p>
+                                            <?php 
+                                            if ($row['staff_id']) {
+                                                echo htmlspecialchars($row['staff_first_name'] . ' ' . $row['staff_last_name']);
+                                            } else {
+                                                echo "No staff information available";
+                                            }
+                                            ?>
+                                        </p>
+                                    </div>
                                 <div class="receipt-footer mt-4">
                                     <p>Thank you for your payment!</p>
                                     <small>This is your official receipt.</small>

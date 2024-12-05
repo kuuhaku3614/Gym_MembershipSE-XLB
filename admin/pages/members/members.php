@@ -79,92 +79,115 @@ if (!file_exists($uploadsDir)) {
 }
 
 // Query to fetch members
-$query = "
-    SELECT 
-        u.id AS user_id, 
-        u.username, 
-        pd.first_name, 
-        pd.middle_name, 
-        pd.last_name, 
-        pd.sex, 
-        pd.birthdate, 
-        pd.phone_number, 
-        COALESCE(pp.photo_path, NULL) AS photo_path, 
-        CASE 
-            WHEN ms.is_paid = 1 THEN 'Paid'
-            ELSE 'Pending'
-        END AS payment_status,
-        COALESCE(ms.amount, 0) AS membership_amount,
-        COALESCE(ps.amount, 0) AS program_subscriptions_amount,
-        COALESCE(rs.amount, 0) AS rental_services_amount,
-        COALESCE(rr.Amount, 0) AS registration_fee_paid,
-        GROUP_CONCAT(DISTINCT 
+    $query = "
+SELECT 
+    u.id AS user_id, 
+    u.username, 
+    pd.first_name, 
+    pd.middle_name, 
+    pd.last_name, 
+    pd.sex, 
+    pd.birthdate, 
+    pd.phone_number, 
+    COALESCE(pp.photo_path, NULL) AS photo_path, 
+    
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM memberships m 
+            JOIN transactions t ON m.transaction_id = t.id
+            WHERE t.user_id = u.id 
+            AND m.status = 'active' 
+            AND m.end_date >= CURDATE()
+            AND m.is_paid = 1
+        ) THEN 'Active'
+        ELSE 'Inactive'
+    END AS membership_status,
+    
+    mp.plan_name AS membership_plan_name,
+    m.start_date AS membership_start,
+    m.end_date AS membership_end,
+    
+    CASE 
+        WHEN m.is_paid = 1 THEN 'Paid'
+        ELSE 'Pending'
+    END AS payment_status,
+    
+    (
+        COALESCE(m.amount, 0) + 
+        COALESCE(
+            (SELECT SUM(amount) 
+             FROM program_subscriptions ps 
+             WHERE ps.transaction_id = t.id AND ps.is_paid = 1), 
+            0
+        ) + 
+        COALESCE(
+            (SELECT SUM(amount) 
+             FROM rental_subscriptions rs 
+             WHERE rs.transaction_id = t.id AND rs.is_paid = 1), 
+            0
+        ) + 
+        COALESCE(rr.Amount, 0)
+    ) AS total_price,
+
+    COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT 
             CONCAT(prg.program_name, ' (', 
                 CASE WHEN ps.is_paid = 1 THEN 'Paid' ELSE 'Pending' END, 
             ')') 
-            SEPARATOR ', '
-        ) AS subscribed_programs, 
-        GROUP_CONCAT(DISTINCT 
-            CONCAT(rsvc.service_name, ' (', 
-                CASE WHEN rs.is_paid = 1 THEN 'Paid' ELSE 'Pending' END, 
+            SEPARATOR ', ')
+         FROM program_subscriptions ps
+         JOIN programs prg ON ps.program_id = prg.id
+         JOIN transactions t2 ON ps.transaction_id = t2.id
+         WHERE t2.user_id = u.id
+         AND ps.is_paid = 1
+        ), 
+        'None'
+    ) AS subscribed_programs,
+
+    COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT 
+            CONCAT(rs.service_name, ' (', 
+                CASE WHEN rss.is_paid = 1 THEN 'Paid' ELSE 'Pending' END, 
             ')') 
-            SEPARATOR ', '
-        ) AS rental_services,
-        (
-            COALESCE(ms.amount, 0) + 
-            COALESCE(ps.amount, 0) + 
-            COALESCE(rs.amount, 0) + 
-            COALESCE(rr.Amount, 0)
-        ) AS total_price,
-        CASE 
-            WHEN EXISTS (
-                SELECT 1 FROM memberships m 
-                JOIN transactions t ON m.transaction_id = t.id
-                WHERE t.user_id = u.id 
-                AND m.status = 'active' 
-                AND m.end_date >= CURDATE()
-            ) THEN 'Active'
-            ELSE 'Inactive'
-        END AS membership_status
-    FROM 
-        users u 
-    JOIN 
-        roles roles ON u.role_id = roles.id AND roles.id = 3 
-    LEFT JOIN 
-        transactions t ON u.id = t.user_id
-    LEFT JOIN 
-        memberships ms ON t.id = ms.transaction_id
-    LEFT JOIN 
-        personal_details pd ON u.id = pd.user_id 
-    LEFT JOIN 
-        profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
-    LEFT JOIN 
-        program_subscriptions ps ON t.id = ps.transaction_id 
-    LEFT JOIN 
-        programs prg ON ps.program_id = prg.id 
-    LEFT JOIN 
-        rental_subscriptions rs ON t.id = rs.transaction_id 
-    LEFT JOIN 
-        rental_services rsvc ON rs.rental_service_id = rsvc.id 
-    LEFT JOIN 
-        registration_records rr ON t.id = rr.transaction_id
-    WHERE 
-        u.is_active = 1 
-    GROUP BY 
-        u.id, 
-        u.username, 
-        pd.first_name, 
-        pd.middle_name, 
-        pd.last_name, 
-        pd.sex, 
-        pd.birthdate, 
-        pd.phone_number, 
-        pp.photo_path, 
-        ms.is_paid,
-        ms.amount,
-        ps.amount,
-        rs.amount,
-        rr.Amount;
+            SEPARATOR ', ')
+        FROM rental_subscriptions rss
+        JOIN rental_services rs ON rss.rental_service_id = rs.id
+        JOIN transactions t3 ON rss.transaction_id = t3.id
+        WHERE t3.user_id = u.id
+        AND rss.is_paid = 1
+        AND rss.status != 'expired'
+        ), 
+        'None'
+    ) AS rental_services
+
+FROM 
+    users u 
+JOIN 
+    roles roles ON u.role_id = roles.id AND roles.id = 3 
+LEFT JOIN 
+    transactions t ON u.id = t.user_id
+LEFT JOIN 
+    memberships m ON t.id = m.transaction_id AND m.is_paid = 1
+LEFT JOIN 
+    membership_plans mp ON m.membership_plan_id = mp.id
+LEFT JOIN 
+    personal_details pd ON u.id = pd.user_id 
+LEFT JOIN 
+    profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
+LEFT JOIN 
+    registration_records rr ON t.id = rr.transaction_id
+WHERE 
+    u.is_active = 1 
+GROUP BY 
+    u.id, 
+    u.username, 
+    pd.first_name, 
+    pd.middle_name, 
+    pd.last_name, 
+    pd.sex, 
+    pd.birthdate, 
+    pd.phone_number, 
+    pp.photo_path;
 ";
 $stmt = $pdo->prepare($query);
 $stmt->execute();
@@ -634,7 +657,7 @@ function registration_fee() {
                         </div>
                         <div class="info-section">
                             <h6 class="info-header">Services Availed</h6>
-                            <p id="memberServices" class="text-muted">None</p>
+                            <p id="memberServices" class="text-muted" >None</p>
                         </div>
                     </div>
                 </div>
@@ -725,16 +748,16 @@ function registration_fee() {
             const $program = $(e.currentTarget);
             const programId = $program.data('id');
             const programName = $program.find('.program-name').text();
-            const $coachSelect = $program.find('.default-coach-id');
+            const $coachSelect = $program.find('.coach-select');
             const programPrice = parseFloat($program.find('.program-price').text().replace('₱', ''));
 
             // Check if program is already added
             const exists = this.state.selectedPrograms.some(p => p.id === programId);
             
             if (!exists) {
-                // If no coaches available, show an alert or use default coach
-                if ($coachSelect.length === 0) {
-                    alert('No coaches available for this program.');
+                // Check if coaches are available
+                if ($coachSelect.length === 0 || $coachSelect.find('option:not(:disabled)').length === 0) {
+                    alert('No active coaches available for this program.');
                     return;
                 }
 
@@ -746,28 +769,33 @@ function registration_fee() {
 
                 // Bind confirm button in modal
                 $('#confirmCoachSelection').off('click').on('click', () => {
-                    const selectedCoachId = $('#coachSelectionModal select').val();
-                    const selectedCoachName = $('#coachSelectionModal select option:selected').text();
+    const $selectedOption = $('#coachSelectionModal select option:selected');
+    const selectedCoachId = $selectedOption.val();
+    const selectedCoachName = $selectedOption.text().split('(')[0].trim();
+    const selectedCoachPrice = parseFloat($selectedOption.data('price')) || programPrice;
 
-                    this.state.selectedPrograms.push({
-                        id: programId,
-                        name: programName,
-                        price: programPrice,
-                        coachId: selectedCoachId,
-                        coachName: selectedCoachName
-                    });
+    // Prepare program object with coach details
+    const programWithCoach = {
+        id: programId,
+        name: programName,
+        price: selectedCoachPrice,
+        coachId: selectedCoachId,  // Changed from coach_id to match the earlier modification
+        coachName: selectedCoachName
+    };
 
-                    // Store selected coach for this program
-                    this.state.selectedCoaches[programId] = {
-                        coachId: selectedCoachId,
-                        coachName: selectedCoachName
-                    };
+    this.state.selectedPrograms.push(programWithCoach);
 
-                    $program.addClass('selected');
-                    this.updateTotalAmount();
-                    this.updateSelectedServices();
-                    $('#coachSelectionModal').modal('hide');
-                });
+    // Store selected coach for this program
+    this.state.selectedCoaches[programId] = {
+        coachId: selectedCoachId,
+        coachName: selectedCoachName
+    };
+
+    $program.addClass('selected');
+    this.updateTotalAmount();
+    this.updateSelectedServices();
+    $('#coachSelectionModal').modal('hide');
+});
             } else {
                 // Remove program if already added
                 this.state.selectedPrograms = this.state.selectedPrograms.filter(p => p.id !== programId);
@@ -824,34 +852,39 @@ function registration_fee() {
         $('#total_amount').text('₱' + this.state.totalAmount.toFixed(2));
     },
     createCoachSelectionModal(programElement) {
-        const programName = programElement.find('.program-name').text();
-        const coachSelect = programElement.find('.coach-select').clone();
-        
-        return `
-            <div class="modal fade" id="coachSelectionModal" tabindex="-1" role="dialog">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Select Coach for ${programName}</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+    const programName = programElement.find('.program-name').text();
+    const coachSelect = programElement.find('.coach-select').clone();
+    
+    // Remove disabled options and ensure a default selected option
+    coachSelect.find('option:disabled').remove();
+    coachSelect.find('option:first').prop('selected', true);
+    
+    return `
+        <div class="modal fade" id="coachSelectionModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Select Coach for ${programName}</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="coachSelection">Choose a Coach:</label>
+                            ${coachSelect[0].outerHTML}
+                            <small class="form-text text-muted">Only active coaches are shown.</small>
                         </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="coachSelection">Choose a Coach:</label>
-                                ${coachSelect[0].outerHTML}
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="confirmCoachSelection">Confirm</button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmCoachSelection">Confirm</button>
                     </div>
                 </div>
             </div>
-        `;
-    },
+        </div>
+    `;
+},
 
     updateSelectedServices() {
         const planOption = $('#membership_plan option:selected');
@@ -1244,7 +1277,7 @@ function registration_fee() {
 
     // Fetch registration fee before processing
     $.ajax({
-        url: '../admin/pages/members/get_registration_fee.php', // Endpoint to fetch registration fee
+        url: '../admin/pages/members/get_registration_fee.php', 
         method: 'GET',
         dataType: 'json',
         success: (feeResponse) => {
@@ -1256,11 +1289,12 @@ function registration_fee() {
             const planOption = $('#membership_plan option:selected');
             const membershipPlanPrice = parseFloat(planOption.data('price')) || 0;
             
-            // Program Prices
+            // Program Prices with Coach IDs
             const programPrices = this.state.selectedPrograms.map(program => ({
                 id: program.id,
                 name: program.name,
-                price: program.price
+                price: program.price,
+                coach_id: program.coachId  // Include coach ID
             }));
             
             // Rental Prices
@@ -1278,7 +1312,7 @@ function registration_fee() {
             formData.set('registration_fee', registrationFee);
             formData.set('total_amount', this.state.totalAmount);
             
-            // Add programs and their prices
+            // Add programs and their prices (including coach IDs)
             if (programPrices.length > 0) {
                 formData.set('programs', JSON.stringify(programPrices));
             }
@@ -1442,64 +1476,106 @@ $('#start_date').on('change', function() {
 $(document).ready(function () {
     const membersData = <?php echo json_encode($members); ?>;
 
-    // View Member Details
-    $('.view-member').on('click', function () {
-        const userId = $(this).data('id');
-        const memberData = membersData.find((member) => member.user_id == userId);
+// Update the view member details logic
+$('.view-member').on('click', function () {
+    const userId = $(this).data('id');
+    const memberData = membersData.find((member) => member.user_id == userId);
 
-        if (memberData) {
-            // Update photo with default if not available
-            $('#memberPhoto').attr(
-                'src', 
-                memberData.photo_path 
-                    ? `../${memberData.photo_path}` 
-                    : '../uploads/default.jpg'
-            );
+    if (memberData) {
+        // Basic details remain the same
+        $('#memberPhoto').attr(
+            'src', 
+            memberData.photo_path 
+                ? `../${memberData.photo_path}` 
+                : '../uploads/default.jpg'
+        );
 
-            // Personal Information
-            $('#memberName').text(`${memberData.first_name} ${memberData.middle_name || ''} ${memberData.last_name}`);
-            $('#memberUsername').text(memberData.username);
-            $('#memberSex').text(memberData.sex);
-            $('#memberBirthdate').text(formatDate(memberData.birthdate));
-            $('#memberPhone').text(memberData.phone_number);
+        $('#memberName').text(
+            [memberData.first_name, memberData.middle_name, memberData.last_name]
+                .filter(name => name && name.trim() !== '')
+                .join(' ')
+        );
+        $('#memberUsername').text(memberData.username || 'N/A');
+        $('#memberSex').text(memberData.sex || 'N/A');
+        $('#memberBirthdate').text(formatDate(memberData.birthdate));
+        $('#memberPhone').text(memberData.phone_number || 'N/A');
 
-            // Payment and Subscription Details
-            $('#totalAmount').text(formatCurrency(memberData.total_price));
-            $('#membershipStatus').text(memberData.payment_status);
+        // Membership Status Badge
+        const membershipStatus = memberData.membership_status || 'Inactive';
+        $('#membershipStatus')
+            .text(membershipStatus)
+            .removeClass('badge-success badge-danger')
+            .addClass(membershipStatus === 'Active' ? 'badge-success' : 'badge-danger');
 
-            // Programs and Services
-            $('#memberPrograms').html(formatSubscriptions(memberData.subscribed_programs));
-            $('#memberServices').html(formatSubscriptions(memberData.rental_services));
+        // Updated Membership Details
+        $('#memberPlan').text(memberData.membership_plan_name || 'Standard Membership');
+        $('#totalAmount').text(formatCurrency(memberData.total_price));
 
-            // Add Pay Button based on payment status
-            updatePaymentButton(memberData);
-
-            $('#editMemberBtn').data('id', userId);
-            $('#memberViewModal').modal('show');
+        // Subscription Period
+        if (memberData.membership_start && memberData.membership_end) {
+            $('#membershipStart').text(formatDate(memberData.membership_start));
+            $('#membershipEnd').text(formatDate(memberData.membership_end));
         } else {
-            alert('Member data not found');
+            $('#membershipStart, #membershipEnd').text('N/A');
         }
-    });
 
-    // Helper function to format subscriptions
-    function formatSubscriptions(subscriptionString) {
-        if (!subscriptionString) return 'None';
-        
-        // Convert comma-separated string to HTML list
-        return subscriptionString.split(', ')
-            .map(sub => {
-                const [name, status] = sub.match(/(.+) \((.+)\)/).slice(1);
-                return `<span class="badge badge-${status === 'Paid' ? 'success' : 'warning'} mr-1">${name} (${status})</span>`;
-            })
-            .join(' ');
+        // Programs and Services
+        $('#memberPrograms').html(formatSubscriptions(memberData.subscribed_programs));
+        $('#memberServices').html(formatSubscriptions(memberData.rental_services));
+
+        // Payment Button
+        updatePaymentButton(memberData);
+
+        $('#memberViewModal').modal('show');
+    } else {
+        alert('Member data not found');
     }
+});
 
-    // Update Pay Button functionality
-    function updatePaymentButton(memberData) {
+function formatSubscriptions(subscriptionString) {
+    if (!subscriptionString || subscriptionString === 'None') {
+        return '<span class="text-muted">None</span>';
+    }
+    
+    return subscriptionString.split(', ')
+        .map(sub => {
+            const match = sub.match(/(.+)\s+\((.+)\)$/);
+            
+            if (!match) {
+                return `<span class="badge badge-info text-dark mr-1">${sub}</span>`;
+            }
+            
+            const [, name, status] = match;
+            
+            // More detailed color coding with explicit text color
+            let badgeClass;
+            switch (status.toLowerCase()) {
+                case 'paid':
+                    badgeClass = 'badge-success text-dark'; // Green for paid with white text
+                    break;
+                case 'pending':
+                    badgeClass = 'badge-warning text-dark'; // Yellow for pending with dark text
+                    break;
+                case 'cancelled':
+                    badgeClass = 'badge-danger text-dark'; // Red for cancelled with white text
+                    break;
+                case 'active':
+                    badgeClass = 'badge-primary text-dark'; // Blue for active with white text
+                    break;
+                default:
+                    badgeClass = 'badge-secondary text-dark'; // Gray for unknown status with white text
+            }
+            
+            return `<span class="badge ${badgeClass} mr-1">${name} (${status})</span>`;
+        })
+        .join(' ');
+}
+
+function updatePaymentButton(memberData) {
     // Remove any existing pay button
     $('#paymentButtonContainer').empty();
 
-    // Create pay button
+    // Create pay button with conditional disabled state
     const payButton = $(`
         <button type="button" class="btn btn-success" id="paySubscriptionBtn" 
                 data-user-id="${memberData.user_id}"
@@ -1508,51 +1584,51 @@ $(document).ready(function () {
         </button>
     `);
 
-    payButton.on('click', function() {
-        if (!$(this).prop('disabled')) {
+    // Only add click handler if not already paid
+    if (memberData.payment_status !== 'Paid') {
+        payButton.on('click', function() {
             const userId = $(this).data('user-id');
             handlePaySubscription(userId);
-        }
-    });
+        });
+    }
 
     $('#paymentButtonContainer').append(payButton);
 }
-
     // Handle Pay Subscription AJAX call
     function handlePaySubscription(userId) {
-    $.ajax({
-        url: '../admin/pages/members/pay_subscription.php',
-        method: 'POST',
-        data: { user_id: userId },
-        dataType: 'json',  // Explicitly parse JSON response
-        success: function(response) {
-            if (response && response.success) {
-                alert('Subscriptions paid successfully!');
-                location.reload();
-            } else {
-                alert('Payment failed: ' + (response.message || 'Unknown error'));
+        $.ajax({
+            url: '../admin/pages/members/pay_subscription.php',
+            method: 'POST',
+            data: { user_id: userId },
+            dataType: 'json',
+            success: function(response) {
+                if (response && response.success) {
+                    alert('Subscriptions paid successfully!');
+                    location.reload();
+                } else {
+                    alert('Payment failed: ' + (response.message || 'Unknown error'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred: ' + error);
             }
-        },
-        error: function(xhr, status, error) {
-            alert('An error occurred: ' + error);
-        }
-    });
-}
+        });
+    }
 
-    // Existing helper functions
+    // Helper functions for formatting
     function formatDate(date) {
-        return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        return date ? new Date(date).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        }) : 'N/A';
     }
 
     function formatCurrency(amount) {
-        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount);
+        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
     }
 
-    $('#editMemberBtn').on('click', function () {
-        const userId = $(this).data('id');
-        alert('Edit functionality will be implemented for user ID: ' + userId);
-    });
-    // Add new modal close handlers
+    // Modal close handlers
     $('#memberViewModal').on('click', '[data-dismiss="modal"]', function() {
         $('#memberViewModal').modal('hide');
     });
@@ -1562,6 +1638,4 @@ $(document).ready(function () {
         $(this).closest('.modal').modal('hide');
     });
 });
-
-
 </script>

@@ -211,7 +211,20 @@ function insertProgramSubscriptions($pdo, $transactionId, $data) {
     }
 
     foreach ($programs as $program) {
-        if (!isset($program['id'])) continue;
+        if (!isset($program['id']) || !isset($program['coach_id'])) continue;
+
+        // Validate that the coach exists and is associated with the program
+        $stmt = $pdo->prepare("
+            SELECT coach_id 
+            FROM coach_program_types 
+            WHERE program_id = ? AND coach_id = ? AND status = 'active'
+        ");
+        $stmt->execute([$program['id'], $program['coach_id']]);
+        $coachProgram = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$coachProgram) {
+            throw new Exception("Invalid coach or coach not associated with this program: Program ID " . $program['id'] . ", Coach ID " . $program['coach_id']);
+        }
 
         $stmt = $pdo->prepare("
             INSERT INTO program_subscriptions (
@@ -230,7 +243,7 @@ function insertProgramSubscriptions($pdo, $transactionId, $data) {
         $stmt->execute([
             $transactionId,
             $program['id'],
-            $program['coach_id'] ?? 1,
+            $program['coach_id'],
             $data['start_date'],
             $data['end_date'],
             'active',
