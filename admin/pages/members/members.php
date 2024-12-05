@@ -1571,29 +1571,29 @@ function formatSubscriptions(subscriptionString) {
         .join(' ');
 }
 
-    // Update Pay Button functionality
-    function updatePaymentButton(memberData) {
-        // Remove any existing pay button
-        $('#paymentButtonContainer').empty();
+function updatePaymentButton(memberData) {
+    // Remove any existing pay button
+    $('#paymentButtonContainer').empty();
 
-        // Create pay button if not already paid
-        if (memberData.payment_status !== 'Paid') {
-            const payButton = $(`
-                <button type="button" class="btn btn-success" id="paySubscriptionBtn" 
-                        data-user-id="${memberData.user_id}">
-                    Pay Subscription
-                </button>
-            `);
+    // Create pay button with conditional disabled state
+    const payButton = $(`
+        <button type="button" class="btn btn-success" id="paySubscriptionBtn" 
+                data-user-id="${memberData.user_id}"
+                ${memberData.payment_status === 'Paid' ? 'disabled' : ''}>
+            Pay
+        </button>
+    `);
 
-            payButton.on('click', function() {
-                const userId = $(this).data('user-id');
-                handlePaySubscription(userId);
-            });
-
-            $('#paymentButtonContainer').append(payButton);
-        }
+    // Only add click handler if not already paid
+    if (memberData.payment_status !== 'Paid') {
+        payButton.on('click', function() {
+            const userId = $(this).data('user-id');
+            handlePaySubscription(userId);
+        });
     }
 
+    $('#paymentButtonContainer').append(payButton);
+}
     // Handle Pay Subscription AJAX call
     function handlePaySubscription(userId) {
         $.ajax({
