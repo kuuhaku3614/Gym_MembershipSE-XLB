@@ -46,7 +46,7 @@
 
 
     <header class="container-fluid" id="title">
-        <div class="container-xl" id="name">
+        <div class="container-xl" id="name" style="position: relative;">
             <h1><?= $_SESSION['personal_details']['name'] ?></h1>
             <?php if (isset($_SESSION['personal_details']['role_name'])): ?>
                 <?php if ($_SESSION['personal_details']['role_name'] === 'member'): ?>
@@ -55,7 +55,13 @@
                     <h5>Coach</h5>
                 <?php endif; ?>
             <?php endif; ?>
+            <?php if (isset($_SESSION['personal_details']['role_id']) && $_SESSION['personal_details']['role_id'] === '3'): ?>
+                <a href="coach_profile.php" class="btn btn-link" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
+                    <i class="fas fa-user-tie"></i>
+                </a>
+            <?php endif; ?>
         </div>
+        
     </header>
 
     <section>
