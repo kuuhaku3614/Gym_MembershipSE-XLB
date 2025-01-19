@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      .hero {
+        height: 100vh;
+        width: 100%;
+        background-image: url("https://source.unsplash.com/random");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2rem;
+        color: white;
+      }
+
+      /* Dark overlay for better text readability */
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .text-container {
+        position: relative; /* To appear above the overlay */
+        z-index: 1;
+        max-width: 400px;
+        padding: 2rem;
+      }
+
+      .left-text {
+        text-align: left;
+        margin-right: auto;
+      }
+
+      .center-text {
+        text-align: center;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .right-text {
+        text-align: right;
+        margin-left: auto;
+      }
+
+      .text-container h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .text-container p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .hero {
+          flex-direction: column;
+          text-align: center;
+          justify-content: center;
+          gap: 2rem;
+        }
+
+        .text-container {
+          position: relative;
+          left: 0;
+          transform: none;
+          margin: 0;
+          padding: 1rem;
+        }
+
+        .center-text {
+          position: relative;
+          left: 0;
+          transform: none;
+        }
+
+        .right-text {
+          text-align: center;
+        }
+
+        .left-text {
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <div class="text-container left-text">
+        <h2>Left Section</h2>
+        <p>
+          This is the left-aligned text content. You can add any text or
+          elements here.
+        </p>
+      </div>
+
+      <div class="text-container center-text">
+        <h2>Center Section</h2>
+        <p>
+          This is the center-aligned text content. This section stays in the
+          middle.
+        </p>
+      </div>
+
+      <div class="text-container right-text">
+        <h2>Right Section</h2>
+        <p>
+          This is the right-aligned text content. You can add any text or
+          elements here.
+        </p>
+      </div>
+    </section>
+  </body>
+</html>

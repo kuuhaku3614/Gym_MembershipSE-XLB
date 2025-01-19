@@ -83,7 +83,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 <nav class="home-navbar">
     <div class="home-logo">
-        <img src="../../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
+        <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
     </div>
     <ul class="nav-links">
         <li><a href="website.php">Home</a></li>
@@ -115,7 +115,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                 </div>
             </div>
         <?php else: ?>
-            <a href="../login/login.php" class="home-signIn">Sign In</a>
+            <a href="../login/login.php" class="home-signIn">Sign Up</a>
         <?php endif; ?>
     </div>
 </nav>

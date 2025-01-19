@@ -47,8 +47,6 @@ $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
 include('includes/header.php');
 ?>
-
-  <!-- Suggested CSS to be added to your stylesheet -->
   <style>
     .offers-carousel {
     position: relative;
@@ -241,27 +239,25 @@ include('includes/header.php');
     }
   </style>
   <body>
-  <header class="home-header"></header>
-
-  <main class="home-main">
-    <!-- Welcome Section -->
-    <section class="S-Welcome">
-            <h1>Welcome To <span class="companyName"><?php 
+  <header class="home-header">
+        <div class="header-content">
+            <h1 class="companyName"><?php 
                 echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
             ?></span></h1>
-            <p><?php 
+            <p class="description"><?php 
                 echo htmlspecialchars($welcomeContent['description'] ?? 'Welcome description goes here.'); 
             ?></p>
             <a href="?services=1" style="text-decoration: none;">
                 <button class="joinButton">
-                    Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
+                    Start your Journey <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
                 </button>
             </a>
-        </section>
+        </div>
+  </header>
 
-        <hr class="home-sectionDivider" />
-
+  <main class="home-main">
        <!-- Offers Section -->
+       <hr class="home-sectionDivider" />
 <section class="S-Offers" id="S-Offers">
     <div class="offers-text">
         <h1>Gym Offers</h1>
