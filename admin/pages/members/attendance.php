@@ -254,7 +254,7 @@ $(document).ready(function () {
         photoContainer.empty();
         
         if (userData.photo_path) {
-            photoContainer.html(`<img src="../../../${userData.photo_path}" class="profile-photo" alt="Profile Photo">`);
+            photoContainer.html(`<img src="../${userData.photo_path}" class="profile-photo" alt="Profile Photo">`);
         } else {
             photoContainer.html('<i class="fas fa-user default-user-icon"></i>');
         }
