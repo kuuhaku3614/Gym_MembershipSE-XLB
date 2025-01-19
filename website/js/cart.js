@@ -342,7 +342,7 @@ function proceedWithAvailing() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = '/website/profile.php';
+                window.location.href = '../website/profile.php';
             } else {
                 alert(data.data.message || 'An error occurred during checkout.');
             }

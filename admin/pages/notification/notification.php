@@ -328,7 +328,7 @@
                 data.userId = userId;
             }
 
-            fetch('/admin/pages/notification/notification.php', {
+            fetch('../admin/pages/notification/notification.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
