@@ -205,35 +205,79 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="dashboard-container">
         <!-- Stats Section -->
         <div class="stats-section">
+            <?php
+            $active_memberships_sql = "
+            SELECT COUNT(*) AS active_memberships 
+            FROM memberships 
+            WHERE status = 'active'
+            ";
+            $active_memberships_stmt = $pdo->prepare($active_memberships_sql);
+            $active_memberships_stmt->execute();
+            $active_memberships = $active_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Current Members</div>
                     <div class="stats-subtitle">(Active)</div>
                 </div>
-                <div class="stats-value">150</div>
+                <div class="stats-value"><?= $active_memberships['active_memberships'] ?></div>
             </div>
+            <?php
+            $current_month = date('Y-m');
+            $new_memberships_sql = "
+            SELECT COUNT(*) AS new_memberships 
+            FROM memberships 
+            WHERE MONTH(created_at) = MONTH(CURDATE()) 
+            AND YEAR(created_at) = YEAR(CURDATE())
+            ";
+            $new_memberships_stmt = $pdo->prepare($new_memberships_sql);
+            $new_memberships_stmt->execute();
+            $new_memberships = $new_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">New Members</div>
                     <div class="stats-subtitle">this month</div>
                 </div>
-                <div class="stats-value">15</div>
+                <div class="stats-value"><?= $new_memberships['new_memberships'] ?></div>
             </div>
+            <?php
+            $member_users_sql = "
+            SELECT COUNT(*) AS member_users 
+            FROM users 
+            JOIN roles ON users.role_id = roles.id 
+            WHERE roles.role_name = 'member'
+            ";
+            $member_users_stmt = $pdo->prepare($member_users_sql);
+            $member_users_stmt->execute();
+            $member_users = $member_users_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Website Accounts</div>
                 </div>
-                <div class="stats-value">200</div>
+                <div class="stats-value"><?= $member_users['member_users'] ?></div>
             </div>
             <div class="card notification-card">
                 <div class="notification-badge">7</div>
                 <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
             </div>
+            <?php
+            $total_earnings_sql = "
+            SELECT 
+            (SELECT SUM(amount) FROM memberships) +
+            (SELECT SUM(amount) FROM program_subscriptions) +
+            (SELECT SUM(amount) FROM rental_subscriptions) AS total_earnings;
+            ";
+            $total_earnings_stmt = $pdo->prepare($total_earnings_sql);
+            $total_earnings_stmt->execute();
+            $total_earnings = $total_earnings_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Total Earnings</div>
                 </div>
-                <div class="stats-value">₱10000</div>
+                <div class="stats-value">₱<?= number_format($total_earnings['total_earnings'], 2) ?></div>
             </div>
         </div>
 
@@ -246,12 +290,24 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
             <div class="stats-section">
+                <?php
+                $current_date = date('Y-m-d');
+                $member_checkin_sql = "
+                SELECT COUNT(*) AS member_checkin 
+                FROM attendance 
+                WHERE date = :current_date
+                AND status = 'checked_in'
+                ";
+                $member_checkin_stmt = $pdo->prepare($member_checkin_sql);
+                $member_checkin_stmt->execute(['current_date' => $current_date]);
+                $member_checkin = $member_checkin_stmt->fetch(PDO::FETCH_ASSOC);
+                ?>
                 <div class="card stats-card">
                     <div>
                         <div class="stats-title">Members Checked In</div>
-                        <div class="stats-subtitle">Date: 20/10/2024</div>
+                        <div class="stats-subtitle">Date: <?= $current_date ?></div>
                     </div>
-                    <div class="stats-value">50</div>
+                    <div class="stats-value"><?= $member_checkin['member_checkin'] ?></div>
                 </div>
                 <div class="card stats-card">
                     <div>
@@ -260,17 +316,36 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <div class="stats-value">10</div>
                 </div>
+                <?php
+                $expiring_memberships_sql = "
+                SELECT COUNT(*) AS expiring_memberships 
+                FROM memberships 
+                WHERE status = 'expiring'
+                ";
+                $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
+                $expiring_memberships_stmt->execute();
+                $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+
+                $expired_memberships_sql = "
+                SELECT COUNT(*) AS expired_memberships 
+                FROM memberships 
+                WHERE status = 'expired'
+                ";
+                $expired_memberships_stmt = $pdo->prepare($expired_memberships_sql);
+                $expired_memberships_stmt->execute();
+                $expired_memberships = $expired_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+                ?>
                 <div class="card stats-card">
                     <div>
                         <div class="stats-title">Expiring Memberships</div>
                     </div>
-                    <div class="stats-value">1</div>
+                    <div class="stats-value"><?= $expiring_memberships['expiring_memberships'] ?></div>
                 </div>
                 <div class="card stats-card">
                     <div>
                         <div class="stats-title">Expired Memberships</div>
                     </div>
-                    <div class="stats-value">2</div>
+                    <div class="stats-value"><?= $expired_memberships['expired_memberships'] ?></div>
                 </div>
             </div>
         </div>
