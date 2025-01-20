@@ -48,10 +48,12 @@ $staffMembers = executeQuery("SELECT * FROM staff");
 include('includes/header.php');
 ?>
   <style>
-    .offers-carousel {
+
+
+ /* .offers-carousel {
     position: relative;
-    width: 500px;  /* Fixed width */
-    height: 500px; /* Fixed height */
+    width: 500px; 
+    height: 500px;
     overflow: hidden;
     margin: 0 auto;
 }
@@ -61,7 +63,7 @@ include('includes/header.php');
     transition: transform 0.5s ease;
 }
 
-.carousel-slide {
+/* /* .carousel-slide {
     min-width: 100%;
     display: none;
     position: relative;
@@ -69,15 +71,15 @@ include('includes/header.php');
 
 .carousel-slide.active {
     display: block;
-}
+} */
 
-.carousel-slide img {
-    width: 100%;  /* Fixed width */
-    height: 100%; /* Fixed height */
-    object-fit: cover; /* This ensures images maintain aspect ratio */
-}
+/* .carousel-slide img {
+    width: 100%;
+    height: 100%; 
+    object-fit: cover; 
+} */
 
-.carousel-caption {
+/* .carousel-caption {
     position: absolute;
     bottom: 20px;
     left: 20px;
@@ -85,41 +87,17 @@ include('includes/header.php');
     color: white;
     padding: 15px;
     border-radius: 5px;
-}
+} */
 
-.carousel-controls {
+/* .carousel-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     position: absolute;
     width: 100%;
-    bottom: 10px; /* Move controls to bottom */
+    bottom: 10px; 
     padding: 0 10px;
-}
-
-.carousel-dots {
-    display: flex;
-    justify-content: center;
-    position: absolute;
-    bottom: -25px; /* Position dots below the carousel */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-}
-
-.carousel-dot {
-    height: 10px;
-    width: 10px;
-    background-color: #bbb;
-    border-radius: 50%;
-    display: inline-block;
-    margin: 0 5px;
-    cursor: pointer;
-}
-
-.carousel-dot.active {
-    background-color: #717171;
-}
+}  */
 
     .offer-button {
       display: inline-block;
@@ -139,68 +117,6 @@ include('includes/header.php');
       padding: 20px 0;
     }
 
-    .image-card {
-      width: 250px;
-      height: 350px;
-      background-color: #f4f4f4;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .image-card:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .image-card img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-    }
-
-    .image-card-content {
-      padding: 15px;
-      text-align: center;
-    }
-
-    /* Products Section Specific Styles */
-    .S-Products .product-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-    }
-
-    .S-Products .product-box {
-      width: 250px;
-      height: 350px;
-      background-color: #f4f4f4;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .S-Products .product-box img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-    }
-
-    .S-Products .product-title {
-      font-weight: bold;
-      text-align: center;
-      margin: 10px 0 5px;
-    }
-
-    .S-Products .product-text {
-      text-align: center;
-      color: #666;
-      padding: 0 15px;
-    }
-
     /* Gallery Section Specific Styles */
     .S-AboutUs .image-container {
       display: grid;
@@ -212,7 +128,7 @@ include('includes/header.php');
 
     .S-AboutUs .image-container img {
       width: 100%;
-      height: 300px;
+      height: 250px;
       object-fit: cover;
       border-radius: 10px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -239,6 +155,7 @@ include('includes/header.php');
     }
   </style>
   <body>
+  <main class="home-main">
   <header class="home-header">
         <div class="header-content">
             <h1 class="companyName"><?php 
@@ -254,10 +171,7 @@ include('includes/header.php');
             </a>
         </div>
   </header>
-
-  <main class="home-main">
        <!-- Offers Section -->
-       <hr class="home-sectionDivider" />
 <section class="S-Offers" id="S-Offers">
     <div class="offers-text">
         <h1>Gym Offers</h1>
@@ -266,50 +180,24 @@ include('includes/header.php');
         ?></p>
     </div>
 
-    <div class="offers-carousel">
-    <div class="carousel-container">
-        <div class="carousel-wrapper">
-            <?php foreach ($offers as $index => $offer): ?>
-                <div class="carousel-slide <?php echo $index === 0 ? 'active' : ''; ?>" data-slide="<?php echo $index; ?>">
-                    <img class="" 
-                        src="<?php echo htmlspecialchars(getImagePath($offer['image_path'])); ?>"
-                        alt="<?php echo htmlspecialchars($offer['title'] ?? 'Gym Offer'); ?>"
-                    />
-                    <!-- <div class="carousel-caption">
-                        <h2><?php echo htmlspecialchars($offer['title']); ?></h2>
-                        <p><?php echo htmlspecialchars($offer['description']); ?></p>
-                        <a href="#">Learn More</a>
-                    </div> -->
+    <div class="offers-container">
+        <div class="offers-wrapper">
+            <?php foreach ($offers as $offer): ?>
+                <div class="offer-slide">
+                    <img src="<?php echo htmlspecialchars(getImagePath($offer['image_path'])); ?>"
+                         alt="<?php echo htmlspecialchars($offer['title'] ?? 'Gym Offer'); ?>">
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
-            <div class="carousel-controls">
-                <button class="carousel-prev leftButton">
-                    <img src="../icon/less-than-solid.svg" alt="Previous" />
-                </button>
-                <div class="carousel-dots">
-                    <?php foreach ($offers as $index => $offer): ?>
-                        <span 
-                            class="carousel-dot <?php echo $index === 0 ? 'active' : ''; ?>" 
-                            data-slide="<?php echo $index; ?>"
-                        ></span>
-                    <?php endforeach; ?>
-                </div>
-                <button class="carousel-next rightButton">
-                    <img src="../icon/greater-than-solid.svg" alt="Next" />
-                </button>
-            </div>
-    </div>
 </section>
-
-        <hr class="home-sectionDivider" />
 
 <!-- Products Section -->
 <section class="S-Products">
-    <h1>Products you may like</h1>
-    <p>Check out our latest fitness products!</p>
-
+    <div class="products-text">
+        <h1>Products you may like</h1>
+        <p>Check out our latest fitness products!</p>
+    </div>
     <div class="product-container">
         <?php foreach ($products as $product): ?>
             <div class="product-box">
@@ -329,6 +217,23 @@ include('includes/header.php');
 
         <!-- About Us/gallery Section -->
 <section class="S-AboutUs">
+
+
+    <div class="aboutUs-text">
+        <h1>About Us</h1>
+        <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
+
+        <div class="joinNow-container">
+            <h1 class="tagline">Go Home or Go Hard</h1>
+            <p>Come be one of us now</p>
+            <a href="?services=1" style="text-decoration: none;">
+                <button class="joinButton-1">
+                    Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
+                </button>
+            </a>
+        </div>
+    </div>
+
     <div class="image-container">
         <?php 
         $imageClasses = ['img1', 'img2', 'img3', 'img4'];
@@ -341,22 +246,17 @@ include('includes/header.php');
             />
         <?php endforeach; ?>
     </div>
-
-    <div class="aboutUs-text">
-        <h1>About Us</h1>
-        <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
-    </div>
 </section>
-        <!-- tagline section -->
-        <section class="S-Tagline">
-          <h1>Go Home or Go Hard</h1>
+
+        <!-- <section class="S-Tagline">
+          
           <a href="?services=1" style="text-decoration: none;">
             <button class="joinButton">
               Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
             </button>
           </a>
-        </section>
-       <!-- Staff Section -->
+        </section> -->
+
 <section class="S-Staffs">
     <h1>Gym Staffs</h1>
     <div class="staff-container">
@@ -389,11 +289,12 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
 ?>
 
 <section class="S-ContactUs">
+    <h1>You can find us here, sign up, local supplements and equipments</h1>
   <div class="image-location">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     
-    <div id="map" style="height: 450px; width: 600px;"></div>
+    <div id="map"></div>
     
     <script>
       var map = L.map('map').setView([<?php echo $latitude; ?>, <?php echo $longitude; ?>], 16);
@@ -404,20 +305,63 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         .openPopup();
     </script>
   </div>
-  <div class="ContactUs-text">
-      <h1>Contact Us:</h1>
-      <p><span>Location: </span><?php echo htmlspecialchars($contactContent['location_name'] ?? 'Zamboanga City'); ?></p>
-      <p><span>#: </span><?php echo htmlspecialchars($contactContent['phone'] ?? '+639999999999'); ?></p>
-      <p><span>@: </span><?php echo htmlspecialchars($contactContent['email'] ?? 'gymfitness@gmail.com'); ?></p>
-  </div>
 </section>
-    </main>
+   
 
-  
-<footer>
-        <hr class="home-sectionDivider" />
-        <p>&copy; <?php echo date('Y'); ?> Your Website. All rights reserved.</p>
-    </footer>
+<footer class="footer">
+    <div class="footer-container">
+        <div class="logo-section">
+            <img src="bull-logo.png" alt="Bull Logo" class="logo">
+            <div class="contact-info">
+                <p>9464 Columbia Ave.<br>
+                New York, NY 10029</p>
+                <p>info@bull.com</p>
+            </div>
+            <div class="social-icons">
+                <a href="#"><img src="facebook.png" alt="Facebook"></a>
+                <a href="#"><img src="twitter.png" alt="Twitter"></a>
+                <a href="#"><img src="instagram.png" alt="Instagram"></a>
+                <a href="#"><img src="linkedin.png" alt="LinkedIn"></a>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <h3>Menu</h3>
+            <ul class="menu-list">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Membership</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Blog</a></li>
+            </ul>
+        </div>
+
+        <div class="quick-links-section">
+            <h3>Quick Links</h3>
+            <ul class="quick-links-list">
+                <li><a href="#">Login</a></li>
+                <li><a href="#">Register</a></li>
+                <li><a href="#">Contact Us</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+            </ul>
+        </div>
+
+        <div class="operational-section">
+            <h3>Operational</h3>
+            <div class="operational-info">
+                <p>Every day: 9:00 – 22:00<br>
+                Sat - Sun: 8:00 – 21:00</p>
+                <p>New Schedule?</p>
+                <p>+ (123) 1600-567-8990</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="copyright">
+        Copyright © BULL. All Rights Reserved.
+    </div>
+</footer>
+
+</main>
 
     <!-- Add JavaScript for Carousel Functionality -->
   <script>
@@ -475,6 +419,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize first slide
     showSlide(0);
 });
+window.addEventListener("scroll", function(){
+    var header = document.querySelector(".home-navbar");
+    header.classList.toggle("sticky", window.scrollY > window.innerHeight);
+})
   </script>
 </body>
 </html>
