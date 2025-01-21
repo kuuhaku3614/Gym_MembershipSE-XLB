@@ -286,7 +286,56 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="graph-container">
                 <h2>Monthly Membership Growth in 2024</h2>
                 <div class="graph-wrapper">
+                    <?php
+                    $membership_data_sql = "
+                    SELECT 
+                        MONTHNAME(created_at) AS month,
+                        COUNT(*) AS total_memberships
+                    FROM memberships
+                    WHERE YEAR(created_at) = YEAR(CURDATE())
+                    GROUP BY MONTH(created_at)
+                    ORDER BY MONTH(created_at)
+                    ";
+                    $membership_data_stmt = $pdo->prepare($membership_data_sql);
+                    $membership_data_stmt->execute();
+                    $membership_data = $membership_data_stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $labels = array_column($membership_data, 'month');
+                    $data = array_map('intval', array_column($membership_data, 'total_memberships'));
+                    ?>
                     <canvas id="membershipGraph"></canvas>
+                    <script>
+                        const ctx = document.getElementById('membershipGraph').getContext('2d');
+                        const chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: <?php echo json_encode($labels) ?>,
+                                datasets: [{
+                                    label: 'Total Memberships',
+                                    data: <?php echo json_encode($data) ?>,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.2)'
+                                    ],
+                                    borderColor: [
+                                        'rgba(255, 99, 132, 1)'
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            stepSize: 1,
+                                            callback: function(value) {
+                                                return Math.floor(value);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    </script>
                 </div>
             </div>
             <div class="stats-section">
@@ -396,5 +445,6 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-    <script src="js/dashboard.js"></script>
+
+    
 </body>
