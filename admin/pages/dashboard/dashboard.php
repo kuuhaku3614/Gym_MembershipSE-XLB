@@ -284,7 +284,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Main Section -->
         <div class="main-section">
             <div class="graph-container">
-                <h2>Monthly Membership Growth in 2024</h2>
+                <h2>Monthly Membership Growth in <?= date('Y') ?></h2>
                 <div class="graph-wrapper">
                     <?php
                     $membership_data_sql = "
