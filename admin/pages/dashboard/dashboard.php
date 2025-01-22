@@ -259,7 +259,17 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="stats-value"><?= $member_users['member_users'] ?></div>
             </div>
             <div class="card notification-card">
-                <div class="notification-badge">7</div>
+                <?php
+                $notifications_sql = "
+                SELECT COUNT(*) AS total_notifications 
+                FROM transactions
+                WHERE status = 'pending'
+                ";
+                $notifications_stmt = $pdo->prepare($notifications_sql);
+                $notifications_stmt->execute();
+                $notifications = $notifications_stmt->fetch(PDO::FETCH_ASSOC);
+                ?>
+                <div class="notification-badge"><?= $notifications['total_notifications'] ?></div>
                 <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
             </div>
             <?php
