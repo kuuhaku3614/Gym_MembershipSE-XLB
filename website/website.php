@@ -112,7 +112,7 @@ include('includes/header.php');
     </div>
 
     <div class="offers-text">
-        <h1>Gym Offers</h1>
+        <h1 class="title">Gym Offers</h1>
         <p><?php 
             echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
         ?></p>
@@ -138,7 +138,7 @@ include('includes/header.php');
     <div class="rhombus rhombus-4"></div>
     </div>
     <div class="products-text">
-        <h1>Products you may like</h1>
+        <h1 class="title">Products you may like</h1>
         <p>Check out our latest fitness products!</p>
     </div>
     <div class="product-container">
@@ -159,18 +159,18 @@ include('includes/header.php');
 </section>
 
         <!-- About Us/gallery Section -->
-<section class="S-AboutUs">
+<section class="S-AboutUs" id="S-AboutUs">
 
     
+    <div class="design-container">
+        <div class="rhombus rhombus-1"></div>
+        <div class="rhombus rhombus-2"></div>
+        <div class="rhombus rhombus-3"></div>
+    </div>
 
     <div class="aboutUs-text">
-
-    <div class="design-container">
-    <div class="rhombus rhombus-1"></div>
-    <div class="rhombus rhombus-2"></div>
-    <div class="rhombus rhombus-3"></div>
-    </div>
-        <h1>About Us</h1>
+    
+        <h1 class="title">About Us</h1>
         <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
 
         <div class="joinNow-container">
@@ -215,7 +215,7 @@ include('includes/header.php');
     <div class="rhombus rhombus-4"></div>
     </div>
 
-    <h1>Gym Staffs</h1>
+    <h1 class="title">Gym Staffs</h1>
     
     <div class="staff-container">
         <?php if (!empty($staffMembers)) : ?>
@@ -246,7 +246,7 @@ $latitude = $contactContent['latitude'] ?? 6.913126;
 $longitude = $contactContent['longitude'] ?? 122.072516;
 ?>
 
-<section class="S-ContactUs">
+<section class="S-ContactUs" id="S-ContactUs">
 
     <div class="design-container">
     <div class="rhombus rhombus-1"></div>
@@ -291,7 +291,9 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
 
     <div class="footer-container">
         <div class="logo-section">
-            <img src="bull-logo.png" alt="Bull Logo" class="logo">
+        <div class="home-logo">
+        <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
+            </div>
             <div class="contact-info">
                 <p>9464 Columbia Ave.<br>
                 New York, NY 10029</p>
@@ -309,13 +311,13 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
             <h3>Menu</h3>
             <ul class="menu-list">
                 <li><a href="#">Home</a></li>
-                <li><a href="#">Membership</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#">Blog</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#S-AboutUs">About</a></li>
+                <li><a href="#S-ContactUs">Contact Us</a></li>
             </ul>
         </div>
 
-        <div class="quick-links-section">
+        <!-- <div class="quick-links-section">
             <h3>Quick Links</h3>
             <ul class="quick-links-list">
                 <li><a href="#">Login</a></li>
@@ -323,7 +325,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
                 <li><a href="#">Contact Us</a></li>
                 <li><a href="#">Privacy Policy</a></li>
             </ul>
-        </div>
+        </div> -->
 
         <div class="operational-section">
             <h3>Operational</h3>
@@ -337,7 +339,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     </div>
 
     <div class="copyright">
-        Copyright © BULL. All Rights Reserved.
+        Copyright © XLB. All Rights Reserved.
     </div>
 </footer>
 
