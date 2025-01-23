@@ -38,7 +38,7 @@ SELECT
     END as rental_status
 FROM users u
 INNER JOIN personal_details pd ON u.id = pd.user_id
-INNER JOIN transactions t ON u.id = t.user_id
+INNER JOIN transactions t ON u.id = t.user_id AND t.status = 'confirmed'
 INNER JOIN memberships m ON t.id = m.transaction_id
 LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
     AND (ps.end_date >= CURDATE() OR ps.end_date IS NULL)

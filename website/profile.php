@@ -448,6 +448,7 @@
 
         body {
             background-color: whitesmoke !important;
+            min-height: 100vh;
         }
 
         header {
@@ -486,6 +487,7 @@
         }
 
         section #availed_services {
+            min-height: 75vh!important;
             width: 30%!important;
             margin-right: 3%!important;
             box-shadow: 0px 1px 3px gray!important;
