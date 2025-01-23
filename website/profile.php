@@ -44,7 +44,6 @@
     include('includes/header.php');
 ?>
 
-
     <header class="container-fluid" id="title">
         <div class="container-xl" id="name" style="position: relative;">
             <h1><?= $_SESSION['personal_details']['name'] ?></h1>
