@@ -79,8 +79,7 @@ if (!file_exists($uploadsDir)) {
 }
 
 // Query to fetch members
-    $query = "
-SELECT 
+    $query = "SELECT 
     u.id AS user_id, 
     u.username, 
     pd.first_name, 
@@ -100,6 +99,14 @@ SELECT
             AND m.end_date >= CURDATE()
             AND m.is_paid = 1
         ) THEN 'Active'
+        WHEN EXISTS (
+            SELECT 1 FROM memberships m 
+            JOIN transactions t ON m.transaction_id = t.id
+            WHERE t.user_id = u.id 
+            AND m.status = 'active' 
+            AND m.end_date >= CURDATE()
+            AND m.is_paid = 0
+        ) THEN 'Pending'
         ELSE 'Inactive'
     END AS membership_status,
     
@@ -108,8 +115,25 @@ SELECT
     m.end_date AS membership_end,
     
     CASE 
-        WHEN m.is_paid = 1 THEN 'Paid'
-        ELSE 'Pending'
+        WHEN EXISTS (
+            SELECT 1 FROM memberships m 
+            JOIN transactions t ON m.transaction_id = t.id
+            WHERE t.user_id = u.id 
+            AND m.status = 'active'
+            AND m.end_date >= CURDATE()
+        ) THEN 
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1 FROM memberships m 
+                    JOIN transactions t ON m.transaction_id = t.id
+                    WHERE t.user_id = u.id 
+                    AND m.status = 'active'
+                    AND m.end_date >= CURDATE()
+                    AND m.is_paid = 1
+                ) THEN 'Paid'
+                ELSE 'Unpaid'
+            END
+        ELSE ' '
     END AS payment_status,
     
     (
@@ -641,23 +665,25 @@ function registration_fee() {
                             <p><strong>Birthdate:</strong> <span id="memberBirthdate"></span></p>
                             <p><strong>Phone:</strong> <span id="memberPhone"></span></p>
                         </div>
-                        <div class="info-section mb-4">
-                            <h6 class="info-header">Membership Details</h6>
-                            <p><strong>Plan:</strong> <span id="memberPlan"></span></p>
-                            <p><strong>Total Amount:</strong> <span id="totalAmount" class="text-primary font-weight-bold"></span></p>
-                        </div>
-                        <div class="info-section mb-4">
-                            <h6 class="info-header">Subscription Period</h6>
-                            <p><strong>Start Date:</strong> <span id="membershipStart"></span></p>
-                            <p><strong>End Date:</strong> <span id="membershipEnd"></span></p>
-                        </div>
-                        <div class="info-section mb-4">
-                            <h6 class="info-header">Programs Availed</h6>
-                            <p id="memberPrograms" class="text-muted">None</p>
-                        </div>
-                        <div class="info-section">
-                            <h6 class="info-header">Services Availed</h6>
-                            <p id="memberServices" class="text-muted" >None</p>
+                        <div id="membershipDetails" style="display: none;">
+                            <div class="info-section mb-4">
+                                <h6 class="info-header">Membership Details</h6>
+                                <p><strong>Plan:</strong> <span id="memberPlan"></span></p>
+                                <p><strong>Total Amount:</strong> <span id="totalAmount" class="text-primary font-weight-bold"></span></p>
+                            </div>
+                            <div class="info-section mb-4">
+                                <h6 class="info-header">Subscription Period</h6>
+                                <p><strong>Start Date:</strong> <span id="membershipStart"></span></p>
+                                <p><strong>End Date:</strong> <span id="membershipEnd"></span></p>
+                            </div>
+                            <div class="info-section mb-4">
+                                <h6 class="info-header">Programs Availed</h6>
+                                <p id="memberPrograms" class="text-muted">None</p>
+                            </div>
+                            <div class="info-section">
+                                <h6 class="info-header">Services Availed</h6>
+                                <p id="memberServices" class="text-muted">None</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1502,26 +1528,31 @@ $('.view-member').on('click', function () {
 
         // Membership Status Badge
         const membershipStatus = memberData.membership_status || 'Inactive';
+        const statusClass = membershipStatus === 'Active' ? 'text-success' : 'text-danger';
         $('#membershipStatus')
             .text(membershipStatus)
             .removeClass('badge-success badge-danger')
             .addClass(membershipStatus === 'Active' ? 'badge-success' : 'badge-danger');
 
-        // Updated Membership Details
-        $('#memberPlan').text(memberData.membership_plan_name || 'Standard Membership');
-        $('#totalAmount').text(formatCurrency(memberData.total_price));
+        // Only show membership details if status is not Inactive
+        if (membershipStatus !== 'Inactive') {
+            $('#membershipDetails').show();
+            $('#memberPlan').text(memberData.membership_plan_name || 'N/A');
+            $('#totalAmount').text(formatCurrency(memberData.total_price));
 
-        // Subscription Period
-        if (memberData.membership_start && memberData.membership_end) {
-            $('#membershipStart').text(formatDate(memberData.membership_start));
-            $('#membershipEnd').text(formatDate(memberData.membership_end));
+            if (memberData.membership_start && memberData.membership_end) {
+                $('#membershipStart').text(formatDate(memberData.membership_start));
+                $('#membershipEnd').text(formatDate(memberData.membership_end));
+            } else {
+                $('#membershipStart, #membershipEnd').text('N/A');
+            }
+
+            // Programs and Services
+            $('#memberPrograms').text(memberData.subscribed_programs || 'None');
+            $('#memberServices').text(memberData.rental_services || 'None');
         } else {
-            $('#membershipStart, #membershipEnd').text('N/A');
+            $('#membershipDetails').hide();
         }
-
-        // Programs and Services
-        $('#memberPrograms').html(formatSubscriptions(memberData.subscribed_programs));
-        $('#memberServices').html(formatSubscriptions(memberData.rental_services));
 
         // Payment Button
         updatePaymentButton(memberData);
