@@ -65,21 +65,24 @@ class Profile_class{
     public function fetchAttendanceLog($searchDate = null) {
         $conn = $this->db->connect();
         $sql = "SELECT 
-                id,
-                attendance_id,
-                DATE_FORMAT(CONVERT_TZ(time_in, '+00:00', '+08:00'), '%h:%i %p') as time_in,
-                DATE_FORMAT(CONVERT_TZ(time_out, '+00:00', '+08:00'), '%h:%i %p') as time_out,
-                created_at
-                FROM attendance_history";
+                ah.id,
+                ah.attendance_id,
+                DATE_FORMAT(CONVERT_TZ(ah.time_in, '+00:00', '+08:00'), '%h:%i %p') as time_in,
+                DATE_FORMAT(CONVERT_TZ(ah.time_out, '+00:00', '+08:00'), '%h:%i %p') as time_out,
+                ah.created_at
+                FROM attendance_history ah
+                JOIN attendance a ON ah.attendance_id = a.id
+                WHERE a.user_id = :user_id";
         
         if ($searchDate) {
-            $sql .= " WHERE DATE(created_at) = :search_date";
+            $sql .= " AND DATE(ah.created_at) = :search_date";
         }
         
-        $sql .= " ORDER BY created_at DESC";
+        $sql .= " ORDER BY ah.created_at DESC";
         
         $stmt = $conn->prepare($sql);
         
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
         if ($searchDate) {
             $stmt->bindParam(':search_date', $searchDate);
         }
