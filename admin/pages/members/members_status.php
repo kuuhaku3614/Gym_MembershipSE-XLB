@@ -1,6 +1,6 @@
 <?php
-// Use your existing database connection
-require_once 'config.php';
+date_default_timezone_set('Asia/Manila');
+require_once '../../../config.php';
 $database = new Database();
 $pdo = $database->connect();
 
@@ -9,44 +9,59 @@ $query = "
 SELECT 
     CONCAT(pd.first_name, ' ', pd.last_name) as full_name,
     m.id as membership_id,
+    mp.plan_name as membership_plan,
     m.start_date as membership_start,
     m.end_date as membership_end,
     CASE 
-        WHEN m.end_date < CURDATE() THEN 'expired'
-        WHEN m.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
-        ELSE 'active'
+        WHEN m.end_date < CURDATE() THEN 'Expired'
+        ELSE CONCAT(
+            DATEDIFF(m.end_date, CURDATE()),
+            ' days remaining'
+        )
     END as membership_status,
-    ps.id as program_id,
-    p.program_name,
-    ps.start_date as program_start,
-    ps.end_date as program_end,
-    CASE 
-        WHEN ps.end_date < CURDATE() THEN 'expired'
-        WHEN ps.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
-        WHEN ps.end_date IS NULL THEN NULL
-        ELSE 'active'
-    END as program_status,
-    rs.id as rental_id,
-    rs.start_date as rental_start,
-    rs.end_date as rental_end,
-    srv.service_name,
-    CASE 
-        WHEN rs.end_date < CURDATE() THEN 'expired'
-        WHEN rs.end_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring'
-        WHEN rs.end_date IS NULL THEN NULL
-        ELSE 'active'
-    END as rental_status
+    GROUP_CONCAT(
+        DISTINCT
+        CONCAT(
+            p.program_name, '|',
+            COALESCE(coach.first_name, ''), ' ', COALESCE(coach.last_name, ''), '|',
+            ps.start_date, '|',
+            ps.end_date, '|',
+            CASE 
+                WHEN ps.end_date IS NULL THEN NULL
+                WHEN ps.end_date < CURDATE() THEN 'Expired'
+                ELSE CONCAT(DATEDIFF(ps.end_date, CURDATE()), ' days remaining')
+            END
+        ) SEPARATOR ';'
+    ) as program_details,
+    GROUP_CONCAT(
+        DISTINCT
+        CONCAT(
+            srv.service_name, '|',
+            rs.start_date, '|',
+            rs.end_date, '|',
+            CASE 
+                WHEN rs.end_date IS NULL THEN NULL
+                WHEN rs.end_date < CURDATE() THEN 'Expired'
+                ELSE CONCAT(DATEDIFF(rs.end_date, CURDATE()), ' days remaining')
+            END
+        ) SEPARATOR ';'
+    ) as service_details
 FROM users u
 INNER JOIN personal_details pd ON u.id = pd.user_id
 INNER JOIN transactions t ON u.id = t.user_id AND t.status = 'confirmed'
 INNER JOIN memberships m ON t.id = m.transaction_id
+INNER JOIN membership_plans mp ON m.membership_plan_id = mp.id
 LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
     AND (ps.end_date >= CURDATE() OR ps.end_date IS NULL)
 LEFT JOIN programs p ON ps.program_id = p.id
+LEFT JOIN users coach_user ON ps.coach_id = coach_user.id
+LEFT JOIN personal_details coach ON coach_user.id = coach.user_id
 LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
     AND (rs.end_date >= CURDATE() OR rs.end_date IS NULL)
 LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
 WHERE u.is_active = 1
+AND m.end_date >= CURDATE()
+GROUP BY u.id, pd.first_name, pd.last_name, m.id, mp.plan_name, m.start_date, m.end_date
 ORDER BY pd.last_name, pd.first_name
 ";
 
@@ -90,35 +105,56 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tr>
                             <td><?php echo htmlspecialchars($row['full_name']); ?></td>
                             <td>
+                                <?php echo htmlspecialchars($row['membership_plan']); ?>
+                                <br>
                                 <span class="badge <?php 
-                                    echo $row['membership_status'] === 'active' ? 'bg-success' : 
-                                        ($row['membership_status'] === 'expiring' ? 'bg-warning' : 'bg-danger'); 
+                                    echo strpos($row['membership_status'], 'Expired') !== false ? 'bg-danger' : 'bg-success'; 
                                     ?>">
-                                    <?php echo ucfirst($row['membership_status']); ?>
+                                    <?php echo $row['membership_status']; ?>
                                 </span>
                             </td>
                             <td>
-                                <span class="badge <?php 
-                                    echo $row['program_status'] === 'active' ? 'bg-success' : 
-                                        ($row['program_status'] === 'expiring' ? 'bg-warning' : 'bg-danger'); 
-                                    ?>">
-                                    <?php echo $row['program_status'] ? ucfirst($row['program_status']) : 'No Program'; ?>
-                                </span>
+                                <?php
+                                if ($row['program_details']) {
+                                    $programs = explode(';', $row['program_details']);
+                                    foreach ($programs as $program) {
+                                        $details = explode('|', $program);
+                                        echo htmlspecialchars($details[0]); // Program name
+                                        echo '<br>';
+                                        echo '<span class="badge ' . 
+                                            (strpos($details[4], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
+                                            '">' . htmlspecialchars($details[4]) . '</span>';
+                                        echo '<br><br>';
+                                    }
+                                } else {
+                                    echo '<span class="text-muted">No program</span>';
+                                }
+                                ?>
                             </td>
                             <td>
-                                <span class="badge <?php 
-                                    echo $row['rental_status'] === 'active' ? 'bg-success' : 
-                                        ($row['rental_status'] === 'expiring' ? 'bg-warning' : 'bg-danger'); 
-                                    ?>">
-                                    <?php echo $row['rental_status'] ? ucfirst($row['rental_status']) : 'No Service'; ?>
-                                </span>
+                                <?php
+                                if ($row['service_details']) {
+                                    $services = explode(';', $row['service_details']);
+                                    foreach ($services as $service) {
+                                        $details = explode('|', $service);
+                                        echo htmlspecialchars($details[0]); // Service name
+                                        echo '<br>';
+                                        echo '<span class="badge ' . 
+                                            (strpos($details[3], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
+                                            '">' . htmlspecialchars($details[3]) . '</span>';
+                                        echo '<br><br>';
+                                    }
+                                } else {
+                                    echo '<span class="text-muted">No service</span>';
+                                }
+                                ?>
                             </td>
                             <td>
                                 <button type="button" 
                                         class="btn btn-primary btn-sm view-details" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#detailsModal"
-                                        data-member='<?php echo json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>'>
+                                        data-details='<?php echo json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>'>
                                     <i class="bi bi-eye"></i> View Details
                                 </button>
                             </td>
@@ -131,58 +167,24 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Modal -->
         <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="detailsModalLabel">Subscription Details</h5>
+                        <h5 class="modal-title" id="detailsModalLabel">Member Details</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <!-- Left Section -->
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <h5 class="fw-bold">Membership Details</h5>
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <p><strong>Start Date:</strong> <span id="membershipStart"></span></p>
-                                            <p><strong>End Date:</strong> <span id="membershipEnd"></span></p>
-                                            <p><strong>Status:</strong> <span id="membershipStatus"></span></p>
-                                            <button class="btn btn-success mt-2">Renew Membership</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <h5 class="fw-bold">Program Details</h5>
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <p><strong>Name:</strong> <span id="programName"></span></p>
-                                            <p><strong>Start Date:</strong> <span id="programStart"></span></p>
-                                            <p><strong>End Date:</strong> <span id="programEnd"></span></p>
-                                            <p><strong>Status:</strong> <span id="programStatus"></span></p>
-                                            <button class="btn btn-success mt-2">Renew Program</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Right Section -->
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <h5 class="fw-bold">Service Details</h5>
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <p><strong>Service Name:</strong> <span id="serviceName"></span></p>
-                                            <p><strong>Start Date:</strong> <span id="serviceStart"></span></p>
-                                            <p><strong>End Date:</strong> <span id="serviceEnd"></span></p>
-                                            <p><strong>Status:</strong> <span id="serviceStatus"></span></p>
-                                            <button class="btn btn-success mt-2">Renew Service</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Membership Details</h6>
+                            <p class="mb-1"><strong>Plan:</strong> <span id="membershipPlan"></span></p>
+                            <p class="mb-1"><strong>Start Date:</strong> <span id="membershipStart"></span></p>
+                            <p class="mb-1"><strong>End Date:</strong> <span id="membershipEnd"></span></p>
+                            <p class="mb-1"><strong>Status:</strong> <span id="membershipStatus"></span></p>
                         </div>
+
+                        <div id="programDetails"></div>
+
+                        <div id="serviceDetails"></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -214,7 +216,7 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Handle modal detail display
             $('.view-details').on('click', function() {
-                const data = $(this).data('member');
+                const data = $(this).data('details');
                 
                 // Format dates
                 function formatDate(dateString) {
@@ -223,24 +225,57 @@ $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
 
                 // Update membership details
+                $('#membershipPlan').text(data.membership_plan);
                 $('#membershipStart').text(formatDate(data.membership_start));
                 $('#membershipEnd').text(formatDate(data.membership_end));
-                $('#membershipStatus').text(data.membership_status ? 
-                    data.membership_status.charAt(0).toUpperCase() + data.membership_status.slice(1) : 'N/A');
+                $('#membershipStatus').text(data.membership_status);
 
                 // Update program details
-                $('#programName').text(data.program_name || 'No Program');
-                $('#programStart').text(formatDate(data.program_start));
-                $('#programEnd').text(formatDate(data.program_end));
-                $('#programStatus').text(data.program_status ? 
-                    data.program_status.charAt(0).toUpperCase() + data.program_status.slice(1) : 'N/A');
+                var programContainer = $('#programDetails');
+                programContainer.empty();
+                
+                if (data.program_details) {
+                    var programs = data.program_details.split(';');
+                    programs.forEach(function(program) {
+                        var details = program.split('|');
+                        var html = `
+                            <div class="mb-3">
+                                <p class="mb-1"><strong>Program:</strong> ${details[0] || 'N/A'}</p>
+                                <p class="mb-1"><strong>Coach:</strong> ${details[1].trim() || 'No Coach Assigned'}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(details[2]) || 'N/A'}</p>
+                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(details[3]) || 'N/A'}</p>
+                                <p class="mb-1"><strong>Status:</strong> ${details[4] || 'N/A'}</p>
+                            </div>
+                        `;
+                        programContainer.append(html);
+                    });
+                } else {
+                    programContainer.html('<p>No programs</p>');
+                }
 
                 // Update service details
-                $('#serviceName').text(data.service_name || 'No Service');
-                $('#serviceStart').text(formatDate(data.rental_start));
-                $('#serviceEnd').text(formatDate(data.rental_end));
-                $('#serviceStatus').text(data.rental_status ? 
-                    data.rental_status.charAt(0).toUpperCase() + data.rental_status.slice(1) : 'N/A');
+                var serviceContainer = $('#serviceDetails');
+                serviceContainer.empty();
+                
+                if (data.service_details) {
+                    var services = data.service_details.split(';');
+                    services.forEach(function(service) {
+                        var details = service.split('|');
+                        var html = `
+                            <div class="mb-3">
+                                <p class="mb-1"><strong>Service:</strong> ${details[0] || 'N/A'}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(details[1]) || 'N/A'}</p>
+                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(details[2]) || 'N/A'}</p>
+                                <p class="mb-1"><strong>Status:</strong> ${details[3] || 'N/A'}</p>
+                            </div>
+                        `;
+                        serviceContainer.append(html);
+                    });
+                } else {
+                    serviceContainer.html('<p>No services</p>');
+                }
+
+                $('#detailsModal').modal('show');
             });
         });
     </script>
