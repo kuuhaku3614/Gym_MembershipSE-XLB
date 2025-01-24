@@ -317,4 +317,31 @@ $(document).ready(function () {
       },
     });
   }
+
+  // Function to update membership statuses
+  function updateMembershipStatuses() {
+    $.ajax({
+      url: '/Gym_MembershipSE-XLB/admin/api/update_membership_status.php',
+      method: 'POST',
+      success: function(response) {
+        if (response.success) {
+          // Only reload if we're on the members_status page
+          if (window.location.pathname.includes('members_status.php')) {
+            location.reload();
+          }
+        } else {
+          console.error('Error updating statuses:', response.message);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Ajax error:', error);
+      }
+    });
+  }
+
+  // Update statuses when any admin page loads
+  updateMembershipStatuses();
+
+  // Update statuses every 30 minutes
+  setInterval(updateMembershipStatuses, 30 * 60 * 1000);
 });

@@ -17,6 +17,7 @@ class Walk_in_class {
                         t.created_at as transaction_date
                     FROM walk_in_records w
                     JOIN transactions t ON w.transaction_id = t.id
+                    WHERE t.status = 'confirmed'
                     ORDER BY 
                         CASE WHEN w.status = 'pending' THEN 0 ELSE 1 END,
                         t.created_at DESC";

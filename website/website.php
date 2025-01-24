@@ -48,58 +48,7 @@ $staffMembers = executeQuery("SELECT * FROM staff");
 include('includes/header.php');
 ?>
   <style>
-
-
- /* .offers-carousel {
-    position: relative;
-    width: 500px; 
-    height: 500px;
-    overflow: hidden;
-    margin: 0 auto;
-}
-
-.carousel-wrapper {
-    display: flex;
-    transition: transform 0.5s ease;
-}
-
-/* /* .carousel-slide {
-    min-width: 100%;
-    display: none;
-    position: relative;
-}
-
-.carousel-slide.active {
-    display: block;
-} */
-
-/* .carousel-slide img {
-    width: 100%;
-    height: 100%; 
-    object-fit: cover; 
-} */
-
-/* .carousel-caption {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    padding: 15px;
-    border-radius: 5px;
-} */
-
-/* .carousel-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: absolute;
-    width: 100%;
-    bottom: 10px; 
-    padding: 0 10px;
-}  */
-
-    .offer-button {
+   .offer-button {
       display: inline-block;
       background-color: #f4f4f4;
       color: black;
@@ -115,24 +64,6 @@ include('includes/header.php');
       justify-content: center;
       gap: 20px;
       padding: 20px 0;
-    }
-
-    /* Gallery Section Specific Styles */
-    .S-AboutUs .image-container {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .S-AboutUs .image-container img {
-      width: 100%;
-      height: 250px;
-      object-fit: cover;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     .S-AboutUs .image-container img:hover {
@@ -173,8 +104,15 @@ include('includes/header.php');
   </header>
        <!-- Offers Section -->
 <section class="S-Offers" id="S-Offers">
+
+    <div class="design-container">
+    <div class="rhombus rhombus-3"></div>
+    <div class="rhombus rhombus-1"></div>
+    <div class="rhombus rhombus-4"></div>
+    </div>
+
     <div class="offers-text">
-        <h1>Gym Offers</h1>
+        <h1 class="title">Gym Offers</h1>
         <p><?php 
             echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
         ?></p>
@@ -194,8 +132,13 @@ include('includes/header.php');
 
 <!-- Products Section -->
 <section class="S-Products">
+<div class="design-container">
+    <div class="rhombus rhombus-3"></div>
+    <div class="rhombus rhombus-1"></div>
+    <div class="rhombus rhombus-4"></div>
+    </div>
     <div class="products-text">
-        <h1>Products you may like</h1>
+        <h1 class="title">Products you may like</h1>
         <p>Check out our latest fitness products!</p>
     </div>
     <div class="product-container">
@@ -216,11 +159,18 @@ include('includes/header.php');
 </section>
 
         <!-- About Us/gallery Section -->
-<section class="S-AboutUs">
+<section class="S-AboutUs" id="S-AboutUs">
 
+    
+    <div class="design-container">
+        <div class="rhombus rhombus-1"></div>
+        <div class="rhombus rhombus-2"></div>
+        <div class="rhombus rhombus-3"></div>
+    </div>
 
     <div class="aboutUs-text">
-        <h1>About Us</h1>
+    
+        <h1 class="title">About Us</h1>
         <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
 
         <div class="joinNow-container">
@@ -258,7 +208,15 @@ include('includes/header.php');
         </section> -->
 
 <section class="S-Staffs">
-    <h1>Gym Staffs</h1>
+    
+<div class="design-container">
+    <div class="rhombus rhombus-3"></div>
+    <div class="rhombus rhombus-2"></div>
+    <div class="rhombus rhombus-4"></div>
+    </div>
+
+    <h1 class="title">Gym Staffs</h1>
+    
     <div class="staff-container">
         <?php if (!empty($staffMembers)) : ?>
             <?php foreach ($staffMembers as $staff): ?>
@@ -288,8 +246,24 @@ $latitude = $contactContent['latitude'] ?? 6.913126;
 $longitude = $contactContent['longitude'] ?? 122.072516;
 ?>
 
-<section class="S-ContactUs">
-    <h1>You can find us here, sign up, local supplements and equipments</h1>
+<section class="S-ContactUs" id="S-ContactUs">
+
+    <div class="design-container">
+    <div class="rhombus rhombus-1"></div>
+    <div class="rhombus rhombus-2"></div>
+    <div class="rhombus rhombus-3"></div>
+    </div>
+    <div class="contactUs-text">
+        <h1>You can find us here, sign up, local supplements and equipments</h1>
+
+        <div class="joinNow-container">
+                <a href="?services=1" style="text-decoration: none;">
+                    <button class="joinButton-2">
+                        Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
+                    </button>
+                </a>
+            </div>
+    </div>
   <div class="image-location">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -309,9 +283,17 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
    
 
 <footer class="footer">
+ <!-- <div class="design-container">
+    <div class="rhombus rhombus-1"></div>
+    <div class="rhombus rhombus-2"></div>
+    <div class="rhombus rhombus-3"></div>
+    </div> -->
+
     <div class="footer-container">
         <div class="logo-section">
-            <img src="bull-logo.png" alt="Bull Logo" class="logo">
+        <div class="home-logo">
+        <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
+            </div>
             <div class="contact-info">
                 <p>9464 Columbia Ave.<br>
                 New York, NY 10029</p>
@@ -329,13 +311,13 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
             <h3>Menu</h3>
             <ul class="menu-list">
                 <li><a href="#">Home</a></li>
-                <li><a href="#">Membership</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#">Blog</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#S-AboutUs">About</a></li>
+                <li><a href="#S-ContactUs">Contact Us</a></li>
             </ul>
         </div>
 
-        <div class="quick-links-section">
+        <!-- <div class="quick-links-section">
             <h3>Quick Links</h3>
             <ul class="quick-links-list">
                 <li><a href="#">Login</a></li>
@@ -343,7 +325,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
                 <li><a href="#">Contact Us</a></li>
                 <li><a href="#">Privacy Policy</a></li>
             </ul>
-        </div>
+        </div> -->
 
         <div class="operational-section">
             <h3>Operational</h3>
@@ -357,7 +339,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     </div>
 
     <div class="copyright">
-        Copyright © BULL. All Rights Reserved.
+        Copyright © XLB. All Rights Reserved.
     </div>
 </footer>
 
@@ -365,60 +347,60 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
 
     <!-- Add JavaScript for Carousel Functionality -->
   <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const carousel = document.querySelector('.carousel-wrapper');
-    const slides = document.querySelectorAll('.carousel-slide');
-    const dots = document.querySelectorAll('.carousel-dot');
-    const prevButton = document.querySelector('.carousel-prev');
-    const nextButton = document.querySelector('.carousel-next');
+// document.addEventListener('DOMContentLoaded', function() {
+//     const carousel = document.querySelector('.carousel-wrapper');
+//     const slides = document.querySelectorAll('.carousel-slide');
+//     const dots = document.querySelectorAll('.carousel-dot');
+//     const prevButton = document.querySelector('.carousel-prev');
+//     const nextButton = document.querySelector('.carousel-next');
 
-    // Check if elements exist before proceeding
-    if (!slides.length || !dots.length || !prevButton || !nextButton) {
-        console.warn('Carousel elements not found');
-        return;
-    }
+//     // Check if elements exist before proceeding
+//     if (!slides.length || !dots.length || !prevButton || !nextButton) {
+//         console.warn('Carousel elements not found');
+//         return;
+//     }
 
-    let currentSlide = 0;
+//     let currentSlide = 0;
 
-    function showSlide(index) {
-        // Safely handle slide and dot updates
-        slides.forEach((slide, i) => {
-            slide.classList.toggle('active', i === index);
-        });
+//     function showSlide(index) {
+//         // Safely handle slide and dot updates
+//         slides.forEach((slide, i) => {
+//             slide.classList.toggle('active', i === index);
+//         });
 
-        dots.forEach((dot, i) => {
-            dot.classList.toggle('active', i === index);
-        });
+//         dots.forEach((dot, i) => {
+//             dot.classList.toggle('active', i === index);
+//         });
 
-        currentSlide = (index + slides.length) % slides.length;
-    }
+//         currentSlide = (index + slides.length) % slides.length;
+//     }
 
-    // Next slide
-    nextButton.addEventListener('click', () => {
-        showSlide(currentSlide + 1);
-    });
+//     // Next slide
+//     nextButton.addEventListener('click', () => {
+//         showSlide(currentSlide + 1);
+//     });
 
-    // Previous slide
-    prevButton.addEventListener('click', () => {
-        showSlide(currentSlide - 1);
-    });
+//     // Previous slide
+//     prevButton.addEventListener('click', () => {
+//         showSlide(currentSlide - 1);
+//     });
 
-    // Dot navigation
-    dots.forEach(dot => {
-        dot.addEventListener('click', () => {
-            const slideIndex = parseInt(dot.getAttribute('data-slide'));
-            showSlide(slideIndex);
-        });
-    });
+//     // Dot navigation
+//     dots.forEach(dot => {
+//         dot.addEventListener('click', () => {
+//             const slideIndex = parseInt(dot.getAttribute('data-slide'));
+//             showSlide(slideIndex);
+//         });
+//     });
 
-    // Optional: Auto-advance slides every 5 seconds
-    setInterval(() => {
-        showSlide(currentSlide + 1);
-    }, 5000);
+//     // Optional: Auto-advance slides every 5 seconds
+//     setInterval(() => {
+//         showSlide(currentSlide + 1);
+//     }, 5000);
 
-    // Initialize first slide
-    showSlide(0);
-});
+//     // Initialize first slide
+//     showSlide(0);
+// });
 window.addEventListener("scroll", function(){
     var header = document.querySelector(".home-navbar");
     header.classList.toggle("sticky", window.scrollY > window.innerHeight);
