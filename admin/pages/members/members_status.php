@@ -186,9 +186,9 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Membership Status</h2>
-            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#historyModal">
+            <a href="/Gym_MembershipSE-XLB/admin/membership_history" class="btn btn-info">
                 <i class="fas fa-history"></i> Membership History
-            </button>
+            </a>
         </div>
         
         <!-- Main Table -->
@@ -305,48 +305,6 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <!-- History Modal -->
-        <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="historyModalLabel">Expired Memberships History</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <table id="historyTable" class="table table-striped table-bordered w-100">
-                            <thead>
-                                <tr>
-                                    <th>Member Name</th>
-                                    <th>Plan</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($expiredMemberships as $membership): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($membership['full_name']) ?></td>
-                                    <td><?= htmlspecialchars($membership['membership_plan']) ?></td>
-                                    <td><?= htmlspecialchars($membership['membership_start']) ?></td>
-                                    <td><?= htmlspecialchars($membership['membership_end']) ?></td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-primary view-details" 
-                                                data-membership='<?= json_encode($membership, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
-                                                data-bs-toggle="modal" data-bs-target="#membershipDetailsModal">
-                                            <i class="bi bi-eye"></i> View Details
-                                        </button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Membership Details Modal -->
         <div class="modal fade" id="membershipDetailsModal" tabindex="-1" aria-labelledby="membershipDetailsModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -396,30 +354,6 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                     search: "Search members:",
                     lengthMenu: "Show _MENU_ members per page"
                 }
-            });
-
-            // Initialize history table
-            var historyTable = $('#historyTable').DataTable({
-                scrollX: true,
-                autoWidth: false,
-                order: [[3, 'desc']], // Sort by end date by default
-                columnDefs: [
-                    { width: '25%', targets: 0 }, // Member Name
-                    { width: '20%', targets: 1 }, // Plan
-                    { width: '15%', targets: 2 }, // Start Date
-                    { width: '15%', targets: 3 }, // End Date
-                    { width: '25%', targets: 4 }  // Actions
-                ]
-            });
-
-            // Adjust columns when modal is shown
-            $('#historyModal').on('shown.bs.modal', function () {
-                historyTable.columns.adjust();
-            });
-
-            // Adjust columns when window is resized
-            $(window).on('resize', function () {
-                historyTable.columns.adjust();
             });
 
             // Format dates
@@ -487,9 +421,6 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
             // Handle details button click for history items
             $('.view-details[data-membership]').on('click', function() {
                 const membership = $(this).data('membership');
-                
-                // Close the history modal
-                $('#historyModal').modal('hide');
                 
                 // Populate details modal
                 $('#historyMemberName').text(membership.full_name);
