@@ -58,7 +58,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
             
             <?php if(!empty($error)): ?>
-                <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+                <div class="alert alert-danger message-container" style="max-height: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" data-toggle="modal" data-target="#error-modal">
+                    <?php echo htmlspecialchars(mb_strimwidth($error, 0, 380, '...')); ?>
+                </div>
+                <div class="modal fade" id="error-modal" tabindex="-1" role="dialog" aria-labelledby="error-modal-label" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="error-modal-label">Error Message</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <?php echo htmlspecialchars($error); ?>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">

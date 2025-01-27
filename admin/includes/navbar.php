@@ -80,6 +80,12 @@
                         Announcements
                     </a>
                 </div>
+                <a href="accounts" id="accounts-link" class="nav-item">
+                    <div class="nav-item-content">
+                        <i class="fas fa-user"></i>
+                        Accounts
+                    </div>
+                </a>
 
                 <a href="website_settings" id="website_settings-link" class="nav-item">
                     <div class="nav-item-content">

@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     header('Location: ../login/login.php');
     exit;
 }
+$userId = $_SESSION['user_id'];
 
 $userRole = $_SESSION['role']; // Retrieve role from session
 $page = $_GET['page'] ?? 'dashboard'; // Default to 'dashboard' if not set
