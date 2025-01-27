@@ -28,6 +28,8 @@ $(document).ready(function () {
       loadContent("pages/payment records/payment_records.php"),
     "notification-link": () =>
       loadContent("pages/notification/notification.php"),
+    "accounts-link": () =>
+      loadContent("pages/accounts/accounts.php"),
     "website_settings-link": () =>
       loadContent("pages/website settings/website_settings.php"),
     "report-link": () => loadContent("pages/report/report.php"),
@@ -93,6 +95,7 @@ $(document).ready(function () {
     payment_records: "payment_records-link",
     notification: "notification-link",
     announcement: "announcement-link",
+    accounts: "accounts-link",
     website_settings: "website_settings-link",
     report: "report-link",
     staff_management: "staff_management-link",
@@ -156,6 +159,11 @@ $(document).ready(function () {
   $("#notification-link").on("click", function (e) {
     e.preventDefault();
     viewNotification();
+  });
+
+  $("#accounts-link").on("click", function (e) {
+    e.preventDefault();
+    viewAccounts();
   });
 
   $("#website_settings-link").on("click", function (e) {
@@ -278,6 +286,17 @@ $(document).ready(function () {
     $.ajax({
       type: "GET",
       url: "pages/notification/notification.php",
+      dataType: "html",
+      success: function (response) {
+        $(".main-content").html(response);
+      },
+    });
+  }
+
+  function viewAccounts() {
+    $.ajax({
+      type: "GET",
+      url: "pages/accounts/accounts.php",
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
