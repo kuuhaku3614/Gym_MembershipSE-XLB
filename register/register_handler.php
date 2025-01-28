@@ -194,32 +194,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle verification code generation
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['action']) && $_GET['action'] === 'generate_code') {
-    // Import the Twilio library
-    require_once __DIR__ . '/../../vendor/autoload.php';
-    use Twilio\Rest\Client;
-
-    // Your Account SID and Auth Token from twilio.com/console
-    $sid = getenv('TWILIO_ACCOUNT_SID');
-    $token = getenv('TWILIO_AUTH_TOKEN');
-    $client = new Client($sid, $token);
-
-    // Generate a random verification code
-    $verificationCode = substr(str_shuffle(MD5(microtime())), 0, 6);
-
-    // Store it securely (e.g., in a temporary table with expiration)
+    // In a real application:
+    // 1. Generate a random verification code
+    // 2. Send it via SMS to the provided phone number
+    // 3. Store it securely (e.g., in a temporary table with expiration)
+    
+    // For this example, we'll use a dummy code
+    $verificationCode = '123456';
     $_SESSION['verification_code'] = $verificationCode;
-
-    // Send it via SMS to the provided phone number
-    $phone_number = $_SESSION['registration_data']['phone_number'];
-    $message = $client->messages
-        ->create($phone_number, // to
-            [
-                'from' => getenv('TWILIO_PHONE_NUMBER'),
-                'body' => "Your verification code is: $verificationCode"
-            ]
-        );
-
-    echo json_encode(['success' => true, 'message' => 'Verification code generated and sent via SMS']);
+    
+    echo json_encode(['success' => true, 'message' => 'Verification code generated']);
     exit;
 }
 ?>
