@@ -15,7 +15,7 @@
                 </div>
             </a>
 
-            <a href="members" id="members-link" class="nav-item has-subnav">
+            <a href="members_new" id="members-link" class="nav-item has-subnav">
                 <div class="nav-item-content">
                     <i class="fas fa-users"></i>
                     Members

@@ -12,9 +12,14 @@
 
 RewriteEngine On
 
+# Redirect old members page to new one
+RewriteRule ^admin/pages/members/members\.php$ /admin/pages/members/members_new.php [R=301,L]
+RewriteRule ^admin/members$ admin/members_new [R=301,L]
+
 # Rewrite rules for admin pages
 RewriteRule ^admin/dashboard$ admin/index.php?page=dashboard [L]
-RewriteRule ^admin/members$ admin/index.php?page=members [L]
+#RewriteRule ^admin/members$ admin/index.php?page=members [L]
+RewriteRule ^admin/members_new$ admin/index.php?page=members_new [L]
 RewriteRule ^admin/attendance$ admin/index.php?page=attendance [L]
 RewriteRule ^admin/member_status$ admin/index.php?page=member_status [L]
 RewriteRule ^admin/membership_history$ admin/pages/members/membership_history.php [L]

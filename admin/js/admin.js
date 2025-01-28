@@ -21,7 +21,12 @@ $(document).ready(function () {
   const navigationHandlers = {
     // Main nav items
     "dashboard-link": () => loadContent("pages/dashboard/dashboard.php"),
-    "members-link": () => loadContent("pages/members/members.php"),
+    "members-link": () => {
+      loadContent("pages/members/members_new.php");
+      if (window.location.pathname.endsWith('members')) {
+        window.history.replaceState({ path: 'members_new' }, "", 'members_new');
+      }
+    },
     "walk_in-link": () => loadContent("pages/walk in/walk_in.php"),
     "gym_rates-link": () => loadContent("pages/gym rates/gym_rates.php"),
     "payment_records-link": () =>
@@ -84,7 +89,7 @@ $(document).ready(function () {
   let url = window.location.href;
   const urlMappings = {
     dashboard: "dashboard-link",
-    members: "members-link",
+    members_new: "members-link", // Only support members_new
     attendance: "attendance-link",
     attendance_history: "attendance_history-link",
     member_status: "member_status-link",
@@ -123,7 +128,7 @@ $(document).ready(function () {
 
   $("#members-link").on("click", function (e) {
     e.preventDefault();
-    viewMembers();
+    viewMembersNew();
   });
 
   $("#attendance-link").on("click", function (e) {
@@ -197,10 +202,10 @@ $(document).ready(function () {
     });
   }
 
-  function viewMembers() {
+  function viewMembersNew() {
     $.ajax({
       type: "GET",
-      url: "pages/members/members.php",
+      url: "pages/members/members_new.php",
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);

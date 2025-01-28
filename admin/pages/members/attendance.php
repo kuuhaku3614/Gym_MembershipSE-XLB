@@ -20,7 +20,7 @@ LEFT JOIN attendance a ON u.id = a.user_id AND a.date = CURRENT_DATE()
 JOIN transactions t ON u.id = t.user_id AND t.status = 'confirmed'
 JOIN memberships m ON t.id = m.transaction_id AND m.status != 'expired'
 WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'member')
-AND u.is_active = 1
+AND u.is_active = 1 AND m.is_paid = 1
 GROUP BY u.id, full_name, u.username, pp.photo_path, a.time_in, a.time_out, a.status, a.date
 ";
 

@@ -12,9 +12,15 @@ $userId = $_SESSION['user_id'];
 $userRole = $_SESSION['role']; // Retrieve role from session
 $page = $_GET['page'] ?? 'dashboard'; // Default to 'dashboard' if not set
 
+// Redirect 'members' to 'members_new'
+if ($page === 'members') {
+    header('Location: members_new');
+    exit;
+}
+
 // Define role-based page access
-$adminPages = ['dashboard', 'members', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'announcement', 'website_settings', 'report', 'staff_management', 'staff_activity_log', 'coach_log'];
-$staffPages = ['dashboard', 'members', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'announcement', 'website_settings', 'report', 'staff_activity_log', 'coach_log'];
+$adminPages = ['dashboard', 'members', 'members_new', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'announcement', 'website_settings', 'report', 'staff_management', 'staff_activity_log', 'coach_log'];
+$staffPages = ['dashboard', 'members', 'members_new', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'announcement', 'website_settings', 'report', 'staff_activity_log', 'coach_log'];
 
 // Check if the user is authorized for the requested page
 if (

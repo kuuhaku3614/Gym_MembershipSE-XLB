@@ -4,8 +4,7 @@ require_once '../../../../config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        $sql = "
-SELECT 
+        $sql = "SELECT 
     ah.id AS history_id,
     u.id AS user_id,
     CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
