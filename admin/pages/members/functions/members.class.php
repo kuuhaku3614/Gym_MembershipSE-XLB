@@ -66,15 +66,10 @@ class Members {
 
     public function getMemberDetails($userId) {
         try {
-            error_log("Attempting to get member details for user ID: " . $userId);
-            
             $connection = $this->db->connect();
             if (!$connection) {
-                error_log("Database connection failed");
                 throw new PDOException("Database connection failed");
             }
-
-            error_log("Database connection successful");
             
             $query = "SELECT 
                 u.id AS user_id, 
@@ -243,25 +238,18 @@ class Members {
                 m.id DESC
             LIMIT 1";
 
-            error_log("Executing query: " . $query);
-            error_log("With user ID: " . $userId);
-            
             $stmt = $connection->prepare($query);
             $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
             $stmt->execute();
             
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            error_log("Query result: " . print_r($result, true));
             
             if (!$result) {
-                error_log("No member found for user ID: " . $userId);
                 throw new PDOException("Member not found");
             }
 
             return $result;
         } catch (PDOException $e) {
-            error_log("PDO Exception in getMemberDetails: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
             throw $e;
         }
     }

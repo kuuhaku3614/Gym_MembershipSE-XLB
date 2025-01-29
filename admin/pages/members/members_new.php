@@ -3,30 +3,18 @@
   
   // Handle AJAX request for member details
   if(isset($_GET['ajax_view_member']) && isset($_GET['user_id'])) {
-    // Disable error display for AJAX requests
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-    
     header('Content-Type: application/json');
     try {
-        error_log("Received AJAX request for member ID: " . $_GET['user_id']);
-        
         $members = new Members();
         $memberDetails = $members->getMemberDetails($_GET['user_id']);
         
-        error_log("Member details retrieved: " . print_r($memberDetails, true));
-        
         if ($memberDetails === null) {
-            error_log("Member details is null");
             http_response_code(500);
             echo json_encode(['error' => 'Failed to fetch member details']);
         } else {
-            error_log("Sending member details response");
             echo json_encode($memberDetails);
         }
     } catch (Exception $e) {
-        error_log("Exception caught in AJAX handler: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
         http_response_code(500);
         echo json_encode(['error' => $e->getMessage()]);
     }
@@ -38,7 +26,12 @@
 ?>
 
 <div class="container mt-4">
-  <h1 class="nav-title">Members</h1>  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="nav-title">Members</h1>
+    <a href="#" class="btn btn-primary" id="add_member-link">
+      <i class="fas fa-user-plus"></i> Add Member
+    </a>
+  </div>
 
   <div class="table-responsive">
         <table class="table table-bordered table-hover">
@@ -291,10 +284,9 @@ function viewMemberDetails(userId) {
             document.querySelector('#memberDetailsModal .modal-body').innerHTML = modalContent;
         })
         .catch(error => {
-            console.error('Error:', error);
             document.querySelector('#memberDetailsModal .modal-body').innerHTML = `
                 <div class="alert alert-danger" role="alert">
-                    <strong>Error:</strong> ${error.message}
+                    Failed to load member details. Please try again later.
                 </div>
             `;
         });
@@ -321,4 +313,24 @@ function getPaymentBadgeClass(status) {
             return 'bg-danger';
     }
 }
+</script>
+
+<script>
+$(document).ready(function() {
+    // Add member button click handler
+    $('#add_member-link').on('click', function(e) {
+        e.preventDefault();
+        $.ajax({
+            type: "GET",
+            url: "pages/members/add_member.php",
+            dataType: "html",
+            success: function(response) {
+                $(".main-content").html(response);
+            },
+            error: function() {
+                alert("Error loading the add member form.");
+            }
+        });
+    });
+});
 </script>
