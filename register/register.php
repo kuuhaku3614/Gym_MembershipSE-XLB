@@ -118,7 +118,7 @@
         <img src="../cms_img/jc_logo_2.png" alt="JC Powerzone Logo" class="modal-logo">
         <h1 class="welcome-text">WELCOME TO<br>JC POWERZONE</h1>
         <p class="verification-text">
-            Enter verification code to verify phone number. (123456)<br>
+            Enter verification code to verify phone number.<br>
             <span id="phoneDisplay"></span>
         </p>
         <input type="text" class="verification-input" maxlength="6">
@@ -143,153 +143,184 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-$(document).ready(function() {
-    // Custom file upload trigger
-    $('.btn-upload-trigger').on('click', function() {
-        $('#profile_photo').click();
-    });
+    $(document).ready(function() {
+        let isVerificationInProgress = false;
 
-    // File input change handler
-    $('#profile_photo').on('change', function(event) {
-        const file = event.target.files[0];
-        const fileNameDisplay = $('.file-name-display');
-        
-        if (file) {
-            // Validate file type and size
-            const allowedTypes = ['image/jpeg', 'image/png'];
-            const maxSize = 5 * 1024 * 1024; // 5MB
+        // Custom file upload trigger
+        $('.btn-upload-trigger').on('click', function() {
+            $('#profile_photo').click();
+        });
+
+        // File input change handler
+        $('#profile_photo').on('change', function(event) {
+            const file = event.target.files[0];
+            const fileNameDisplay = $('.file-name-display');
             
-            if (!allowedTypes.includes(file.type)) {
-                alert('Please upload a valid image (JPEG or PNG)');
-                resetFileInput();
+            if (file) {
+                const allowedTypes = ['image/jpeg', 'image/png'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please upload a valid image (JPEG or PNG)');
+                    resetFileInput();
+                    return;
+                }
+                
+                if (file.size > maxSize) {
+                    alert('File size exceeds 5MB limit');
+                    resetFileInput();
+                    return;
+                }
+                
+                fileNameDisplay.text(file.name);
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('.profile-photo-container').html(`<img src="${e.target.result}" alt="Profile Photo">`);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function resetFileInput() {
+            $('#profile_photo').val('');
+            $('.file-name-display').text('No file chosen');
+            $('.profile-photo-container').html(`
+                <div class="profile-photo-placeholder">
+                    <i class="fas fa-camera"></i>
+                    <span>Upload Photo</span>
+                </div>
+            `);
+        }
+
+        // Form submission handler
+        $('#registrationForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            if (isVerificationInProgress) {
                 return;
             }
             
-            if (file.size > maxSize) {
-                alert('File size exceeds 5MB limit');
-                resetFileInput();
+            // Validate password match
+            if ($('#password').val() !== $('#confirmPassword').val()) {
+                alert('Passwords do not match!');
                 return;
             }
             
-            // Update file name display
-            fileNameDisplay.text(file.name);
+            var formData = new FormData(this);
+            formData.append('action', 'validate');
             
-            // Create image preview
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                $('.profile-photo-container').html(`<img src="${e.target.result}" alt="Profile Photo">`);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    function resetFileInput() {
-        $('#profile_photo').val('');
-        $('.file-name-display').text('No file chosen');
-        $('.profile-photo-container').html(`
-            <div class="profile-photo-placeholder">
-                <i class="fas fa-camera"></i>
-                <span>Upload Photo</span>
-            </div>
-        `);
-    }
-
-    // Form submission handler
-    $('#registrationForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Validate password match
-        if ($('#password').val() !== $('#confirmPassword').val()) {
-            alert('Passwords do not match!');
-            return;
-        }
-        
-        // Create FormData object to send both form data and file
-        var formData = new FormData(this);
-        formData.append('action', 'validate');
-        
-        // First, validate the form data
-        $.ajax({
-            url: 'register_handler.php',
-            type: 'POST',
-            data: formData,
-            processData: false,  // Important for file upload
-            contentType: false,  // Important for file upload
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    // Generate verification code
-                    $.get('register_handler.php', { action: 'generate_code' }, function() {
-                        // Show verification modal
+            $.ajax({
+                url: 'register_handler.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        isVerificationInProgress = true;
                         const phoneNumber = $('#phone').val();
                         const maskedPhone = maskPhoneNumber(phoneNumber);
                         $('#phoneDisplay').text(`Verification code sent to ${maskedPhone}`);
                         $('.modal-overlay').fadeIn();
-                        $('.verification-modal').css('display', 'block');
-                    });
-                } else {
-                    alert(response.message);
+                        $('.verification-modal').fadeIn();
+                        
+                        // Generate verification code after showing modal
+                        generateVerificationCode();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('An error occurred during validation. Please try again.');
                 }
-            },
-            error: function() {
-                alert('An error occurred during validation. Please try again.');
-            }
+            });
         });
-    });
 
-    // Verify button click handler
-    $('.btn-verify').click(function() {
-        const code = $('.verification-input').val();
-        
-        // Get the original form data with file
-        var formData = new FormData($('#registrationForm')[0]);
-        formData.append('action', 'verify');
-        formData.append('code', code);
-        
-        $.ajax({
-            url: 'register_handler.php',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    $('.verification-modal').css('display', 'none');
-                    $('.success-modal').css('display', 'block');
-                } else {
-                    alert(response.message);
+        // Function to generate verification code
+        function generateVerificationCode() {
+            $.ajax({
+                url: 'register_handler.php',
+                type: 'GET',
+                data: { action: 'generate_code' },
+                dataType: 'json',
+                success: function(response) {
+                    if (!response.success) {
+                        alert(response.message);
+                        isVerificationInProgress = false;
+                        $('.verification-modal').hide();
+                        $('.modal-overlay').fadeOut();
+                    }
+                },
+                error: function() {
+                    alert('Failed to send verification code. Please try again.');
+                    isVerificationInProgress = false;
+                    $('.verification-modal').hide();
+                    $('.modal-overlay').fadeOut();
                 }
-            },
-            error: function() {
-                alert('An error occurred during verification. Please try again.');
+            });
+        }
+
+        // Verify button click handler
+        $('.btn-verify').click(function() {
+            const code = $('.verification-input').val();
+            if (!code || code.length !== 6) {
+                alert('Please enter a valid 6-digit verification code.');
+                return;
             }
+            
+            var formData = new FormData();
+            formData.append('action', 'verify');
+            formData.append('code', code);
+            
+            $.ajax({
+                url: 'register_handler.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        $('.verification-modal').hide();
+                        $('.success-modal').fadeIn();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('An error occurred during verification. Please try again.');
+                }
+            });
         });
-    });
 
-    // Existing event handlers remain the same
-    $('.btn-back').click(function() {
-        $('.verification-modal').css('display', 'none');
-        $('.modal-overlay').fadeOut();
-    });
-
-    $('.btn-login').click(function() {
-        window.location.href = '../login/login.php';
-    });
-
-    $('.resend-code').click(function() {
-        $.get('register_handler.php', { action: 'generate_code' }, function(response) {
-            if (response.success) {
-                alert('New verification code sent!');
-            }
+        // Resend code handler
+        $('.resend-code').click(function() {
+            $('.verification-input').val(''); // Clear the input field
+            generateVerificationCode();
+            alert('New verification code has been sent.');
         });
-    });
 
-    // Helper function
-    function maskPhoneNumber(phone) {
-        return phone.substring(0, 2) + '*'.repeat(phone.length - 4) + phone.slice(-2);
-    }
-});
-</script>
+        // Back button handler
+        $('.btn-back').click(function() {
+            isVerificationInProgress = false;
+            $('.verification-modal').hide();
+            $('.modal-overlay').fadeOut();
+            $('.verification-input').val(''); // Clear the input field
+        });
+
+        // Login button handler
+        $('.btn-login').click(function() {
+            window.location.href = '../login/login.php';
+        });
+
+        // Helper function to mask phone number
+        function maskPhoneNumber(phone) {
+            if (phone.length <= 5) return phone;
+            return phone.substring(0, 3) + '*'.repeat(phone.length - 5) + phone.slice(-2);
+        }
+    });
+    </script>
 </body>
 </html>
