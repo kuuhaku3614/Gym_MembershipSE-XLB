@@ -66,9 +66,9 @@ function generateAndStoreVerificationCode($userId, $pdo) {
 
 function sendVerificationSMS($phoneNumber) {
     try {
-        // $sid = "AC80cae86174ab25c1728133facec97816";
-        // $token = "1073ee807e57151f875aeef78576a100"; 
-        // $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
+        $sid = "AC80cae86174ab25c1728133facec97816";
+        $token = "1073ee807e57151f875aeef78576a100"; 
+        $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
 
         $twilio = new Client($sid, $token);
         
