@@ -40,6 +40,12 @@ function validatePassword($password) {
     }
 }
 
+function validatePhoneNumber($phone) {
+    if (!preg_match('/^(?:\+63)?9\d{9}$/', $phone)) {
+        throw new Exception("Phone number is not a valid Philippine phone number.");
+    }
+}
+
 function generateAndStoreVerificationCode($userId, $pdo) {
     // Generate a random 6-digit code
     $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -169,6 +175,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             // Validate age
             validateAge($_POST['birthday']);
+            
+            // Validate phone number
+            validatePhoneNumber($_POST['phone']);
             
             // Store validated data in session
             $_SESSION['registration_data'] = [

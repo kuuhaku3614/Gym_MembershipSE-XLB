@@ -62,14 +62,14 @@
                 <div class="form-row">
                     <div class="col-md-6">
                         <div class="form-floating">
-                            <input type="text" class="form-control" id="middleName" name="middle_name" placeholder="Optional">
-                            <label for="middleName">Middle Name</label>
+                            <input type="text" class="form-control" id="middleName" name="middle_name" placeholder=" ">
+                            <label for="middleName">Middle Name (Optional)</label>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-floating">
                             <select class="form-select form-control" id="sex" name="sex" required>
-                                <option value="" selected disabled></option>
+                                <option value="" selected disabled>N/A</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>

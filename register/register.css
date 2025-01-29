@@ -1,101 +1,176 @@
 body {
-    margin: 0;
+    background-color: #f8f9fa;
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(180deg, #c92f2f 0%, #1A1A1A 100%);
     min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.container {
+    min-height: 100vh;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
 
 .registration-container {
-    width: 460px;
-    background: #FFFFFF;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    text-align: center;
-    margin-top: 120px;
-    margin-bottom: 40px;
+    width: 580px;
+    max-width: 95%;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin: 0 auto;
 }
 
 .logo-placeholder {
-    width: 154px;
-    height: 154px;
-    margin: -100px auto 20px;
-    border-radius: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: #FFFFFF;
+    text-align: center;
+    margin-bottom: 1rem;
 }
 
 .logo-placeholder img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 2px;
+    max-width: 180px;
+    height: auto;
 }
 
 h1 {
-    font-size: 24px;
-    font-weight: 800;
-    color: #000000;
-    margin-bottom: 30px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.form-row {
+    margin-bottom: 1rem;
 }
 
 .form-floating {
     position: relative;
-    margin-bottom: 15px;
+    margin-bottom: 1rem;
 }
 
-.form-floating > .form-control,
-.form-floating > .form-select {
+.form-floating input,
+.form-floating select {
     height: calc(3.5rem + 2px);
-    padding: 1.625rem 0.75rem 0.625rem;
-}
-
-.form-floating > label {
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    font-size: 12px;
-    color: #6c757d;
-    pointer-events: none;
-}
-
-.form-control, .form-select {
-    border-radius: 10px;
+    padding: 1rem 0.75rem;
+    font-size: 1rem;
     border: 1px solid #ced4da;
+    border-radius: 0.25rem;
 }
 
-.btn-confirm {
-    font-size: 24px;
-    font-weight: 500;
-    border-radius: 20px;
+.form-floating label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 1rem 0.75rem;
+    pointer-events: none;
+    transition: all 0.2s ease-in-out;
+    font-size: 1rem;
+}
+
+.form-floating input:focus ~ label,
+.form-floating input:not(:placeholder-shown) ~ label,
+.form-floating select:focus ~ label,
+.form-floating select:not([value=""]) ~ label {
+    opacity: 0.65;
+    transform: scale(0.85) translateY(-0.75rem) translateX(0.15rem);
+}
+
+/* Profile Photo Upload Styles */
+.profile-photo-upload {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.profile-photo-container {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 1rem;
+    border: 2px dashed #ced4da;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+}
+
+.profile-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-photo-placeholder {
+    color: #6c757d;
+    text-align: center;
+}
+
+.profile-photo-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-photo-placeholder span {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.file-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-upload-trigger {
     background-color: #FF0000;
     color: white;
     border: none;
-    margin-top: 10px;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-upload-trigger:hover {
+    background-color: #cc0000;
+}
+
+.file-name-display {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Button Styles */
+.btn-confirm {
+    background-color: #FF0000;
+    color: white;
+    font-weight: bold;
+    padding: 10px 0;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-confirm:hover {
+    background-color: #cc0000;
+    color: white;
 }
 
 .btn-exit {
-    font-size: 24px;
-    font-weight: 500;
-    border-radius: 20px;
-    background-color: #343a40;
+    background-color: #ffffff;
+    color: #FF0000;
+    border: 2px solid #FF0000;
+    font-weight: bold;
+    padding: 10px 0;
+    font-size: 1rem;
+}
+
+.btn-exit:hover {
+    background-color: #ff0000;
     color: white;
-    border: none;
-    margin-top: 10px;
-}
-
-.form-row {
-    margin-left: -5px;
-    margin-right: -5px;
-}
-
-.form-row > .col, 
-.form-row > [class*="col-"] {
-    padding-left: 5px;
-    padding-right: 5px;
 }
 
 /* Modal Styles */
@@ -117,325 +192,78 @@ h1 {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 500px;
-    background: #FFFFFF;
-    border-radius: 20px;
+    background: white;
     padding: 2rem;
+    border-radius: 10px;
     z-index: 1001;
+    width: 90%;
+    max-width: 400px;
     text-align: center;
-}
-
-.modal.active {
-    display: block;
 }
 
 .modal-logo {
-    width: 150px;
-    height: 120px;
-    margin: 0 auto 1rem;
-    border-radius: 100px;
-}
-
-.welcome-text {
-    font-weight: 800;
-    font-size: 24px;
-    line-height: 29px;
-    text-align: center;
-    color: #000000;
-    margin-bottom: 1.5rem;
-}
-
-.verification-text {
-    font-weight: 500;
-    font-size: 17px;
-    line-height: 21px;
-    color: #000000;
-    margin-bottom: 1.5rem;
-}
-
-.verification-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #FF0000;
-    border-radius: 5px;
+    max-width: 120px;
     margin-bottom: 1rem;
 }
 
+.verification-text,
+.success-message {
+    margin: 1rem 0;
+    color: #6c757d;
+}
+
+.verification-input {
+    width: 200px;
+    height: 40px;
+    text-align: center;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    letter-spacing: 0.5rem;
+}
+
 .resend-code {
-    font-weight: 800;
-    font-size: 20px;
-    color: #1961EC;
+    color: #FF0000;
     background: none;
     border: none;
+    text-decoration: underline;
     cursor: pointer;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .modal-buttons {
     display: flex;
-    justify-content: space-between;
     gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
 }
 
-.btn-verify,
 .btn-back,
+.btn-verify,
 .btn-login {
-    flex: 1;
-    padding: 0.75rem;
-    border: none;
-    border-radius: 5px;
-    color: #FFFFFF;
-    font-weight: 800;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.btn-verify {
-    background: #06D91B;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
 }
 
 .btn-back {
-    background: #1961EC;
+    background-color: #ffffff;
+    color: #FF0000;
+    border: 2px solid #FF0000;
 }
 
+.btn-verify,
 .btn-login {
-    background: #1961EC;
-    width: 200px;
-    margin: 0 auto;
-}
-
-.success-message {
-    font-weight: 500;
-    font-size: 24px;
-    color: #06D91B;
-    margin: 2rem 0;
-}
-.file-upload-container {
-    width: 100%;
-    height: 50px; /* Fixed height */
-    margin-bottom: 15px;
-    overflow: hidden; /* Hide any overflow */
-}
-
-.file-upload-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background-color: #f8f9fa;
-    padding: 10px;
-    border-radius: 10px;
-    border: 2px dashed #ced4da;
-    transition: all 0.3s ease;
-    width: 100%;
-    height: 100%; /* Ensure it fills the container */
-}
-
-.file-name-display {
-    color: #6c757d;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-}
-
-.file-upload-wrapper:hover {
-    border-color: #FF0000;
-    background-color: #fff0f0;
-}
-
-.btn-upload-trigger {
     background-color: #FF0000;
     color: white;
     border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    white-space: nowrap; /* Prevent text wrapping */
-    overflow: hidden; /* Hide any overflow */
-    max-width: max-content; /* Limit width to content */
 }
 
-.btn-upload-trigger i {
-    font-size: 20px;
-    flex-shrink: 0; /* Prevent icon from shrinking */
-}
-
-.btn-upload-trigger span {
-    flex-shrink: 0; /* Prevent text from shrinking */
-}
-
-.file-name-display {
-    color: #6c757d;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-}
-.profile-photo-upload {
-    position: relative;
-    width: 100%;
-    margin-bottom: 20px;
-}
-
-.profile-photo-container {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 15px;
-    border-radius: 50%;
-    border: 3px solid #FF0000;
-    background-color: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.profile-photo-container:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
-.profile-photo-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.profile-photo-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-}
-
-.profile-photo-placeholder i {
-    font-size: 20px;
-    margin-bottom: 10px;
-}
-
-.custom-file {
-    position: relative;
-    width: 100%;
-}
-
-.custom-file-input {
-    position: absolute;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.custom-file-label {
-    position: relative;
-    z-index: 1;
-    background-color: #FF0000;
+.btn-back:hover {
+    background-color: #ff0000;
     color: white;
-    border-radius: 10px;
-    padding: 10px 15px;
-    text-align: center;
-    transition: background-color 0.3s ease;
 }
 
-.custom-file-label:hover {
+.btn-verify:hover,
+.btn-login:hover {
     background-color: #cc0000;
 }
-    /* Modal Styles */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-    }
-
-    .verification-modal, .success-modal {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: white;
-        padding: 30px;
-        border-radius: 10px;
-        text-align: center;
-        z-index: 1001;
-        width: 90%;
-        max-width: 400px;
-    }
-
-    .modal-logo {
-        width: 150px;
-        margin-bottom: 20px;
-    }
-
-    .verification-input {
-        width: 200px;
-        padding: 10px;
-        margin: 20px auto;
-        display: block;
-        text-align: center;
-        font-size: 20px;
-        letter-spacing: 5px;
-        border: 2px solid #ddd;
-        border-radius: 5px;
-    }
-
-    .modal-buttons {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
-    }
-
-    .btn-back, .btn-verify, .btn-login, .resend-code {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-
-    .btn-verify {
-        background-color: #FF0000;
-        color: white;
-    }
-
-    .btn-back {
-        background-color: #ddd;
-    }
-
-    .resend-code {
-        background: none;
-        border: none;
-        color: #0066cc;
-        text-decoration: underline;
-        margin: 10px 0;
-    }
-
-    .welcome-text {
-        font-size: 24px;
-        margin-bottom: 20px;
-    }
-
-    .verification-text {
-        color: #666;
-        margin-bottom: 20px;
-    }
-
-    #phoneDisplay {
-        font-weight: bold;
-        color: #333;
-    }
