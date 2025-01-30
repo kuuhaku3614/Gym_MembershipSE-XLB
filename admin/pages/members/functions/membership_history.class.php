@@ -44,15 +44,12 @@ class MembershipHistory {
 
             return $formattedMemberships;
         } catch (PDOException $e) {
-            error_log('Error in getAllMemberships: ' . $e->getMessage());
-            throw new Exception('Error fetching memberships: ' . $e->getMessage());
+            throw new Exception('Error fetching memberships');
         }
     }
 
     public function getMembershipDetails($membership_id) {
         try {
-            error_log('Getting details for membership ID: ' . $membership_id);
-            
             $query = "SELECT 
                 CONCAT(pd.first_name, ' ', pd.last_name) as full_name,
                 m.id as membership_id,
@@ -91,33 +88,20 @@ class MembershipHistory {
             WHERE m.id = :membership_id
             GROUP BY u.id, pd.first_name, pd.last_name, m.id, mp.plan_name, m.start_date, m.end_date";
             
-            error_log('Executing query with membership ID: ' . $membership_id);
             $stmt = $this->pdo->prepare($query);
             $stmt->bindParam(':membership_id', $membership_id, PDO::PARAM_INT);
             $stmt->execute();
             
-            error_log('Query executed, fetching results');
             $membership = $stmt->fetch(PDO::FETCH_ASSOC);
-            error_log('Results fetched: ' . ($membership ? 'yes' : 'no'));
 
             if (!$membership) {
-                error_log('No membership found for ID: ' . $membership_id);
                 throw new Exception('Membership not found');
             }
 
-            error_log('Generating HTML for membership');
-            $html = $this->generateDetailsHTML($membership);
-            error_log('HTML generated successfully');
-            
-            return $html;
+            return $this->generateDetailsHTML($membership);
         } catch (PDOException $e) {
-            error_log('PDO Error in getMembershipDetails: ' . $e->getMessage());
-            error_log('SQL State: ' . $e->errorInfo[0]);
-            error_log('Error Code: ' . $e->errorInfo[1]);
-            error_log('Error Message: ' . $e->errorInfo[2]);
-            throw new Exception('Database error while fetching membership details: ' . $e->getMessage());
+            throw new Exception('Database error while fetching membership details');
         } catch (Exception $e) {
-            error_log('General Error in getMembershipDetails: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -175,8 +159,7 @@ class MembershipHistory {
             <?php
             return ob_get_clean();
         } catch (Exception $e) {
-            error_log('Error in generateDetailsHTML: ' . $e->getMessage());
-            throw new Exception('Error generating membership details view: ' . $e->getMessage());
+            throw new Exception('Error generating membership details view');
         }
     }
 }
@@ -205,8 +188,8 @@ if (isset($_GET['action'])) {
                 throw new Exception('Invalid action');
         }
     } catch (Exception $e) {
-        error_log('AJAX Error: ' . $e->getMessage());
         http_response_code(500);
         echo json_encode(['error' => $e->getMessage()]);
     }
+    exit;
 }
