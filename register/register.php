@@ -321,6 +321,113 @@
             return phone.substring(0, 3) + '*'.repeat(phone.length - 5) + phone.slice(-2);
         }
     });
+    $(document).ready(function() {
+    // Real-time validation functions
+    const validations = {
+        password: function(value) {
+            return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(value) ? 
+                '' : 'Password must be at least 8 characters and contain uppercase, lowercase, and numbers.';
+        },
+        phone: function(value) {
+        return /^(?:\+63|0)9\d{9}$/.test(value) ?
+            '' : 'Please enter a valid Philippine phone number (e.g., 09123456789 or +639123456789)';
+        },
+        birthday: function(value) {
+            const birthDate = new Date(value);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            return age >= 15 ? '' : 'You must be at least 15 years old to register.';
+        }
+    };
+
+    // Function to show error feedback
+    function showError(field, message) {
+        const element = $(`#${field}`);
+        const feedbackDiv = element.siblings('.error-feedback');
+        
+        element.addClass('is-invalid');
+        if (feedbackDiv.length === 0) {
+            element.after(`<div class="error-feedback">${message}</div>`);
+        } else {
+            feedbackDiv.text(message).show();
+        }
+    }
+
+    // Function to clear error feedback
+    function clearError(field) {
+        const element = $(`#${field}`);
+        element.removeClass('is-invalid');
+        element.siblings('.error-feedback').hide();
+    }
+
+    // Real-time validation listeners
+    Object.keys(validations).forEach(field => {
+        $(`#${field}`).on('input blur', function() {
+            const error = validations[field](this.value);
+            if (error) {
+                showError(field, error);
+            } else {
+                clearError(field);
+            }
+        });
+    });
+
+    // Password confirmation validation
+    $('#confirmPassword').on('input blur', function() {
+        const password = $('#password').val();
+        if (this.value !== password) {
+            showError('confirmPassword', 'Passwords do not match.');
+        } else {
+            clearError('confirmPassword');
+        }
+    });
+
+    // Update form submission handler
+    $('#registrationForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        if (isVerificationInProgress) {
+            return;
+        }
+        
+        // Clear all previous errors
+        $('.error-feedback').hide();
+        $('.is-invalid').removeClass('is-invalid');
+        
+        var formData = new FormData(this);
+        formData.append('action', 'validate');
+        
+        $.ajax({
+            url: 'register_handler.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    isVerificationInProgress = true;
+                    const phoneNumber = $('#phone').val();
+                    const maskedPhone = maskPhoneNumber(phoneNumber);
+                    $('#phoneDisplay').text(`Verification code sent to ${maskedPhone}`);
+                    $('.modal-overlay').fadeIn();
+                    $('.verification-modal').fadeIn();
+                    generateVerificationCode();
+                } else {
+                    // Show error on specific field if available
+                    if (response.field && response.field !== 'general') {
+                        showError(response.field, response.message);
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            },
+            error: function() {
+                alert('An error occurred during validation. Please try again.');
+            }
+        });
+    });
+});
     </script>
 </body>
 </html>

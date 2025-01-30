@@ -24,6 +24,19 @@ function validateFullName($firstName, $middleName, $lastName, $pdo) {
     }
 }
 
+// Add this new function to register_handler.php
+function validatePhoneExists($phone, $pdo) {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) FROM personal_details 
+        WHERE phone_number = ?
+    ");
+    $stmt->execute([trim($phone)]);
+    
+    if ($stmt->fetchColumn() > 0) {
+        throw new Exception("This phone number is already registered.");
+    }
+}
+
 function validateAge($birthday) {
     $birthDate = new DateTime($birthday);
     $today = new DateTime();
@@ -41,8 +54,8 @@ function validatePassword($password) {
 }
 
 function validatePhoneNumber($phone) {
-    if (!preg_match('/^(?:\+63)?9\d{9}$/', $phone)) {
-        throw new Exception("Phone number is not a valid Philippine phone number.");
+    if (!preg_match('/^(?:\+63|0)9\d{9}$/', $phone)) {
+        throw new Exception("Please enter a valid Philippine phone number (e.g., 09123456789 or +639123456789).");
     }
 }
 
@@ -147,61 +160,87 @@ function verifyTwilioCode($phoneNumber, $code) {
     }
 }
 
+// Add this helper function to determine which field caused the error
+function determineErrorField($errorMessage) {
+    $patterns = [
+        'username' => '/username already exists/i',
+        'password' => '/password must be/i',
+        'name' => '/name is already registered/i',
+        'age' => '/must be at least 15 years/i',
+        'phone' => '/phone number/i'
+    ];
+    
+    foreach ($patterns as $field => $pattern) {
+        if (preg_match($pattern, $errorMessage)) {
+            return $field;
+        }
+    }
+    return 'general';
+}
+
 // Handle POST requests
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Handle initial form validation
-    if (isset($_POST['action']) && $_POST['action'] === 'validate') {
-        try {
-            $pdo->beginTransaction();
-            
-            // Validate username
-            $username = trim($_POST['username']);
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
-            $stmt->execute([$username]);
-            if ($stmt->rowCount() > 0) {
-                throw new Exception("Username already exists.");
-            }
-            
-            // Validate password
-            validatePassword($_POST['password']);
-            
-            // Validate full name
-            validateFullName(
-                $_POST['first_name'],
-                $_POST['middle_name'],
-                $_POST['last_name'],
-                $pdo
-            );
-            
-            // Validate age
-            validateAge($_POST['birthday']);
-            
-            // Validate phone number
-            validatePhoneNumber($_POST['phone']);
-            
-            // Store validated data in session
-            $_SESSION['registration_data'] = [
-                'username' => $username,
-                'password' => trim($_POST['password']),
-                'first_name' => trim($_POST['first_name']),
-                'middle_name' => trim($_POST['middle_name']),
-                'last_name' => trim($_POST['last_name']),
-                'sex' => $_POST['sex'],
-                'birthday' => $_POST['birthday'],
-                'phone' => trim($_POST['phone'])
-            ];
-            
-            $pdo->commit();
-            echo json_encode(['success' => true]);
-            
-        } catch (Exception $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    // Update the validation section in the 'validate' action handler:
+if (isset($_POST['action']) && $_POST['action'] === 'validate') {
+    try {
+        $pdo->beginTransaction();
+        
+        // Validate username
+        $username = trim($_POST['username']);
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        if ($stmt->rowCount() > 0) {
+            throw new Exception("Username already exists.");
         }
-        exit;
+        
+        // Validate password
+        validatePassword($_POST['password']);
+        
+        // Validate full name
+        validateFullName(
+            $_POST['first_name'],
+            $_POST['middle_name'],
+            $_POST['last_name'],
+            $pdo
+        );
+        
+        // Validate age
+        validateAge($_POST['birthday']);
+        
+        // Validate phone number format
+        validatePhoneNumber($_POST['phone']);
+        
+        // Validate phone number existence
+        validatePhoneExists($_POST['phone'], $pdo);
+        
+        // Store validated data in session
+        $_SESSION['registration_data'] = [
+            'username' => $username,
+            'password' => trim($_POST['password']),
+            'first_name' => trim($_POST['first_name']),
+            'middle_name' => trim($_POST['middle_name']),
+            'last_name' => trim($_POST['last_name']),
+            'sex' => $_POST['sex'],
+            'birthday' => $_POST['birthday'],
+            'phone' => trim($_POST['phone'])
+        ];
+        
+        $pdo->commit();
+        echo json_encode(['success' => true]);
+        
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        echo json_encode([
+            'success' => false, 
+            'message' => $e->getMessage(),
+            'field' => determineErrorField($e->getMessage())
+        ]);
     }
+    exit;
+}
 
     // Handle verification code submission
     if (isset($_POST['action']) && $_POST['action'] === 'verify') {

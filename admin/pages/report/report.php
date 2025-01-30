@@ -195,7 +195,7 @@ $pdo = $database->connect();
     </div>
   </div>
   <div class="container mt-4">
-    <h1 class="nav-title">Total Rentals</h1>
+    <h1 class="nav-title">Total Rental Subscriptions</h1>
     <div class="card shadow-sm p-4">
       <h4 class="mb-4">Rentals Table</h4>
       <table class="table table-striped table-bordered mt-4" id="rentalsTable">

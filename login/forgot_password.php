@@ -12,9 +12,11 @@ require_once 'functions.php';
     <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #404040;
             font-family: 'Inter', sans-serif;
         }
         .forgot-password-container {
@@ -37,6 +39,15 @@ require_once 'functions.php';
             background-color: #cc0000;
             color: white;
         }
+        .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+        }
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -52,10 +63,11 @@ require_once 'functions.php';
             <!-- Step 1: Enter Username -->
             <div id="step1" class="form-step">
                 <form id="usernameForm">
-                    <div class="form-group">
-                        <label for="username">Enter your username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
+                        <div class="form-group">
+                            <label for="username">Enter your username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div id="usernameError" class="error-message"></div>
+                        </div>
                     <button type="submit" class="btn btn-submit btn-block">Continue</button>
                 </form>
             </div>
@@ -64,10 +76,11 @@ require_once 'functions.php';
             <div id="step2" class="form-step" style="display: none;">
                 <p class="mb-3">We've sent a verification code to your registered phone number.</p>
                 <form id="verificationForm">
-                    <div class="form-group">
-                        <label for="code">Enter verification code</label>
-                        <input type="text" class="form-control" id="code" name="code" required>
-                    </div>
+                        <div class="form-group">
+                            <label for="code">Enter verification code</label>
+                            <input type="text" class="form-control" id="code" name="code" required>
+                            <div id="codeError" class="error-message"></div>
+                        </div>
                     <button type="submit" class="btn btn-submit btn-block mb-2">Verify Code</button>
                     <button type="button" id="resendCode" class="btn btn-link btn-block">Resend Code</button>
                 </form>
@@ -76,15 +89,16 @@ require_once 'functions.php';
             <!-- Step 3: New Password -->
             <div id="step3" class="form-step" style="display: none;">
                 <form id="passwordForm">
-                    <div class="form-group">
-                        <label for="newPassword">New Password</label>
-                        <input type="password" class="form-control" id="newPassword" name="newPassword" required>
-                        <small class="form-text text-muted">Password must be at least 8 characters with uppercase, lowercase, and numbers.</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
-                    </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                            <div id="newPasswordError" class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                            <div id="confirmPasswordError" class="error-message"></div>
+                        </div>
                     <button type="submit" class="btn btn-submit btn-block">Reset Password</button>
                 </form>
             </div>
@@ -101,95 +115,272 @@ require_once 'functions.php';
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-        $(document).ready(function() {
-            let username = '';
+$(document).ready(function() {
+    let username = '';
+    
+    // Error handling functions
+    function showError(elementId, message) {
+        $(`#${elementId}`).text(message).show();
+        $(`#${elementId}`).prev('input').addClass('is-invalid');
+    }
 
-            // Handle username submission
-            $('#usernameForm').on('submit', function(e) {
-                e.preventDefault();
-                username = $('#username').val();
-                
-                $.post('forgot_password_functions.php', {
-                    action: 'verify_username',
-                    username: username
-                })
-                .done(function(response) {
-                    const result = JSON.parse(response);
-                    if (result.success) {
-                        $('#step1').hide();
-                        $('#step2').show();
-                        // Send verification code automatically
-                        sendVerificationCode();
-                    } else {
-                        alert(result.message);
-                    }
-                });
-            });
+    function clearError(elementId) {
+        $(`#${elementId}`).hide();
+        $(`#${elementId}`).prev('input').removeClass('is-invalid');
+    }
 
-            // Handle verification code submission
-            $('#verificationForm').on('submit', function(e) {
-                e.preventDefault();
-                $.post('forgot_password_functions.php', {
-                    action: 'verify_code',
-                    username: username,
-                    code: $('#code').val()
-                })
-                .done(function(response) {
-                    const result = JSON.parse(response);
-                    if (result.success) {
-                        $('#step2').hide();
-                        $('#step3').show();
-                    } else {
-                        alert(result.message);
-                    }
-                });
-            });
+    function clearAllErrors() {
+        $('.error-message').hide();
+        $('.form-control').removeClass('is-invalid');
+    }
 
-            // Handle new password submission
-            $('#passwordForm').on('submit', function(e) {
-                e.preventDefault();
-                const newPassword = $('#newPassword').val();
-                const confirmPassword = $('#confirmPassword').val();
+    // Loading state functions
+    function setLoadingState(button) {
+        const originalText = button.text();
+        button.prop('disabled', true)
+              .html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading...')
+              .data('original-text', originalText);
+    }
 
-                if (newPassword !== confirmPassword) {
-                    alert('Passwords do not match');
-                    return;
+    function resetLoadingState(button) {
+        const originalText = button.data('original-text');
+        button.prop('disabled', false).text(originalText);
+    }
+
+    // Handle username submission
+    $('#usernameForm').on('submit', function(e) {
+        e.preventDefault();
+        const submitButton = $(this).find('button[type="submit"]');
+        username = $('#username').val().trim();
+        
+        clearAllErrors();
+        
+        // Front-end validation
+        if (!username) {
+            showError('usernameError', 'Please enter your username');
+            return;
+        }
+
+        setLoadingState(submitButton);
+        
+        $.post('forgot_password_functions.php', {
+            action: 'verify_username',
+            username: username
+        })
+        .done(function(response) {
+            try {
+                const result = JSON.parse(response);
+                if (result.success) {
+                    $('#step1').hide();
+                    $('#step2').show();
+                    sendVerificationCode();
+                } else {
+                    showError('usernameError', result.message);
                 }
+            } catch (e) {
+                showError('usernameError', 'An unexpected error occurred');
+            }
+        })
+        .fail(function() {
+            showError('usernameError', 'Failed to connect to server. Please try again.');
+        })
+        .always(function() {
+            resetLoadingState(submitButton);
+        });
+    });
 
-                $.post('forgot_password_functions.php', {
-                    action: 'reset_password',
-                    username: username,
-                    password: newPassword
-                })
-                .done(function(response) {
-                    const result = JSON.parse(response);
-                    if (result.success) {
-                        alert('Password reset successful!');
+    // Handle verification code submission
+    $('#verificationForm').on('submit', function(e) {
+        e.preventDefault();
+        const submitButton = $(this).find('button[type="submit"]');
+        const code = $('#code').val().trim();
+        
+        clearAllErrors();
+        
+        // Front-end validation
+        if (!code) {
+            showError('codeError', 'Please enter the verification code');
+            return;
+        }
+
+        if (!/^\d{6}$/.test(code)) {
+            showError('codeError', 'Please enter a valid 6-digit code');
+            return;
+        }
+
+        setLoadingState(submitButton);
+        
+        $.post('forgot_password_functions.php', {
+            action: 'verify_code',
+            username: username,
+            code: code
+        })
+        .done(function(response) {
+            try {
+                const result = JSON.parse(response);
+                if (result.success) {
+                    $('#step2').hide();
+                    $('#step3').show();
+                } else {
+                    showError('codeError', result.message);
+                }
+            } catch (e) {
+                showError('codeError', 'An unexpected error occurred');
+            }
+        })
+        .fail(function() {
+            showError('codeError', 'Failed to connect to server. Please try again.');
+        })
+        .always(function() {
+            resetLoadingState(submitButton);
+        });
+    });
+
+    // Handle new password submission
+    $('#passwordForm').on('submit', function(e) {
+        e.preventDefault();
+        const submitButton = $(this).find('button[type="submit"]');
+        const newPassword = $('#newPassword').val();
+        const confirmPassword = $('#confirmPassword').val();
+        
+        clearAllErrors();
+        
+        // Front-end validation
+        if (!newPassword) {
+            showError('newPasswordError', 'Please enter a new password');
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            showError('newPasswordError', 'Password must be at least 8 characters long');
+            return;
+        }
+
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(newPassword)) {
+            showError('newPasswordError', 'Password must contain at least one uppercase letter, one lowercase letter, and one number');
+            return;
+        }
+
+        if (!confirmPassword) {
+            showError('confirmPasswordError', 'Please confirm your password');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showError('confirmPasswordError', 'Passwords do not match');
+            return;
+        }
+
+        setLoadingState(submitButton);
+
+        $.post('forgot_password_functions.php', {
+            action: 'reset_password',
+            username: username,
+            password: newPassword
+        })
+        .done(function(response) {
+            try {
+                const result = JSON.parse(response);
+                if (result.success) {
+                    // Show success message before redirect
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Your password has been reset successfully. You will be redirected to the login page.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
                         window.location.href = 'login.php';
-                    } else {
-                        alert(result.message);
-                    }
-                });
-            });
+                    });
+                } else {
+                    showError('newPasswordError', result.message);
+                }
+            } catch (e) {
+                showError('newPasswordError', 'An unexpected error occurred');
+            }
+        })
+        .fail(function() {
+            showError('newPasswordError', 'Failed to connect to server. Please try again.');
+        })
+        .always(function() {
+            resetLoadingState(submitButton);
+        });
+    });
 
-            // Handle resend code
-            $('#resendCode').on('click', function() {
-                sendVerificationCode();
-            });
+    // Handle resend code button
+    let resendTimer;
+    $('#resendCode').on('click', function() {
+        const button = $(this);
+        clearError('codeError');
+        
+        if (button.prop('disabled')) {
+            return;
+        }
 
-            function sendVerificationCode() {
-                $.get('forgot_password_functions.php', {
-                    action: 'generate_code',
-                    username: username
-                })
-                .done(function(response) {
-                    const result = JSON.parse(response);
-                    if (!result.success) {
-                        alert(result.message);
-                    }
-                });
+        setLoadingState(button);
+        
+        $.get('forgot_password_functions.php', {
+            action: 'generate_code',
+            username: username
+        })
+        .done(function(response) {
+            try {
+                const result = JSON.parse(response);
+                if (result.success) {
+                    // Start countdown timer
+                    let timeLeft = 60;
+                    button.prop('disabled', true);
+                    
+                    resendTimer = setInterval(function() {
+                        if (timeLeft <= 0) {
+                            clearInterval(resendTimer);
+                            button.prop('disabled', false)
+                                  .text('Resend Code');
+                        } else {
+                            button.text(`Resend Code (${timeLeft}s)`);
+                            timeLeft--;
+                        }
+                    }, 1000);
+                    
+                    // Show success message
+                    Swal.fire({
+                        title: 'Code Sent!',
+                        text: 'A new verification code has been sent to your phone.',
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    showError('codeError', result.message);
+                }
+            } catch (e) {
+                showError('codeError', 'An unexpected error occurred');
+            }
+        })
+        .fail(function() {
+            showError('codeError', 'Failed to connect to server. Please try again.');
+        })
+        .always(function() {
+            if (!resendTimer) {
+                resetLoadingState(button);
             }
         });
-    </script>
+    });
+
+    // Clear timer when navigating away from verification step
+    function clearResendTimer() {
+        if (resendTimer) {
+            clearInterval(resendTimer);
+            $('#resendCode').prop('disabled', false).text('Resend Code');
+        }
+    }
+
+    // Handle back to login
+    $('.back-to-login').on('click', function(e) {
+        e.preventDefault();
+        clearResendTimer();
+        window.location.href = 'login.php';
+    });
+});
+</script>
 </body>
 </html>
