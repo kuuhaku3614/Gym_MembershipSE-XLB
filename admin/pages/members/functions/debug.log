@@ -1,0 +1,1205 @@
+[31-Jan-2025 22:17:21 Europe/Berlin] Script started - 2025-01-31 22:17:21
+[31-Jan-2025 22:17:21 Europe/Berlin] Request Method: GET
+[31-Jan-2025 22:17:21 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:17:21 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:17:21 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:17:21 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[31-Jan-2025 22:17:21 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 500.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+    [2] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+)
+
+[31-Jan-2025 22:17:21 Europe/Berlin] Script started - 2025-01-31 22:17:21
+[31-Jan-2025 22:17:21 Europe/Berlin] Request Method: GET
+[31-Jan-2025 22:17:21 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:17:21 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:17:21 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:17:21 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[31-Jan-2025 22:17:21 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 500.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+    [2] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+)
+
+[31-Jan-2025 22:17:27 Europe/Berlin] Script started - 2025-01-31 22:17:27
+[31-Jan-2025 22:17:27 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:17:27 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:17:27 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:17:27 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:17:27 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 1
+)
+
+[31-Jan-2025 22:17:27 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:17:27 Europe/Berlin] Processing phase: 1
+[31-Jan-2025 22:17:27 Europe/Berlin] Processing Phase 1 - Personal Details
+[31-Jan-2025 22:17:27 Europe/Berlin] Starting Phase 1 transaction
+[31-Jan-2025 22:17:27 Europe/Berlin] Phase 1 successful. User ID: 70
+[31-Jan-2025 22:17:27 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [user_id] => 70
+    [username] => bretz952
+    [password] => f351bad0
+)
+
+[31-Jan-2025 22:17:30 Europe/Berlin] Script started - 2025-01-31 22:17:30
+[31-Jan-2025 22:17:30 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:17:30 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:17:30 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:17:30 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:17:30 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 2
+)
+
+[31-Jan-2025 22:17:30 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:17:30 Europe/Berlin] Processing phase: 2
+[31-Jan-2025 22:17:30 Europe/Berlin] Processing Phase 2 - Membership Plan
+[31-Jan-2025 22:17:30 Europe/Berlin] Starting Phase 2 transaction
+[31-Jan-2025 22:17:30 Europe/Berlin] Phase 2 successful. Transaction ID: 105
+[31-Jan-2025 22:17:30 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [transaction_id] => 105
+)
+
+[31-Jan-2025 22:17:34 Europe/Berlin] Script started - 2025-01-31 22:17:34
+[31-Jan-2025 22:17:34 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:17:34 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:17:34 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:17:34 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:17:34 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:17:34 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:17:34 Europe/Berlin] Processing phase: 3
+[31-Jan-2025 22:17:34 Europe/Berlin] Processing Phase 3 - Programs and Services
+[31-Jan-2025 22:17:34 Europe/Berlin] Starting Phase 3 transaction
+[31-Jan-2025 22:17:34 Europe/Berlin] Phase 3 data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:17:34 Europe/Berlin] Phase 3 successful
+[31-Jan-2025 22:17:34 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+)
+
+[31-Jan-2025 22:22:30 Europe/Berlin] Script started - 2025-01-31 22:22:30
+[31-Jan-2025 22:22:30 Europe/Berlin] Request Method: GET
+[31-Jan-2025 22:22:30 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:22:30 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:22:30 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:22:30 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[31-Jan-2025 22:22:30 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 500.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+    [2] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+)
+
+[31-Jan-2025 22:22:41 Europe/Berlin] Script started - 2025-01-31 22:22:41
+[31-Jan-2025 22:22:41 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:22:41 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:22:41 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:22:41 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:22:41 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 1
+)
+
+[31-Jan-2025 22:22:41 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:22:41 Europe/Berlin] Processing phase: 1
+[31-Jan-2025 22:22:41 Europe/Berlin] Processing Phase 1 - Personal Details
+[31-Jan-2025 22:22:41 Europe/Berlin] Starting Phase 1 transaction
+[31-Jan-2025 22:22:41 Europe/Berlin] Phase 1 successful. User ID: 71
+[31-Jan-2025 22:22:41 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [user_id] => 71
+    [username] => bretz151
+    [password] => d6346e09
+)
+
+[31-Jan-2025 22:22:43 Europe/Berlin] Script started - 2025-01-31 22:22:43
+[31-Jan-2025 22:22:43 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:22:43 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:22:43 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:22:43 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:22:43 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 2
+)
+
+[31-Jan-2025 22:22:43 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:22:43 Europe/Berlin] Processing phase: 2
+[31-Jan-2025 22:22:43 Europe/Berlin] Processing Phase 2 - Membership Plan
+[31-Jan-2025 22:22:43 Europe/Berlin] Starting Phase 2 transaction
+[31-Jan-2025 22:22:43 Europe/Berlin] Phase 2 successful. Transaction ID: 106
+[31-Jan-2025 22:22:43 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [transaction_id] => 106
+)
+
+[31-Jan-2025 22:22:50 Europe/Berlin] Script started - 2025-01-31 22:22:50
+[31-Jan-2025 22:22:50 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:22:50 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:22:50 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:22:50 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:22:50 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:22:50 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:22:50 Europe/Berlin] Processing phase: 3
+[31-Jan-2025 22:22:50 Europe/Berlin] Processing Phase 3 - Programs and Services
+[31-Jan-2025 22:22:50 Europe/Berlin] Starting Phase 3 transaction
+[31-Jan-2025 22:22:50 Europe/Berlin] Phase 3 data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:22:50 Europe/Berlin] Processing programs: Array
+(
+    [3] => 36
+)
+
+[31-Jan-2025 22:22:50 Europe/Berlin] Program price info: Array
+(
+    [price] => 450.00
+)
+
+[31-Jan-2025 22:22:50 Europe/Berlin] Program subscription saved successfully
+[31-Jan-2025 22:22:50 Europe/Berlin] Phase 3 successful
+[31-Jan-2025 22:22:50 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+)
+
+[31-Jan-2025 22:22:52 Europe/Berlin] Script started - 2025-01-31 22:22:52
+[31-Jan-2025 22:22:52 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:22:52 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:22:52 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:22:52 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:22:52 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 4
+)
+
+[31-Jan-2025 22:22:52 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:22:52 Europe/Berlin] Processing phase: 4
+[31-Jan-2025 22:22:52 Europe/Berlin] Processing Phase 4 - Finalization
+[31-Jan-2025 22:22:52 Europe/Berlin] Starting finalization transaction
+[31-Jan-2025 22:22:52 Europe/Berlin] Error in finalizeRegistration: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'field list'
+[31-Jan-2025 22:22:52 Europe/Berlin] Sending response: Array
+(
+    [success] => 
+    [message] => SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'field list'
+)
+
+[31-Jan-2025 22:23:58 Europe/Berlin] Script started - 2025-01-31 22:23:58
+[31-Jan-2025 22:23:58 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:23:58 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:23:58 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:23:58 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:23:58 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 4
+)
+
+[31-Jan-2025 22:23:58 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:23:58 Europe/Berlin] Processing phase: 4
+[31-Jan-2025 22:23:58 Europe/Berlin] Processing Phase 4 - Finalization
+[31-Jan-2025 22:23:58 Europe/Berlin] Starting finalization transaction
+[31-Jan-2025 22:23:58 Europe/Berlin] Error in finalizeRegistration: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'field list'
+[31-Jan-2025 22:23:58 Europe/Berlin] Sending response: Array
+(
+    [success] => 
+    [message] => SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'field list'
+)
+
+[31-Jan-2025 22:24:09 Europe/Berlin] Script started - 2025-01-31 22:24:09
+[31-Jan-2025 22:24:09 Europe/Berlin] Request Method: GET
+[31-Jan-2025 22:24:09 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:24:09 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:24:09 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:24:09 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[31-Jan-2025 22:24:09 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 500.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+    [2] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+)
+
+[31-Jan-2025 22:24:15 Europe/Berlin] Script started - 2025-01-31 22:24:15
+[31-Jan-2025 22:24:15 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:24:15 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:24:15 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:24:15 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:24:15 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 1
+)
+
+[31-Jan-2025 22:24:15 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:24:15 Europe/Berlin] Processing phase: 1
+[31-Jan-2025 22:24:15 Europe/Berlin] Processing Phase 1 - Personal Details
+[31-Jan-2025 22:24:15 Europe/Berlin] Starting Phase 1 transaction
+[31-Jan-2025 22:24:15 Europe/Berlin] Phase 1 successful. User ID: 72
+[31-Jan-2025 22:24:15 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [user_id] => 72
+    [username] => bretz779
+    [password] => 93987936
+)
+
+[31-Jan-2025 22:24:17 Europe/Berlin] Script started - 2025-01-31 22:24:17
+[31-Jan-2025 22:24:17 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:24:17 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:24:17 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:24:17 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:24:17 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 2
+)
+
+[31-Jan-2025 22:24:17 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:24:17 Europe/Berlin] Processing phase: 2
+[31-Jan-2025 22:24:17 Europe/Berlin] Processing Phase 2 - Membership Plan
+[31-Jan-2025 22:24:17 Europe/Berlin] Starting Phase 2 transaction
+[31-Jan-2025 22:24:17 Europe/Berlin] Phase 2 successful. Transaction ID: 107
+[31-Jan-2025 22:24:17 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [transaction_id] => 107
+)
+
+[31-Jan-2025 22:24:17 Europe/Berlin] Script started - 2025-01-31 22:24:17
+[31-Jan-2025 22:24:17 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:24:17 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:24:17 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:24:17 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:24:17 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 2
+)
+
+[31-Jan-2025 22:24:17 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:24:17 Europe/Berlin] Processing phase: 2
+[31-Jan-2025 22:24:17 Europe/Berlin] Processing Phase 2 - Membership Plan
+[31-Jan-2025 22:24:17 Europe/Berlin] Starting Phase 2 transaction
+[31-Jan-2025 22:24:17 Europe/Berlin] Phase 2 successful. Transaction ID: 108
+[31-Jan-2025 22:24:17 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [transaction_id] => 108
+)
+
+[31-Jan-2025 22:24:21 Europe/Berlin] Script started - 2025-01-31 22:24:21
+[31-Jan-2025 22:24:21 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:24:21 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:24:21 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:24:21 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:24:21 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:24:21 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:24:21 Europe/Berlin] Processing phase: 3
+[31-Jan-2025 22:24:21 Europe/Berlin] Processing Phase 3 - Programs and Services
+[31-Jan-2025 22:24:21 Europe/Berlin] Starting Phase 3 transaction
+[31-Jan-2025 22:24:21 Europe/Berlin] Phase 3 data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:24:21 Europe/Berlin] Processing programs: Array
+(
+    [3] => 36
+)
+
+[31-Jan-2025 22:24:21 Europe/Berlin] Program price info: Array
+(
+    [price] => 450.00
+)
+
+[31-Jan-2025 22:24:21 Europe/Berlin] Program subscription saved successfully
+[31-Jan-2025 22:24:21 Europe/Berlin] Phase 3 successful
+[31-Jan-2025 22:24:21 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+)
+
+[31-Jan-2025 22:24:23 Europe/Berlin] Script started - 2025-01-31 22:24:23
+[31-Jan-2025 22:24:23 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:24:23 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:24:23 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:24:23 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:24:23 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 4
+)
+
+[31-Jan-2025 22:24:23 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:24:23 Europe/Berlin] Processing phase: 4
+[31-Jan-2025 22:24:23 Europe/Berlin] Processing Phase 4 - Finalization
+[31-Jan-2025 22:24:23 Europe/Berlin] Starting finalization transaction
+[31-Jan-2025 22:24:23 Europe/Berlin] Error in finalizeRegistration: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'field list'
+[31-Jan-2025 22:24:23 Europe/Berlin] Sending response: Array
+(
+    [success] => 
+    [message] => SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'field list'
+)
+
+[31-Jan-2025 22:25:05 Europe/Berlin] Script started - 2025-01-31 22:25:05
+[31-Jan-2025 22:25:05 Europe/Berlin] Request Method: GET
+[31-Jan-2025 22:25:05 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:25:05 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:25:05 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:25:05 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[31-Jan-2025 22:25:05 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 500.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+    [2] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+)
+
+[31-Jan-2025 22:25:10 Europe/Berlin] Script started - 2025-01-31 22:25:10
+[31-Jan-2025 22:25:10 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:25:10 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:25:10 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:25:10 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:25:10 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 1
+)
+
+[31-Jan-2025 22:25:10 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:25:10 Europe/Berlin] Processing phase: 1
+[31-Jan-2025 22:25:10 Europe/Berlin] Processing Phase 1 - Personal Details
+[31-Jan-2025 22:25:10 Europe/Berlin] Starting Phase 1 transaction
+[31-Jan-2025 22:25:10 Europe/Berlin] Phase 1 successful. User ID: 73
+[31-Jan-2025 22:25:10 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [user_id] => 73
+    [username] => bretz161
+    [password] => 1f4291b5
+)
+
+[31-Jan-2025 22:25:12 Europe/Berlin] Script started - 2025-01-31 22:25:12
+[31-Jan-2025 22:25:12 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:25:12 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:25:12 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:25:12 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:25:12 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 
+        )
+
+    [phase] => 2
+)
+
+[31-Jan-2025 22:25:12 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:25:12 Europe/Berlin] Processing phase: 2
+[31-Jan-2025 22:25:12 Europe/Berlin] Processing Phase 2 - Membership Plan
+[31-Jan-2025 22:25:12 Europe/Berlin] Starting Phase 2 transaction
+[31-Jan-2025 22:25:12 Europe/Berlin] Phase 2 successful. Transaction ID: 109
+[31-Jan-2025 22:25:12 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+    [transaction_id] => 109
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Script started - 2025-01-31 22:25:17
+[31-Jan-2025 22:25:17 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:25:17 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:25:17 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:25:17 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:25:17 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Processing phase: 3
+[31-Jan-2025 22:25:17 Europe/Berlin] Processing Phase 3 - Programs and Services
+[31-Jan-2025 22:25:17 Europe/Berlin] Starting Phase 3 transaction
+[31-Jan-2025 22:25:17 Europe/Berlin] Phase 3 data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 3
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Processing programs: Array
+(
+    [3] => 36
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Program price info: Array
+(
+    [price] => 450.00
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Program subscription saved successfully
+[31-Jan-2025 22:25:17 Europe/Berlin] Phase 3 successful
+[31-Jan-2025 22:25:17 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Script started - 2025-01-31 22:25:17
+[31-Jan-2025 22:25:17 Europe/Berlin] Request Method: POST
+[31-Jan-2025 22:25:17 Europe/Berlin] Attempting database connection to localhost...
+[31-Jan-2025 22:25:17 Europe/Berlin] Database connection successful
+[31-Jan-2025 22:25:17 Europe/Berlin] Database connection established in Members class
+[31-Jan-2025 22:25:17 Europe/Berlin] POST Data received: Array
+(
+    [username] => 
+    [password] => 
+    [first_name] => BRETZ
+    [middle_name] => bretz
+    [last_name] => bretz
+    [sex] => Male
+    [birthdate] => 2025-01-26
+    [phone_number] => 09752441070
+    [membership_plan] => 20
+    [start_date] => 2025-01-31
+    [program_coach] => Array
+        (
+            [3] => 36
+        )
+
+    [rentals] => Array
+        (
+            [0] => 5
+        )
+
+    [phase] => 4
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Files Data received: Array
+(
+    [photo] => Array
+        (
+            [name] => 
+            [full_path] => 
+            [type] => 
+            [tmp_name] => 
+            [error] => 4
+            [size] => 0
+        )
+
+)
+
+[31-Jan-2025 22:25:17 Europe/Berlin] Processing phase: 4
+[31-Jan-2025 22:25:17 Europe/Berlin] Processing Phase 4 - Finalization
+[31-Jan-2025 22:25:17 Europe/Berlin] Starting finalization transaction
+[31-Jan-2025 22:25:17 Europe/Berlin] Phase 4 successful - Registration completed
+[31-Jan-2025 22:25:17 Europe/Berlin] Sending response: Array
+(
+    [success] => 1
+)
+
