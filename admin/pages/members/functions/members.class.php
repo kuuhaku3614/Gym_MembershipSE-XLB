@@ -496,11 +496,69 @@ class Members {
         }
     }
 
+    // Validate Phase 1 data
+    private function validatePhase1Data($data) {
+        $errors = [];
+        
+        // Required fields
+        $requiredFields = ['first_name', 'last_name', 'sex', 'birthdate', 'phone_number'];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field]) || trim($data[$field]) === '') {
+                $errors[$field] = ucfirst(str_replace('_', ' ', $field)) . ' is required';
+            }
+        }
+
+        // Validate birthdate
+        if (isset($data['birthdate']) && trim($data['birthdate']) !== '') {
+            $birthdate = strtotime($data['birthdate']);
+            $today = strtotime(date('Y-m-d'));
+            if ($birthdate >= $today) {
+                $errors['birthdate'] = 'Birthdate cannot be today or a future date';
+            }
+        }
+
+        // Validate sex
+        if (isset($data['sex']) && !in_array($data['sex'], ['Male', 'Female'])) {
+            $errors['sex'] = 'Invalid sex value';
+        }
+
+        // Validate phone number format (optional, add your specific validation rules)
+        if (isset($data['phone_number']) && trim($data['phone_number']) !== '') {
+            // Add your phone number validation logic here if needed
+            // For example: if (!preg_match('/^[0-9]{11}$/', $data['phone_number'])) {
+            //     $errors['phone_number'] = 'Invalid phone number format';
+            // }
+        }
+
+        return $errors;
+    }
+
+    // Validate Phase 2 data
+    private function validatePhase2Data($data) {
+        $errors = [];
+        
+        // Check if membership plan is selected
+        if (!isset($data['membership_plan']) || trim($data['membership_plan']) === '') {
+            $errors['membership_plan'] = 'Please select a membership plan';
+        }
+
+        return $errors;
+    }
+
     // Save personal details (Phase 1)
     public function savePhase1($data) {
         try {
+            // Validate the data first
+            $validationErrors = $this->validatePhase1Data($data);
+            if (!empty($validationErrors)) {
+                return [
+                    'success' => false,
+                    'errors' => $validationErrors,
+                    'message' => 'Validation failed'
+                ];
+            }
+
             $this->pdo->beginTransaction();
-            error_log("Starting Phase 1 transaction");
 
             // Generate username and password
             $username = strtolower($data['first_name']) . rand(100, 999);
@@ -537,16 +595,23 @@ class Members {
             }
 
             $this->pdo->commit();
+
             return [
                 'success' => true,
+                'message' => 'Personal details saved successfully',
                 'user_id' => $userId,
                 'username' => $username,
                 'password' => $password
             ];
+
         } catch (Exception $e) {
-            $this->pdo->rollBack();
-            error_log("Phase 1 error: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
         }
     }
 
@@ -555,6 +620,7 @@ class Members {
         try {
             $connection = $this->pdo;
             $connection->beginTransaction();
+            
             error_log("Starting Phase 2 transaction");
 
             // Get membership plan details
@@ -759,6 +825,27 @@ class Members {
         } catch (Exception $e) {
             $this->pdo->rollBack();
             error_log("Rollback error: " . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    // Handle termination of incomplete registration
+    public function terminateRegistration($userId) {
+        try {
+            if (!$userId) {
+                return ['success' => false, 'message' => 'No user ID provided for termination'];
+            }
+
+            // Call the rollback function
+            $result = $this->rollbackRegistration($userId);
+            
+            if ($result['success']) {
+                return ['success' => true, 'message' => 'Registration terminated successfully'];
+            } else {
+                throw new Exception($result['message'] ?? 'Failed to terminate registration');
+            }
+        } catch (Exception $e) {
+            error_log("Termination error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
