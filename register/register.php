@@ -10,103 +10,108 @@
     <link rel="stylesheet" href="register.css">
 </head>
 <body>
-    <div class="container d-flex justify-content-center align-items-start">
+    <div class="container d-flex justify-content-center align-items-start max-vh-80">
         <div class="registration-container">
-            <div class="logo-placeholder">
-                <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
+            <!-- Profile Photo Section - Fixed -->
+            <div class="profile-photo-upload">
+                <div class="d-flex justify-content-between align-items-center mb-1 w-100">
+                    <div class="d-flex flex-column align-items-start justify-content-end h-100">
+                        <h2 class="mb-0">Register Information</h2>
+                        <p class="text-muted medium mb-0">Start your journey with us!</p>
+                    </div>
+                    <div class="profile-photo-container">   
+                        <div class="profile-photo-placeholder">
+                            <i class="fas fa-camera"></i>
+                            <span>Upload Photo</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="file-upload-container">
+                    <input 
+                        type="file" 
+                        id="profile_photo" 
+                        name="profile_photo" 
+                        accept=".jpg, .jpeg, .png" 
+                        class="file-input" 
+                        hidden
+                    >
+                    <div class="file-upload-wrapper">
+                        <button type="button" class="btn-upload-trigger">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Upload</span>
+                        </button>
+                        <span class="file-name-display">No file chosen</span>
+                    </div>
+                </div>
             </div>
-            <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
-            
-            <form id="registrationForm" method="POST" enctype="multipart/form-data">
-                <div class="form-row">
-                    <!-- Profile Photo Upload Section -->
-                    <div class="profile-photo-upload">
-                        <div class="profile-photo-container">
-                            <div class="profile-photo-placeholder">
-                                <i class="fas fa-camera"></i>
-                                <span>Upload Photo</span>
+
+            <!-- Scrollable Form Section -->
+            <div class="form-scroll-container">
+                <form id="registrationForm" method="POST" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="firstName" name="first_name" placeholder=" " required>
+                                <label for="firstName">First Name</label>
                             </div>
                         </div>
-                        <div class="file-upload-container">
-                            <input 
-                                type="file" 
-                                id="profile_photo" 
-                                name="profile_photo" 
-                                accept=".jpg, .jpeg, .png" 
-                                class="file-input" 
-                                hidden
-                            >
-                            <div class="file-upload-wrapper">
-                                <button type="button" class="btn-upload-trigger">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                    <span>Upload</span>
-                                </button>
-                                <span class="file-name-display">No file chosen</span>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="lastName" name="last_name" placeholder=" " required>
+                                <label for="lastName">Last Name</label>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            <input type="text" class="form-control" id="firstName" name="first_name" placeholder=" " required>
-                            <label for="firstName">First Name</label>
+
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="middleName" name="middle_name" placeholder=" ">
+                                <label for="middleName">Middle Name (Optional)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <select class="form-select form-control" id="sex" name="sex" required>
+                                    <option value="" selected disabled>N/A</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                                <label for="sex">Sex</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <input type="date" class="form-control" id="birthday" name="birthday" placeholder=" " required>
+                                <label for="birthday">Birthday</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            <input type="text" class="form-control" id="lastName" name="last_name" placeholder=" " required>
-                            <label for="lastName">Last Name</label>
-                        </div>
+
+                    <div class="form-floating">
+                        <input type="tel" class="form-control" id="phone" name="phone" placeholder=" " required>
+                        <label for="phone">Phone No.</label>
                     </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            <input type="text" class="form-control" id="middleName" name="middle_name" placeholder=" ">
-                            <label for="middleName">Middle Name (Optional)</label>
-                        </div>
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="username" name="username" placeholder=" " required>
+                        <label for="username">Username</label>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-floating">
-                            <select class="form-select form-control" id="sex" name="sex" required>
-                                <option value="" selected disabled>N/A</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                            <label for="sex">Sex</label>
-                        </div>
+
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="password" name="password" placeholder=" " required>
+                        <label for="password">Password</label>
                     </div>
-                    <div class="col-md-3">
-                        <div class="form-floating">
-                            <input type="date" class="form-control" id="birthday" name="birthday" placeholder=" " required>
-                            <label for="birthday">Birthday</label>
-                        </div>
+
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder=" " required>
+                        <label for="confirmPassword">Confirm Password</label>
                     </div>
-                </div>
 
-                <div class="form-floating">
-                    <input type="tel" class="form-control" id="phone" name="phone" placeholder=" " required>
-                    <label for="phone">Phone No.</label>
-                </div>
-
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="username" name="username" placeholder=" " required>
-                    <label for="username">Username</label>
-                </div>
-
-                <div class="form-floating">
-                    <input type="password" class="form-control" id="password" name="password" placeholder=" " required>
-                    <label for="password">Password</label>
-                </div>
-
-                <div class="form-floating">
-                    <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder=" " required>
-                    <label for="confirmPassword">Confirm Password</label>
-                </div>
-
-                <button type="submit" class="btn btn-confirm btn-block">Confirm</button>
-                <a href="../login/login.php" class="btn btn-exit btn-block">Exit</a>
-            </form>
+                    <button type="submit" class="btn btn-confirm btn-block">Confirm</button>
+                    <a href="../login/login.php" class="btn btn-exit btn-block">Return to Login</a>
+                </form>
+            </div>
         </div>
     </div>
 

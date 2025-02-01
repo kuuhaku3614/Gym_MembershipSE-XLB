@@ -429,16 +429,19 @@ nav.sticky {
   height: 50%;
   text-align: left;
   align-self: flex-end;
+  margin-bottom: 20px;
 }
 
 .S-Offers h1 {
   font-size: 3rem;
   color: #f5f5f5;
+  width: 90%;
 }
 
 .S-Offers p {
   font-size: 1.25rem;
   color: #f5f5f5;
+  width: 90%;
 }
 
 .offers-container {

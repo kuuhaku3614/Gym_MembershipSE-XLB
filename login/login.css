@@ -1,61 +1,65 @@
+@font-face {
+  font-family: myFont;
+  src: url(../AC.ttf);
+}
+
 body {
-  background-color: #404040;
-  font-family: 'Inter', sans-serif;
+  background-color: #ecebeb;
+  font-family: myFont;
 }
 .login-container {
-  width: 480px;
+  width: 600px;
   max-width: 90%;
-  padding: 1.5rem; 
+  padding: 1.5rem;
   background: white;
   border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .logo-placeholder img {
-  max-width: 180px;
-  margin-bottom: 1rem; 
+  max-width: 100px;
 }
 .btn-login {
-  background-color: #FF0000;
+  background-color: #df0000;
   color: white;
-  font-weight: bold;
   margin-bottom: 12px;
   padding: 10px 0;
   font-size: 1rem;
 }
 .btn-login:hover {
-  background-color: #cc0000;
+  background-color: #ff0000;
   color: white;
 }
 .btn-register {
   background-color: #ffffff;
-  color: #FF0000;
-  border: 2px solid #FF0000;
-  font-weight: bold;
+  color: #6c757d;
+  border: 1px solid #6c757d;
   padding: 10px 0;
   font-size: 1rem;
 }
 .btn-register:hover {
-  background-color: #ff0000;
+  background-color: #6c757d;
   color: white;
 }
 h1 {
-  font-size: 1.5rem; 
-  font-weight: bold;
-  margin-bottom: 1.5rem; 
+  font-size: 2.5rem;
   line-height: 1.4;
+  align-items: center;
 }
 .form-floating {
   position: relative;
-  margin-bottom: 1rem; 
+  margin-bottom: 1rem;
 }
-
 
 .form-floating input {
   height: calc(3.5rem + 2px);
   padding: 1rem 0.75rem;
   font-size: 1rem;
+  border: 1px solid #ced4da;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
 }
+
 .form-floating label {
   position: absolute;
   top: 0;
@@ -64,11 +68,21 @@ h1 {
   pointer-events: none;
   transition: all 0.2s ease-in-out;
   font-size: 1rem;
+  margin-left: 0.5rem;
 }
+
 .form-floating input:focus ~ label,
 .form-floating input:not(:placeholder-shown) ~ label {
-  opacity: 0.65;
-  transform: scale(0.85) translateY(-0.75rem) translateX(0.15rem);
+  padding: 0 0.5rem;
+  transform: translateY(-50%) scale(0.85);
+  color: #6c757d;
+  opacity: 1;
+  z-index: 1;
+  background-color: white;
+}
+
+.form-floating input:not(:focus):not(:placeholder-shown) {
+  border: 1px solid #ced4da;
 }
 .forgot-password {
   color: #6c757d;
@@ -76,7 +90,7 @@ h1 {
   font-size: 0.9rem;
 }
 .forgot-password:hover {
-  color: #FF0000;
+  color: #ff0000;
   text-decoration: none;
 }
 .home-link {
@@ -87,7 +101,7 @@ h1 {
   display: inline-block;
 }
 .home-link:hover {
-  color: #FF0000;
+  color: #ff0000;
   text-decoration: none;
 }
 .remember-me-label {
@@ -100,15 +114,14 @@ h1 {
 }
 .alert {
   padding: 0.5rem 1rem;
-  font-size: 0.85rem; 
-  margin-bottom: 1rem; 
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
 }
-
 
 .remember-me-container {
   margin-left: 0.25rem;
 }
 .bottom-links {
-  margin-top: 1rem; 
-  padding-top: 0.5rem; 
+  margin-top: 1rem;
+  padding-top: 0.5rem;
 }
