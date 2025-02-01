@@ -1,18 +1,7 @@
 <?php
+date_default_timezone_set('Asia/Manila');
 require_once "../../../config.php";
 require_once 'functions/members.class.php';
-
-// Enable error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Set up error logging
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/functions/debug.log');
-
-error_log("Script started - " . date('Y-m-d H:i:s'));
-error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
 
 session_start();
 
@@ -24,18 +13,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Set content type to JSON
     header('Content-Type: application/json');
     
-    error_log("POST Data received: " . print_r($_POST, true));
-    error_log("Files Data received: " . print_r($_FILES, true));
+    $members = new Members();
+    $response = ['success' => false, 'message' => 'Invalid request'];
+
+    // Handle termination request
+    if (isset($_POST['action']) && $_POST['action'] === 'terminate') {
+        if (isset($_POST['user_id'])) {
+            $response = $members->terminateRegistration($_POST['user_id']);
+        } else {
+            $response = ['success' => false, 'message' => 'No user ID provided'];
+        }
+        echo json_encode($response);
+        exit;
+    }
 
     $phase = $_POST['phase'] ?? null;
     $response = ['success' => false, 'message' => 'Invalid phase'];
 
-    error_log("Processing phase: " . $phase);
-
     try {
         switch ($phase) {
             case '1':
-                error_log("Processing Phase 1 - Personal Details");
                 // Handle personal details
                 $response = $members->savePhase1($_POST);
                 if ($response['success']) {
@@ -44,12 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'username' => $response['username'],
                         'password' => $response['password']
                     ];
-                    error_log("Phase 1 successful. User ID: " . $response['user_id']);
                 }
                 break;
 
             case '2':
-                error_log("Processing Phase 2 - Membership Plan");
                 // Handle membership plan
                 if (!isset($_SESSION['registration']['user_id'])) {
                     throw new Exception("Personal details not saved. Please complete phase 1 first.");
@@ -57,12 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response = $members->savePhase2($_SESSION['registration']['user_id'], $_POST);
                 if ($response['success']) {
                     $_SESSION['registration']['transaction_id'] = $response['transaction_id'];
-                    error_log("Phase 2 successful. Transaction ID: " . $response['transaction_id']);
                 }
                 break;
 
             case '3':
-                error_log("Processing Phase 3 - Programs and Services");
                 // Handle programs and services
                 if (!isset($_SESSION['registration']['transaction_id'])) {
                     throw new Exception("Membership plan not saved. Please complete phase 2 first.");
@@ -72,13 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['registration']['transaction_id'],
                     $_POST
                 );
-                if ($response['success']) {
-                    error_log("Phase 3 successful");
-                }
                 break;
 
             case '4':
-                error_log("Processing Phase 4 - Finalization");
                 // Finalize registration
                 if (!isset($_SESSION['registration']['user_id']) || !isset($_SESSION['registration']['transaction_id'])) {
                     throw new Exception("Previous phases not completed. Please complete all phases in order.");
@@ -88,35 +77,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['registration']['transaction_id']
                 );
                 if ($response['success']) {
-                    error_log("Phase 4 successful - Registration completed");
                     // Clear registration session data after successful completion
                     unset($_SESSION['registration']);
                 }
                 break;
 
             case 'rollback':
-                error_log("Processing Rollback Request");
                 // Handle rollback request
                 if (isset($_SESSION['registration']['user_id'])) {
                     $response = $members->rollbackRegistration($_SESSION['registration']['user_id']);
                     if ($response['success']) {
-                        error_log("Rollback successful");
                         unset($_SESSION['registration']);
                     }
                 }
                 break;
-
-            default:
-                error_log("Invalid phase received: " . $phase);
-                break;
         }
     } catch (Exception $e) {
-        error_log("Error occurred: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
         $response = ['success' => false, 'message' => $e->getMessage()];
     }
 
-    error_log("Sending response: " . print_r($response, true));
     echo json_encode($response);
     exit;
 }
@@ -230,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">First Name</label>
-                                        <input type="text" class="form-control" name="first_name" required>
+                                        <input type="text" class="form-control" name="first_name">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Middle Name</label>
@@ -238,26 +217,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" name="last_name" required>
+                                        <input type="text" class="form-control" name="last_name">
                                     </div>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Sex</label>
-                                        <select class="form-select" name="sex" required>
-                                            <option value="">Select Sex</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                        </select>
+                                        <div class="d-flex gap-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="sex" value="Male" id="sexMale">
+                                                <label class="form-check-label" for="sexMale">Male</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="sex" value="Female" id="sexFemale">
+                                                <label class="form-check-label" for="sexFemale">Female</label>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Birthdate</label>
-                                        <input type="date" class="form-control" name="birthdate" required>
+                                        <input type="date" class="form-control" name="birthdate" 
+                                               max="<?php echo date('Y-m-d', strtotime('-1 day')); ?>">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Phone Number</label>
-                                        <input type="tel" class="form-control" name="phone_number" required>
+                                        <input type="tel" class="form-control" name="phone_number">
                                     </div>
                                 </div>
 
@@ -283,6 +268,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Select Membership Plan</h5>
+                                <div id="membershipError" class="alert alert-danger mb-3" style="display: none;">
+                                    Please select a membership plan
+                                </div>
                                 <div class="row">
                                     <?php foreach ($members->getMembershipPlans() as $plan): ?>
                                     <div class="col-md-4 mb-3">
@@ -297,8 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <input class="form-check-input" type="radio" 
                                                            name="membership_plan" 
                                                            value="<?php echo $plan['id']; ?>"
-                                                           data-price="<?php echo $plan['price']; ?>"
-                                                           required>
+                                                           data-price="<?php echo $plan['price']; ?>">
                                                     <label class="form-check-label">
                                                         Select Plan
                                                     </label>
@@ -313,14 +300,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-6">
                                         <label class="form-label">Start Date</label>
                                         <input type="date" class="form-control" name="start_date" 
-                                               value="<?php echo date('Y-m-d'); ?>" required>
+                                               min="<?php echo date('Y-m-d'); ?>"
+                                               value="<?php echo date('Y-m-d'); ?>">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="previousPhase(2)">Previous</button>
+                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="prevPhase(2)">Previous</button>
                             <button type="button" class="btn btn-primary btn-nav" onclick="nextPhase(2)">Next</button>
                         </div>
                     </div>
@@ -394,7 +382,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="previousPhase(3)">Previous</button>
+                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="prevPhase(3)">Previous</button>
                             <button type="button" class="btn btn-primary btn-nav" onclick="nextPhase(3)">Next</button>
                         </div>
                     </div>
@@ -448,7 +436,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="previousPhase(4)">Previous</button>
+                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="prevPhase(4)">Previous</button>
                             <button type="submit" class="btn btn-success btn-nav">Submit</button>
                         </div>
                     </div>
@@ -465,150 +453,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the base URL for AJAX calls
     const baseUrl = '/Gym_MembershipSE-XLB/admin/pages/members/add_member.php';
 
-    async function savePhase(phase) {
-        const form = document.getElementById('memberForm');
-        const formData = new FormData(form);
-        formData.append('phase', phase.toString());
+    async function submitPhase(phase) {
+        // For phase 1, use server-side validation
+        if (phase === 1) {
+            const form = document.getElementById('memberForm');
+            const formData = new FormData(form);
+            formData.append('phase', phase);
 
-        try {
-            const response = await fetch(baseUrl, {
-                method: 'POST',
-                body: formData
-            });
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+                if (!result.success) {
+                    if (result.errors) {
+                        // Clear previous validation state
+                        const inputs = document.querySelectorAll('.is-invalid');
+                        inputs.forEach(input => {
+                            input.classList.remove('is-invalid');
+                        });
 
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                const text = await response.text();
-                console.error('Response was not JSON:', text);
-                throw new TypeError("Response was not JSON. Check console for details.");
-            }
+                        // Clear all existing error messages
+                        document.querySelectorAll('.invalid-feedback').forEach(feedback => {
+                            feedback.remove();
+                        });
 
-            const result = await response.json();
-            
-            if (result.success) {
-                if (phase === 1) {
-                    currentUserId = result.user_id;
-                    // Display credentials
-                    document.getElementById('generatedUsername').textContent = result.username;
-                    document.getElementById('generatedPassword').textContent = result.password;
-                } else if (phase === 2) {
-                    currentTransactionId = result.transaction_id;
+                        // Show validation errors
+                        Object.entries(result.errors).forEach(([field, message]) => {
+                            const input = document.querySelector(`[name="${field}"]`);
+                            if (input) {
+                                input.classList.add('is-invalid');
+                                
+                                // Special handling for radio buttons
+                                if (input.type === 'radio') {
+                                    const feedback = document.createElement('div');
+                                    feedback.className = 'invalid-feedback d-block';
+                                    feedback.textContent = message;
+                                    input.closest('.d-flex').appendChild(feedback);
+                                } else {
+                                    const feedback = document.createElement('div');
+                                    feedback.className = 'invalid-feedback';
+                                    feedback.textContent = message;
+                                    input.parentNode.insertBefore(feedback, input.nextSibling);
+                                }
+                            }
+                        });
+                        return false;
+                    }
+                    throw new Error(result.message || 'An error occurred');
                 }
+
+                // Handle successful response
+                currentUserId = result.user_id;
+                document.getElementById('usernameField').value = result.username;
+                document.getElementById('passwordField').value = result.password;
                 return true;
-            } else {
-                alert(result.message || 'Error saving data');
+            } catch (error) {
+                alert(error.message);
                 return false;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while saving data: ' + error.message);
-            return false;
-        }
-    }
-
-    async function rollbackRegistration() {
-        if (!currentUserId) return true;
-
-        try {
-            const formData = new FormData();
-            formData.append('phase', 'rollback');
-
-            const response = await fetch(baseUrl, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        } else {
+            // For other phases, use the existing validation logic
+            if (!validatePhase(phase)) {
+                return false;
             }
 
-            const result = await response.json();
-            if (result.success) {
-                currentUserId = null;
-                currentTransactionId = null;
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Error during rollback:', error);
-            return false;
-        }
-    }
+            // If validation passes, proceed with saving
+            const form = document.getElementById('memberForm');
+            const formData = new FormData(form);
+            formData.append('phase', phase);
+            formData.append('user_id', currentUserId);
 
-    async function previousPhase(currentPhase) {
-        if (await rollbackRegistration()) {
-            document.querySelector(`#phase${currentPhase}`).classList.remove('active');
-            document.querySelector(`#phase${currentPhase - 1}`).classList.add('active');
-            updatePhaseNav(currentPhase - 1);
-            window.scrollTo(0, 0);
-        }
-    }
-
-    async function nextPhase(currentPhase) {
-        if (validatePhase(currentPhase)) {
-            if (await savePhase(currentPhase)) {
-                document.querySelector(`#phase${currentPhase}`).classList.remove('active');
-                document.querySelector(`#phase${currentPhase + 1}`).classList.add('active');
-                updatePhaseNav(currentPhase + 1);
-                window.scrollTo(0, 0);
-
-                // Update total amount when entering payment summary
-                if (currentPhase + 1 === 4) {
-                    updateTotalAmount();
+            // For phase 3, we need to include the transaction_id
+            if (phase === 3) {
+                if (!currentTransactionId) {
+                    alert('Error: No transaction ID found. Please complete phase 2 first.');
+                    return false;
                 }
+                formData.append('transaction_id', currentTransactionId);
+            }
+
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message || 'An error occurred');
+                }
+
+                if (phase === 2) {
+                    currentTransactionId = result.transaction_id;
+                }
+
+                return true;
+            } catch (error) {
+                alert(error.message);
+                return false;
             }
         }
     }
-
-    // Handle form submission for the final phase
-    document.getElementById('memberForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (await savePhase(4)) {
-            alert('Registration completed successfully!');
-            window.location.href = 'index.php'; // Redirect to members list
-        }
-    });
 
     function validatePhase(phase) {
         const currentPhase = document.querySelector(`#phase${phase}`);
         const inputs = currentPhase.querySelectorAll('input[required], select[required]');
         let isValid = true;
-        let emptyFields = [];
 
-        // Clear previous validation
-        currentPhase.querySelectorAll('.is-invalid').forEach(el => {
-            el.classList.remove('is-invalid');
-            const feedback = el.nextElementSibling;
-            if (feedback && feedback.classList.contains('invalid-feedback')) {
-                feedback.remove();
-            }
-        });
-
-        // Check each required field
+        // Clear previous validation state
         inputs.forEach(input => {
-            if (!input.value.trim()) {
-                isValid = false;
-                emptyFields.push(input.previousElementSibling.textContent.trim());
-                input.classList.add('is-invalid');
-                
-                // Add error message
-                const feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback';
-                feedback.textContent = 'This field is required';
-                input.parentNode.insertBefore(feedback, input.nextSibling);
+            input.classList.remove('is-invalid');
+            const feedback = input.nextElementSibling;
+            if (feedback && feedback.className === 'invalid-feedback') {
+                feedback.remove();
             }
         });
 
         // Special validation for phase 2 (membership plan)
         if (phase === 2) {
             const membershipSelected = currentPhase.querySelector('input[name="membership_plan"]:checked');
+            const errorDiv = document.getElementById('membershipError');
             if (!membershipSelected) {
                 isValid = false;
-                alert('Please select a membership plan');
+                errorDiv.style.display = 'block';
+            } else {
+                errorDiv.style.display = 'none';
             }
         }
 
@@ -626,17 +598,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         }
 
-        if (!isValid) {
-            if (emptyFields.length > 0) {
-                alert('Please fill in all required fields: ' + emptyFields.join(', '));
-            }
-            return false;
-        }
+        return isValid;
+    }
 
-        return true;
+    async function nextPhase(currentPhase) {
+        if (await submitPhase(currentPhase)) {
+            document.querySelector(`#phase${currentPhase}`).classList.remove('active');
+            document.querySelector(`#phase${currentPhase + 1}`).classList.add('active');
+            updatePhaseNav(currentPhase + 1);
+            
+            // Update total amount when entering payment summary
+            if (currentPhase + 1 === 4) {
+                updateTotalAmount();
+            }
+        }
+    }
+
+    async function prevPhase(currentPhase) {
+        try {
+            // Send request to terminate incomplete registration
+            const formData = new FormData();
+            formData.append('action', 'terminate');
+            formData.append('phase', currentPhase);
+            formData.append('user_id', currentUserId);
+
+            const response = await fetch(baseUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to terminate incomplete registration');
+            }
+
+            // Reset stored IDs if going back to phase 1
+            if (currentPhase - 1 === 1) {
+                currentUserId = null;
+                currentTransactionId = null;
+            }
+
+            // Hide current phase and show previous phase
+            document.querySelector(`#phase${currentPhase}`).classList.remove('active');
+            document.querySelector(`#phase${currentPhase - 1}`).classList.add('active');
+            updatePhaseNav(currentPhase - 1);
+
+        } catch (error) {
+            alert(error.message);
+        }
     }
 
     function updatePhaseNav(currentPhase) {
+        // Update navigation links
         document.querySelectorAll('.nav-link').forEach(link => {
             const phase = parseInt(link.dataset.phase);
             link.classList.remove('active', 'completed');
@@ -646,7 +659,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 link.classList.add('active');
             }
         });
+
+        // Update button visibility
+        document.querySelectorAll('.btn-nav').forEach(btn => {
+            if (btn.classList.contains('btn-secondary')) {
+                // Previous buttons
+                btn.style.display = currentPhase > 1 ? 'inline-block' : 'none';
+            } else if (btn.classList.contains('btn-success')) {
+                // Submit button
+                btn.style.display = currentPhase === 4 ? 'inline-block' : 'none';
+            } else if (btn.classList.contains('btn-primary')) {
+                // Next buttons
+                btn.style.display = currentPhase < 4 ? 'inline-block' : 'none';
+            }
+        });
     }
+
+    // Handle form submission for the final phase
+    document.getElementById('memberForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (await submitPhase(4)) {
+            alert('Registration completed successfully!');
+            window.location.href = 'index.php'; // Redirect to members list
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
         // Handle coach selection changes
@@ -684,7 +720,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
 
         // Remove invalid state when user types or changes input
-        document.querySelectorAll('input[required], select[required]').forEach(input => {
+        document.querySelectorAll('input, select').forEach(input => {
             input.addEventListener('input', function() {
                 if (this.value) {
                     this.classList.remove('is-invalid');
