@@ -199,6 +199,17 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         table.dataTable tbody tr:hover {
             background-color: var(--background-color);
         }
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .stats-value.empty {
+            color: #6c757d;
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 <body>

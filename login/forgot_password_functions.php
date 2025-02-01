@@ -8,7 +8,7 @@ session_start();
 // Twilio configuration
 function getTwilioClient() {
     $sid = "AC80cae86174ab25c1728133facec97816";
-    $token = "1073ee807e57151f875aeef78576a100";
+    $token = "6ea56e4f9eb311a8c85158e835f5ba38";
     return new Client($sid, $token);
 }
 
@@ -16,12 +16,10 @@ function getTwilioClient() {
 function verifyUsername($username) {
     global $pdo;
     
-    // Basic input validation
     if (empty(trim($username))) {
         throw new Exception("Username cannot be empty.");
     }
     
-    // Check if username exists and get role
     $stmt = $pdo->prepare("
         SELECT u.id, r.role_name, u.is_active, u.is_banned
         FROM users u
@@ -39,12 +37,10 @@ function verifyUsername($username) {
         throw new Exception("Username does not exist.");
     }
     
-    // Check role restrictions - only allow regular users
     if (in_array($user['role_name'], ['staff', 'admin', 'coach'])) {
         throw new Exception("Password reset not allowed for staff, coach and admin accounts. Please contact system administrator.");
     }
     
-    // Check account status
     if (!$user['is_active']) {
         throw new Exception("This account is not activated. Please contact support.");
     }
@@ -80,70 +76,49 @@ function getUserPhone($username) {
     return $phone;
 }
 
-// Send verification SMS with improved phone formatting
+// Updated sendVerificationSMS function to match register_handler.php
 function sendVerificationSMS($phoneNumber) {
     try {
+        $sid = "AC80cae86174ab25c1728133facec97816";
+        $token = "6ea56e4f9eb311a8c85158e835f5ba38";
         $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
+
+        $twilio = new Client($sid, $token);
         
-        // Sanitize and format phone number
-        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
-        if (strlen($phoneNumber) < 10) {
-            throw new Exception("Invalid phone number format.");
-        }
-        
-        // Format to E.164
         if (!str_starts_with($phoneNumber, '+')) {
             $phoneNumber = '+63' . ltrim($phoneNumber, '0');
         }
 
-        // Send verification
-        $twilio = getTwilioClient();
         $verification = $twilio->verify->v2->services($verifyServiceId)
             ->verifications
             ->create($phoneNumber, "sms");
         
-        if (!$verification->sid) {
-            throw new Exception("Failed to generate verification code.");
-        }
-        
         return $verification->sid;
     } catch (Exception $e) {
         error_log("Twilio Error: " . $e->getMessage());
-        throw new Exception("Failed to send verification code. Please try again later.");
+        throw new Exception("Failed to send verification code. Please try again.");
     }
 }
 
-// Verify the SMS code with improved validation
+// Updated verifyTwilioCode function to match register_handler.php
 function verifyTwilioCode($phoneNumber, $code) {
     try {
+        $sid = "AC80cae86174ab25c1728133facec97816";
+        $token = "6ea56e4f9eb311a8c85158e835f5ba38";
         $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
-        
-        // Validate code format
-        if (!preg_match('/^\d{6}$/', $code)) {
-            throw new Exception("Invalid verification code format.");
-        }
-        
-        // Sanitize and format phone number
-        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
-        if (strlen($phoneNumber) < 10) {
-            throw new Exception("Invalid phone number format.");
-        }
+
+        $twilio = new Client($sid, $token);
         
         if (!str_starts_with($phoneNumber, '+')) {
             $phoneNumber = '+63' . ltrim($phoneNumber, '0');
         }
 
-        $twilio = getTwilioClient();
         $verification_check = $twilio->verify->v2->services($verifyServiceId)
             ->verificationChecks
             ->create([
                 'to' => $phoneNumber,
                 'code' => $code
             ]);
-
-        if (!$verification_check) {
-            throw new Exception("Verification failed. Please try again.");
-        }
 
         return $verification_check->status === "approved";
     } catch (Exception $e) {
@@ -156,151 +131,152 @@ function verifyTwilioCode($phoneNumber, $code) {
 function updatePassword($username, $newPassword) {
     global $pdo;
     
-    // Validate password requirements
     if (strlen($newPassword) < 8) {
         throw new Exception("Password must be at least 8 characters long.");
     }
     
-    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/', $newPassword)) {
+    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/', $newPassword)) {
         throw new Exception("Password must contain at least one uppercase letter, one lowercase letter, and one number.");
     }
-    
-    try {
-        $pdo->beginTransaction();
-        
-        // Verify user exists and is eligible for password reset
-        $stmt = $pdo->prepare("
-            SELECT id FROM users 
-            WHERE username = ? AND is_active = 1 AND is_banned = 0
-        ");
-        
-        if (!$stmt->execute([$username])) {
-            throw new Exception("Database error occurred.");
-        }
-        
-        if (!$stmt->fetch()) {
-            throw new Exception("Invalid user or account status.");
-        }
-        
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        
-        $stmt = $pdo->prepare("
-            UPDATE users 
-            SET password = ?, 
-                updated_at = CURRENT_TIMESTAMP,
-                password_reset_at = CURRENT_TIMESTAMP
-            WHERE username = ?
-        ");
-        
-        if (!$stmt->execute([$hashedPassword, $username])) {
-            throw new Exception("Failed to update password.");
-        }
-        
-        $pdo->commit();
-        return true;
-    } catch (PDOException $e) {
-        $pdo->rollBack();
-        error_log("Password Update Error: " . $e->getMessage());
-        throw new Exception("Database error occurred. Please try again later.");
+
+    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+    $stmt = $pdo->prepare("
+        UPDATE users 
+        SET password = ? 
+        WHERE username = ?
+    ");
+
+    if (!$stmt->execute([$hashedPassword, $username])) {
+        throw new Exception("Failed to update password. Please try again.");
     }
+
+    return true;
 }
 
-// Handle POST requests
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+// Handle AJAX requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $response = ['success' => false, 'message' => ''];
+
     try {
-        $action = $_POST['action'] ?? '';
-        
+        if (!isset($_POST['action'])) {
+            throw new Exception("Invalid request.");
+        }
+
+        $action = $_POST['action'];
+
         switch ($action) {
             case 'verify_username':
-                $username = trim($_POST['username'] ?? '');
+                if (!isset($_POST['username'])) {
+                    throw new Exception("Username is required.");
+                }
+
+                $username = trim($_POST['username']);
                 verifyUsername($username);
-                $phone = getUserPhone($username);
-                echo json_encode(['success' => true]);
+                $_SESSION['reset_username'] = $username; // Store username in session
+                $response['success'] = true;
                 break;
-                
+
             case 'verify_code':
                 if (!isset($_POST['username']) || !isset($_POST['code'])) {
-                    throw new Exception("Missing required parameters.");
+                    throw new Exception("Username and verification code are required.");
                 }
-                
+
                 $username = trim($_POST['username']);
                 $code = trim($_POST['code']);
-                $phone = getUserPhone($username);
-                
-                if (verifyTwilioCode($phone, $code)) {
-                    $_SESSION['reset_verified'] = true;
-                    $_SESSION['reset_username'] = $username;
-                    echo json_encode(['success' => true]);
-                } else {
-                    throw new Exception("Invalid verification code.");
-                }
-                break;
-                
-            case 'reset_password':
-                if (!isset($_SESSION['reset_verified']) || !$_SESSION['reset_verified']) {
-                    throw new Exception("Verification required before resetting password.");
-                }
-                
-                if (!isset($_POST['username']) || !isset($_POST['password'])) {
-                    throw new Exception("Missing required parameters.");
-                }
-                
-                $username = trim($_POST['username']);
-                $password = $_POST['password'];
-                
-                // Verify username matches session
-                if ($username !== $_SESSION['reset_username']) {
+
+                // Verify username is in session and matches
+                if (!isset($_SESSION['reset_username']) || $_SESSION['reset_username'] !== $username) {
                     throw new Exception("Invalid session. Please start over.");
                 }
-                
-                if (updatePassword($username, $password)) {
-                    // Clear session variables
-                    unset($_SESSION['reset_verified']);
-                    unset($_SESSION['reset_username']);
-                    echo json_encode(['success' => true]);
+
+                $phoneNumber = getUserPhone($username);
+                if (!verifyTwilioCode($phoneNumber, $code)) {
+                    throw new Exception("Invalid verification code.");
                 }
+
+                $_SESSION['code_verified'] = true;
+                $response['success'] = true;
                 break;
+
+            case 'reset_password':
+                if (!isset($_POST['username']) || !isset($_POST['password'])) {
+                    throw new Exception("Username and password are required.");
+                }
+
+                // Verify the session is valid
+                if (!isset($_SESSION['reset_username']) || !isset($_SESSION['code_verified'])) {
+                    throw new Exception("Invalid session. Please start over.");
+                }
+
+                $username = trim($_POST['username']);
+                if ($_SESSION['reset_username'] !== $username) {
+                    throw new Exception("Invalid session. Please start over.");
+                }
+
+                $newPassword = trim($_POST['password']);
+                updatePassword($username, $newPassword);
                 
+                // Clear session data after successful password reset
+                unset($_SESSION['reset_username']);
+                unset($_SESSION['code_verified']);
+                
+                $response['success'] = true;
+                $response['message'] = "Password has been reset successfully.";
+                break;
+
             default:
-                throw new Exception("Invalid action specified.");
+                throw new Exception("Invalid action.");
         }
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        $response['message'] = $e->getMessage();
     }
+
+    echo json_encode($response);
     exit;
 }
 
-// Handle GET requests with rate limiting
-if ($_SERVER["REQUEST_METHOD"] == "GET") {
+// Handle GET requests for code generation with rate limiting
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $response = ['success' => false, 'message' => ''];
+
     try {
-        if (isset($_GET['action']) && $_GET['action'] === 'generate_code') {
-            // Rate limiting check
-            if (isset($_SESSION['last_code_sent']) && 
-                time() - $_SESSION['last_code_sent'] < 60) {
-                throw new Exception('Please wait 60 seconds before requesting another code.');
+        if (!isset($_GET['action']) || !isset($_GET['username'])) {
+            throw new Exception("Invalid request.");
+        }
+
+        $action = $_GET['action'];
+        $username = trim($_GET['username']);
+
+        // Verify username is in session
+        if (!isset($_SESSION['reset_username']) || $_SESSION['reset_username'] !== $username) {
+            throw new Exception("Invalid session. Please start over.");
+        }
+
+        if ($action === 'generate_code') {
+            // Add rate limiting
+            if (isset($_SESSION['last_code_sent']) && time() - $_SESSION['last_code_sent'] < 60) {
+                throw new Exception("Please wait 60 seconds before requesting another code.");
             }
-            
-            $username = trim($_GET['username'] ?? '');
-            if (empty($username)) {
-                throw new Exception("Username is required.");
+
+            $phoneNumber = getUserPhone($username);
+            $verificationSid = sendVerificationSMS($phoneNumber);
+
+            if (!$verificationSid) {
+                throw new Exception("Failed to send verification code.");
             }
-            
-            $phone = getUserPhone($username);
-            $verificationSid = sendVerificationSMS($phone);
+
             $_SESSION['last_code_sent'] = time();
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Verification code sent successfully'
-            ]);
+            $response['success'] = true;
+            $response['message'] = "Verification code sent successfully.";
         } else {
-            throw new Exception("Invalid action specified.");
+            throw new Exception("Invalid action.");
         }
     } catch (Exception $e) {
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
+        $response['message'] = $e->getMessage();
     }
+
+    echo json_encode($response);
     exit;
 }
+?>

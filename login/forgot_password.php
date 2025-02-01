@@ -40,10 +40,10 @@ require_once 'functions.php';
             color: white;
         }
         .error-message {
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-        display: none;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
         }
         .form-control.is-invalid {
             border-color: #dc3545;
@@ -63,11 +63,11 @@ require_once 'functions.php';
             <!-- Step 1: Enter Username -->
             <div id="step1" class="form-step">
                 <form id="usernameForm">
-                        <div class="form-group">
-                            <label for="username">Enter your username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                            <div id="usernameError" class="error-message"></div>
-                        </div>
+                    <div class="form-group">
+                        <label for="username">Enter your username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div id="usernameError" class="error-message"></div>
+                    </div>
                     <button type="submit" class="btn btn-submit btn-block">Continue</button>
                 </form>
             </div>
@@ -76,11 +76,11 @@ require_once 'functions.php';
             <div id="step2" class="form-step" style="display: none;">
                 <p class="mb-3">We've sent a verification code to your registered phone number.</p>
                 <form id="verificationForm">
-                        <div class="form-group">
-                            <label for="code">Enter verification code</label>
-                            <input type="text" class="form-control" id="code" name="code" required>
-                            <div id="codeError" class="error-message"></div>
-                        </div>
+                    <div class="form-group">
+                        <label for="code">Enter verification code</label>
+                        <input type="text" class="form-control" id="code" name="code" required>
+                        <div id="codeError" class="error-message"></div>
+                    </div>
                     <button type="submit" class="btn btn-submit btn-block mb-2">Verify Code</button>
                     <button type="button" id="resendCode" class="btn btn-link btn-block">Resend Code</button>
                 </form>
@@ -89,16 +89,16 @@ require_once 'functions.php';
             <!-- Step 3: New Password -->
             <div id="step3" class="form-step" style="display: none;">
                 <form id="passwordForm">
-                        <div class="form-group">
-                            <label for="newPassword">New Password</label>
-                            <input type="password" class="form-control" id="newPassword" name="newPassword" required>
-                            <div id="newPasswordError" class="error-message"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="confirmPassword">Confirm Password</label>
-                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
-                            <div id="confirmPasswordError" class="error-message"></div>
-                        </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                        <div id="newPasswordError" class="error-message"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        <div id="confirmPasswordError" class="error-message"></div>
+                    </div>
                     <button type="submit" class="btn btn-submit btn-block">Reset Password</button>
                 </form>
             </div>
@@ -117,7 +117,8 @@ require_once 'functions.php';
     <script>
 $(document).ready(function() {
     let username = '';
-    
+    let resendTimer;
+
     // Error handling functions
     function showError(elementId, message) {
         $(`#${elementId}`).text(message).show();
@@ -147,6 +148,41 @@ $(document).ready(function() {
         button.prop('disabled', false).text(originalText);
     }
 
+    // Function to send verification code
+    function sendVerificationCode() {
+        $.get('forgot_password_functions.php', {
+            action: 'generate_code',
+            username: username
+        })
+        .done(function(response) {
+            try {
+                const result = JSON.parse(response);
+                if (result.success) {
+                    let timeLeft = 60;
+                    $('#resendCode').prop('disabled', true);
+                    
+                    resendTimer = setInterval(function() {
+                        if (timeLeft <= 0) {
+                            clearInterval(resendTimer);
+                            $('#resendCode').prop('disabled', false)
+                                          .text('Resend Code');
+                        } else {
+                            $('#resendCode').text(`Resend Code (${timeLeft}s)`);
+                            timeLeft--;
+                        }
+                    }, 1000);
+                } else {
+                    showError('codeError', result.message);
+                }
+            } catch (e) {
+                showError('codeError', 'An unexpected error occurred');
+            }
+        })
+        .fail(function() {
+            showError('codeError', 'Failed to connect to server. Please try again.');
+        });
+    }
+
     // Handle username submission
     $('#usernameForm').on('submit', function(e) {
         e.preventDefault();
@@ -155,7 +191,6 @@ $(document).ready(function() {
         
         clearAllErrors();
         
-        // Front-end validation
         if (!username) {
             showError('usernameError', 'Please enter your username');
             return;
@@ -189,52 +224,122 @@ $(document).ready(function() {
         });
     });
 
-    // Handle verification code submission
-    $('#verificationForm').on('submit', function(e) {
-        e.preventDefault();
-        const submitButton = $(this).find('button[type="submit"]');
-        const code = $('#code').val().trim();
-        
-        clearAllErrors();
-        
-        // Front-end validation
-        if (!code) {
-            showError('codeError', 'Please enter the verification code');
-            return;
-        }
+// Handle verification code submission
+$('#verificationForm').on('submit', function(e) {
+    e.preventDefault();
+    const submitButton = $(this).find('button[type="submit"]');
+    const code = $('#code').val().trim();
+    
+    clearAllErrors();
+    
+    if (!code) {
+        showError('codeError', 'Please enter the verification code');
+        return;
+    }
 
-        if (!/^\d{6}$/.test(code)) {
-            showError('codeError', 'Please enter a valid 6-digit code');
-            return;
-        }
+    // Validate code format - must be 6 digits
+    if (!/^\d{6}$/.test(code)) {
+        showError('codeError', 'Please enter a valid 6-digit code');
+        return;
+    }
 
-        setLoadingState(submitButton);
-        
-        $.post('forgot_password_functions.php', {
-            action: 'verify_code',
-            username: username,
-            code: code
-        })
-        .done(function(response) {
-            try {
-                const result = JSON.parse(response);
-                if (result.success) {
+    setLoadingState(submitButton);
+    
+    $.post('forgot_password_functions.php', {
+        action: 'verify_code',
+        username: username, // This is stored from the first step
+        code: code
+    })
+    .done(function(response) {
+        try {
+            const result = JSON.parse(response);
+            if (result.success) {
+                // Show success message before moving to next step
+                Swal.fire({
+                    title: 'Verified!',
+                    text: 'Code verification successful',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
                     $('#step2').hide();
                     $('#step3').show();
-                } else {
-                    showError('codeError', result.message);
-                }
-            } catch (e) {
-                showError('codeError', 'An unexpected error occurred');
+                    clearInterval(resendTimer); // Clear the resend timer when moving to next step
+                });
+            } else {
+                showError('codeError', result.message || 'Invalid verification code');
             }
-        })
-        .fail(function() {
-            showError('codeError', 'Failed to connect to server. Please try again.');
-        })
-        .always(function() {
-            resetLoadingState(submitButton);
-        });
+        } catch (e) {
+            showError('codeError', 'An unexpected error occurred');
+            console.error('Error parsing response:', e);
+        }
+    })
+    .fail(function(xhr, status, error) {
+        showError('codeError', 'Failed to connect to server. Please try again.');
+        console.error('AJAX Error:', status, error);
+    })
+    .always(function() {
+        resetLoadingState(submitButton);
     });
+});
+
+// Handle resend code button with improved error handling
+$('#resendCode').on('click', function() {
+    const button = $(this);
+    clearError('codeError');
+    
+    if (button.prop('disabled')) {
+        return;
+    }
+
+    setLoadingState(button);
+    
+    $.get('forgot_password_functions.php', {
+        action: 'generate_code',
+        username: username // Using the stored username
+    })
+    .done(function(response) {
+        try {
+            const result = JSON.parse(response);
+            if (result.success) {
+                let timeLeft = 60;
+                button.prop('disabled', true);
+                
+                clearInterval(resendTimer); // Clear any existing timer
+                resendTimer = setInterval(function() {
+                    if (timeLeft <= 0) {
+                        clearInterval(resendTimer);
+                        button.prop('disabled', false)
+                              .text('Resend Code');
+                    } else {
+                        button.text(`Resend Code (${timeLeft}s)`);
+                        timeLeft--;
+                    }
+                }, 1000);
+                
+                Swal.fire({
+                    title: 'Code Sent!',
+                    text: 'A new verification code has been sent to your phone.',
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            } else {
+                showError('codeError', result.message || 'Failed to send verification code');
+                resetLoadingState(button);
+            }
+        } catch (e) {
+            showError('codeError', 'An unexpected error occurred');
+            console.error('Error parsing response:', e);
+            resetLoadingState(button);
+        }
+    })
+    .fail(function(xhr, status, error) {
+        showError('codeError', 'Failed to connect to server. Please try again.');
+        console.error('AJAX Error:', status, error);
+        resetLoadingState(button);
+    });
+});
 
     // Handle new password submission
     $('#passwordForm').on('submit', function(e) {
@@ -245,7 +350,6 @@ $(document).ready(function() {
         
         clearAllErrors();
         
-        // Front-end validation
         if (!newPassword) {
             showError('newPasswordError', 'Please enter a new password');
             return;
@@ -282,7 +386,6 @@ $(document).ready(function() {
             try {
                 const result = JSON.parse(response);
                 if (result.success) {
-                    // Show success message before redirect
                     Swal.fire({
                         title: 'Success!',
                         text: 'Your password has been reset successfully. You will be redirected to the login page.',
@@ -306,65 +409,6 @@ $(document).ready(function() {
         });
     });
 
-    // Handle resend code button
-    let resendTimer;
-    $('#resendCode').on('click', function() {
-        const button = $(this);
-        clearError('codeError');
-        
-        if (button.prop('disabled')) {
-            return;
-        }
-
-        setLoadingState(button);
-        
-        $.get('forgot_password_functions.php', {
-            action: 'generate_code',
-            username: username
-        })
-        .done(function(response) {
-            try {
-                const result = JSON.parse(response);
-                if (result.success) {
-                    // Start countdown timer
-                    let timeLeft = 60;
-                    button.prop('disabled', true);
-                    
-                    resendTimer = setInterval(function() {
-                        if (timeLeft <= 0) {
-                            clearInterval(resendTimer);
-                            button.prop('disabled', false)
-                                  .text('Resend Code');
-                        } else {
-                            button.text(`Resend Code (${timeLeft}s)`);
-                            timeLeft--;
-                        }
-                    }, 1000);
-                    
-                    // Show success message
-                    Swal.fire({
-                        title: 'Code Sent!',
-                        text: 'A new verification code has been sent to your phone.',
-                        icon: 'success',
-                        timer: 3000,
-                        showConfirmButton: false
-                    });
-                } else {
-                    showError('codeError', result.message);
-                }
-            } catch (e) {
-                showError('codeError', 'An unexpected error occurred');
-            }
-        })
-        .fail(function() {
-            showError('codeError', 'Failed to connect to server. Please try again.');
-        })
-        .always(function() {
-            if (!resendTimer) {
-                resetLoadingState(button);
-            }
-        });
-    });
 
     // Clear timer when navigating away from verification step
     function clearResendTimer() {
