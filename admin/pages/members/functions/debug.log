@@ -1203,3 +1203,66 @@
     [success] => 1
 )
 
+[01-Feb-2025 14:23:18 Europe/Berlin] Script started - 2025-02-01 14:23:18
+[01-Feb-2025 14:23:18 Europe/Berlin] Request Method: GET
+[01-Feb-2025 14:23:18 Europe/Berlin] Attempting database connection to localhost...
+[01-Feb-2025 14:23:18 Europe/Berlin] Database connection successful
+[01-Feb-2025 14:23:18 Europe/Berlin] Database connection established in Members class
+[01-Feb-2025 14:23:18 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[01-Feb-2025 14:23:18 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+)
+
+[01-Feb-2025 14:23:18 Europe/Berlin] Executing coach query: SELECT 
+                        cpt.program_id,
+                        cpt.coach_id,
+                        cpt.price,
+                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
+                      FROM coach_program_types cpt
+                      JOIN users u ON cpt.coach_id = u.id
+                      JOIN personal_details pd ON u.id = pd.user_id
+                      WHERE cpt.status = 'active'
+[01-Feb-2025 14:23:18 Europe/Berlin] Coach query result: Array
+(
+    [0] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 35
+            [price] => 150.00
+            [coach_name] => coach, coach 
+        )
+
+    [1] => Array
+        (
+            [program_id] => 3
+            [coach_id] => 36
+            [price] => 450.00
+            [coach_name] => coach2, coach2 
+        )
+
+)
+

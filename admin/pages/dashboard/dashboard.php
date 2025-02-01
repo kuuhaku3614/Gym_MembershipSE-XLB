@@ -1,6 +1,7 @@
 <?php
 require_once '../../../config.php';
 
+// Fetch administrative announcements
 $admin_sql = "
 SELECT id, applied_date, applied_time, message 
 FROM announcements 
@@ -211,134 +212,150 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 1.5rem;
         }
     </style>
-</head>
-<body>
-    <div class="dashboard-container">
-        <!-- Stats Section -->
-        <div class="stats-section">
-            <?php
-            $active_memberships_sql = "
-            SELECT COUNT(*) AS active_memberships 
-            FROM memberships 
-            WHERE status = 'active'
-            ";
-            $active_memberships_stmt = $pdo->prepare($active_memberships_sql);
-            $active_memberships_stmt->execute();
-            $active_memberships = $active_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-            ?>
-            <div class="card stats-card">
-                <div>
-                    <div class="stats-title">Current Members</div>
-                    <div class="stats-subtitle">(Active)</div>
-                </div>
-                <div class="stats-value"><?= $active_memberships['active_memberships'] ?></div>
+<div class="dashboard-container">
+    <!-- Stats Section -->
+    <div class="stats-section">
+        <?php
+        // Active Memberships
+        $active_memberships_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS active_memberships 
+        FROM memberships 
+        WHERE status = 'active'
+        ";
+        $active_memberships_stmt = $pdo->prepare($active_memberships_sql);
+        $active_memberships_stmt->execute();
+        $active_memberships = $active_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <div class="card stats-card">
+            <div>
+                <div class="stats-title">Current Members</div>
+                <div class="stats-subtitle">(Active)</div>
             </div>
-            <?php
-            $current_month = date('Y-m');
-            $new_memberships_sql = "
-            SELECT COUNT(*) AS new_memberships 
-            FROM memberships 
-            WHERE MONTH(created_at) = MONTH(CURDATE()) 
-            AND YEAR(created_at) = YEAR(CURDATE())
-            ";
-            $new_memberships_stmt = $pdo->prepare($new_memberships_sql);
-            $new_memberships_stmt->execute();
-            $new_memberships = $new_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-            ?>
-            <div class="card stats-card">
-                <div>
-                    <div class="stats-title">New Members</div>
-                    <div class="stats-subtitle">this month</div>
-                </div>
-                <div class="stats-value"><?= $new_memberships['new_memberships'] ?></div>
-            </div>
-            <?php
-            $member_users_sql = "
-            SELECT COUNT(*) AS member_users 
-            FROM users 
-            JOIN roles ON users.role_id = roles.id 
-            WHERE roles.role_name = 'member'
-            ";
-            $member_users_stmt = $pdo->prepare($member_users_sql);
-            $member_users_stmt->execute();
-            $member_users = $member_users_stmt->fetch(PDO::FETCH_ASSOC);
-            ?>
-            <div class="card stats-card">
-                <div>
-                    <div class="stats-title">Website Accounts</div>
-                </div>
-                <div class="stats-value"><?= $member_users['member_users'] ?></div>
-            </div>
-            <div class="card notification-card">
-                <?php
-                $notifications_sql = "
-                SELECT COUNT(*) AS total_notifications 
-                FROM transactions
-                WHERE status = 'pending'
-                ";
-                $notifications_stmt = $pdo->prepare($notifications_sql);
-                $notifications_stmt->execute();
-                $notifications = $notifications_stmt->fetch(PDO::FETCH_ASSOC);
-                ?>
-                <div class="notification-badge"><?= $notifications['total_notifications'] ?></div>
-                <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
-            </div>
-            <?php
-            $total_earnings_sql = "
-            SELECT 
-            (SELECT SUM(amount) FROM memberships) +
-            (SELECT SUM(amount) FROM program_subscriptions) +
-            (SELECT SUM(amount) FROM rental_subscriptions) AS total_earnings;
-            ";
-            $total_earnings_stmt = $pdo->prepare($total_earnings_sql);
-            $total_earnings_stmt->execute();
-            $total_earnings = $total_earnings_stmt->fetch(PDO::FETCH_ASSOC);
-            ?>
-            <div class="card stats-card">
-                <div>
-                    <div class="stats-title">Total Earnings</div>
-                </div>
-                <div class="stats-value">₱<?= number_format($total_earnings['total_earnings'], 2) ?></div>
+            <div class="stats-value <?= $active_memberships['active_memberships'] == 0 ? 'empty' : '' ?>">
+                <?= $active_memberships['active_memberships'] ?: '0' ?>
             </div>
         </div>
 
-        <!-- Main Section -->
-        <div class="main-section">
-            <div class="graph-container">
-                <h2>Monthly Membership Growth in <?= date('Y') ?></h2>
-                <div class="graph-wrapper">
-                    <?php
-                    $membership_data_sql = "
-                    SELECT 
-                        MONTHNAME(created_at) AS month,
-                        COUNT(*) AS total_memberships
-                    FROM memberships
-                    WHERE YEAR(created_at) = YEAR(CURDATE())
-                    GROUP BY MONTH(created_at)
-                    ORDER BY MONTH(created_at)
-                    ";
-                    $membership_data_stmt = $pdo->prepare($membership_data_sql);
-                    $membership_data_stmt->execute();
-                    $membership_data = $membership_data_stmt->fetchAll(PDO::FETCH_ASSOC);
+        <?php
+        // New Memberships This Month
+        $new_memberships_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS new_memberships 
+        FROM memberships 
+        WHERE MONTH(created_at) = MONTH(CURDATE()) 
+        AND YEAR(created_at) = YEAR(CURDATE())
+        ";
+        $new_memberships_stmt = $pdo->prepare($new_memberships_sql);
+        $new_memberships_stmt->execute();
+        $new_memberships = $new_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <div class="card stats-card">
+            <div>
+                <div class="stats-title">New Members</div>
+                <div class="stats-subtitle">this month</div>
+            </div>
+            <div class="stats-value <?= $new_memberships['new_memberships'] == 0 ? 'empty' : '' ?>">
+                <?= $new_memberships['new_memberships'] ?: '0' ?>
+            </div>
+        </div>
+
+        <?php
+        // Member Users Count
+        $member_users_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS member_users 
+        FROM users 
+        JOIN roles ON users.role_id = roles.id 
+        WHERE roles.role_name = 'member'
+        ";
+        $member_users_stmt = $pdo->prepare($member_users_sql);
+        $member_users_stmt->execute();
+        $member_users = $member_users_stmt->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <div class="card stats-card">
+            <div>
+                <div class="stats-title">Website Accounts</div>
+            </div>
+            <div class="stats-value <?= $member_users['member_users'] == 0 ? 'empty' : '' ?>">
+                <?= $member_users['member_users'] ?: '0' ?>
+            </div>
+        </div>
+
+        <?php
+        // Pending Notifications
+        $notifications_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS total_notifications 
+        FROM transactions
+        WHERE status = 'pending'
+        ";
+        $notifications_stmt = $pdo->prepare($notifications_sql);
+        $notifications_stmt->execute();
+        $notifications = $notifications_stmt->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <div class="card notification-card">
+            <div class="notification-badge"><?= $notifications['total_notifications'] ?: '0' ?></div>
+            <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
+        </div>
+
+        <?php
+        // Total Earnings with COALESCE
+        $total_earnings_sql = "
+        SELECT COALESCE(
+            (SELECT COALESCE(SUM(amount), 0) FROM memberships) +
+            (SELECT COALESCE(SUM(amount), 0) FROM program_subscriptions) +
+            (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions),
+            0
+        ) AS total_earnings;
+        ";
+        $total_earnings_stmt = $pdo->prepare($total_earnings_sql);
+        $total_earnings_stmt->execute();
+        $total_earnings = $total_earnings_stmt->fetch(PDO::FETCH_ASSOC);
+        ?>
+        <div class="card stats-card">
+            <div>
+                <div class="stats-title">Total Earnings</div>
+            </div>
+            <div class="stats-value <?= $total_earnings['total_earnings'] == 0 ? 'empty' : '' ?>">
+                ₱<?= number_format($total_earnings['total_earnings'], 2) ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Section -->
+    <div class="main-section">
+        <div class="graph-container">
+            <h2>Monthly Membership Growth in <?= date('Y') ?></h2>
+            <div class="graph-wrapper">
+                <?php
+                $membership_data_sql = "
+                SELECT 
+                    MONTHNAME(created_at) AS month,
+                    COUNT(*) AS total_memberships
+                FROM memberships
+                WHERE YEAR(created_at) = YEAR(CURDATE())
+                GROUP BY MONTH(created_at)
+                ORDER BY MONTH(created_at)
+                ";
+                $membership_data_stmt = $pdo->prepare($membership_data_sql);
+                $membership_data_stmt->execute();
+                $membership_data = $membership_data_stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (empty($membership_data)) {
+                    echo '<div class="empty-state">No membership data available for ' . date('Y') . '</div>';
+                } else {
                     $labels = array_column($membership_data, 'month');
                     $data = array_map('intval', array_column($membership_data, 'total_memberships'));
-                    ?>
+                ?>
                     <canvas id="membershipGraph"></canvas>
                     <script>
                         const ctx = document.getElementById('membershipGraph').getContext('2d');
                         const chart = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: <?php echo json_encode($labels) ?>,
+                                labels: <?= json_encode($labels) ?>,
                                 datasets: [{
                                     label: 'Total Memberships',
-                                    data: <?php echo json_encode($data) ?>,
-                                    backgroundColor: [
-                                        'rgba(255, 99, 132, 0.2)'
-                                    ],
-                                    borderColor: [
-                                        'rgba(255, 99, 132, 1)'
-                                    ],
+                                    data: <?= json_encode($data) ?>,
+                                    backgroundColor: ['rgba(255, 99, 132, 0.2)'],
+                                    borderColor: ['rgba(255, 99, 132, 1)'],
                                     borderWidth: 1
                                 }]
                             },
@@ -357,115 +374,125 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
                             }
                         });
                     </script>
-                </div>
-            </div>
-            <div class="stats-section">
-                <?php
-                $current_date = date('Y-m-d');
-                $member_checkin_sql = "
-                SELECT COUNT(*) AS member_checkin 
-                FROM attendance 
-                WHERE date = :current_date
-                AND status = 'checked_in'
-                ";
-                $member_checkin_stmt = $pdo->prepare($member_checkin_sql);
-                $member_checkin_stmt->execute(['current_date' => $current_date]);
-                $member_checkin = $member_checkin_stmt->fetch(PDO::FETCH_ASSOC);
-                ?>
-                <div class="card stats-card">
-                    <div>
-                        <div class="stats-title">Members Checked In</div>
-                        <div class="stats-subtitle">Date: <?= $current_date ?></div>
-                    </div>
-                    <div class="stats-value"><?= $member_checkin['member_checkin'] ?></div>
-                </div>
-                <div class="card stats-card">
-                    <div>
-                        <div class="stats-title">Coaches Checked In</div>
-                        <div class="stats-subtitle">Date: 20/10/2024</div>
-                    </div>
-                    <div class="stats-value">10</div>
-                </div>
-                <?php
-                $expiring_memberships_sql = "
-                SELECT COUNT(*) AS expiring_memberships 
-                FROM memberships 
-                WHERE status = 'expiring'
-                ";
-                $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
-                $expiring_memberships_stmt->execute();
-                $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-
-                $expired_memberships_sql = "
-                SELECT COUNT(*) AS expired_memberships 
-                FROM memberships 
-                WHERE status = 'expired'
-                ";
-                $expired_memberships_stmt = $pdo->prepare($expired_memberships_sql);
-                $expired_memberships_stmt->execute();
-                $expired_memberships = $expired_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-                ?>
-                <div class="card stats-card">
-                    <div>
-                        <div class="stats-title">Expiring Memberships</div>
-                    </div>
-                    <div class="stats-value"><?= $expiring_memberships['expiring_memberships'] ?></div>
-                </div>
-                <div class="card stats-card">
-                    <div>
-                        <div class="stats-title">Expired Memberships</div>
-                    </div>
-                    <div class="stats-value"><?= $expired_memberships['expired_memberships'] ?></div>
-                </div>
+                <?php } ?>
             </div>
         </div>
 
-<!-- Tables Section -->
-<div class="tables-section">
-    <div class="table-container">
-        <div class="table-header">Administrative Announcements</div>
-        <table id="administrativeAnnouncementsTable" class="display" width="100%">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Message</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($administrative_announcements as $announcement): ?>
-                    <tr>
-                        <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
-                        <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
-                        <td><?= htmlspecialchars($announcement['message']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="stats-section">
+            <?php
+            // Member Check-ins
+            $current_date = date('Y-m-d');
+            $member_checkin_sql = "
+            SELECT COALESCE(COUNT(*), 0) AS member_checkin 
+            FROM attendance 
+            WHERE date = :current_date
+            AND status = 'checked_in'
+            ";
+            $member_checkin_stmt = $pdo->prepare($member_checkin_sql);
+            $member_checkin_stmt->execute(['current_date' => $current_date]);
+            $member_checkin = $member_checkin_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
+            <div class="card stats-card">
+                <div>
+                    <div class="stats-title">Members Checked In</div>
+                    <div class="stats-subtitle">Date: <?= $current_date ?></div>
+                </div>
+                <div class="stats-value <?= $member_checkin['member_checkin'] == 0 ? 'empty' : '' ?>">
+                    <?= $member_checkin['member_checkin'] ?: '0' ?>
+                </div>
+            </div>
+
+            <?php
+            // Expiring and Expired Memberships
+            $expiring_memberships_sql = "
+            SELECT COALESCE(COUNT(*), 0) AS expiring_memberships 
+            FROM memberships 
+            WHERE status = 'expiring'
+            ";
+            $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
+            $expiring_memberships_stmt->execute();
+            $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+
+            $expired_memberships_sql = "
+            SELECT COALESCE(COUNT(*), 0) AS expired_memberships 
+            FROM memberships 
+            WHERE status = 'expired'
+            ";
+            $expired_memberships_stmt = $pdo->prepare($expired_memberships_sql);
+            $expired_memberships_stmt->execute();
+            $expired_memberships = $expired_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
+            <div class="card stats-card">
+                <div>
+                    <div class="stats-title">Expiring Memberships</div>
+                </div>
+                <div class="stats-value <?= $expiring_memberships['expiring_memberships'] == 0 ? 'empty' : '' ?>">
+                    <?= $expiring_memberships['expiring_memberships'] ?: '0' ?>
+                </div>
+            </div>
+            <div class="card stats-card">
+                <div>
+                    <div class="stats-title">Expired Memberships</div>
+                </div>
+                <div class="stats-value <?= $expired_memberships['expired_memberships'] == 0 ? 'empty' : '' ?>">
+                    <?= $expired_memberships['expired_memberships'] ?: '0' ?>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="table-container">
-        <div class="table-header">Activity Announcements</div>
-        <table id="activityAnnouncementsTable" class="display" width="100%">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Message</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($activity_announcements as $announcement): ?>
-                    <tr>
-                        <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
-                        <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
-                        <td><?= htmlspecialchars($announcement['message']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+
+    <!-- Tables Section -->
+    <div class="tables-section">
+        <div class="table-container">
+            <div class="table-header">Administrative Announcements</div>
+            <?php if (empty($administrative_announcements)): ?>
+                <div class="empty-state">No administrative announcements available</div>
+            <?php else: ?>
+                <table id="administrativeAnnouncementsTable" class="display" width="100%">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($administrative_announcements as $announcement): ?>
+                            <tr>
+                                <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
+                                <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
+                                <td><?= htmlspecialchars($announcement['message']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">Activity Announcements</div>
+            <?php if (empty($activity_announcements)): ?>
+                <div class="empty-state">No activity announcements available</div>
+            <?php else: ?>
+                <table id="activityAnnouncementsTable" class="display" width="100%">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($activity_announcements as $announcement): ?>
+                            <tr>
+                                <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
+                                <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
+                                <td><?= htmlspecialchars($announcement['message']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
-
-
-    
-</body>
