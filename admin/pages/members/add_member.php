@@ -3,102 +3,35 @@ date_default_timezone_set('Asia/Manila');
 require_once "../../../config.php";
 require_once 'functions/members.class.php';
 
-session_start();
-
-// Initialize Members class
 $members = new Members();
 
-// Handle form submissions
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Set content type to JSON
+    // Disable error output
+    error_reporting(0);
+    ini_set('display_errors', 0);
+    
     header('Content-Type: application/json');
     
-    $members = new Members();
-    $response = ['success' => false, 'message' => 'Invalid request'];
-
-    // Handle termination request
-    if (isset($_POST['action']) && $_POST['action'] === 'terminate') {
-        if (isset($_POST['user_id'])) {
-            $response = $members->terminateRegistration($_POST['user_id']);
-        } else {
-            $response = ['success' => false, 'message' => 'No user ID provided'];
-        }
-        echo json_encode($response);
-        exit;
-    }
-
-    $phase = $_POST['phase'] ?? null;
-    $response = ['success' => false, 'message' => 'Invalid phase'];
-
     try {
-        switch ($phase) {
-            case '1':
-                // Handle personal details
-                $response = $members->savePhase1($_POST);
-                if ($response['success']) {
-                    $_SESSION['registration'] = [
-                        'user_id' => $response['user_id'],
-                        'username' => $response['username'],
-                        'password' => $response['password']
-                    ];
-                }
-                break;
-
-            case '2':
-                // Handle membership plan
-                if (!isset($_SESSION['registration']['user_id'])) {
-                    throw new Exception("Personal details not saved. Please complete phase 1 first.");
-                }
-                $response = $members->savePhase2($_SESSION['registration']['user_id'], $_POST);
-                if ($response['success']) {
-                    $_SESSION['registration']['transaction_id'] = $response['transaction_id'];
-                }
-                break;
-
-            case '3':
-                // Handle programs and services
-                if (!isset($_SESSION['registration']['transaction_id'])) {
-                    throw new Exception("Membership plan not saved. Please complete phase 2 first.");
-                }
-                $response = $members->savePhase3(
-                    $_SESSION['registration']['user_id'],
-                    $_SESSION['registration']['transaction_id'],
-                    $_POST
-                );
-                break;
-
-            case '4':
-                // Finalize registration
-                if (!isset($_SESSION['registration']['user_id']) || !isset($_SESSION['registration']['transaction_id'])) {
-                    throw new Exception("Previous phases not completed. Please complete all phases in order.");
-                }
-                $response = $members->finalizeRegistration(
-                    $_SESSION['registration']['user_id'],
-                    $_SESSION['registration']['transaction_id']
-                );
-                if ($response['success']) {
-                    // Clear registration session data after successful completion
-                    unset($_SESSION['registration']);
-                }
-                break;
-
-            case 'rollback':
-                // Handle rollback request
-                if (isset($_SESSION['registration']['user_id'])) {
-                    $response = $members->rollbackRegistration($_SESSION['registration']['user_id']);
-                    if ($response['success']) {
-                        unset($_SESSION['registration']);
-                    }
-                }
-                break;
+        if (isset($_POST['action']) && $_POST['action'] === 'generate_credentials') {
+            $firstName = $_POST['first_name'];
+            $result = $members->generateCredentials($firstName);
+            echo json_encode($result);
+            exit;
         }
+        
+        $result = $members->handleRequest($_POST);
+        echo json_encode($result);
     } catch (Exception $e) {
-        $response = ['success' => false, 'message' => $e->getMessage()];
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
-
-    echo json_encode($response);
     exit;
 }
+
+// Re-enable error reporting for the rest of the script
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 ?>
 
 <!DOCTYPE html>
@@ -196,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </li>
                 </ul>
 
-                <form method="POST" enctype="multipart/form-data" id="memberForm" onsubmit="return prepareFormSubmission()">
+                <form id="memberForm" method="POST" enctype="multipart/form-data">
                     <!-- Hidden fields for credentials -->
                     <input type="hidden" name="username" id="usernameField">
                     <input type="hidden" name="password" id="passwordField">
@@ -242,7 +175,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Phone Number</label>
-                                        <input type="tel" class="form-control" name="phone_number">
+                                        <input type="text" class="form-control" name="phone" 
+                                               pattern="[0-9]{11}" 
+                                               title="Please enter a valid 11-digit phone number">
                                     </div>
                                 </div>
 
@@ -258,8 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
-                        <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-primary btn-nav" onclick="nextPhase(1)">Next</button>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="nextPhase(1)">Next</button>
                         </div>
                     </div>
 
@@ -274,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="row">
                                     <?php foreach ($members->getMembershipPlans() as $plan): ?>
                                     <div class="col-md-4 mb-3">
-                                        <div class="card">
+                                        <div class="card membership-option">
                                             <div class="card-body">
                                                 <h6 class="card-title"><?php echo htmlspecialchars($plan['plan_name']); ?></h6>
                                                 <p class="card-text">
@@ -307,9 +242,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
-                        <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="prevPhase(2)">Previous</button>
-                            <button type="button" class="btn btn-primary btn-nav" onclick="nextPhase(2)">Next</button>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-secondary" onclick="prevPhase(2)">Previous</button>
+                            <button type="button" class="btn btn-primary" onclick="nextPhase(2)">Next</button>
                         </div>
                     </div>
 
@@ -381,9 +316,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
-                        <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="prevPhase(3)">Previous</button>
-                            <button type="button" class="btn btn-primary btn-nav" onclick="nextPhase(3)">Next</button>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-secondary" onclick="prevPhase(3)">Previous</button>
+                            <button type="button" class="btn btn-primary" onclick="nextPhase(3)">Next</button>
                         </div>
                     </div>
 
@@ -435,9 +370,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
-                        <div class="mt-3 text-end">
-                            <button type="button" class="btn btn-secondary btn-nav me-2" onclick="prevPhase(4)">Previous</button>
-                            <button type="submit" class="btn btn-success btn-nav">Submit</button>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-secondary" onclick="prevPhase(4)">Previous</button>
+                            <button type="submit" class="btn btn-success">Submit</button>
                         </div>
                     </div>
                 </form>
@@ -446,181 +381,263 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-    let currentUserId = <?php echo isset($_SESSION['registration']['user_id']) ? $_SESSION['registration']['user_id'] : 'null'; ?>;
-    let currentTransactionId = <?php echo isset($_SESSION['registration']['transaction_id']) ? $_SESSION['registration']['transaction_id'] : 'null'; ?>;
+    // Global variables for registration
+    let registrationData = {};
     let registrationFee = <?php echo $members->getRegistrationFee(); ?>;
-
-    // Get the base URL for AJAX calls
     const baseUrl = '/Gym_MembershipSE-XLB/admin/pages/members/add_member.php';
 
     async function submitPhase(phase) {
-        // For phase 1, use server-side validation
+        const form = document.getElementById('memberForm');
+        const currentFormData = new FormData(form);
+        console.log('Submitting phase:', phase);
+
+        // For phase 1, use server-side validation without saving
         if (phase === 1) {
-            const form = document.getElementById('memberForm');
-            const formData = new FormData(form);
-            formData.append('phase', phase);
+            currentFormData.append('phase', phase);
+            currentFormData.append('validate_only', 'true');
+            currentFormData.append('action', 'validate_phase1');
 
             try {
                 const response = await fetch(baseUrl, {
                     method: 'POST',
-                    body: formData
+                    body: currentFormData
                 });
                 const result = await response.json();
+                console.log('Phase 1 validation result:', result);
 
                 if (!result.success) {
                     if (result.errors) {
-                        // Clear previous validation state
-                        const inputs = document.querySelectorAll('.is-invalid');
-                        inputs.forEach(input => {
-                            input.classList.remove('is-invalid');
-                        });
-
-                        // Clear all existing error messages
-                        document.querySelectorAll('.invalid-feedback').forEach(feedback => {
-                            feedback.remove();
-                        });
-
-                        // Show validation errors
-                        Object.entries(result.errors).forEach(([field, message]) => {
-                            const input = document.querySelector(`[name="${field}"]`);
-                            if (input) {
-                                input.classList.add('is-invalid');
-                                
-                                // Special handling for radio buttons
-                                if (input.type === 'radio') {
-                                    const feedback = document.createElement('div');
-                                    feedback.className = 'invalid-feedback d-block';
-                                    feedback.textContent = message;
-                                    input.closest('.d-flex').appendChild(feedback);
-                                } else {
-                                    const feedback = document.createElement('div');
-                                    feedback.className = 'invalid-feedback';
-                                    feedback.textContent = message;
-                                    input.parentNode.insertBefore(feedback, input.nextSibling);
-                                }
-                            }
-                        });
+                        showValidationErrors(result.errors);
                         return false;
                     }
                     throw new Error(result.message || 'An error occurred');
                 }
 
-                // Handle successful response
-                currentUserId = result.user_id;
-                document.getElementById('usernameField').value = result.username;
-                document.getElementById('passwordField').value = result.password;
-                return true;
-            } catch (error) {
-                alert(error.message);
-                return false;
-            }
-        } else {
-            // For other phases, use the existing validation logic
-            if (!validatePhase(phase)) {
-                return false;
-            }
-
-            // If validation passes, proceed with saving
-            const form = document.getElementById('memberForm');
-            const formData = new FormData(form);
-            formData.append('phase', phase);
-            formData.append('user_id', currentUserId);
-
-            // For phase 3, we need to include the transaction_id
-            if (phase === 3) {
-                if (!currentTransactionId) {
-                    alert('Error: No transaction ID found. Please complete phase 2 first.');
-                    return false;
-                }
-                formData.append('transaction_id', currentTransactionId);
-            }
-
-            try {
-                const response = await fetch(baseUrl, {
-                    method: 'POST',
-                    body: formData
+                // Store phase 1 data
+                registrationData.phase1 = {};
+                currentFormData.forEach((value, key) => {
+                    registrationData.phase1[key] = value;
                 });
-                const result = await response.json();
-
-                if (!result.success) {
-                    throw new Error(result.message || 'An error occurred');
-                }
-
-                if (phase === 2) {
-                    currentTransactionId = result.transaction_id;
-                }
-
                 return true;
             } catch (error) {
-                alert(error.message);
+                console.error('Error in phase 1 validation:', error);
+                document.getElementById('phase1').insertAdjacentHTML('afterbegin', `<div class="alert alert-danger">${error.message}</div>`);
                 return false;
             }
+        } else if (phase === 2) {
+            const errors = {};
+            
+            // Validate membership plan selection
+            const membershipSelected = document.querySelector('input[name="membership_plan"]:checked');
+            if (!membershipSelected) {
+                errors.membership_plan = 'Please select a membership plan';
+            }
+
+            // Validate start date
+            const startDate = document.querySelector('input[name="start_date"]');
+            if (!startDate.value) {
+                errors.start_date = 'Please select a start date';
+            } else {
+                const selectedDate = new Date(startDate.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Reset time part for proper date comparison
+                
+                if (selectedDate < today) {
+                    errors.start_date = 'Start date cannot be in the past';
+                }
+            }
+
+            // Show errors if any
+            if (Object.keys(errors).length > 0) {
+                showValidationErrors(errors);
+                return false;
+            }
+
+            // Clear any previous error messages
+            document.getElementById('membershipError').style.display = 'none';
+            
+            // Store phase 2 data
+            registrationData.phase2 = {
+                membership_plan: membershipSelected.value,
+                start_date: startDate.value
+            };
+            return true;
         }
+        return true;
     }
 
-    function validatePhase(phase) {
-        const currentPhase = document.querySelector(`#phase${phase}`);
-        const inputs = currentPhase.querySelectorAll('input[required], select[required]');
-        let isValid = true;
-
+    function showValidationErrors(errors) {
         // Clear previous validation state
+        const inputs = document.querySelectorAll('.is-invalid');
         inputs.forEach(input => {
             input.classList.remove('is-invalid');
-            const feedback = input.nextElementSibling;
-            if (feedback && feedback.className === 'invalid-feedback') {
-                feedback.remove();
-            }
         });
 
-        // Special validation for phase 2 (membership plan)
-        if (phase === 2) {
-            const membershipSelected = currentPhase.querySelector('input[name="membership_plan"]:checked');
-            const errorDiv = document.getElementById('membershipError');
-            if (!membershipSelected) {
-                isValid = false;
-                errorDiv.style.display = 'block';
-            } else {
-                errorDiv.style.display = 'none';
-            }
-        }
+        // Clear all existing error messages
+        document.querySelectorAll('.invalid-feedback').forEach(feedback => {
+            feedback.remove();
+        });
 
-        // Special validation for phase 3 (programs & coaches)
-        if (phase === 3) {
-            const selectedPrograms = currentPhase.querySelectorAll('.program-checkbox:checked');
-            selectedPrograms.forEach(program => {
-                const programId = program.value;
-                const coachSelect = currentPhase.querySelector(`select[name="program_coach[${programId}]"]`);
-                if (coachSelect && !coachSelect.value) {
-                    isValid = false;
-                    coachSelect.classList.add('is-invalid');
-                    alert('Please select a coach for each selected program');
+        // Show validation errors
+        Object.entries(errors).forEach(([field, message]) => {
+            const input = document.querySelector(`[name="${field}"]`);
+            if (input) {
+                input.classList.add('is-invalid');
+                
+                // Special handling for radio buttons
+                if (input.type === 'radio') {
+                    const container = input.closest('.membership-option') || input.closest('.d-flex');
+                    if (container) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback d-block';
+                        feedback.textContent = message;
+                        container.appendChild(feedback);
+                    }
+                } else {
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = message;
+                    input.parentNode.insertBefore(feedback, input.nextSibling);
                 }
-            });
-        }
-
-        return isValid;
+            }
+        });
     }
 
     async function nextPhase(currentPhase) {
-        if (await submitPhase(currentPhase)) {
-            document.querySelector(`#phase${currentPhase}`).classList.remove('active');
-            document.querySelector(`#phase${currentPhase + 1}`).classList.add('active');
-            updatePhaseNav(currentPhase + 1);
-            
-            // Update total amount when entering payment summary
-            if (currentPhase + 1 === 4) {
-                updateTotalAmount();
+        try {
+            if (await submitPhase(currentPhase)) {
+                // Generate credentials when moving to Phase 4
+                if (currentPhase === 3) {
+                    const firstName = document.querySelector('input[name="first_name"]').value;
+                    const formData = new FormData();
+                    formData.append('action', 'generate_credentials');
+                    formData.append('first_name', firstName);
+
+                    const response = await fetch(baseUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Update the credentials display
+                        document.getElementById('generatedUsername').textContent = result.username;
+                        document.getElementById('generatedPassword').textContent = result.password;
+                        
+                        // Store in hidden fields
+                        document.getElementById('usernameField').value = result.username;
+                        document.getElementById('passwordField').value = result.password;
+                    } else {
+                        console.error('Error generating credentials:', result.message);
+                    }
+                }
+
+                // Hide current phase and show next phase
+                document.querySelector(`#phase${currentPhase}`).classList.remove('active');
+                document.querySelector(`#phase${currentPhase + 1}`).classList.add('active');
+                
+                // Update navigation
+                document.querySelector(`.nav-link[data-phase="${currentPhase}"]`).classList.remove('active');
+                document.querySelector(`.nav-link[data-phase="${currentPhase}"]`).classList.add('completed');
+                document.querySelector(`.nav-link[data-phase="${currentPhase + 1}"]`).classList.add('active');
+                
+                // Update progress
+                updateProgress(currentPhase + 1);
+
+                // Update total amount when entering payment summary
+                if (currentPhase === 3) {
+                    updateTotalAmount();
+                }
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
             }
+        } catch (error) {
+            console.error('Error in nextPhase:', error);
         }
     }
 
+    function updateProgress(phase) {
+        // Update navigation links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const phaseNumber = parseInt(link.dataset.phase);
+            link.classList.remove('active', 'completed');
+            if (phaseNumber < phase) {
+                link.classList.add('completed');
+            } else if (phaseNumber === phase) {
+                link.classList.add('active');
+            }
+        });
+    }
+
     async function prevPhase(currentPhase) {
+        // Hide current phase and show previous phase
+        document.querySelector(`#phase${currentPhase}`).classList.remove('active');
+        document.querySelector(`#phase${currentPhase - 1}`).classList.add('active');
+        updateProgress(currentPhase - 1);
+    }
+
+    // Function to update total amount
+    function updateTotalAmount() {
+        // Get membership plan price
+        const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
+        const membershipPrice = selectedPlan ? parseFloat(selectedPlan.dataset.price) : 0;
+        document.getElementById('membershipSubtotal').textContent = `₱${membershipPrice.toFixed(2)}`;
+
+        // Calculate programs total
+        let programsTotal = 0;
+        document.querySelectorAll('.coach-select').forEach(select => {
+            if (select.value) {
+                const price = parseFloat(select.options[select.selectedIndex].dataset.price || 0);
+                programsTotal += price;
+            }
+        });
+        document.getElementById('programsSubtotal').textContent = `₱${programsTotal.toFixed(2)}`;
+
+        // Calculate rentals total
+        let rentalsTotal = 0;
+        document.querySelectorAll('input[name="rentals[]"]:checked').forEach(rental => {
+            rentalsTotal += parseFloat(rental.dataset.price || 0);
+        });
+        document.getElementById('rentalsSubtotal').textContent = `₱${rentalsTotal.toFixed(2)}`;
+
+        // Calculate total
+        const total = registrationFee + membershipPrice + programsTotal + rentalsTotal;
+        document.getElementById('totalAmount').textContent = `₱${total.toFixed(2)}`;
+    }
+
+    // Handle form submission for the final phase
+    document.getElementById('memberForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Clear previous messages
+        const alertMessages = document.querySelectorAll('#phase4 .alert');
+        alertMessages.forEach(alert => alert.remove());
+        
         try {
-            // Send request to terminate incomplete registration
-            const formData = new FormData();
-            formData.append('action', 'terminate');
-            formData.append('phase', currentPhase);
-            formData.append('user_id', currentUserId);
+            const formData = new FormData(this);
+            formData.append('action', 'add_member');
+
+            // Add membership plan data
+            const membershipPlan = document.querySelector('input[name="membership_plan"]:checked');
+            const startDate = document.querySelector('input[name="start_date"]');
+
+            if (!membershipPlan || !startDate.value) {
+                document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
+                    '<div class="alert alert-danger">Please complete all previous phases before submitting.</div>'
+                );
+                return;
+            }
+
+            formData.append('membership_plan', membershipPlan.value);
+            formData.append('start_date', startDate.value);
+
+            // Add programs and coaches data
+            const { programs, programCoaches } = getSelectedProgramsAndCoaches();
+            if (programs.length > 0) {
+                formData.append('programs', JSON.stringify(programs));
+                formData.append('program_coach', JSON.stringify(programCoaches));
+            }
 
             const response = await fetch(baseUrl, {
                 method: 'POST',
@@ -628,61 +645,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
 
             const result = await response.json();
+            console.log('Submission result:', result);
+
             if (!result.success) {
-                throw new Error(result.message || 'Failed to terminate incomplete registration');
+                document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
+                    `<div class="alert alert-danger">${result.message}</div>`
+                );
+                return;
             }
 
-            // Reset stored IDs if going back to phase 1
-            if (currentPhase - 1 === 1) {
-                currentUserId = null;
-                currentTransactionId = null;
-            }
-
-            // Hide current phase and show previous phase
-            document.querySelector(`#phase${currentPhase}`).classList.remove('active');
-            document.querySelector(`#phase${currentPhase - 1}`).classList.add('active');
-            updatePhaseNav(currentPhase - 1);
+            // Show success message with credentials
+            document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
+                `<div class="alert alert-success">
+                    Registration completed successfully!<br>
+                    Please save these credentials:<br>
+                    Username: ${document.getElementById('usernameField').value}<br>
+                    Password: ${document.getElementById('passwordField').value}<br>
+                    Redirecting...
+                </div>`
+            );
+            
+            setTimeout(() => {
+                window.location.href = 'members_new';
+            }, 3000);
 
         } catch (error) {
-            alert(error.message);
-        }
-    }
-
-    function updatePhaseNav(currentPhase) {
-        // Update navigation links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            const phase = parseInt(link.dataset.phase);
-            link.classList.remove('active', 'completed');
-            if (phase < currentPhase) {
-                link.classList.add('completed');
-            } else if (phase === currentPhase) {
-                link.classList.add('active');
-            }
-        });
-
-        // Update button visibility
-        document.querySelectorAll('.btn-nav').forEach(btn => {
-            if (btn.classList.contains('btn-secondary')) {
-                // Previous buttons
-                btn.style.display = currentPhase > 1 ? 'inline-block' : 'none';
-            } else if (btn.classList.contains('btn-success')) {
-                // Submit button
-                btn.style.display = currentPhase === 4 ? 'inline-block' : 'none';
-            } else if (btn.classList.contains('btn-primary')) {
-                // Next buttons
-                btn.style.display = currentPhase < 4 ? 'inline-block' : 'none';
-            }
-        });
-    }
-
-    // Handle form submission for the final phase
-    document.getElementById('memberForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (await submitPhase(4)) {
-            alert('Registration completed successfully!');
-            window.location.href = 'index.php'; // Redirect to members list
+            console.error('Error submitting form:', error);
+            document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
+                `<div class="alert alert-danger">An error occurred: ${error.message}</div>`
+            );
         }
     });
+
+    // Function to collect selected programs and coaches
+    function getSelectedProgramsAndCoaches() {
+        const programs = [];
+        const programCoaches = {};
+        
+        document.querySelectorAll('.coach-select').forEach(select => {
+            if (select.value) {
+                const programId = select.dataset.programId;
+                programs.push(programId);
+                programCoaches[programId] = select.value;
+            }
+        });
+        
+        return { programs, programCoaches };
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         // Handle coach selection changes
@@ -690,16 +699,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             select.addEventListener('change', function() {
                 const programId = this.dataset.programId;
                 const programInput = document.querySelector(`.program-input[data-program-id="${programId}"]`);
-                const card = this.closest('.card');
                 
                 if (this.value) {
+                    // Enable program input when coach is selected
                     programInput.disabled = false;
-                    card.classList.add('selected');
                 } else {
+                    // Disable program input when no coach is selected
                     programInput.disabled = true;
-                    card.classList.remove('selected');
                 }
                 
+                // Update total amount
                 updateTotalAmount();
             });
         });
@@ -749,43 +758,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         updateTotalAmount();
     });
 
-    function updateTotalAmount() {
-        let total = registrationFee;
-        let membershipSubtotal = 0;
-        let programsSubtotal = 0;
-        let rentalsSubtotal = 0;
-
-        // Calculate membership plan cost
-        const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
-        if (selectedPlan) {
-            membershipSubtotal = parseFloat(selectedPlan.dataset.price) || 0;
-        }
-        total += membershipSubtotal;
-
-        // Calculate programs and coaches cost
-        document.querySelectorAll('.coach-select').forEach(select => {
-            if (select.value) {
-                const selectedOption = select.options[select.selectedIndex];
-                const coachPrice = parseFloat(selectedOption.dataset.price) || 0;
-                programsSubtotal += coachPrice;
-            }
-        });
-        total += programsSubtotal;
-
-        // Calculate rentals cost
-        document.querySelectorAll('.rental-checkbox:checked').forEach(checkbox => {
-            const rentalPrice = parseFloat(checkbox.dataset.price) || 0;
-            rentalsSubtotal += rentalPrice;
-        });
-        total += rentalsSubtotal;
-
-        // Update display
-        document.getElementById('registrationSubtotal').textContent = '₱' + registrationFee.toFixed(2);
-        document.getElementById('membershipSubtotal').textContent = '₱' + membershipSubtotal.toFixed(2);
-        document.getElementById('programsSubtotal').textContent = '₱' + programsSubtotal.toFixed(2);
-        document.getElementById('rentalsSubtotal').textContent = '₱' + rentalsSubtotal.toFixed(2);
-        document.getElementById('totalAmount').textContent = '₱' + total.toFixed(2);
-    }
     </script>
 </body>
 </html>
