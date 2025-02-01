@@ -46,15 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
-    <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="login-container">
-            <div class="text-center">
-                <div class="logo-placeholder">
-                    <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
-                </div>
-                <h1>WELCOME TO <br><span style="color: #FF0000;">JC POWERZONE</span></h1>
+    <div class="container d-flex flex-column justify-content-center align-items-center vh-100">
+            <div class="text-center d-flex mb-2 gap-2">
+                        <div class="logo-placeholder">
+                            <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
+                        </div>
+                        <h1 class="d-flex align-items-center justify-content-center m-0">JC POWERZONE</h1>
             </div>
 
+    <div class="login-container">
+    <div class=" mb-4">
+        <h2>Log In</h2>
+        <p class="text-muted">Or sign up to create a new account</p>
+    </div>
             <?php if(!empty($error)): ?>
                 <div class="alert alert-danger" role="alert">
                     <?php echo htmlspecialchars($error); ?>
@@ -85,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <button type="submit" class="btn btn-login btn-block">Login</button>
-                <a href="../register/register.php" class="btn btn-register btn-block">Register</a>
+                <a href="../register/register.php" class="btn btn-register btn-block">Sign Up</a>
                 
                 <div class="text-center bottom-links">
                     <a href="../website/website.php" class="home-link">Back to Home</a>
