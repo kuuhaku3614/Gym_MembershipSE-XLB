@@ -280,148 +280,6 @@ class Members {
         }
     }
 
-    public function addCompleteMember($memberData, $membershipData) {
-        try {
-            $connection = $this->pdo;
-            $connection->beginTransaction();
-
-            // 1. Create user account
-            $createUserQuery = "INSERT INTO users (username, password, role_id, is_active) VALUES (?, ?, 3, 1)";
-            $userStmt = $connection->prepare($createUserQuery);
-            $userStmt->execute([$memberData['username'], password_hash($memberData['password'], PASSWORD_DEFAULT)]);
-            $userId = $connection->lastInsertId();
-
-            // 2. Add personal details
-            $personalQuery = "INSERT INTO personal_details (user_id, first_name, middle_name, last_name, sex, birthdate, phone_number) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $personalStmt = $connection->prepare($personalQuery);
-            $personalStmt->execute([
-                $userId,
-                $memberData['first_name'],
-                $memberData['middle_name'],
-                $memberData['last_name'],
-                $memberData['sex'],
-                $memberData['birthdate'],
-                $memberData['phone_number']
-            ]);
-
-            // 3. Handle profile photo if provided
-            if (isset($memberData['photo'])) {
-                $photo = $memberData['photo'];
-                $fileExtension = pathinfo($photo['name'], PATHINFO_EXTENSION);
-                $newFileName = $userId . '_' . time() . '.' . $fileExtension;
-                $uploadPath = '../../../uploads/profile_photos/' . $newFileName;
-
-                if (move_uploaded_file($photo['tmp_name'], $uploadPath)) {
-                    $photoQuery = "INSERT INTO profile_photos (user_id, photo_path, is_active) VALUES (?, ?, 1)";
-                    $photoStmt = $connection->prepare($photoQuery);
-                    $photoStmt->execute([$userId, $newFileName]);
-                }
-            }
-
-            // 4. Create transaction record
-            $transactionQuery = "INSERT INTO transactions (user_id, status, created_at) VALUES (?, 'pending', NOW())";
-            $transactionStmt = $connection->prepare($transactionQuery);
-            $transactionStmt->execute([$userId]);
-            $transactionId = $connection->lastInsertId();
-
-            // 5. Add registration fee
-            $regFeeQuery = "INSERT INTO registration_records (transaction_id, amount) VALUES (?, ?)";
-            $regFeeStmt = $connection->prepare($regFeeQuery);
-            $regFeeStmt->execute([$transactionId, $membershipData['registration_fee']]);
-
-            // 6. Add membership
-            if (!empty($membershipData['membership_plan'])) {
-                $membershipQuery = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
-                                  VALUES (?, ?, ?, ?, ?, 'active', 1)";
-                $membershipStmt = $connection->prepare($membershipQuery);
-                
-                // Get plan info and calculate end date
-                $planQuery = "SELECT plan_type, price FROM membership_plans WHERE id = ?";
-                $planStmt = $connection->prepare($planQuery);
-                $planStmt->execute([$membershipData['membership_plan']]);
-                $planInfo = $planStmt->fetch(PDO::FETCH_ASSOC);
-                
-                $startDate = $membershipData['start_date'];
-                $endDate = ($planInfo['plan_type'] === 'Monthly') 
-                    ? date('Y-m-d', strtotime($startDate . ' +1 month'))
-                    : date('Y-m-d', strtotime($startDate . ' +1 year'));
-                
-                $membershipStmt->execute([
-                    $transactionId,
-                    $membershipData['membership_plan'],
-                    $startDate,
-                    $endDate,
-                    $planInfo['price']
-                ]);
-            }
-
-            // 7. Add programs if selected
-            if (!empty($membershipData['programs'])) {
-                $programSubQuery = "INSERT INTO program_subscriptions (transaction_id, program_id, coach_id, start_date, end_date, amount, status, is_paid) 
-                                  VALUES (?, ?, ?, ?, ?, ?, 'active', 0)";
-                $programSubStmt = $connection->prepare($programSubQuery);
-                
-                foreach ($membershipData['programs'] as $programId) {
-                    $coachId = $membershipData['program_coach'][$programId];
-                    
-                    // Get price from coach_program_types
-                    $priceQuery = "SELECT price FROM coach_program_types WHERE program_id = ? AND coach_id = ?";
-                    $priceStmt = $connection->prepare($priceQuery);
-                    $priceStmt->execute([$programId, $coachId]);
-                    $price = $priceStmt->fetch(PDO::FETCH_ASSOC)['price'];
-                    
-                    $startDate = $membershipData['start_date'];
-                    $endDate = date('Y-m-d', strtotime($startDate . ' +1 month'));
-                    
-                    $programSubStmt->execute([
-                        $transactionId,
-                        $programId,
-                        $coachId,
-                        $startDate,
-                        $endDate,
-                        $price
-                    ]);
-                }
-            }
-
-            // 8. Add rental services if selected
-            if (!empty($membershipData['rentals'])) {
-                $rentalSubQuery = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, start_date, end_date, amount, status, is_paid) 
-                                 VALUES (?, ?, ?, ?, ?, 'active', 0)";
-                $rentalSubStmt = $connection->prepare($rentalSubQuery);
-                
-                foreach ($membershipData['rentals'] as $rentalId) {
-                    $rentalPriceQuery = "SELECT price FROM rental_services WHERE id = ?";
-                    $rentalPriceStmt = $connection->prepare($rentalPriceQuery);
-                    $rentalPriceStmt->execute([$rentalId]);
-                    $rentalPrice = $rentalPriceStmt->fetch(PDO::FETCH_ASSOC)['price'];
-                    
-                    $startDate = $membershipData['start_date'];
-                    $endDate = date('Y-m-d', strtotime($startDate . ' +1 month'));
-                    
-                    $rentalSubStmt->execute([
-                        $transactionId,
-                        $rentalId,
-                        $startDate,
-                        $endDate,
-                        $rentalPrice
-                    ]);
-                }
-            }
-
-            $connection->commit();
-            return ['success' => true, 'message' => 'Member registration completed successfully'];
-
-        } catch (Exception $e) {
-            if ($connection) {
-                $connection->rollBack();
-            }
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
-    }
-
-    // Helper functions for member registration
     public function getMembershipPlans() {
         try {
             $connection = $this->pdo;
@@ -496,360 +354,6 @@ class Members {
         }
     }
 
-    // Validate Phase 1 data
-    private function validatePhase1Data($data) {
-        $errors = [];
-        
-        // Required fields
-        $requiredFields = ['first_name', 'last_name', 'sex', 'birthdate', 'phone_number'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || trim($data[$field]) === '') {
-                $errors[$field] = ucfirst(str_replace('_', ' ', $field)) . ' is required';
-            }
-        }
-
-        // Validate birthdate
-        if (isset($data['birthdate']) && trim($data['birthdate']) !== '') {
-            $birthdate = strtotime($data['birthdate']);
-            $today = strtotime(date('Y-m-d'));
-            if ($birthdate >= $today) {
-                $errors['birthdate'] = 'Birthdate cannot be today or a future date';
-            }
-        }
-
-        // Validate sex
-        if (isset($data['sex']) && !in_array($data['sex'], ['Male', 'Female'])) {
-            $errors['sex'] = 'Invalid sex value';
-        }
-
-        // Validate phone number format (optional, add your specific validation rules)
-        if (isset($data['phone_number']) && trim($data['phone_number']) !== '') {
-            // Add your phone number validation logic here if needed
-            // For example: if (!preg_match('/^[0-9]{11}$/', $data['phone_number'])) {
-            //     $errors['phone_number'] = 'Invalid phone number format';
-            // }
-        }
-
-        return $errors;
-    }
-
-    // Validate Phase 2 data
-    private function validatePhase2Data($data) {
-        $errors = [];
-        
-        // Check if membership plan is selected
-        if (!isset($data['membership_plan']) || trim($data['membership_plan']) === '') {
-            $errors['membership_plan'] = 'Please select a membership plan';
-        }
-
-        return $errors;
-    }
-
-    // Save personal details (Phase 1)
-    public function savePhase1($data) {
-        try {
-            // Validate the data first
-            $validationErrors = $this->validatePhase1Data($data);
-            if (!empty($validationErrors)) {
-                return [
-                    'success' => false,
-                    'errors' => $validationErrors,
-                    'message' => 'Validation failed'
-                ];
-            }
-
-            $this->pdo->beginTransaction();
-
-            // Generate username and password
-            $username = strtolower($data['first_name']) . rand(100, 999);
-            $password = bin2hex(random_bytes(4)); // 8 characters
-
-            // Insert into users table
-            $userQuery = "INSERT INTO users (username, password, role_id, is_active) VALUES (?, ?, 3, 0)";
-            $userStmt = $this->pdo->prepare($userQuery);
-            if (!$userStmt->execute([$username, password_hash($password, PASSWORD_DEFAULT)])) {
-                throw new Exception("Failed to create user account");
-            }
-            $userId = $this->pdo->lastInsertId();
-            $this->tempUserId = $userId;
-
-            // Insert personal details
-            $detailsQuery = "INSERT INTO personal_details (user_id, first_name, middle_name, last_name, sex, birthdate, phone_number) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $detailsStmt = $this->pdo->prepare($detailsQuery);
-            if (!$detailsStmt->execute([
-                $userId,
-                $data['first_name'],
-                $data['middle_name'] ?? '',
-                $data['last_name'],
-                $data['sex'],
-                $data['birthdate'],
-                $data['phone_number']
-            ])) {
-                throw new Exception("Failed to save personal details");
-            }
-
-            // Handle photo if present
-            if (isset($data['photo']) && $data['photo']['error'] === 0) {
-                $this->handlePhotoUpload($userId, $data['photo']);
-            }
-
-            $this->pdo->commit();
-
-            return [
-                'success' => true,
-                'message' => 'Personal details saved successfully',
-                'user_id' => $userId,
-                'username' => $username,
-                'password' => $password
-            ];
-
-        } catch (Exception $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
-        }
-    }
-
-    // Save membership plan (Phase 2)
-    public function savePhase2($userId, $data) {
-        try {
-            $connection = $this->pdo;
-            $connection->beginTransaction();
-            
-            error_log("Starting Phase 2 transaction");
-
-            // Get membership plan details
-            $planQuery = "SELECT * FROM membership_plans WHERE id = ? AND status = 'active'";
-            $stmt = $connection->prepare($planQuery);
-            $stmt->execute([$data['membership_plan']]);
-            $plan = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$plan) {
-                throw new Exception("Invalid membership plan selected");
-            }
-
-            // Create transaction record - note: staff_id is NULL for self-registration
-            $transactionQuery = "INSERT INTO transactions (staff_id, user_id, status, created_at) 
-                                VALUES (NULL, ?, 'pending', NOW())";
-            $stmt = $connection->prepare($transactionQuery);
-            $stmt->execute([$userId]);
-            $transactionId = $connection->lastInsertId();
-
-            // Create membership record
-            $membershipQuery = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
-                               VALUES (?, ?, ?, ?, ?, 'active', 1)";
-            $stmt = $connection->prepare($membershipQuery);
-                
-            // Get plan info and calculate end date
-            $planQuery = "SELECT plan_type, price FROM membership_plans WHERE id = ?";
-            $planStmt = $connection->prepare($planQuery);
-            $planStmt->execute([$data['membership_plan']]);
-            $planInfo = $planStmt->fetch(PDO::FETCH_ASSOC);
-                
-            $startDate = $data['start_date'];
-            $endDate = ($planInfo['plan_type'] === 'Monthly') 
-                ? date('Y-m-d', strtotime($startDate . ' +1 month'))
-                : date('Y-m-d', strtotime($startDate . ' +1 year'));
-                
-            $stmt->execute([
-                $transactionId,
-                $plan['id'],
-                $startDate,
-                $endDate,
-                $plan['price']
-            ]);
-
-            $connection->commit();
-            return ['success' => true, 'transaction_id' => $transactionId];
-        } catch (Exception $e) {
-            $connection->rollBack();
-            error_log("Error in savePhase2: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
-    }
-
-    // Save programs and services (Phase 3)
-    public function savePhase3($userId, $transactionId, $data) {
-        try {
-            $this->pdo->beginTransaction();
-            error_log("Starting Phase 3 transaction");
-            error_log("Phase 3 data received: " . print_r($data, true));
-
-            // Add programs and coaches
-            if (!empty($data['program_coach'])) {
-                error_log("Processing programs: " . print_r($data['program_coach'], true));
-                
-                foreach ($data['program_coach'] as $programId => $coachId) {
-                    if (!empty($coachId)) {
-                        // Get program price
-                        $priceQuery = "SELECT price FROM coach_program_types WHERE program_id = ? AND coach_id = ?";
-                        $priceStmt = $this->pdo->prepare($priceQuery);
-                        $priceStmt->execute([$programId, $coachId]);
-                        $priceInfo = $priceStmt->fetch(PDO::FETCH_ASSOC);
-                        error_log("Program price info: " . print_r($priceInfo, true));
-                        
-                        $programQuery = "INSERT INTO program_subscriptions (transaction_id, program_id, coach_id, amount, status, is_paid) 
-                                       VALUES (?, ?, ?, ?, 'pending', 0)";
-                        $programStmt = $this->pdo->prepare($programQuery);
-                        if (!$programStmt->execute([
-                            $transactionId,
-                            $programId,
-                            $coachId,
-                            $priceInfo['price']
-                        ])) {
-                            throw new Exception("Failed to save program subscription");
-                        }
-                        error_log("Program subscription saved successfully");
-                    }
-                }
-            }
-
-            // Add rental services
-            if (!empty($data['rentals'])) {
-                foreach ($data['rentals'] as $rentalId) {
-                    $priceQuery = "SELECT price FROM rental_services WHERE id = ?";
-                    $priceStmt = $this->pdo->prepare($priceQuery);
-                    $priceStmt->execute([$rentalId]);
-                    $priceInfo = $priceStmt->fetch(PDO::FETCH_ASSOC);
-                    
-                    $rentalQuery = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, amount, status, is_paid) 
-                                  VALUES (?, ?, ?, 'pending', 0)";
-                    $rentalStmt = $this->pdo->prepare($rentalQuery);
-                    if (!$rentalStmt->execute([
-                        $transactionId,
-                        $rentalId,
-                        $priceInfo['price']
-                    ])) {
-                        throw new Exception("Failed to save rental subscription");
-                    }
-                }
-            }
-
-            $this->pdo->commit();
-            return ['success' => true];
-        } catch (Exception $e) {
-            $this->pdo->rollBack();
-            error_log("Phase 3 error: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
-    }
-
-    // Finalize registration (Phase 4)
-    public function finalizeRegistration($userId, $transactionId) {
-        try {
-            $connection = $this->pdo;
-            $connection->beginTransaction();
-            error_log("Starting finalization transaction");
-
-            // Update user status
-            $userQuery = "UPDATE users SET is_active = 1 WHERE id = ?";
-            $stmt = $connection->prepare($userQuery);
-            $stmt->execute([$userId]);
-
-            // Update memberships status and is_paid
-            $membershipQuery = "UPDATE memberships SET status = 'active', is_paid = 1 WHERE transaction_id = ?";
-            $stmt = $connection->prepare($membershipQuery);
-            $stmt->execute([$transactionId]);
-
-            // Update transaction status to confirmed
-            $transactionQuery = "UPDATE transactions SET status = 'confirmed' WHERE id = ?";
-            $stmt = $connection->prepare($transactionQuery);
-            $stmt->execute([$transactionId]);
-
-            // Update program subscriptions status and is_paid
-            $programQuery = "UPDATE program_subscriptions SET status = 'active', is_paid = 1 WHERE transaction_id = ?";
-            $stmt = $connection->prepare($programQuery);
-            $stmt->execute([$transactionId]);
-
-            // Update rental subscriptions status and is_paid
-            $rentalQuery = "UPDATE rental_subscriptions SET status = 'active', is_paid = 1 WHERE transaction_id = ?";
-            $stmt = $connection->prepare($rentalQuery);
-            $stmt->execute([$transactionId]);
-
-            $connection->commit();
-            return ['success' => true];
-        } catch (Exception $e) {
-            $connection->rollBack();
-            error_log("Error in finalizeRegistration: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
-    }
-
-    // Rollback registration
-    public function rollbackRegistration($userId) {
-        try {
-            $this->pdo->beginTransaction();
-            error_log("Starting rollback for user ID: " . $userId);
-
-            // Delete rental subscriptions
-            $rentalQuery = "DELETE rs FROM rental_subscriptions rs 
-                           INNER JOIN transactions t ON rs.transaction_id = t.id 
-                           WHERE t.user_id = ?";
-            $this->pdo->prepare($rentalQuery)->execute([$userId]);
-
-            // Delete program subscriptions
-            $programQuery = "DELETE ps FROM program_subscriptions ps 
-                           INNER JOIN transactions t ON ps.transaction_id = t.id 
-                           WHERE t.user_id = ?";
-            $this->pdo->prepare($programQuery)->execute([$userId]);
-
-            // Delete memberships
-            $membershipQuery = "DELETE m FROM memberships m 
-                              INNER JOIN transactions t ON m.transaction_id = t.id 
-                              WHERE t.user_id = ?";
-            $this->pdo->prepare($membershipQuery)->execute([$userId]);
-
-            // Delete transactions
-            $transactionQuery = "DELETE FROM transactions WHERE user_id = ?";
-            $this->pdo->prepare($transactionQuery)->execute([$userId]);
-
-            // Delete profile photos
-            $photoQuery = "DELETE FROM profile_photos WHERE user_id = ?";
-            $this->pdo->prepare($photoQuery)->execute([$userId]);
-
-            // Delete personal details
-            $detailsQuery = "DELETE FROM personal_details WHERE user_id = ?";
-            $this->pdo->prepare($detailsQuery)->execute([$userId]);
-
-            // Delete user
-            $userQuery = "DELETE FROM users WHERE id = ?";
-            $this->pdo->prepare($userQuery)->execute([$userId]);
-
-            $this->pdo->commit();
-            return ['success' => true];
-        } catch (Exception $e) {
-            $this->pdo->rollBack();
-            error_log("Rollback error: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
-    }
-
-    // Handle termination of incomplete registration
-    public function terminateRegistration($userId) {
-        try {
-            if (!$userId) {
-                return ['success' => false, 'message' => 'No user ID provided for termination'];
-            }
-
-            // Call the rollback function
-            $result = $this->rollbackRegistration($userId);
-            
-            if ($result['success']) {
-                return ['success' => true, 'message' => 'Registration terminated successfully'];
-            } else {
-                throw new Exception($result['message'] ?? 'Failed to terminate registration');
-            }
-        } catch (Exception $e) {
-            error_log("Termination error: " . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
-    }
-
     private function handlePhotoUpload($userId, $photo) {
         $fileExtension = strtolower(pathinfo($photo['name'], PATHINFO_EXTENSION));
         $newFileName = $userId . '_' . time() . '.' . $fileExtension;
@@ -870,6 +374,316 @@ class Members {
         $photoStmt = $this->pdo->prepare($photoQuery);
         if (!$photoStmt->execute([$userId, $newFileName])) {
             throw new Exception("Failed to save photo information to database");
+        }
+    }
+
+    public function validatePhase1($data) {
+        $errors = [];
+
+        // Required fields
+        $requiredFields = ['first_name', 'last_name', 'phone', 'birthdate', 'sex'];
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                $errors[$field] = ucfirst(str_replace('_', ' ', $field)) . ' is required';
+            }
+        }
+
+        // Email validation
+        if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'Invalid email format';
+        }
+
+        // Phone validation (must be 11 digits)
+        if (!empty($data['phone'])) {
+            $phone = preg_replace('/[^0-9]/', '', $data['phone']);
+            if (strlen($phone) !== 11) {
+                $errors['phone'] = 'Phone number must be 11 digits';
+            }
+        } else {
+            $errors['phone'] = 'Phone number is required';
+        }
+
+        // Sex validation
+        if (!empty($data['sex']) && !in_array($data['sex'], ['Male', 'Female'])) {
+            $errors['sex'] = 'Please select a valid sex';
+        }
+
+        // Birthdate validation
+        if (!empty($data['birthdate'])) {
+            $birthdate = new DateTime($data['birthdate']);
+            $today = new DateTime();
+            if ($birthdate > $today) {
+                $errors['birthdate'] = 'Birthdate cannot be in the future';
+            }
+        }
+
+        return [
+            'success' => empty($errors),
+            'errors' => $errors
+        ];
+    }
+
+    public function generateUsername($firstName) {
+        $baseUsername = strtolower($firstName);
+        $randomNumbers = str_pad(mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+        $username = $baseUsername . $randomNumbers;
+
+        // Keep trying until we find an available username
+        while (true) {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            if ($stmt->fetchColumn() == 0) {
+                return $username;
+            }
+            $randomNumbers = str_pad(mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            $username = $baseUsername . $randomNumbers;
+        }
+    }
+
+    public function generateCredentials($firstName) {
+        try {
+            $username = $this->generateUsername($firstName);
+            $password = $this->generatePassword();
+            return [
+                'success' => true,
+                'username' => $username,
+                'password' => $password
+            ];
+        } catch (Exception $e) {
+            error_log('Error generating credentials: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error generating credentials: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    private function generatePassword($length = 8) {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $password;
+    }
+
+    public function addMember($data) {
+        try {
+            error_log('Starting member registration with data: ' . print_r($data, true));
+            
+            $this->pdo->beginTransaction();
+
+            // Use pre-generated credentials from hidden fields
+            $username = $data['username'];
+            $password = $data['password'];
+
+            // 1. Create user account
+            $sql = "INSERT INTO users (username, password, role_id, is_active) VALUES (:username, :password, 3, 1)";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':username' => $username,
+                ':password' => password_hash($password, PASSWORD_DEFAULT)
+            ]);
+            $userId = $this->pdo->lastInsertId();
+            error_log('User created with ID: ' . $userId);
+
+            // Store credentials for display in Phase 4
+            $data['generated_username'] = $username;
+            $data['generated_password'] = $password;
+
+            // 2. Add personal details
+            $sql = "INSERT INTO personal_details (user_id, first_name, middle_name, last_name, sex, birthdate, phone_number) 
+                    VALUES (:user_id, :first_name, :middle_name, :last_name, :sex, :birthdate, :phone)";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':first_name' => $data['first_name'],
+                ':middle_name' => $data['middle_name'] ?? '',
+                ':last_name' => $data['last_name'],
+                ':sex' => $data['sex'],
+                ':birthdate' => $data['birthdate'],
+                ':phone' => $data['phone']
+            ]);
+            error_log('Personal details added');
+
+            // 3. Create transaction record
+            $sql = "INSERT INTO transactions (user_id, status, created_at) VALUES (:user_id, 'confirmed', NOW())";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':user_id' => $userId]);
+            $transactionId = $this->pdo->lastInsertId();
+            error_log('Transaction created with ID: ' . $transactionId);
+
+            // 4. Add registration fee
+            $sql = "INSERT INTO registration_records (transaction_id, amount) VALUES (:transaction_id, :amount)";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':transaction_id' => $transactionId,
+                ':amount' => $this->getRegistrationFee()
+            ]);
+            error_log('Registration fee added');
+
+            // 5. Add membership
+            // Get plan info and calculate end date
+            $sql = "SELECT mp.plan_type, mp.price, mp.duration, dt.type_name as duration_type 
+                    FROM membership_plans mp 
+                    JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                    WHERE mp.id = :plan_id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':plan_id' => $data['membership_plan']]);
+            $planInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $startDate = $data['start_date'];
+            $endDate = date('Y-m-d', strtotime($startDate . ' +' . $planInfo['duration'] . ' ' . strtolower($planInfo['duration_type'])));
+
+            $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
+                    VALUES (:transaction_id, :plan_id, :start_date, :end_date, :amount, 'active', 1)";
+            $stmt = $this->pdo->prepare($sql);
+                
+            $stmt->execute([
+                ':transaction_id' => $transactionId,
+                ':plan_id' => $data['membership_plan'],
+                ':start_date' => $startDate,
+                ':end_date' => $endDate,
+                ':amount' => $planInfo['price']
+            ]);
+            error_log('Membership added');
+
+            // 6. Add programs if selected
+            if (isset($data['programs'])) {
+                $programs = json_decode($data['programs'], true);
+                $programCoaches = json_decode($data['program_coach'], true);
+                
+                error_log('Programs data: ' . print_r($programs, true));
+                error_log('Program coaches data: ' . print_r($programCoaches, true));
+
+                if (!empty($programs)) {
+                    $programSubQuery = "INSERT INTO program_subscriptions (transaction_id, program_id, coach_id, start_date, end_date, amount, status, is_paid) 
+                                      VALUES (:transaction_id, :program_id, :coach_id, :start_date, :end_date, :amount, 'active', 1)";
+                    $programSubStmt = $this->pdo->prepare($programSubQuery);
+                    
+                    foreach ($programs as $programId) {
+                        $coachId = $programCoaches[$programId];
+                        
+                        // Get price from coach_program_types
+                        $priceQuery = "SELECT price FROM coach_program_types WHERE program_id = :program_id AND coach_id = :coach_id";
+                        $priceStmt = $this->pdo->prepare($priceQuery);
+                        $priceStmt->execute([
+                            ':program_id' => $programId,
+                            ':coach_id' => $coachId
+                        ]);
+                        $priceResult = $priceStmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        if (!$priceResult) {
+                            throw new Exception("Could not find price for program $programId with coach $coachId");
+                        }
+                        
+                        $price = $priceResult['price'];
+                        $programStartDate = $data['start_date'];
+                        $programEndDate = date('Y-m-d', strtotime($programStartDate . ' +1 month'));
+                        
+                        error_log("Adding program subscription: Program ID: $programId, Coach ID: $coachId, Price: $price");
+                        
+                        $programSubStmt->execute([
+                            ':transaction_id' => $transactionId,
+                            ':program_id' => $programId,
+                            ':coach_id' => $coachId,
+                            ':start_date' => $programStartDate,
+                            ':end_date' => $programEndDate,
+                            ':amount' => $price
+                        ]);
+                        
+                        error_log("Program subscription added successfully");
+                    }
+                }
+            }
+
+            // 7. Add rental services if selected
+            if (!empty($data['rentals'])) {
+                foreach ($data['rentals'] as $rentalId) {
+                    $rentalPriceQuery = "SELECT price FROM rental_services WHERE id = :rental_id";
+                    $rentalPriceStmt = $this->pdo->prepare($rentalPriceQuery);
+                    $rentalPriceStmt->execute([':rental_id' => $rentalId]);
+                    $rentalPrice = $rentalPriceStmt->fetch(PDO::FETCH_ASSOC)['price'];
+                    
+                    $rentalStartDate = $data['start_date'];
+                    $rentalEndDate = date('Y-m-d', strtotime($rentalStartDate . ' +1 month'));
+                    
+                    $rentalSubQuery = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, start_date, end_date, amount, status, is_paid) 
+                                     VALUES (:transaction_id, :rental_id, :start_date, :end_date, :amount, 'active', 1)";
+                    $rentalSubStmt = $this->pdo->prepare($rentalSubQuery);
+                    $rentalSubStmt->execute([
+                        ':transaction_id' => $transactionId,
+                        ':rental_id' => $rentalId,
+                        ':start_date' => $rentalStartDate,
+                        ':end_date' => $rentalEndDate,
+                        ':amount' => $rentalPrice
+                    ]);
+                }
+            }
+
+            // 8. Handle photo upload if provided
+            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                error_log('Processing photo upload');
+                $uploadDir = '../../../uploads/profile_photos/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                
+                $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+                $filename = $userId . '_' . time() . '.' . $extension;
+                $targetPath = $uploadDir . $filename;
+
+                error_log('Moving uploaded file to: ' . $targetPath);
+                if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
+                    $sql = "INSERT INTO profile_photos (user_id, photo_path, is_active) VALUES (:user_id, :photo_path, 1)";
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute([
+                        ':user_id' => $userId,
+                        ':photo_path' => $filename
+                    ]);
+                    error_log('Photo path added to database');
+                }
+            }
+
+            $this->pdo->commit();
+            error_log('Member registration completed successfully');
+            return [
+                'success' => true, 
+                'message' => 'Member registered successfully',
+                'generated_username' => $username,
+                'generated_password' => $password
+            ];
+
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            error_log('Error in addMember - Code: ' . $e->getCode() . ' Message: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log('General error in addMember: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+
+    public function handleRequest($data) {
+        try {
+            if (!isset($data['action'])) {
+                throw new Exception('No action specified');
+            }
+
+            switch ($data['action']) {
+                case 'validate_phase1':
+                    return $this->validatePhase1($data);
+                case 'add_member':
+                    return $this->addMember($data);
+                default:
+                    throw new Exception('Invalid action');
+            }
+        } catch (Exception $e) {
+            error_log('Error in handleRequest: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 }

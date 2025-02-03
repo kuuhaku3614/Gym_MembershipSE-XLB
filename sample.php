@@ -49,36 +49,19 @@ class AttendanceSystem {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    public function getAttendanceHistory($userId) {
-        $query = "SELECT 
-            ah.id AS history_id,
-            u.id AS user_id,
-            CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
-            u.username,
-            a.date,
-            ah.time_in,
-            ah.time_out,
-            ah.status,
-            ah.created_at AS history_timestamp
-        FROM attendance_history ah
-        JOIN attendance a ON ah.attendance_id = a.id
-        JOIN users u ON a.user_id = u.id
-        JOIN personal_details pd ON u.id = pd.user_id
-        WHERE u.id = :user_id
-        ORDER BY ah.created_at DESC";
-
-        $stmt = $this->pdo->prepare($query);
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
 }
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Attendance System</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
+</head>
+<body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
         <div class="bg-white rounded-lg shadow-lg p-6">
             <div class="flex justify-between items-center mb-6">
@@ -101,7 +84,6 @@ class AttendanceSystem {
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -139,12 +121,6 @@ class AttendanceSystem {
                                     <?= $member['status'] ?? 'Not checked in' ?>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <button onclick="openHistoryModal(<?= $member['user_id'] ?>)" 
-                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                                    View History
-                                </button>
-                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -153,57 +129,13 @@ class AttendanceSystem {
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="historyModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">Attendance History</h3>
-                <button onclick="closeHistoryModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="historyContent" class="overflow-x-auto">
-                <!-- History content will be loaded here -->
-            </div>
-        </div>
-    </div>
-
     <script>
-    // Search functionality
     document.getElementById('searchInput').addEventListener('input', function(e) {
         const searchTerm = e.target.value;
         const currentUrl = new URL(window.location.href);
         currentUrl.searchParams.set('search', searchTerm);
         window.location.href = currentUrl.toString();
     });
-
-    // Modal functionality
-    function openHistoryModal(userId) {
-        document.getElementById('historyModal').classList.remove('hidden');
-        fetchAttendanceHistory(userId);
-    }
-
-    function closeHistoryModal() {
-        document.getElementById('historyModal').classList.add('hidden');
-    }
-
-    function fetchAttendanceHistory(userId) {
-        fetch(`get_history.php?user_id=${userId}`)
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('historyContent').innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('historyContent').innerHTML = 'Error loading history';
-            });
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('historyModal');
-        if (event.target === modal) {
-            closeHistoryModal();
-        }
-    }
     </script>
+</body>
+</html>
