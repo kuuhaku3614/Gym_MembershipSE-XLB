@@ -14,13 +14,13 @@
         <div class="registration-container">
             <!-- Profile Photo Section - Fixed -->
             <!-- Scrollable Form Section -->
-            <div class="d-flex flex-column align-items-start justify-content-end ">
+            <div class="d-flex flex-column align-items-start">
                         <h2 class="mb-0">Register Information</h2>
                         <p class="text-muted medium mb-0">Start your journey with us!</p>
                     </div>
-            <div class="form-scroll-container">
+        <div class="form-scroll-container">
             <div class="profile-photo-upload">
-                <div class="d-flex justify-content-end align-items-center mb-1 w-100">
+                <div class="d-flex justify-content-center align-items-center mb-1 w-100">
                     <div class="profile-photo-container">   
                         <div class="profile-photo-placeholder">
                             <i class="fas fa-camera"></i>
@@ -37,7 +37,7 @@
                         class="file-input" 
                         hidden
                     >
-                    <div class="file-upload-wrapper">
+                    <div class="file-upload-wrapper d-flex justify-content-center align-items-center text-center w-100">
                         <button type="button" class="btn-upload-trigger">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span>Upload</span>
@@ -110,11 +110,11 @@
                         <label for="confirmPassword">Confirm Password</label>
                     </div>
 
-                    <button type="submit" class="btn btn-confirm btn-block">Confirm</button>
+        </div>
+                    <button type="submit" class="btn btn-confirm btn-block mt-3">Confirm</button>
                     <a href="../login/login.php" class="btn btn-exit btn-block">Return to Login</a>
                 </form>
             </div>
-        </div>
     </div>
 
     <!-- Modal Overlay -->
@@ -150,6 +150,19 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const icon = event.currentTarget.querySelector('.togglePW');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 
     $(document).ready(function() {
     let isVerificationInProgress = false;
