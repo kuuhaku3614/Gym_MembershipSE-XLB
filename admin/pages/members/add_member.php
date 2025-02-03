@@ -1,37 +1,80 @@
 <?php
+session_start();
 date_default_timezone_set('Asia/Manila');
 require_once "../../../config.php";
 require_once 'functions/members.class.php';
 
 $members = new Members();
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Disable error output
-    error_reporting(0);
-    ini_set('display_errors', 0);
-    
+// Get base URL from config or construct it
+$baseUrl = isset($config['base_url']) ? $config['base_url'] : (
+    (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . 
+    "://" . $_SERVER['HTTP_HOST'] . 
+    str_replace('/admin/pages/members/add_member.php', '', $_SERVER['SCRIPT_NAME'])
+);
+
+// Generate credentials when moving to Phase 4
+if (isset($_POST['generate_credentials'])) {
     header('Content-Type: application/json');
     
     try {
-        if (isset($_POST['action']) && $_POST['action'] === 'generate_credentials') {
-            $firstName = $_POST['first_name'];
-            $result = $members->generateCredentials($firstName);
-            echo json_encode($result);
-            exit;
+        if (empty($_POST['first_name'])) {
+            throw new Exception('First name is required');
         }
         
-        $result = $members->handleRequest($_POST);
-        echo json_encode($result);
+        $credentials = $members->generateCredentials($_POST['first_name']);
+        echo json_encode([
+            'success' => true,
+            'username' => $credentials['username'],
+            'password' => $credentials['password']
+        ]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
     }
     exit;
 }
 
-// Re-enable error reporting for the rest of the script
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Handle form submission to save all data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_member') {
+    header('Content-Type: application/json');
+    try {
+        // Log raw data for debugging
+        error_log("Raw POST data: " . print_r($_POST, true));
+        error_log("Raw FILES data: " . print_r($_FILES, true));
+        
+        // Prepare the data
+        $data = $_POST;
+        
+        // Handle file upload
+        if (isset($_FILES['photo'])) {
+            $data['photo'] = $_FILES['photo'];
+        }
+        
+        // Add member and get result
+        $result = $members->addMember($data);
+        
+        if ($result['success']) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Member registered successfully!'
+            ]);
+        } else {
+            throw new Exception($result['message'] ?? 'Failed to register member');
+        }
+    } catch (Exception $e) {
+        error_log("Error adding member: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -125,7 +168,7 @@ ini_set('display_errors', 1);
                         <a class="nav-link" data-phase="3">3. Programs & Services</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-phase="4">4. Payment Summary</a>
+                        <a class="nav-link" data-phase="4">4. Payment Details</a>
                     </li>
                 </ul>
 
@@ -133,8 +176,10 @@ ini_set('display_errors', 1);
                     <!-- Hidden fields for credentials -->
                     <input type="hidden" name="username" id="usernameField">
                     <input type="hidden" name="password" id="passwordField">
+                    <input type="hidden" name="form_submitted" value="true">
                     <!-- Phase 1: Personal Details -->
                     <div id="phase1" class="form-phase active">
+                        <h4 class="mb-4">Personal Information</h4>
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Personal Information</h5>
@@ -199,7 +244,8 @@ ini_set('display_errors', 1);
                     </div>
 
                     <!-- Phase 2: Membership Plan -->
-                    <div id="phase2" class="form-phase">
+                    <div id="phase2" class="form-phase" style="display: none;">
+                        <h4 class="mb-4">Membership Plan</h4>
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">Select Membership Plan</h5>
@@ -207,21 +253,27 @@ ini_set('display_errors', 1);
                                     Please select a membership plan
                                 </div>
                                 <div class="row">
-                                    <?php foreach ($members->getMembershipPlans() as $plan): ?>
-                                    <div class="col-md-4 mb-3">
+                                    <?php 
+                                    $membershipPlans = $members->getMembershipPlans();
+                                    error_log("Membership plans: " . print_r($membershipPlans, true));
+                                    foreach ($membershipPlans as $plan): ?>
+                                    <div class="col-md-6 mb-4">
                                         <div class="card membership-option">
                                             <div class="card-body">
                                                 <h6 class="card-title"><?php echo htmlspecialchars($plan['plan_name']); ?></h6>
+                                                <p class="card-text"><?php echo htmlspecialchars($plan['description']); ?></p>
                                                 <p class="card-text">
                                                     Type: <?php echo htmlspecialchars($plan['plan_type']); ?><br>
-                                                    Price: ₱<?php echo number_format($plan['price'], 2); ?>
+                                                    Price: ₱<?php echo number_format($plan['price'], 2); ?><br>
+                                                    Duration: <?php echo $plan['duration'] . ' ' . $plan['duration_type']; ?>
                                                 </p>
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="radio" 
                                                            name="membership_plan" 
                                                            value="<?php echo $plan['id']; ?>"
-                                                           data-price="<?php echo $plan['price']; ?>">
-                                                    <label class="form-check-label">
+                                                           data-price="<?php echo $plan['price']; ?>"
+                                                           id="membership_plan_<?php echo $plan['id']; ?>">
+                                                    <label class="form-check-label" for="membership_plan_<?php echo $plan['id']; ?>">
                                                         Select Plan
                                                     </label>
                                                 </div>
@@ -233,10 +285,12 @@ ini_set('display_errors', 1);
 
                                 <div class="row mt-4">
                                     <div class="col-md-6">
-                                        <label class="form-label">Start Date</label>
-                                        <input type="date" class="form-control" name="start_date" 
-                                               min="<?php echo date('Y-m-d'); ?>"
-                                               value="<?php echo date('Y-m-d'); ?>">
+                                        <label for="start_date" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                                               value="<?php echo date('Y-m-d'); ?>" 
+                                               min="<?php echo date('Y-m-d'); ?>" 
+                                               required>
+                                        <div class="invalid-feedback">Start date is required</div>
                                     </div>
                                 </div>
                             </div>
@@ -249,70 +303,103 @@ ini_set('display_errors', 1);
                     </div>
 
                     <!-- Phase 3: Programs & Services -->
-                    <div id="phase3" class="form-phase">
+                    <div id="phase3" class="form-phase" style="display: none;">
                         <h4 class="mb-4">Programs & Services</h4>
                         
                         <!-- Programs Section -->
                         <div class="mb-4">
                             <h5>Available Programs</h5>
                             <div class="row row-cols-1 row-cols-md-3 g-4">
-                                <?php foreach ($members->getPrograms() as $program): ?>
-                                <div class="col">
-                                    <div class="card h-100">
-                                        <div class="card-body">
-                                            <h5 class="card-title"><?php echo $program['program_name']; ?></h5>
-                                            <p class="card-text"><?php echo $program['description']; ?></p>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Select Coach:</label>
-                                                <select class="form-select coach-select" name="program_coach[<?php echo $program['id']; ?>]" 
-                                                        data-program-id="<?php echo $program['id']; ?>">
-                                                    <option value="">Choose a coach...</option>
-                                                    <?php 
-                                                    $coaches = $members->getProgramCoaches();
-                                                    foreach ($coaches as $coach) {
-                                                        if ($coach['program_id'] == $program['id']) {
-                                                            echo "<option value='{$coach['coach_id']}' data-price='{$coach['price']}'>{$coach['coach_name']} - ₱{$coach['price']}</option>";
-                                                        }
-                                                    }
-                                                    ?>
-                                                </select>
+                                <?php 
+                                $programs = $members->getPrograms();
+                                $programCoaches = $members->getProgramCoaches();
+                                
+                                // Organize coaches by program
+                                $coachesByProgram = [];
+                                foreach ($programCoaches as $coach) {
+                                    if (!isset($coachesByProgram[$coach['program_id']])) {
+                                        $coachesByProgram[$coach['program_id']] = [];
+                                    }
+                                    $coachesByProgram[$coach['program_id']][] = $coach;
+                                }
+                                
+                                if (empty($programs)) {
+                                    echo '<div class="col-12"><div class="alert alert-info">No programs available.</div></div>';
+                                } else {
+                                    foreach ($programs as $program): ?>
+                                    <div class="col">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title"><?php echo htmlspecialchars($program['program_name']); ?></h6>
+                                                <p class="card-text"><?php echo htmlspecialchars($program['description']); ?></p>
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        Duration: <?php echo htmlspecialchars($program['duration'] . ' ' . $program['duration_type']); ?>
+                                                    </small>
+                                                </p>
+                                                <?php if (isset($coachesByProgram[$program['id']])): ?>
+                                                <div class="form-group">
+                                                    <label class="form-label">Select Coach:</label>
+                                                    <select class="form-select program-coach" 
+                                                            name="program_coaches[<?php echo $program['id']; ?>]"
+                                                            data-program-id="<?php echo $program['id']; ?>">
+                                                        <option value="">Choose a coach</option>
+                                                        <?php foreach ($coachesByProgram[$program['id']] as $coach): ?>
+                                                        <option value="<?php echo $coach['coach_id']; ?>"
+                                                                data-price="<?php echo $coach['price']; ?>">
+                                                            <?php echo htmlspecialchars($coach['coach_name']); ?> - ₱<?php echo number_format($coach['price'], 2); ?>
+                                                        </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <?php endif; ?>
                                             </div>
-                                            <input type="hidden" class="program-input" name="programs[]" 
-                                                   value="<?php echo $program['id']; ?>" 
-                                                   data-program-id="<?php echo $program['id']; ?>" 
-                                                   disabled>
                                         </div>
                                     </div>
-                                </div>
-                                <?php endforeach; ?>
+                                    <?php endforeach;
+                                } ?>
                             </div>
                         </div>
-
+                        
                         <!-- Rental Services Section -->
                         <div class="mb-4">
                             <h5>Rental Services</h5>
                             <div class="row row-cols-1 row-cols-md-3 g-4">
-                                <?php foreach ($members->getRentalServices() as $rental): ?>
-                                <div class="col">
-                                    <div class="card h-100">
-                                        <div class="card-body">
-                                            <h5 class="card-title"><?php echo $rental['service_name']; ?></h5>
-                                            <p class="card-text"><?php echo $rental['description']; ?></p>
-                                            <div class="form-check">
-                                                <input class="form-check-input rental-checkbox" type="checkbox" 
-                                                       name="rentals[]" 
-                                                       value="<?php echo $rental['id']; ?>"
-                                                       data-price="<?php echo $rental['price']; ?>"
-                                                       id="rental<?php echo $rental['id']; ?>">
-                                                <label class="form-check-label" for="rental<?php echo $rental['id']; ?>">
-                                                    ₱<?php echo $rental['price']; ?> per month
-                                                </label>
+                                <?php 
+                                $rentals = $members->getRentalServices();
+                                if (empty($rentals)) {
+                                    echo '<div class="col-12"><div class="alert alert-info">No rental services available.</div></div>';
+                                } else {
+                                    foreach ($rentals as $rental): ?>
+                                    <div class="col">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title"><?php echo htmlspecialchars($rental['rental_name']); ?></h6>
+                                                <p class="card-text"><?php echo htmlspecialchars($rental['description']); ?></p>
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        Duration: <?php echo htmlspecialchars($rental['duration'] . ' ' . $rental['duration_type']); ?>
+                                                    </small>
+                                                </p>
+                                                <p class="card-text">
+                                                    <small class="text-muted">
+                                                        Price: ₱<?php echo number_format($rental['price'], 2); ?>
+                                                    </small>
+                                                </p>
+                                                <div class="form-check">
+                                                    <input class="form-check-input rental-checkbox" type="checkbox" 
+                                                           name="rental_services[]" 
+                                                           value="<?php echo $rental['id']; ?>"
+                                                           data-price="<?php echo $rental['price']; ?>"
+                                                           data-duration="<?php echo $rental['duration']; ?>"
+                                                           data-duration-type="<?php echo $rental['duration_type']; ?>">
+                                                    <label class="form-check-label">Select Service</label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <?php endforeach; ?>
+                                    <?php endforeach;
+                                } ?>
                             </div>
                         </div>
 
@@ -322,57 +409,66 @@ ini_set('display_errors', 1);
                         </div>
                     </div>
 
-                    <!-- Phase 4: Payment Summary -->
-                    <div id="phase4" class="form-phase">
-                        <h4 class="mb-4">Payment Summary</h4>
+                    <!-- Phase 4: Payment Details -->
+                    <div id="phase4" class="form-phase" style="display: none;">
+                        <h4 class="mb-4">Payment Details</h4>
                         
-                        <!-- Account Information -->
+                        <!-- Payment Summary -->
                         <div class="card mb-4">
                             <div class="card-body">
-                                <h5 class="card-title">Generated Account Information</h5>
-                                <div class="row mb-3">
-                                    <div class="col-md-4 fw-bold">Username:</div>
-                                    <div class="col-md-8" id="generatedUsername"></div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-4 fw-bold">Password:</div>
-                                    <div class="col-md-8" id="generatedPassword"></div>
-                                </div>
-                                <div class="alert alert-info mt-3 mb-0">
-                                    <i class="fas fa-info-circle"></i> Please save these credentials. They will be needed to log in.
+                                <h5 class="card-title">Payment Summary</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <tbody>
+                                            <tr>
+                                                <td>Registration Fee:</td>
+                                                <td class="text-end" id="registrationFee">₱<?php echo number_format($members->getRegistrationFee(), 2); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Membership Plan:</td>
+                                                <td class="text-end" id="membershipSubtotal">₱0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Programs:</td>
+                                                <td class="text-end" id="programsSubtotal">₱0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Rental Services:</td>
+                                                <td class="text-end" id="rentalsSubtotal">₱0.00</td>
+                                            </tr>
+                                            <tr class="fw-bold">
+                                                <td>Total Amount:</td>
+                                                <td class="text-end" id="totalAmount">₱0.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Payment Details -->
-                        <div class="card">
+                        <!-- Generated Credentials -->
+                        <div class="card mb-4">
                             <div class="card-body">
-                                <div class="row mb-3">
-                                    <div class="col-md-8">Registration Fee:</div>
-                                    <div class="col-md-4 text-end" id="registrationSubtotal">₱<?php echo number_format($members->getRegistrationFee(), 2); ?></div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-8">Membership Plan:</div>
-                                    <div class="col-md-4 text-end" id="membershipSubtotal">₱0.00</div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-8">Programs & Coaches:</div>
-                                    <div class="col-md-4 text-end" id="programsSubtotal">₱0.00</div>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col-md-8">Rental Services:</div>
-                                    <div class="col-md-4 text-end" id="rentalsSubtotal">₱0.00</div>
-                                </div>
-                                <div class="row fw-bold">
-                                    <div class="col-md-8">Total Amount:</div>
-                                    <div class="col-md-4 text-end" id="totalAmount">₱0.00</div>
+                                <h5 class="card-title">Generated Credentials</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <tbody>
+                                            <tr>
+                                                <td>Username:</td>
+                                                <td class="text-end" id="generatedUsername">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Password:</td>
+                                                <td class="text-end" id="generatedPassword">-</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mt-3">
                             <button type="button" class="btn btn-secondary" onclick="prevPhase(4)">Previous</button>
-                            <button type="submit" class="btn btn-success">Submit</button>
+                            <button type="button" onclick="submitForm()">Submit</button>
                         </div>
                     </div>
                 </form>
@@ -381,383 +477,435 @@ ini_set('display_errors', 1);
     </div>
 
     <script>
-    // Global variables for registration
-    let registrationData = {};
-    let registrationFee = <?php echo $members->getRegistrationFee(); ?>;
-    const baseUrl = '/Gym_MembershipSE-XLB/admin/pages/members/add_member.php';
+    // Make base URL available to JavaScript
+    const BASE_URL = '<?php echo $baseUrl; ?>';
+    
+    // Initialize registration fee as a number, not a string
+    let registrationFee = parseFloat(<?php echo $members->getRegistrationFee(); ?>) || 0;
+    
+    function formatPrice(amount) {
+        // Ensure amount is a number
+        amount = parseFloat(amount) || 0;
+        return `₱${amount.toFixed(2)}`;
+    }
 
-    async function submitPhase(phase) {
+    function validatePhase1() {
         const form = document.getElementById('memberForm');
-        const currentFormData = new FormData(form);
-        console.log('Submitting phase:', phase);
-
-        // For phase 1, use server-side validation without saving
-        if (phase === 1) {
-            currentFormData.append('phase', phase);
-            currentFormData.append('validate_only', 'true');
-            currentFormData.append('action', 'validate_phase1');
-
-            try {
-                const response = await fetch(baseUrl, {
-                    method: 'POST',
-                    body: currentFormData
-                });
-                const result = await response.json();
-                console.log('Phase 1 validation result:', result);
-
-                if (!result.success) {
-                    if (result.errors) {
-                        showValidationErrors(result.errors);
-                        return false;
-                    }
-                    throw new Error(result.message || 'An error occurred');
-                }
-
-                // Store phase 1 data
-                registrationData.phase1 = {};
-                currentFormData.forEach((value, key) => {
-                    registrationData.phase1[key] = value;
-                });
-                return true;
-            } catch (error) {
-                console.error('Error in phase 1 validation:', error);
-                document.getElementById('phase1').insertAdjacentHTML('afterbegin', `<div class="alert alert-danger">${error.message}</div>`);
-                return false;
+        let hasErrors = false;
+        
+        // Clear previous errors
+        clearValidationErrors();
+        
+        // Validate first name
+        if (!form.first_name.value) {
+            showError(form.first_name, 'First name is required');
+            hasErrors = true;
+        }
+        
+        // Validate last name
+        if (!form.last_name.value) {
+            showError(form.last_name, 'Last name is required');
+            hasErrors = true;
+        }
+        
+        // Validate sex
+        const sexInputs = form.querySelectorAll('input[name="sex"]');
+        let sexSelected = false;
+        sexInputs.forEach(input => {
+            if (input.checked) sexSelected = true;
+        });
+        if (!sexSelected) {
+            const sexContainer = document.querySelector('.d-flex.gap-4');
+            const error = document.createElement('div');
+            error.className = 'invalid-feedback d-block';
+            error.textContent = 'Please select your sex';
+            sexContainer.appendChild(error);
+            hasErrors = true;
+        }
+        
+        // Validate birthdate
+        if (!form.birthdate.value) {
+            showError(form.birthdate, 'Birthdate is required');
+            hasErrors = true;
+        } else {
+            const birthdate = new Date(form.birthdate.value);
+            const today = new Date();
+            if (birthdate > today) {
+                showError(form.birthdate, 'Birthdate cannot be in the future');
+                hasErrors = true;
             }
-        } else if (phase === 2) {
-            const errors = {};
-            
-            // Validate membership plan selection
-            const membershipSelected = document.querySelector('input[name="membership_plan"]:checked');
-            if (!membershipSelected) {
-                errors.membership_plan = 'Please select a membership plan';
-            }
+        }
+        
+        // Validate phone
+        if (!form.phone.value) {
+            showError(form.phone, 'Phone number is required');
+            hasErrors = true;
+        } else if (!/^[0-9]{11}$/.test(form.phone.value)) {
+            showError(form.phone, 'Phone number must be 11 digits');
+            hasErrors = true;
+        }
+        
+        return !hasErrors;
+    }
 
-            // Validate start date
-            const startDate = document.querySelector('input[name="start_date"]');
-            if (!startDate.value) {
-                errors.start_date = 'Please select a start date';
+    function validatePhase2() {
+        const membershipSelected = document.querySelector('input[name="membership_plan"]:checked');
+        const startDate = document.getElementById('start_date');
+        let hasErrors = false;
+
+        if (!membershipSelected) {
+            document.getElementById('membershipError').style.display = 'block';
+            hasErrors = true;
+        }
+
+        if (!startDate.value) {
+            startDate.classList.add('is-invalid');
+            hasErrors = true;
+        } else {
+            const selectedDate = new Date(startDate.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate < today) {
+                startDate.classList.add('is-invalid');
+                startDate.nextElementSibling.textContent = 'Start date cannot be earlier than today';
+                hasErrors = true;
             } else {
-                const selectedDate = new Date(startDate.value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); // Reset time part for proper date comparison
-                
-                if (selectedDate < today) {
-                    errors.start_date = 'Start date cannot be in the past';
-                }
+                startDate.classList.remove('is-invalid');
             }
+        }
 
-            // Show errors if any
-            if (Object.keys(errors).length > 0) {
-                showValidationErrors(errors);
-                return false;
-            }
+        return !hasErrors;
+    }
 
-            // Clear any previous error messages
-            document.getElementById('membershipError').style.display = 'none';
+    function showError(input, message) {
+        input.classList.add('is-invalid');
+        const error = document.createElement('div');
+        error.className = 'invalid-feedback';
+        error.textContent = message;
+        input.parentNode.appendChild(error);
+    }
+
+    function clearValidationErrors() {
+        // Remove invalid class from inputs
+        const invalidInputs = document.querySelectorAll('.is-invalid');
+        invalidInputs.forEach(input => input.classList.remove('is-invalid'));
+        
+        // Remove error messages
+        const errorMessages = document.querySelectorAll('.invalid-feedback');
+        errorMessages.forEach(msg => msg.remove());
+        
+        // Hide membership error
+        document.getElementById('membershipError').style.display = 'none';
+    }
+
+    function nextPhase(currentPhase) {
+        if (currentPhase === 1) {
+            if (!validatePhase1()) return;
+
+            // Generate credentials after Phase 1 validation
+            console.log("Generating credentials after Phase 1...");
+            const firstNameInput = document.querySelector('input[name="first_name"]');
+            console.log("First name input element:", firstNameInput);
             
-            // Store phase 2 data
-            registrationData.phase2 = {
-                membership_plan: membershipSelected.value,
-                start_date: startDate.value
-            };
-            return true;
-        }
-        return true;
-    }
-
-    function showValidationErrors(errors) {
-        // Clear previous validation state
-        const inputs = document.querySelectorAll('.is-invalid');
-        inputs.forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-
-        // Clear all existing error messages
-        document.querySelectorAll('.invalid-feedback').forEach(feedback => {
-            feedback.remove();
-        });
-
-        // Show validation errors
-        Object.entries(errors).forEach(([field, message]) => {
-            const input = document.querySelector(`[name="${field}"]`);
-            if (input) {
-                input.classList.add('is-invalid');
-                
-                // Special handling for radio buttons
-                if (input.type === 'radio') {
-                    const container = input.closest('.membership-option') || input.closest('.d-flex');
-                    if (container) {
-                        const feedback = document.createElement('div');
-                        feedback.className = 'invalid-feedback d-block';
-                        feedback.textContent = message;
-                        container.appendChild(feedback);
-                    }
-                } else {
-                    const feedback = document.createElement('div');
-                    feedback.className = 'invalid-feedback';
-                    feedback.textContent = message;
-                    input.parentNode.insertBefore(feedback, input.nextSibling);
-                }
+            if (!firstNameInput) {
+                console.error('First name input not found');
+                return;
             }
-        });
-    }
 
-    async function nextPhase(currentPhase) {
-        try {
-            if (await submitPhase(currentPhase)) {
-                // Generate credentials when moving to Phase 4
-                if (currentPhase === 3) {
-                    const firstName = document.querySelector('input[name="first_name"]').value;
-                    const formData = new FormData();
-                    formData.append('action', 'generate_credentials');
-                    formData.append('first_name', firstName);
+            const firstName = firstNameInput.value;
+            console.log("First name value:", firstName);
+            
+            if (!firstName) {
+                console.error('First name is empty');
+                alert('Please enter a first name');
+                return;
+            }
 
-                    const response = await fetch(baseUrl, {
-                        method: 'POST',
-                        body: formData
+            const formData = new FormData();
+            formData.append('first_name', firstName);
+            formData.append('generate_credentials', '1');
+            
+            console.log("Sending request to generate credentials...");
+            fetch('/Gym_MembershipSE-XLB/admin/pages/members/add_member.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log("Got response:", response);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error("Error response:", text);
+                        throw new Error('Network response was not ok');
                     });
-
-                    const result = await response.json();
-                    if (result.success) {
-                        // Update the credentials display
-                        document.getElementById('generatedUsername').textContent = result.username;
-                        document.getElementById('generatedPassword').textContent = result.password;
-                        
-                        // Store in hidden fields
-                        document.getElementById('usernameField').value = result.username;
-                        document.getElementById('passwordField').value = result.password;
-                    } else {
-                        console.error('Error generating credentials:', result.message);
+                }
+                return response.text().then(text => {
+                    console.log("Raw response:", text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("Failed to parse JSON:", e);
+                        throw new Error('Invalid JSON response');
                     }
-                }
-
-                // Hide current phase and show next phase
-                document.querySelector(`#phase${currentPhase}`).classList.remove('active');
-                document.querySelector(`#phase${currentPhase + 1}`).classList.add('active');
-                
-                // Update navigation
-                document.querySelector(`.nav-link[data-phase="${currentPhase}"]`).classList.remove('active');
-                document.querySelector(`.nav-link[data-phase="${currentPhase}"]`).classList.add('completed');
-                document.querySelector(`.nav-link[data-phase="${currentPhase + 1}"]`).classList.add('active');
-                
-                // Update progress
-                updateProgress(currentPhase + 1);
-
-                // Update total amount when entering payment summary
-                if (currentPhase === 3) {
-                    updateTotalAmount();
+                });
+            })
+            .then(data => {
+                console.log("Got data:", data);
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to generate credentials');
                 }
                 
-                // Scroll to top
-                window.scrollTo(0, 0);
-            }
-        } catch (error) {
-            console.error('Error in nextPhase:', error);
+                // Store credentials in hidden fields
+                document.getElementById('usernameField').value = data.username;
+                document.getElementById('passwordField').value = data.password;
+
+                // Move to Phase 2
+                document.getElementById('phase1').style.display = 'none';
+                document.getElementById('phase2').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error generating credentials:', error);
+                alert('Error generating credentials. Please try again.');
+            });
+            return; // Don't proceed with normal phase transition
         }
-    }
 
-    function updateProgress(phase) {
-        // Update navigation links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            const phaseNumber = parseInt(link.dataset.phase);
-            link.classList.remove('active', 'completed');
-            if (phaseNumber < phase) {
-                link.classList.add('completed');
-            } else if (phaseNumber === phase) {
-                link.classList.add('active');
+        if (currentPhase === 2 && !validatePhase2()) return;
+
+        // If moving to phase 4, display stored credentials
+        if (currentPhase === 3) {
+            const username = document.getElementById('usernameField').value;
+            const password = document.getElementById('passwordField').value;
+            
+            if (!username || !password) {
+                alert('Error: Credentials not found. Please go back to Phase 1.');
+                return;
             }
-        });
+
+            // Display the stored credentials
+            document.getElementById('generatedUsername').textContent = username;
+            document.getElementById('generatedPassword').textContent = password;
+        }
+
+        // For all other phase transitions
+        document.getElementById('phase' + currentPhase).style.display = 'none';
+        document.getElementById('phase' + (currentPhase + 1)).style.display = 'block';
+        
+        // Update total amount
+        updateTotalAmount();
     }
 
-    async function prevPhase(currentPhase) {
-        // Hide current phase and show previous phase
-        document.querySelector(`#phase${currentPhase}`).classList.remove('active');
-        document.querySelector(`#phase${currentPhase - 1}`).classList.add('active');
-        updateProgress(currentPhase - 1);
+    function prevPhase(currentPhase) {
+        document.getElementById('phase' + currentPhase).style.display = 'none';
+        document.getElementById('phase' + (currentPhase - 1)).style.display = 'block';
+        
+        // Update total amount when changing phases
+        updateTotalAmount();
     }
 
-    // Function to update total amount
     function updateTotalAmount() {
         // Get membership plan price
         const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
-        const membershipPrice = selectedPlan ? parseFloat(selectedPlan.dataset.price) : 0;
-        document.getElementById('membershipSubtotal').textContent = `₱${membershipPrice.toFixed(2)}`;
-
-        // Calculate programs total
-        let programsTotal = 0;
-        document.querySelectorAll('.coach-select').forEach(select => {
-            if (select.value) {
-                const price = parseFloat(select.options[select.selectedIndex].dataset.price || 0);
-                programsTotal += price;
+        const membershipPrice = selectedPlan ? parseFloat(selectedPlan.dataset.price) || 0 : 0;
+        
+        // Get selected programs prices from coach dropdowns
+        const programCoachDropdowns = document.querySelectorAll('.program-coach');
+        let programTotal = 0;
+        programCoachDropdowns.forEach(dropdown => {
+            if (dropdown.value) {
+                const selectedOption = dropdown.options[dropdown.selectedIndex];
+                programTotal += parseFloat(selectedOption.dataset.price) || 0;
             }
         });
-        document.getElementById('programsSubtotal').textContent = `₱${programsTotal.toFixed(2)}`;
-
-        // Calculate rentals total
-        let rentalsTotal = 0;
-        document.querySelectorAll('input[name="rentals[]"]:checked').forEach(rental => {
-            rentalsTotal += parseFloat(rental.dataset.price || 0);
+        
+        // Get selected rental services prices
+        const selectedRentals = document.querySelectorAll('input[name="rental_services[]"]:checked');
+        let rentalTotal = 0;
+        selectedRentals.forEach(rental => {
+            rentalTotal += parseFloat(rental.dataset.price) || 0;
         });
-        document.getElementById('rentalsSubtotal').textContent = `₱${rentalsTotal.toFixed(2)}`;
 
-        // Calculate total
-        const total = registrationFee + membershipPrice + programsTotal + rentalsTotal;
-        document.getElementById('totalAmount').textContent = `₱${total.toFixed(2)}`;
+        // Update all subtotals
+        document.getElementById('registrationFee').textContent = formatPrice(registrationFee);
+        document.getElementById('membershipSubtotal').textContent = formatPrice(membershipPrice);
+        document.getElementById('programsSubtotal').textContent = formatPrice(programTotal);
+        document.getElementById('rentalsSubtotal').textContent = formatPrice(rentalTotal);
+
+        // Calculate and update total
+        const total = registrationFee + membershipPrice + programTotal + rentalTotal;
+        document.getElementById('totalAmount').textContent = formatPrice(total);
+
+        // Debug output
+        console.log({
+            registrationFee,
+            membershipPrice,
+            programTotal,
+            rentalTotal,
+            total
+        });
     }
 
-    // Handle form submission for the final phase
-    document.getElementById('memberForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    function submitForm() {
+        // Get all form data
+        const formData = new FormData();
         
-        // Clear previous messages
-        const alertMessages = document.querySelectorAll('#phase4 .alert');
-        alertMessages.forEach(alert => alert.remove());
+        // Add action
+        formData.append('action', 'add_member');
         
-        try {
-            const formData = new FormData(this);
-            formData.append('action', 'add_member');
-
-            // Add membership plan data
-            const membershipPlan = document.querySelector('input[name="membership_plan"]:checked');
-            const startDate = document.querySelector('input[name="start_date"]');
-
-            if (!membershipPlan || !startDate.value) {
-                document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
-                    '<div class="alert alert-danger">Please complete all previous phases before submitting.</div>'
-                );
-                return;
-            }
-
-            formData.append('membership_plan', membershipPlan.value);
-            formData.append('start_date', startDate.value);
-
-            // Add programs and coaches data
-            const { programs, programCoaches } = getSelectedProgramsAndCoaches();
-            if (programs.length > 0) {
-                formData.append('programs', JSON.stringify(programs));
-                formData.append('program_coach', JSON.stringify(programCoaches));
-            }
-
-            const response = await fetch(baseUrl, {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-            console.log('Submission result:', result);
-
-            if (!result.success) {
-                document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
-                    `<div class="alert alert-danger">${result.message}</div>`
-                );
-                return;
-            }
-
-            // Show success message with credentials
-            document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
-                `<div class="alert alert-success">
-                    Registration completed successfully!<br>
-                    Please save these credentials:<br>
-                    Username: ${document.getElementById('usernameField').value}<br>
-                    Password: ${document.getElementById('passwordField').value}<br>
-                    Redirecting...
-                </div>`
-            );
-            
-            setTimeout(() => {
-                window.location.href = 'members_new';
-            }, 3000);
-
-        } catch (error) {
-            console.error('Error submitting form:', error);
-            document.getElementById('phase4').insertAdjacentHTML('afterbegin', 
-                `<div class="alert alert-danger">An error occurred: ${error.message}</div>`
-            );
+        // Phase 1 - Personal Details
+        const personalFields = ['first_name', 'middle_name', 'last_name', 'sex', 'birthdate', 'phone'];
+        personalFields.forEach(field => {
+            const input = document.querySelector(`input[name="${field}"]`);
+            if (input) formData.append(field, input.value);
+        });
+        
+        // Add photo if selected
+        const photoInput = document.querySelector('input[name="photo"]');
+        if (photoInput && photoInput.files[0]) {
+            formData.append('photo', photoInput.files[0]);
         }
-    });
 
-    // Function to collect selected programs and coaches
-    function getSelectedProgramsAndCoaches() {
+        // Phase 2 - Membership Plan
+        const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
+        if (selectedPlan) {
+            formData.append('membership_plan', selectedPlan.value);
+        }
+
+        // Phase 3 - Programs and Rentals
+        // Get selected programs and their coaches
         const programs = [];
-        const programCoaches = {};
-        
-        document.querySelectorAll('.coach-select').forEach(select => {
-            if (select.value) {
-                const programId = select.dataset.programId;
-                programs.push(programId);
-                programCoaches[programId] = select.value;
+        document.querySelectorAll('.program-coach').forEach(coachSelect => {
+            if (coachSelect.value) {
+                programs.push({
+                    program_id: coachSelect.getAttribute('data-program-id'),
+                    coach_id: coachSelect.value
+                });
             }
         });
+        formData.append('program_coach', JSON.stringify(programs));
+
+        // Get selected rentals
+        const selectedRentals = [];
+        document.querySelectorAll('.rental-checkbox:checked').forEach(rental => {
+            selectedRentals.push(rental.value);
+        });
+        formData.append('rentals', JSON.stringify(selectedRentals));
+
+        // Phase 4 - Credentials
+        const username = document.getElementById('usernameField').value;
+        const password = document.getElementById('passwordField').value;
+        formData.append('username', username);
+        formData.append('password', password);
+
+        // Add start date
+        const today = new Date();
+        const startDate = today.toISOString().split('T')[0];
+        formData.append('start_date', startDate);
+
+        console.log("Submitting form data...");
         
-        return { programs, programCoaches };
+        // Log the form data
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+        
+        // Submit the form
+        fetch('/Gym_MembershipSE-XLB/admin/pages/members/add_member.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log("Got response:", response);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error("Error response:", text);
+                    throw new Error('Network response was not ok');
+                });
+            }
+            return response.text().then(text => {
+                console.log("Raw response:", text);
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse JSON:", e);
+                    throw new Error('Invalid JSON response');
+                }
+            });
+        })
+        .then(data => {
+            console.log("Got data:", data);
+            if (data.success) {
+                alert('Member registered successfully!');
+                // Use BASE_URL for redirection
+                window.location.href = `${BASE_URL}/admin/members_new`;
+            } else {
+                alert('Error: ' + (data.message || 'Failed to register member'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error registering member. Please try again.');
+        });
     }
 
+    // Add event listeners
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle coach selection changes
-        document.querySelectorAll('.coach-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const programId = this.dataset.programId;
-                const programInput = document.querySelector(`.program-input[data-program-id="${programId}"]`);
-                
-                if (this.value) {
-                    // Enable program input when coach is selected
-                    programInput.disabled = false;
-                } else {
-                    // Disable program input when no coach is selected
-                    programInput.disabled = true;
-                }
-                
-                // Update total amount
-                updateTotalAmount();
-            });
-        });
+        // Add submit event listener to the form
+        const form = document.getElementById('memberForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-        // Remove invalid state when user selects a membership plan
-        document.querySelectorAll('input[name="membership_plan"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                document.querySelectorAll('input[name="membership_plan"]').forEach(r => {
-                    r.closest('.card').classList.remove('border-danger');
-                });
-                updateTotalAmount();
-            });
-        });
-
-        // Add change event listener for rental checkboxes
-        document.querySelectorAll('.rental-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', updateTotalAmount);
-        });
-
-        // Remove invalid state when user types or changes input
-        document.querySelectorAll('input, select').forEach(input => {
-            input.addEventListener('input', function() {
-                if (this.value) {
-                    this.classList.remove('is-invalid');
-                    const feedback = this.nextElementSibling;
-                    if (feedback && feedback.classList.contains('invalid-feedback')) {
-                        feedback.remove();
-                    }
-                }
-            });
-        });
-
-        // Handle photo preview
-        document.getElementById('photoInput').addEventListener('change', function(e) {
-            const preview = document.getElementById('photoPreview');
-            const file = e.target.files[0];
+            // Collect selected programs and coaches
+            const selectedPrograms = [];
+            const programCoaches = {};
+            const programCoachDropdowns = document.querySelectorAll('.program-coach');
             
-            if (file) {
-                preview.style.display = 'block';
-                preview.src = URL.createObjectURL(file);
-            } else {
-                preview.style.display = 'none';
-            }
+            programCoachDropdowns.forEach(dropdown => {
+                if (dropdown.value) {
+                    const programId = dropdown.getAttribute('data-program-id');
+                    selectedPrograms.push(programId);
+                    programCoaches[programId] = dropdown.value;
+                }
+            });
+
+            // Add hidden fields for programs and coaches
+            const programsInput = document.createElement('input');
+            programsInput.type = 'hidden';
+            programsInput.name = 'programs';
+            programsInput.value = JSON.stringify(selectedPrograms);
+            form.appendChild(programsInput);
+
+            const programCoachInput = document.createElement('input');
+            programCoachInput.type = 'hidden';
+            programCoachInput.name = 'program_coach';
+            programCoachInput.value = JSON.stringify(programCoaches);
+            form.appendChild(programCoachInput);
+
+            // Submit the form
+            form.submit();
+        });
+
+        // Add change event listener to membership plan radios
+        const membershipPlans = document.querySelectorAll('input[name="membership_plan"]');
+        membershipPlans.forEach(plan => {
+            plan.addEventListener('change', updateTotalAmount);
+        });
+
+        // Add change event listener to program coach dropdowns
+        const programCoachDropdowns = document.querySelectorAll('.program-coach');
+        programCoachDropdowns.forEach(dropdown => {
+            dropdown.addEventListener('change', updateTotalAmount);
+        });
+
+        // Add change event listener to rental service checkboxes
+        const rentalServices = document.querySelectorAll('input[name="rental_services[]"]');
+        rentalServices.forEach(service => {
+            service.addEventListener('change', updateTotalAmount);
         });
 
         // Initial calculation
         updateTotalAmount();
     });
-
     </script>
 </body>
 </html>
