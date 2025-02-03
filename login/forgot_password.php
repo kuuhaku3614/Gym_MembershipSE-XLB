@@ -9,34 +9,36 @@ require_once 'functions.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password - JC Powerzone</title>
-    <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        @font-face {
+            font-family: myFont;
+            src: url(../AC.ttf);
+        }
         body {
-            background-color: #404040;
-            font-family: 'Inter', sans-serif;
+            background-color: #ecebeb;
+            font-family: myFont;
         }
         .forgot-password-container {
-            max-width: 400px;
+            width: 400px;
             padding: 2rem;
             background: white;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
         .logo-placeholder img {
-            max-width: 150px;
+            max-width: 100px;
             margin-bottom: 1rem;
         }
         .btn-submit {
-            background-color: #FF0000;
+            background-color: #4361ee;
             color: white;
-            font-weight: bold;
         }
         .btn-submit:hover {
-            background-color: #cc0000;
+            background-color:rgb(39, 75, 238);
             color: white;
         }
         .error-message {
@@ -48,62 +50,67 @@ require_once 'functions.php';
         .form-control.is-invalid {
             border-color: #dc3545;
         }
-    </style>
-</head>
-<body>
-    <div class="container d-flex justify-content-center align-items-center vh-100">
+        .form-control{
+            font-family: Arial, Helvetica, sans-serif;
+            color: #6c757d;
+        }
+
+        </style>
+    </head>
+    <body>
+        <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="forgot-password-container">
             <div class="text-center">
-                <div class="logo-placeholder">
-                    <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo">
-                </div>
-                <h2 class="mb-4">Reset Password</h2>
+            <div class="logo-placeholder">
+                <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo">
+            </div>
+            <h2 class="mb-4">Reset Password</h2>
             </div>
 
             <!-- Step 1: Enter Username -->
             <div id="step1" class="form-step">
-                <form id="usernameForm">
-                    <div class="form-group">
-                        <label for="username">Enter your username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                        <div id="usernameError" class="error-message"></div>
-                    </div>
-                    <button type="submit" class="btn btn-submit btn-block">Continue</button>
-                </form>
+            <form id="usernameForm">
+                <div class="form-group">
+                <label for="username" class="text-secondary">Enter your username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+                <div id="usernameError" class="error-message"></div>
+                </div>
+                <button type="submit" class="btn btn-submit btn-block">Continue</button>
+            </form>
             </div>
 
             <!-- Step 2: Enter Verification Code -->
             <div id="step2" class="form-step" style="display: none;">
-                <p class="mb-3">We've sent a verification code to your registered phone number.</p>
-                <form id="verificationForm">
-                    <div class="form-group">
-                        <label for="code">Enter verification code</label>
-                        <input type="text" class="form-control" id="code" name="code" required>
-                        <div id="codeError" class="error-message"></div>
-                    </div>
-                    <button type="submit" class="btn btn-submit btn-block mb-2">Verify Code</button>
-                    <button type="button" id="resendCode" class="btn btn-link btn-block">Resend Code</button>
-                </form>
+            <p class="mb-3 text-secondary">We've sent a verification code to your registered phone number.</p>
+            <form id="verificationForm">
+                <div class="form-group">
+                <label for="code" class="text-secondary">Enter verification code</label>
+                <input type="text" class="form-control" id="code" name="code" required>
+                <div id="codeError" class="error-message"></div>
+                </div>
+                <button type="submit" class="btn btn-submit btn-block mb-2">Verify Code</button>
+                <button type="button" id="resendCode" class="btn btn-link btn-block">Resend Code</button>
+            </form>
             </div>
 
             <!-- Step 3: New Password -->
             <div id="step3" class="form-step" style="display: none;">
-                <form id="passwordForm">
-                    <div class="form-group">
-                        <label for="newPassword">New Password</label>
-                        <input type="password" class="form-control" id="newPassword" name="newPassword" required>
-                        <div id="newPasswordError" class="error-message"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
-                        <div id="confirmPasswordError" class="error-message"></div>
-                    </div>
-                    <button type="submit" class="btn btn-submit btn-block">Reset Password</button>
-                </form>
+            <form id="passwordForm">
+                <div class="form-group">
+                <label for="newPassword" class="text-secondary">New Password</label>
+                <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                <div id="newPasswordError" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                <label for="confirmPassword" class="text-secondary">Confirm Password</label>
+                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                <div id="confirmPasswordError" class="error-message"></div>
+                </div>
+                <button type="submit" class="btn btn-submit btn-block">Reset Password</button>
+            </form>
             </div>
 
-            <div class="text-center mt-3">
+            <div class="text-center mt-3 ">
                 <a href="login.php">Back to Login</a>
             </div>
         </div>

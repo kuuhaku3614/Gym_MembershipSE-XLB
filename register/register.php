@@ -13,12 +13,14 @@
     <div class="container d-flex justify-content-center align-items-start max-vh-80">
         <div class="registration-container">
             <!-- Profile Photo Section - Fixed -->
-            <div class="profile-photo-upload">
-                <div class="d-flex justify-content-between align-items-center mb-1 w-100">
-                    <div class="d-flex flex-column align-items-start justify-content-end h-100">
+            <!-- Scrollable Form Section -->
+            <div class="d-flex flex-column align-items-start justify-content-end ">
                         <h2 class="mb-0">Register Information</h2>
                         <p class="text-muted medium mb-0">Start your journey with us!</p>
                     </div>
+            <div class="form-scroll-container">
+            <div class="profile-photo-upload">
+                <div class="d-flex justify-content-end align-items-center mb-1 w-100">
                     <div class="profile-photo-container">   
                         <div class="profile-photo-placeholder">
                             <i class="fas fa-camera"></i>
@@ -44,9 +46,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Scrollable Form Section -->
-            <div class="form-scroll-container">
                 <form id="registrationForm" method="POST" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="col-md-6">
@@ -98,11 +97,14 @@
                         <label for="username">Username</label>
                     </div>
 
-                    <div class="form-floating">
+                    <div class="form-floating position-relative">
                         <input type="password" class="form-control" id="password" name="password" placeholder=" " required>
                         <label for="password">Password</label>
+                        <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('password')">
+                            <i class="togglePW fas fa-eye"></i>
+                        </button>
                     </div>
-
+                    
                     <div class="form-floating">
                         <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder=" " required>
                         <label for="confirmPassword">Confirm Password</label>
@@ -148,6 +150,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
+
     $(document).ready(function() {
     let isVerificationInProgress = false;
 
@@ -186,6 +189,20 @@
             reader.readAsDataURL(file);
         }
     });
+
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const icon = event.currentTarget.querySelector('.togglePW');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 
     function resetFileInput() {
         $('#profile_photo').val('');

@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
@@ -71,9 +72,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                            value="<?php echo htmlspecialchars($username); ?>" placeholder=" ">
                     <label for="username">Username</label>
                 </div>
-                <div class="form-floating mb-3">
+                <div class="form-floating mb-3 position-relative">
                     <input type="password" class="form-control" id="password" name="password" placeholder=" ">
                     <label for="password">Password</label>
+                    <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('password')">
+                            <i class="togglePW fas fa-eye"></i>
+                    </button>
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -111,6 +115,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 document.cookie = "remember_me=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
             }
         }
+
+        function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const icon = event.currentTarget.querySelector('.togglePW');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
     </script>
 </body>
 </html>
