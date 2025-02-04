@@ -352,6 +352,21 @@ class Members {
         }
     }
 
+    public function getMembershipPlanDuration($planId) {
+        try {
+            $sql = "SELECT mp.duration, mp.duration_type_id 
+                    FROM membership_plans mp
+                    WHERE mp.id = :plan_id AND mp.status = 'active'";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindParam(':plan_id', $planId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error getting membership plan duration: " . $e->getMessage());
+            return null;
+        }
+    }
+
     public function getPrograms($membershipDuration = null, $membershipDurationTypeId = null) {
         try {
             $connection = $this->pdo;
@@ -360,16 +375,49 @@ class Members {
                     FROM programs p
                     JOIN duration_types dt ON p.duration_type_id = dt.id
                     LEFT JOIN coach_program_types cpt ON p.id = cpt.program_id AND cpt.status = 'active'
-                    WHERE p.status = 'active' AND p.is_removed = 0
-                    GROUP BY p.id, p.program_name, p.description, p.duration, dt.type_name";
+                    WHERE p.status = 'active' AND p.is_removed = 0";
+            
+            // Add duration filter if membership duration is provided
+            if ($membershipDuration !== null && $membershipDurationTypeId !== null) {
+                $sql .= " AND (
+                    -- If same duration type, directly compare durations
+                    (p.duration_type_id = :duration_type_id AND p.duration <= :duration)
+                    OR 
+                    -- If different duration types, convert both to days and compare
+                    (p.duration_type_id != :duration_type_id AND 
+                        CASE p.duration_type_id
+                            WHEN 1 THEN p.duration -- days
+                            WHEN 2 THEN p.duration * 30 -- months to days
+                            WHEN 3 THEN p.duration * 365 -- years to days
+                        END <= 
+                        CASE :duration_type_id
+                            WHEN 1 THEN :duration -- days
+                            WHEN 2 THEN :duration * 30 -- months to days
+                            WHEN 3 THEN :duration * 365 -- years to days
+                        END
+                    )
+                )";
+            }
+            
+            $sql .= " GROUP BY p.id, p.program_name, p.description, p.duration, dt.type_name";
             
             $stmt = $connection->prepare($sql);
+            
+            if ($membershipDuration !== null && $membershipDurationTypeId !== null) {
+                $stmt->bindParam(':duration_type_id', $membershipDurationTypeId, PDO::PARAM_INT);
+                $stmt->bindParam(':duration', $membershipDuration, PDO::PARAM_INT);
+            }
+            
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Error getting programs: " . $e->getMessage());
             return [];
         }
+    }
+
+    public function getProgramsByDuration($duration, $durationTypeId) {
+        return $this->getPrograms($duration, $durationTypeId);
     }
 
     public function getRentalServices($membershipDuration = null, $membershipDurationTypeId = null) {
@@ -381,13 +429,45 @@ class Members {
                     JOIN duration_types dt ON rs.duration_type_id = dt.id
                     WHERE rs.status = 'active' AND rs.is_removed = 0";
             
+            // Add duration filter if membership duration is provided
+            if ($membershipDuration !== null && $membershipDurationTypeId !== null) {
+                $sql .= " AND (
+                    -- If same duration type, directly compare durations
+                    (rs.duration_type_id = :duration_type_id AND rs.duration <= :duration)
+                    OR 
+                    -- If different duration types, convert both to days and compare
+                    (rs.duration_type_id != :duration_type_id AND 
+                        CASE rs.duration_type_id
+                            WHEN 1 THEN rs.duration -- days
+                            WHEN 2 THEN rs.duration * 30 -- months to days
+                            WHEN 3 THEN rs.duration * 365 -- years to days
+                        END <= 
+                        CASE :duration_type_id
+                            WHEN 1 THEN :duration -- days
+                            WHEN 2 THEN :duration * 30 -- months to days
+                            WHEN 3 THEN :duration * 365 -- years to days
+                        END
+                    )
+                )";
+            }
+            
             $stmt = $connection->prepare($sql);
+            
+            if ($membershipDuration !== null && $membershipDurationTypeId !== null) {
+                $stmt->bindParam(':duration_type_id', $membershipDurationTypeId, PDO::PARAM_INT);
+                $stmt->bindParam(':duration', $membershipDuration, PDO::PARAM_INT);
+            }
+            
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Error getting rental services: " . $e->getMessage());
             return [];
         }
+    }
+
+    public function getRentalServicesByDuration($duration, $durationTypeId) {
+        return $this->getRentalServices($duration, $durationTypeId);
     }
 
     public function getProgramCoaches() {
