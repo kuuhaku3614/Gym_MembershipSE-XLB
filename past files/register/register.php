@@ -19,7 +19,7 @@
             
             <form id="registrationForm" method="POST" enctype="multipart/form-data">
                 <!-- Profile Photo Section -->
-                <div class="profile-photo-upload">
+                <div class="profile-photo-upload mb-4">
                     <div class="d-flex justify-content-center align-items-center mb-1 w-100">
                         <div class="profile-photo-container">   
                             <div class="profile-photo-placeholder">
@@ -103,9 +103,6 @@
                         <div class="form-floating">
                             <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder=" " required>
                             <label for="confirmPassword">Confirm Password</label>
-                            <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('confirmPassword')">
-                                <i class="togglePW fas fa-eye"></i>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -388,21 +385,7 @@
             $input.after(`<div class="error-feedback">${message}</div>`);
         }
     }
-    
 });
-function togglePassword(inputId) {
-        const passwordInput = document.getElementById(inputId);
-        const icon = event.currentTarget.querySelector('.togglePW');
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            passwordInput.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    }
     </script>
 </body>
 </html>

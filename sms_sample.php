@@ -16,12 +16,12 @@ function formatPhilippinesNumber($number) {
 
 try {
     // Your Twilio Account SID and Auth Token
-    $account_sid = 'AC80cae86174ab25c1728133facec97816';
-    $auth_token = '6ea56e4f9eb311a8c85158e835f5ba38';
-    $verify_sid = 'VA65eaa4607fec1266ff04693d0dab7f4f';
+    $account_sid = 'ACc1f1f89f87b2b2e23e7c037aad8abae0';
+    $auth_token = 'afa4dc02209004070a276548eed3a6b0';
+    $verify_sid = 'VA48723f597c526f0dcf1203976de0780f';
     
     // Format the test number
-    $test_number = '09944758991';
+    $test_number = '09562307646';
     $formatted_number = formatPhilippinesNumber($test_number);
     
     echo "Attempting to send verification to: " . $formatted_number . "\n";

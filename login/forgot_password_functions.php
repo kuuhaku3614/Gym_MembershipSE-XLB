@@ -5,10 +5,9 @@ use Twilio\Rest\Client;
 
 session_start();
 
-// Twilio configuration
 function getTwilioClient() {
-    $sid = "AC80cae86174ab25c1728133facec97816";
-    $token = "6ea56e4f9eb311a8c85158e835f5ba38";
+    $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
+    $token = "afa4dc02209004070a276548eed3a6b0";
     return new Client($sid, $token);
 }
 
@@ -76,47 +75,53 @@ function getUserPhone($username) {
     return $phone;
 }
 
-// Updated sendVerificationSMS function to match register_handler.php
+
+
+// Updated sendVerificationSMS function with new credentials
 function sendVerificationSMS($phoneNumber) {
     try {
-        $sid = "AC80cae86174ab25c1728133facec97816";
-        $token = "6ea56e4f9eb311a8c85158e835f5ba38";
-        $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
+        $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
+        $token = "afa4dc02209004070a276548eed3a6b0";
+        $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
         
-        if (!str_starts_with($phoneNumber, '+')) {
-            $phoneNumber = '+63' . ltrim($phoneNumber, '0');
+        // Format phone number
+        $formattedNumber = preg_replace('/^0/', '+63', $phoneNumber);
+        if (!preg_match('/^\+63/', $formattedNumber)) {
+            $formattedNumber = '+63' . $formattedNumber;
         }
 
         $verification = $twilio->verify->v2->services($verifyServiceId)
             ->verifications
-            ->create($phoneNumber, "sms");
+            ->create($formattedNumber, "sms");
         
+        $_SESSION['verification_phone'] = $formattedNumber;
         return $verification->sid;
     } catch (Exception $e) {
-        error_log("Twilio Error: " . $e->getMessage());
+        error_log("Twilio Error (sendVerificationSMS): " . $e->getMessage());
         throw new Exception("Failed to send verification code. Please try again.");
     }
 }
 
-// Updated verifyTwilioCode function to match register_handler.php
 function verifyTwilioCode($phoneNumber, $code) {
     try {
-        $sid = "AC80cae86174ab25c1728133facec97816";
-        $token = "6ea56e4f9eb311a8c85158e835f5ba38";
-        $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
+        $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
+        $token = "afa4dc02209004070a276548eed3a6b0";
+        $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
         
-        if (!str_starts_with($phoneNumber, '+')) {
-            $phoneNumber = '+63' . ltrim($phoneNumber, '0');
+        // Format phone number
+        $formattedNumber = preg_replace('/^0/', '+63', $phoneNumber);
+        if (!preg_match('/^\+63/', $formattedNumber)) {
+            $formattedNumber = '+63' . $formattedNumber;
         }
 
         $verification_check = $twilio->verify->v2->services($verifyServiceId)
             ->verificationChecks
             ->create([
-                'to' => $phoneNumber,
+                'to' => $formattedNumber,
                 'code' => $code
             ]);
 
