@@ -98,11 +98,17 @@ require_once 'functions.php';
             <form id="passwordForm">
                 <div class="form-group">
                 <label for="newPassword" class="text-secondary">New Password</label>
+                <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('password')">
+                            <i class="togglePW fas fa-eye"></i>
+                    </button>
                 <input type="password" class="form-control" id="newPassword" name="newPassword" required>
                 <div id="newPasswordError" class="error-message"></div>
                 </div>
                 <div class="form-group">
                 <label for="confirmPassword" class="text-secondary">Confirm Password</label>
+                <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('password')">
+                            <i class="togglePW fas fa-eye"></i>
+                    </button>
                 <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
                 <div id="confirmPasswordError" class="error-message"></div>
                 </div>
@@ -125,7 +131,20 @@ require_once 'functions.php';
 $(document).ready(function() {
     let username = '';
     let resendTimer;
-
+    
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const icon = event.currentTarget.querySelector('.togglePW');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
     // Error handling functions
     function showError(elementId, message) {
         $(`#${elementId}`).text(message).show();
@@ -155,6 +174,19 @@ $(document).ready(function() {
         button.prop('disabled', false).text(originalText);
     }
 
+    // Enforce 6-digit code input
+    $('#code').on('input', function() {
+        // Remove any non-digit characters
+        let value = this.value.replace(/\D/g, '');
+        
+        // Limit to 6 digits
+        if (value.length > 6) {
+            value = value.slice(0, 6);
+        }
+        
+        // Update input value
+        this.value = value;
+    });
     // Function to send verification code
     function sendVerificationCode() {
         $.get('forgot_password_functions.php', {
@@ -239,12 +271,13 @@ $('#verificationForm').on('submit', function(e) {
     
     clearAllErrors();
     
+    // Validate code format
     if (!code) {
         showError('codeError', 'Please enter the verification code');
         return;
     }
 
-    // Validate code format - must be 6 digits
+    // Must be exactly 6 digits
     if (!/^\d{6}$/.test(code)) {
         showError('codeError', 'Please enter a valid 6-digit code');
         return;
@@ -254,16 +287,15 @@ $('#verificationForm').on('submit', function(e) {
     
     $.post('forgot_password_functions.php', {
         action: 'verify_code',
-        username: username, // This is stored from the first step
+        username: username,
         code: code
     })
     .done(function(response) {
         try {
             const result = JSON.parse(response);
             if (result.success) {
-                // Show success message before moving to next step
                 Swal.fire({
-                    title: 'Verified!',
+                    title: 'Success!',
                     text: 'Code verification successful',
                     icon: 'success',
                     timer: 1500,
@@ -271,19 +303,17 @@ $('#verificationForm').on('submit', function(e) {
                 }).then(() => {
                     $('#step2').hide();
                     $('#step3').show();
-                    clearInterval(resendTimer); // Clear the resend timer when moving to next step
+                    clearInterval(resendTimer);
                 });
             } else {
                 showError('codeError', result.message || 'Invalid verification code');
             }
         } catch (e) {
             showError('codeError', 'An unexpected error occurred');
-            console.error('Error parsing response:', e);
         }
     })
-    .fail(function(xhr, status, error) {
+    .fail(function() {
         showError('codeError', 'Failed to connect to server. Please try again.');
-        console.error('AJAX Error:', status, error);
     })
     .always(function() {
         resetLoadingState(submitButton);

@@ -5,10 +5,9 @@ use Twilio\Rest\Client;
 
 session_start();
 
-// Twilio configuration
 function getTwilioClient() {
-    $sid = "AC80cae86174ab25c1728133facec97816";
-    $token = "6ea56e4f9eb311a8c85158e835f5ba38";
+    $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
+    $token = "afa4dc02209004070a276548eed3a6b0";
     return new Client($sid, $token);
 }
 
@@ -21,7 +20,7 @@ function verifyUsername($username) {
     }
     
     $stmt = $pdo->prepare("
-        SELECT u.id, r.role_name, u.is_active, u.is_banned
+        SELECT u.id, r.role_name, u.is_active, u.is_banned, u.last_password_change
         FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE u.username = ?;
@@ -38,7 +37,7 @@ function verifyUsername($username) {
     }
     
     if (in_array($user['role_name'], ['staff', 'admin', 'coach'])) {
-        throw new Exception("Password reset not allowed for staff, coach and admin accounts. Please contact system administrator.");
+        throw new Exception("Password reset not allowed for staff, coach and admin accounts.");
     }
     
     if (!$user['is_active']) {
@@ -49,8 +48,22 @@ function verifyUsername($username) {
         throw new Exception("This account has been suspended. Please contact support.");
     }
     
+    // Check if 30 days have passed since last password change
+    if ($user['last_password_change']) {
+        $lastChange = new DateTime($user['last_password_change']);
+        $now = new DateTime();
+        $daysSinceChange = $now->diff($lastChange)->days;
+        
+        if ($daysSinceChange < 30) {
+            $daysRemaining = 30 - $daysSinceChange;
+            throw new Exception("Password can only be changed every 30 days. Please wait {$daysRemaining} more days before attempting to change your password again.");
+        }
+    }
+    
     return true;
 }
+
+
 
 // Get user's phone number from database
 function getUserPhone($username) {
@@ -76,47 +89,53 @@ function getUserPhone($username) {
     return $phone;
 }
 
-// Updated sendVerificationSMS function to match register_handler.php
+
+
+// Updated sendVerificationSMS function with new credentials
 function sendVerificationSMS($phoneNumber) {
     try {
-        $sid = "AC80cae86174ab25c1728133facec97816";
-        $token = "6ea56e4f9eb311a8c85158e835f5ba38";
-        $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
+        $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
+        $token = "e8b25acb4e646642c43f8d751c75aaf8";
+        $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
         
-        if (!str_starts_with($phoneNumber, '+')) {
-            $phoneNumber = '+63' . ltrim($phoneNumber, '0');
+        // Format phone number
+        $formattedNumber = preg_replace('/^0/', '+63', $phoneNumber);
+        if (!preg_match('/^\+63/', $formattedNumber)) {
+            $formattedNumber = '+63' . $formattedNumber;
         }
 
         $verification = $twilio->verify->v2->services($verifyServiceId)
             ->verifications
-            ->create($phoneNumber, "sms");
+            ->create($formattedNumber, "sms");
         
+        $_SESSION['verification_phone'] = $formattedNumber;
         return $verification->sid;
     } catch (Exception $e) {
-        error_log("Twilio Error: " . $e->getMessage());
+        error_log("Twilio Error (sendVerificationSMS): " . $e->getMessage());
         throw new Exception("Failed to send verification code. Please try again.");
     }
 }
 
-// Updated verifyTwilioCode function to match register_handler.php
 function verifyTwilioCode($phoneNumber, $code) {
     try {
-        $sid = "AC80cae86174ab25c1728133facec97816";
-        $token = "6ea56e4f9eb311a8c85158e835f5ba38";
-        $verifyServiceId = "VA65eaa4607fec1266ff04693d0dab7f4f";
+        $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
+        $token = "e8b25acb4e646642c43f8d751c75aaf8";
+        $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
         
-        if (!str_starts_with($phoneNumber, '+')) {
-            $phoneNumber = '+63' . ltrim($phoneNumber, '0');
+        // Format phone number
+        $formattedNumber = preg_replace('/^0/', '+63', $phoneNumber);
+        if (!preg_match('/^\+63/', $formattedNumber)) {
+            $formattedNumber = '+63' . $formattedNumber;
         }
 
         $verification_check = $twilio->verify->v2->services($verifyServiceId)
             ->verificationChecks
             ->create([
-                'to' => $phoneNumber,
+                'to' => $formattedNumber,
                 'code' => $code
             ]);
 
@@ -141,17 +160,26 @@ function updatePassword($username, $newPassword) {
 
     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
-    $stmt = $pdo->prepare("
-        UPDATE users 
-        SET password = ? 
-        WHERE username = ?
-    ");
+    try {
+        $pdo->beginTransaction();
 
-    if (!$stmt->execute([$hashedPassword, $username])) {
-        throw new Exception("Failed to update password. Please try again.");
+        // Update password and last_password_change timestamp
+        $stmt = $pdo->prepare("
+            UPDATE users 
+            SET password = ?, last_password_change = CURRENT_TIMESTAMP 
+            WHERE username = ?
+        ");
+
+        if (!$stmt->execute([$hashedPassword, $username])) {
+            throw new Exception("Failed to update password. Please try again.");
+        }
+
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw new Exception("Failed to update password: " . $e->getMessage());
     }
-
-    return true;
 }
 
 // Handle AJAX requests
