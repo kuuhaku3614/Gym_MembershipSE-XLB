@@ -95,6 +95,11 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     <div class="nav-right">
         <?php if ($isLoggedIn): ?>
             <?php 
+            $defaultImage = "../../uploads/default_profile.png";
+            $profileImage = isset($_SESSION['personal_details']['profile_photo']) ? 
+                "../../uploads/" . htmlspecialchars($_SESSION['personal_details']['profile_photo']) :
+                $defaultImage;
+
             // Get the current page filename
             $current_page = basename($_SERVER['PHP_SELF']);
             if ($current_page === 'services.php'): 
@@ -105,13 +110,14 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             <?php endif; ?>
             
             <div class="dropdown">
-                <button class="dropbtn" aria-label="User Menu" title="User Menu">
+
+                <button class="dropbtn" aria-label="User Menu" title="User Menu" style="background-image: url('<?php echo $profileImage; ?>');">
                 </button>
                 <div class="dropdown-content">
                     <a href="profile.php" class="username"><?php echo getFullName(); ?></a>
                     <hr class="dropdown-divider">
-                    <a href="#"> Notifications</a>
-                    <a href="?logout=1"> Logout</a>
+                    <a href="notifications.php"><i class="fas fa-bell pe-3"></i> Notifications</a>
+                    <a href="?logout=1"><i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
                 </div>
             </div>
         <?php else: ?>

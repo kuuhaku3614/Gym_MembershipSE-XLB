@@ -43,9 +43,28 @@
 
     include('includes/header.php');
 ?>
+    <style>
+        html{
+            background-color: transparent;
+        }
+        body{
+            height: 100vh;
+        }
+        .home-navbar{
+            background-color: red;
+            position: fixed;
+            border-radius: 0;
+        }
+        .main-content{
+           padding-top: 100px;
+        }
+    </style>
+  
 
-    <header class="container-fluid" id="title">
-        <div class="container-xl" id="name" style="position: relative;">
+    <section class="main-content vh-100">
+        <div id="availed_services">
+        <header id="title">
+        <div id="name">
             <h1><?= $_SESSION['personal_details']['name'] ?></h1>
             <?php if (isset($_SESSION['personal_details']['role_name'])): ?>
                 <?php if ($_SESSION['personal_details']['role_name'] === 'member'): ?>
@@ -60,11 +79,7 @@
                 </a>
             <?php endif; ?>
         </div>
-        
     </header>
-
-    <section>
-        <div id="availed_services">
             <div class="section-header">
                 <h4>Current Membership Plan</h4>
                 <button type="button" class="icon-button" id="history-btn" onclick="toggleHistory()">
@@ -439,86 +454,82 @@
     </div>
 
     <style>
-        :root {
-            --red: #ff0000 !important;
-            --white: #ffffff !important;
-            --black: #000000 !important;
-            --dark-gray: #333333 !important;
+
+        @font-face {
+        font-family: myFont;
+        src: url(../AC.ttf);
         }
 
         body {
-            background-color: whitesmoke !important;
+            background-color: whitesmoke;
             min-height: 100vh;
         }
 
-        header {
-            margin-bottom: 2rem !important;
-        }
-
         #title {
-            background-color: <?php echo (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach') ? '#000000' : 'var(--red)'; ?> !important;
-            color: white !important;
-            padding: 2rem 0 !important;
-            box-shadow: 0px 5px 10px gray !important;
-            display: flex !important;
-            justify-content: center !important;
+            color: #6c757d;
+            display: flex;
+            border-bottom: 2px solid #ff0000;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            
+        }
+        h5 {
+            font-family: myFont;
         }
         #name h1 {
-            font-size: 2.5rem !important;
-            font-weight: 900 !important;
-            font-style: italic !important;
-            font-family: arial !important;
-            margin: 0 !important;
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-style: italic;
+            margin: 0;
         }
         #name h5 {
-            font-size: 1.25rem!important;
-            font-family: arial!important;
+            font-size: 1.75rem;
         }
         #name {
-            display: flex!important;
-            flex-direction: column!important;
-            justify-content: center!important;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         section {
-            width: 100%!important;
-            padding: 0 5%!important;
-            display: flex!important;
-            flex-wrap: wrap!important;
+            width: 100%;
+            padding: 0 5%;
+            display: flex;
+            flex-wrap: wrap;
         }
 
         section #availed_services {
-            min-height: 75vh!important;
-            width: 30%!important;
-            margin-right: 3%!important;
-            box-shadow: 0px 1px 3px gray!important;
-            border-radius: 10px!important;
-            background-color: white!important;
-            display: flex!important;
-            flex-direction: column!important;
-            padding: 1rem!important;
-            height: auto!important;
-            max-height: 70vh!important;
-            overflow: auto!important;
-            scrollbar-width: none!important;
-            -ms-overflow-style: none!important;
+            min-height: 75vh;
+            width: 30%;
+            margin-right: 3%;
+            box-shadow: 0px 1px 3px gray;
+            border-radius: 10px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            height: auto;
+            max-height: 70vh;
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
         section #availed_services::-webkit-scrollbar {
-            display: none!important;
+            display: none;
         }
 
         section #log {
-            padding-top: 5px!important;
-            width: 67%!important;
-            background-color: whitesmoke!important;
-            height: 70vh!important;
-            overflow: auto!important;
-            scrollbar-width: none!important;
-            -ms-overflow-style: none!important;
+            padding-top: 5px;
+            width: 67%;
+            background-color: whitesmoke;
+            height: 70vh;
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
         section #log::-webkit-scrollbar {
-            display: none!important;
+            display: none;
         }
 
         .subscription-table {
@@ -554,9 +565,7 @@
         }
 
         .attendance-title {
-            color: #ff3b30;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 2.25em;
             margin: 0;
         }
 
@@ -747,10 +756,6 @@
         .info-row .label {
             font-weight: normal;
             margin-right: 10px;
-        }
-
-        .info-row .value {
-            font-weight: bold;
         }
 
         .card-icon {
