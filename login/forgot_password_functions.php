@@ -37,7 +37,7 @@ function verifyUsername($username) {
     }
     
     if (in_array($user['role_name'], ['staff', 'admin', 'coach'])) {
-        throw new Exception("Password reset not allowed for staff, coach and admin accounts. Please contact system administrator.");
+        throw new Exception("Password reset not allowed for staff, coach and admin accounts.");
     }
     
     if (!$user['is_active']) {
