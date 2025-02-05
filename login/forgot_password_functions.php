@@ -20,7 +20,7 @@ function verifyUsername($username) {
     }
     
     $stmt = $pdo->prepare("
-        SELECT u.id, r.role_name, u.is_active, u.is_banned
+        SELECT u.id, r.role_name, u.is_active, u.is_banned, u.last_password_change
         FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE u.username = ?;
@@ -48,8 +48,22 @@ function verifyUsername($username) {
         throw new Exception("This account has been suspended. Please contact support.");
     }
     
+    // Check if 30 days have passed since last password change
+    if ($user['last_password_change']) {
+        $lastChange = new DateTime($user['last_password_change']);
+        $now = new DateTime();
+        $daysSinceChange = $now->diff($lastChange)->days;
+        
+        if ($daysSinceChange < 30) {
+            $daysRemaining = 30 - $daysSinceChange;
+            throw new Exception("Password can only be changed every 30 days. Please wait {$daysRemaining} more days before attempting to change your password again.");
+        }
+    }
+    
     return true;
 }
+
+
 
 // Get user's phone number from database
 function getUserPhone($username) {
@@ -81,7 +95,7 @@ function getUserPhone($username) {
 function sendVerificationSMS($phoneNumber) {
     try {
         $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-        $token = "afa4dc02209004070a276548eed3a6b0";
+        $token = "e8b25acb4e646642c43f8d751c75aaf8";
         $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
@@ -107,7 +121,7 @@ function sendVerificationSMS($phoneNumber) {
 function verifyTwilioCode($phoneNumber, $code) {
     try {
         $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-        $token = "afa4dc02209004070a276548eed3a6b0";
+        $token = "e8b25acb4e646642c43f8d751c75aaf8";
         $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
@@ -146,17 +160,26 @@ function updatePassword($username, $newPassword) {
 
     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
-    $stmt = $pdo->prepare("
-        UPDATE users 
-        SET password = ? 
-        WHERE username = ?
-    ");
+    try {
+        $pdo->beginTransaction();
 
-    if (!$stmt->execute([$hashedPassword, $username])) {
-        throw new Exception("Failed to update password. Please try again.");
+        // Update password and last_password_change timestamp
+        $stmt = $pdo->prepare("
+            UPDATE users 
+            SET password = ?, last_password_change = CURRENT_TIMESTAMP 
+            WHERE username = ?
+        ");
+
+        if (!$stmt->execute([$hashedPassword, $username])) {
+            throw new Exception("Failed to update password. Please try again.");
+        }
+
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw new Exception("Failed to update password: " . $e->getMessage());
     }
-
-    return true;
 }
 
 // Handle AJAX requests
