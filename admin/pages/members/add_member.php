@@ -75,6 +75,154 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     exit;
 }
+
+// Get membership duration and filtered items
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    if ($_POST['action'] === 'get_membership_duration') {
+        try {
+            $planId = $_POST['plan_id'];
+            $membershipPlan = $members->getMembershipPlanDuration($planId);
+            if ($membershipPlan) {
+                echo json_encode([
+                    'success' => true,
+                    'duration' => $membershipPlan['duration'],
+                    'duration_type_id' => $membershipPlan['duration_type_id']
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Membership plan not found'
+                ]);
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error getting membership plan: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    } elseif ($_POST['action'] === 'get_filtered_items') {
+        try {
+            $duration = $_POST['duration'];
+            $durationTypeId = $_POST['duration_type_id'];
+            
+            $programs = $members->getProgramsByDuration($duration, $durationTypeId);
+            $rentals = $members->getRentalServicesByDuration($duration, $durationTypeId);
+            
+            echo json_encode([
+                'success' => true,
+                'programs_html' => renderPrograms($programs),
+                'rentals_html' => renderRentalServices($rentals)
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error getting filtered items: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+}
+
+function renderPrograms($programs) {
+    global $members;
+    $programCoaches = $members->getProgramCoaches();
+    
+    // Organize coaches by program
+    $coachesByProgram = [];
+    foreach ($programCoaches as $coach) {
+        if (!isset($coachesByProgram[$coach['program_id']])) {
+            $coachesByProgram[$coach['program_id']] = [];
+        }
+        $coachesByProgram[$coach['program_id']][] = $coach;
+    }
+
+    $html = '';
+    if (empty($programs)) {
+        $html .= '<div class="col-12"><div class="alert alert-info">No programs available.</div></div>';
+    } else {
+        foreach ($programs as $program) {
+            $html .= '<div class="col">';
+            $html .= '<div class="card h-100">';
+            $html .= '<div class="card-body">';
+            $html .= '<h6 class="card-title">' . htmlspecialchars($program['program_name']) . '</h6>';
+            $html .= '<p class="card-text">' . htmlspecialchars($program['description']) . '</p>';
+            $html .= '<p class="card-text">';
+            $html .= '<small class="text-muted">';
+            $html .= 'Duration: ' . htmlspecialchars($program['duration'] . ' ' . $program['duration_type']);
+            $html .= '</small>';
+            $html .= '</p>';
+            
+            if (isset($coachesByProgram[$program['id']])) {
+                $html .= '<div class="form-group">';
+                $html .= '<label class="form-label">Select Coach:</label>';
+                $html .= '<select class="form-select program-coach" ';
+                $html .= 'name="program_coaches[' . $program['id'] . ']" ';
+                $html .= 'data-program-id="' . $program['id'] . '">';
+                $html .= '<option value="">Choose a coach</option>';
+                
+                foreach ($coachesByProgram[$program['id']] as $coach) {
+                    $html .= '<option value="' . $coach['coach_id'] . '" ';
+                    $html .= 'data-price="' . $coach['price'] . '">';
+                    $html .= htmlspecialchars($coach['coach_name']) . ' - ₱';
+                    $html .= number_format($coach['price'], 2);
+                    $html .= '</option>';
+                }
+                
+                $html .= '</select>';
+                $html .= '</div>';
+            }
+            
+            $html .= '</div>';
+            $html .= '</div>';
+            $html .= '</div>';
+        }
+    }
+    return $html;
+}
+
+function renderRentalServices($rentals) {
+    $html = '';
+    if (empty($rentals)) {
+        $html .= '<div class="col-12"><div class="alert alert-info">No rental services available.</div></div>';
+    } else {
+        foreach ($rentals as $rental) {
+            $html .= '<div class="col">';
+            $html .= '<div class="card h-100">';
+            $html .= '<div class="card-body">';
+            $html .= '<div class="form-check">';
+            $html .= '<input class="form-check-input rental-checkbox" type="checkbox" ';
+            $html .= 'name="rental_services[]" ';
+            $html .= 'value="' . $rental['id'] . '" ';
+            $html .= 'data-price="' . $rental['price'] . '" ';
+            $html .= 'data-duration="' . $rental['duration'] . '" ';
+            $html .= 'data-duration-type="' . $rental['duration_type'] . '">';
+            $html .= '<label class="form-check-label">Select Service</label>';
+            $html .= '</div>';
+            $html .= '<h6 class="card-title">' . htmlspecialchars($rental['rental_name']) . '</h6>';
+            $html .= '<p class="card-text">' . htmlspecialchars($rental['description']) . '</p>';
+            $html .= '<p class="card-text">';
+            $html .= '<small class="text-muted">';
+            $html .= 'Duration: ' . htmlspecialchars($rental['duration'] . ' ' . $rental['duration_type']);
+            $html .= '</small>';
+            $html .= '</p>';
+            $html .= '<p class="card-text">';
+            $html .= '<small class="text-muted">';
+            $html .= 'Price: ₱' . number_format($rental['price'], 2);
+            $html .= '</small>';
+            $html .= '</p>';
+            $html .= '</div>';
+            $html .= '</div>';
+            $html .= '</div>';
+        }
+    }
+    return $html;
+}
 ?>
 
 <!DOCTYPE html>
@@ -309,7 +457,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <!-- Programs Section -->
                         <div class="mb-4">
                             <h5>Available Programs</h5>
-                            <div class="row row-cols-1 row-cols-md-3 g-4">
+                            <div class="row row-cols-1 row-cols-md-3 g-4 programs-container">
                                 <?php 
                                 $programs = $members->getPrograms();
                                 $programCoaches = $members->getProgramCoaches();
@@ -364,7 +512,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <!-- Rental Services Section -->
                         <div class="mb-4">
                             <h5>Rental Services</h5>
-                            <div class="row row-cols-1 row-cols-md-3 g-4">
+                            <div class="row row-cols-1 row-cols-md-3 g-4 rentals-container">
                                 <?php 
                                 $rentals = $members->getRentalServices();
                                 if (empty($rentals)) {
@@ -668,11 +816,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 alert('Error generating credentials. Please try again.');
             });
             return; // Don't proceed with normal phase transition
+        } else if (currentPhase === 2) {
+            if (!validatePhase2()) return;
+            
+            // Get selected membership plan
+            const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
+            if (!selectedPlan) return;
+            
+            // Get membership plan duration and filter programs/rentals
+            fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=get_membership_duration&plan_id=${selectedPlan.value}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fetch filtered programs and rentals
+                    return fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `action=get_filtered_items&duration=${data.duration}&duration_type_id=${data.duration_type_id}`
+                    });
+                }
+                throw new Error('Failed to get membership duration');
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update programs list
+                    const programsContainer = document.querySelector('#phase3 .programs-container');
+                    if (programsContainer) {
+                        programsContainer.innerHTML = data.programs_html;
+                    }
+                    
+                    // Update rentals list
+                    const rentalsContainer = document.querySelector('#phase3 .rentals-container');
+                    if (rentalsContainer) {
+                        rentalsContainer.innerHTML = data.rentals_html;
+                    }
+                    
+                    // Show phase 3
+                    document.getElementById('phase2').style.display = 'none';
+                    document.getElementById('phase3').style.display = 'block';
+                } else {
+                    throw new Error('Failed to get filtered items');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request. Please try again.');
+            });
+            
+            return; // Don't proceed with normal phase transition
         }
 
-        if (currentPhase === 2 && !validatePhase2()) return;
-
-        // If moving to phase 4, display stored credentials
         if (currentPhase === 3) {
             const username = document.getElementById('usernameField').value;
             const password = document.getElementById('passwordField').value;
