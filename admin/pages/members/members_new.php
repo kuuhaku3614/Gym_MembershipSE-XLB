@@ -160,6 +160,16 @@
     </div>
 </div>
 
+<style>
+/* Add transition styles */
+.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay {
+    transition: all 0.3s ease-in-out !important;
+}
+.main-content {
+    transition: margin-left 0.3s ease-in-out !important;
+}
+</style>
+
 <script>
 function viewMemberDetails(userId) {
     // Show loading state
@@ -320,6 +330,24 @@ $(document).ready(function() {
     // Add member button click handler
     $('#add_member-link').on('click', function(e) {
         e.preventDefault();
+        
+        // First adjust the opacity with transition
+        $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+            'opacity': '0',
+            'transform': 'translateX(-20px)'
+        });
+        
+        // Adjust main content with transition
+        $('.main-content').css('margin-left', '0');
+        
+        // After the transition, hide the elements completely
+        setTimeout(function() {
+            $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+                'display': 'none',
+                'transform': 'translateX(0)'
+            });
+        }, 300);
+        
         $.ajax({
             type: "GET",
             url: "pages/members/add_member.php",
@@ -329,6 +357,19 @@ $(document).ready(function() {
             },
             error: function() {
                 alert("Error loading the add member form.");
+                // Show navigation elements back with transition
+                $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+                    'display': '',
+                    'opacity': '0',
+                    'transform': 'translateX(-20px)'
+                });
+                setTimeout(function() {
+                    $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+                        'opacity': '1',
+                        'transform': 'translateX(0)'
+                    });
+                    $('.main-content').css('margin-left', '');
+                }, 50);
             }
         });
     });
