@@ -186,7 +186,7 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Membership Status</h2>
-            <a href="/Gym_MembershipSE-XLB/admin/membership_history" class="btn btn-info">
+            <a href="../admin/membership_history" class="btn btn-info">
                 <i class="fas fa-history"></i> Membership History
             </a>
         </div>
