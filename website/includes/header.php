@@ -130,9 +130,9 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                     aria-label="User menu options">
                     <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <hr class="dropdown-divider" aria-hidden="true">
-                    <a href="#" role="menuitem"> Notifications</a>
-                    <a href="" class="edit-profile-link" role="menuitem">Edit Profile</a>
-                    <a href="../../login/logout.php" role="menuitem"> Logout</a>
+                    <a href="notifications.php" role="menuitem"> <i class="fas fa-bell pe-3"></i> Notifications</a>
+                    <a href="" class="edit-profile-link" role="menuitem"> <i class="fas fa-user-edit pe-3"></i> Edit Profile</a>
+                    <a href="../login/logout.php" role="menuitem"> <i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
                 </div>
             </div>
         <?php else: ?>
