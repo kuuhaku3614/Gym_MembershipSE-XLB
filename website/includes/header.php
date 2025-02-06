@@ -28,7 +28,7 @@ if (!function_exists('requireLogin')) {
 }
 
 if (!function_exists('getFullName')) {
-    // Function to get the full name of the user
+    // Updated function to get the full name and profile photo of the user
     function getFullName() {
         if (isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])) {
             $userId = (int)$_SESSION['user_id'];
@@ -39,16 +39,27 @@ if (!function_exists('getFullName')) {
                 die("Connection failed: " . $conn->connect_error);
             }
 
-            // Fetch first and last name
-            $stmt = $conn->prepare("SELECT first_name, last_name FROM personal_details WHERE user_id = ?");
+            // Fetch first name, last name, and profile photo
+            $sql = "SELECT pd.first_name, pd.last_name, pp.photo_path 
+                   FROM personal_details pd 
+                   LEFT JOIN profile_photos pp ON pd.user_id = pp.user_id 
+                   WHERE pd.user_id = ? AND (pp.is_active = 1 OR pp.is_active IS NULL)";
+            
+            $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
 
             if ($row = $result->fetch_assoc()) {
+                $fullName = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
+                $photoPath = $row['photo_path'] ? htmlspecialchars($row['photo_path']) : '../cms_img/user.png';
+                
+                // Store both name and photo path
+                $_SESSION['user_photo'] = $photoPath;
+                
                 $stmt->close();
                 $conn->close();
-                return htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
+                return $fullName;
             }
 
             // Close connections
@@ -105,13 +116,17 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             <?php endif; ?>
             
             <div class="dropdown">
-                <button class="dropbtn" aria-label="User Menu" title="User Menu">
+                <button class="dropbtn" 
+                        aria-label="User Menu" 
+                        title="User Menu" 
+                        style="background-image: url('../../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>');">
                 </button>
                 <div class="dropdown-content">
                     <a href="profile.php" class="username"><?php echo getFullName(); ?></a>
                     <hr class="dropdown-divider">
                     <a href="#"> Notifications</a>
-                    <a href="?logout=1"> Logout</a>
+                    <a href="" class="edit-profile-link">Edit Profile</a>
+                    <a href="../../login/logout.php"> Logout</a>
                 </div>
             </div>
         <?php else: ?>
@@ -119,3 +134,44 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         <?php endif; ?>
     </div>
 </nav>
+<!-- Profile Edit Modal -->
+<div id="profileEditModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal"><i class="fas fa-times"></i></span>
+        <h2>Edit Profile</h2>
+        <div class="profile-edit-container">
+            <div class="profile-photo-container">
+                <div class="photo-wrapper">
+                    <img src="<?php echo isset($_SESSION['user_photo']) ? '../../' . $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" 
+                         alt="Profile Photo" 
+                         id="profilePhoto">
+                    <div class="photo-edit-overlay">
+                        <label for="photoInput" class="edit-icon">
+                            <i class="fas fa-pencil-alt"></i>
+                        </label>
+                        <input type="file" 
+                               id="photoInput" 
+                               accept="image/*" 
+                               style="display: none;">
+                    </div>
+                </div>
+            </div>
+            <div class="username-container">
+                <div class="input-wrapper">
+                    <input type="text" 
+                           id="usernameInput" 
+                           value="<?php echo $_SESSION['username'] ?? ''; ?>" 
+                           readonly>
+                    <button class="edit-username-btn">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="save-actions">
+                <button id="saveChanges" class="save-btn">Save Changes</button>
+                <button id="cancelChanges" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="js/edit_profile.js"></script>

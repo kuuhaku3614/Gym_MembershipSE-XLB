@@ -30,10 +30,14 @@ function loginUser($username, $password) {
     }
 
     try {
-        $sql = "SELECT u.id, u.password, u.role_id, r.role_name as role, u.is_banned 
+        // Modified query to include profile photo
+        $sql = "SELECT u.id, u.password, u.role_id, r.role_name as role, u.is_banned,
+                pp.photo_path
                 FROM users u 
                 JOIN roles r ON u.role_id = r.id 
+                LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
                 WHERE u.username = :username AND u.is_active = 1";
+        
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
@@ -51,8 +55,10 @@ function loginUser($username, $password) {
                     return ['success' => false, 'message' => 'Unauthorized role detected.'];
                 }
 
+                // Set all necessary session variables at once
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $username;
+                $_SESSION['user_photo'] = $user['photo_path'] ?? '../cms_img/user.png';
 
                 return [
                     'success' => true,

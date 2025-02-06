@@ -45,7 +45,7 @@ $offers = executeQuery("SELECT * FROM gym_offers LIMIT 4");
 $products = executeQuery("SELECT * FROM products LIMIT 8");
 $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
-include('includes/header.php');
+require_once('includes/header.php');
 ?>
   <style>
    .offer-button {
@@ -102,6 +102,8 @@ include('includes/header.php');
             </a>
         </div>
   </header>
+   
+
        <!-- Offers Section -->
 <section class="S-Offers" id="S-Offers">
 
@@ -280,7 +282,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     </script>
   </div>
 </section>
-   
+
 
 <footer class="footer">
  <!-- <div class="design-container">
