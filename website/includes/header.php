@@ -132,7 +132,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                     <hr class="dropdown-divider" aria-hidden="true">
                     <a href="#" role="menuitem"> Notifications</a>
                     <a href="" class="edit-profile-link" role="menuitem">Edit Profile</a>
-                    <a href="../../login/logout.php" role="menuitem"> Logout</a>
+                    <a href="../login/logout.php" role="menuitem"> Logout</a>
                 </div>
             </div>
         <?php else: ?>

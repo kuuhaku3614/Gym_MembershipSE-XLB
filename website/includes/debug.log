@@ -560,3 +560,30 @@
     [action] => update_photo
 )
 
+2025-02-06 15:26:31 - Request received
+2025-02-06 15:26:31 - POST data: Array
+(
+    [action] => check_username
+    [username] => n
+)
+
+2025-02-06 15:26:32 - Request received
+2025-02-06 15:26:32 - POST data: Array
+(
+    [action] => check_username
+    [username] => nosjay
+)
+
+2025-02-06 15:26:33 - Request received
+2025-02-06 15:26:33 - POST data: Array
+(
+    [action] => update_username
+    [username] => nosjay
+)
+
+2025-02-06 15:26:33 - Request received
+2025-02-06 15:26:33 - POST data: Array
+(
+    [action] => update_photo
+)
+
