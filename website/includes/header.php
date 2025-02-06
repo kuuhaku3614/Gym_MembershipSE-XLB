@@ -122,7 +122,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                         aria-expanded="false"
                         aria-controls="user-dropdown"
                         title="User Menu" 
-                        style="background-image: url('../../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>');">
+                        style="background-image: url('../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>');">
                 </button>
                 <div class="dropdown-content" 
                     id="user-dropdown" 
@@ -148,7 +148,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         <div class="profile-edit-container">
             <div class="profile-photo-container">
                 <div class="photo-wrapper">
-                    <img src="<?php echo isset($_SESSION['user_photo']) ? '../../' . $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" 
+                    <img src="<?php echo isset($_SESSION['user_photo']) ? '../' . $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" 
                          alt="Profile Photo" 
                          id="profilePhoto">
                     <div class="photo-edit-overlay">
