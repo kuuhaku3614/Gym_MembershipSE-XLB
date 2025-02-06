@@ -176,7 +176,7 @@ nav.sticky {
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  background-image: url(../cms_img/user.png);
+  /* background-image: url(../cms_img/user.png); */
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;

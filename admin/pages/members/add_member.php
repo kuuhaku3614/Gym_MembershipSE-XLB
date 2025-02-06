@@ -297,7 +297,6 @@ function renderRentalServices($rentals) {
     </style>
 </head>
 <body>
-    <?php include '../../includes/navbar.php'; ?>
 
     <div class="container-fluid py-4">
         <div class="row">
