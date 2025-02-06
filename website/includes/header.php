@@ -118,15 +118,21 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             <div class="dropdown">
                 <button class="dropbtn" 
                         aria-label="User Menu" 
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        aria-controls="user-dropdown"
                         title="User Menu" 
                         style="background-image: url('../../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>');">
                 </button>
-                <div class="dropdown-content">
-                    <a href="profile.php" class="username"><?php echo getFullName(); ?></a>
-                    <hr class="dropdown-divider">
-                    <a href="#"> Notifications</a>
-                    <a href="" class="edit-profile-link">Edit Profile</a>
-                    <a href="../../login/logout.php"> Logout</a>
+                <div class="dropdown-content" 
+                    id="user-dropdown" 
+                    role="menu" 
+                    aria-label="User menu options">
+                    <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
+                    <hr class="dropdown-divider" aria-hidden="true">
+                    <a href="#" role="menuitem"> Notifications</a>
+                    <a href="" class="edit-profile-link" role="menuitem">Edit Profile</a>
+                    <a href="../../login/logout.php" role="menuitem"> Logout</a>
                 </div>
             </div>
         <?php else: ?>
@@ -175,3 +181,4 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     </div>
 </div>
 <script src="js/edit_profile.js"></script>
+<script src="js/dropdown.js"></script>
