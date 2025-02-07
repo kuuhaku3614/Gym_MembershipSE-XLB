@@ -8,6 +8,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="register.css">
+    <style>
+        .error-message {
+            color: red;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: none;
+        }
+        .form-control.invalid {
+            border-color: red;
+        }
+    </style>
 </head>
 <body>
     <div class="page-container">
@@ -18,7 +29,7 @@
             </div>
             
             <form id="registrationForm" method="POST" enctype="multipart/form-data">
-                <!-- Profile Photo Section -->
+                <!-- Profile Photo Section (unchanged from original) -->
                 <div class="profile-photo-upload">
                     <div class="d-flex justify-content-center align-items-center mb-1 w-100">
                         <div class="profile-photo-container">   
@@ -45,14 +56,16 @@
                         <div class="form-row">
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="firstName" name="first_name" placeholder=" " required>
+                                    <input type="text" class="form-control" id="firstName" name="first_name" placeholder=" ">
                                     <label for="firstName">First Name</label>
+                                    <div id="firstNameError" class="error-message">First name is required</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="lastName" name="last_name" placeholder=" " required>
+                                    <input type="text" class="form-control" id="lastName" name="last_name" placeholder=" ">
                                     <label for="lastName">Last Name</label>
+                                    <div id="lastNameError" class="error-message">Last name is required</div>
                                 </div>
                             </div>
                         </div>
@@ -66,46 +79,53 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-floating">
-                                    <select class="form-select form-control" id="sex" name="sex" required>
-                                        <option value="" selected disabled>N/A</option>
+                                    <select class="form-select form-control" id="sex" name="sex">
+                                        <option value="" selected disabled>Select</option>
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
+                                        <option value="NA">NA</option>
                                     </select>
                                     <label for="sex">Sex</label>
+                                    <div id="sexError" class="error-message">Sex is required</div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-floating">
-                                    <input type="date" class="form-control" id="birthday" name="birthday" placeholder=" " required>
+                                    <input type="date" class="form-control" id="birthday" name="birthday" placeholder=" ">
                                     <label for="birthday">Birthday</label>
+                                    <div id="birthdayError" class="error-message">Birthday is required</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-floating">
-                            <input type="tel" class="form-control" id="phone" name="phone" placeholder=" " required>
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder=" ">
                             <label for="phone">Phone No.</label>
+                            <div id="phoneError" class="error-message">Please enter a valid Philippine phone number</div>
                         </div>
 
                         <div class="form-floating">
-                            <input type="text" class="form-control" id="username" name="username" placeholder=" " required>
+                            <input type="text" class="form-control" id="username" name="username" placeholder=" ">
                             <label for="username">Username</label>
+                            <div id="usernameError" class="error-message">Username is required</div>
                         </div>
 
                         <div class="form-floating position-relative">
-                            <input type="password" class="form-control" id="password" name="password" placeholder=" " required>
+                            <input type="password" class="form-control" id="password" name="password" placeholder=" ">
                             <label for="password">Password</label>
                             <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('password')">
                                 <i class="togglePW fas fa-eye"></i>
                             </button>
+                            <div id="passwordError" class="error-message">Password must be at least 8 characters with uppercase, lowercase, and numbers</div>
                         </div>
                         
                         <div class="form-floating">
-                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder=" " required>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder=" ">
                             <label for="confirmPassword">Confirm Password</label>
                             <button type="button" class="eyeToggler btn position-absolute" onclick="togglePassword('confirmPassword')">
                                 <i class="togglePW fas fa-eye"></i>
                             </button>
+                            <div id="confirmPasswordError" class="error-message">Passwords do not match</div>
                         </div>
                     </div>
                 </div>
@@ -151,9 +171,126 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        $(document).ready(function() {
-    let isVerificationInProgress = false;
-    let countdownInterval;
+    $(document).ready(function() {
+        // Validation functions
+        function validateFirstName() {
+            const firstName = $('#firstName').val().trim();
+            const isValid = firstName.length > 0;
+            $('#firstName').toggleClass('invalid', !isValid);
+            $('#firstNameError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validateLastName() {
+            const lastName = $('#lastName').val().trim();
+            const isValid = lastName.length > 0;
+            $('#lastName').toggleClass('invalid', !isValid);
+            $('#lastNameError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validateSex() {
+            const sex = $('#sex').val();
+            const isValid = sex && sex !== '';
+            $('#sex').toggleClass('invalid', !isValid);
+            $('#sexError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validateBirthday() {
+            const birthday = $('#birthday').val();
+            const isValid = birthday !== '';
+            
+            if (isValid) {
+                const today = new Date();
+                const birthDate = new Date(birthday);
+                const age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                
+                const finalAge = monthDiff < 0 || 
+                    (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+                    ? age - 1 : age;
+                
+                const ageValid = finalAge >= 15;
+                
+                $('#birthday').toggleClass('invalid', !ageValid);
+                $('#birthdayError').toggle(!ageValid);
+                $('#birthdayError').text(ageValid ? 'Birthday is required' : 'You must be at least 15 years old');
+                
+                return ageValid;
+            }
+            
+            $('#birthday').toggleClass('invalid', true);
+            $('#birthdayError').show();
+            return false;
+        }
+
+        function validatePhoneNumber() {
+            const phone = $('#phone').val().trim();
+            const phoneRegex = /^(?:\+63|0)9\d{9}$/;
+            const isValid = phoneRegex.test(phone);
+            $('#phone').toggleClass('invalid', !isValid);
+            $('#phoneError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validateUsername() {
+            const username = $('#username').val().trim();
+            const isValid = username.length > 0;
+            $('#username').toggleClass('invalid', !isValid);
+            $('#usernameError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validatePassword() {
+            const password = $('#password').val();
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+            const isValid = passwordRegex.test(password);
+            $('#password').toggleClass('invalid', !isValid);
+            $('#passwordError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validateConfirmPassword() {
+            const password = $('#password').val();
+            const confirmPassword = $('#confirmPassword').val();
+            const isValid = password === confirmPassword && confirmPassword !== '';
+            $('#confirmPassword').toggleClass('invalid', !isValid);
+            $('#confirmPasswordError').toggle(!isValid);
+            return isValid;
+        }
+
+        function validateProfilePhoto() {
+            const file = $('#profile_photo')[0].files[0];
+            const allowedTypes = ['image/jpeg', 'image/png'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            let isValid = true;
+            if (!file) {
+                isValid = false;
+                alert('Please upload a profile photo.');
+            } else if (!allowedTypes.includes(file.type)) {
+                isValid = false;
+                alert('Please upload a valid image (JPEG or PNG)');
+                resetFileInput();
+            } else if (file.size > maxSize) {
+                isValid = false;
+                alert('File size exceeds 5MB limit');
+                resetFileInput();
+            }
+
+            return isValid;
+        }
+
+        // Bind validation to input events
+        $('#firstName').on('input', validateFirstName);
+        $('#lastName').on('input', validateLastName);
+        $('#sex').on('change', validateSex);
+        $('#birthday').on('change', validateBirthday);
+        $('#phone').on('input', validatePhoneNumber);
+        $('#username').on('input', validateUsername);
+        $('#password').on('input', validatePassword);
+        $('#confirmPassword').on('input', validateConfirmPassword);
     
     // File upload handling
     $('.btn-upload-trigger').on('click', function() {
@@ -164,52 +301,68 @@
         handleFileUpload(event);
     });
 
-    // Form submission
+    // Form submission validation
     $('#registrationForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        if (!validateProfilePhoto()) {
-            return;
-        }
+            e.preventDefault();
 
-        var formData = new FormData(this);
-        formData.append('action', 'validate');
-        
-        // Show loading state
-        const submitBtn = $(this).find('button[type="submit"]');
-        const originalText = submitBtn.text();
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
-        
-        $.ajax({
-            url: 'register_handler.php',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    const phoneNumber = $('#phone').val();
-                    const maskedPhone = maskPhoneNumber(phoneNumber);
-                    $('#phoneDisplay').text(`Verification code sent to ${maskedPhone}`);
-                    showModal('.verification-modal');
-                    generateVerificationCode();
-                } else {
-                    if (response.field && response.field !== 'general') {
-                        showError(response.field, response.message);
-                    } else {
-                        alert(response.message);
+            const isProfilePhotoValid = validateProfilePhoto();
+            const isFirstNameValid = validateFirstName();
+            const isLastNameValid = validateLastName();
+            const isSexValid = validateSex();
+            const isBirthdayValid = validateBirthday();
+            const isPhoneValid = validatePhoneNumber();
+            const isUsernameValid = validateUsername();
+            const isPasswordValid = validatePassword();
+            const isConfirmPasswordValid = validateConfirmPassword();
+
+            if (isProfilePhotoValid && 
+                isFirstNameValid && 
+                isLastNameValid && 
+                isSexValid && 
+                isBirthdayValid && 
+                isPhoneValid && 
+                isUsernameValid && 
+                isPasswordValid && 
+                isConfirmPasswordValid) {
+                // Existing form submission logic from the original script
+                var formData = new FormData(this);
+                formData.append('action', 'validate');
+                
+                const submitBtn = $(this).find('button[type="submit"]');
+                const originalText = submitBtn.text();
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+                
+                $.ajax({
+                    url: 'register_handler.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            const phoneNumber = $('#phone').val();
+                            const maskedPhone = maskPhoneNumber(phoneNumber);
+                            $('#phoneDisplay').text(`Verification code sent to ${maskedPhone}`);
+                            showModal('.verification-modal');
+                            generateVerificationCode();
+                        } else {
+                            if (response.field && response.field !== 'general') {
+                                showError(response.field, response.message);
+                            } else {
+                                alert(response.message);
+                            }
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred. Please try again.');
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).text(originalText);
                     }
-                }
-            },
-            error: function() {
-                alert('An error occurred. Please try again.');
-            },
-            complete: function() {
-                submitBtn.prop('disabled', false).text(originalText);
+                });
             }
         });
-    });
 
     // Verification code input
     $('.verification-input').on('input', function() {

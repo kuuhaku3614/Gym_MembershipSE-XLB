@@ -7,7 +7,7 @@ session_start();
 
 function getTwilioClient() {
     $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-    $token = "afa4dc02209004070a276548eed3a6b0";
+    $token = "5f9d1a083156c3c38a641129fdf07be1";
     return new Client($sid, $token);
 }
 
@@ -95,7 +95,7 @@ function getUserPhone($username) {
 function sendVerificationSMS($phoneNumber) {
     try {
         $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-        $token = "e8b25acb4e646642c43f8d751c75aaf8";
+        $token = "5f9d1a083156c3c38a641129fdf07be1";
         $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
@@ -121,7 +121,7 @@ function sendVerificationSMS($phoneNumber) {
 function verifyTwilioCode($phoneNumber, $code) {
     try {
         $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-        $token = "e8b25acb4e646642c43f8d751c75aaf8";
+        $token = "5f9d1a083156c3c38a641129fdf07be1";
         $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);

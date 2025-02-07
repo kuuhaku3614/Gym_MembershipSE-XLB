@@ -44,7 +44,7 @@ body {
 
 .form-content {
   padding: 0 10px;
-  padding-top: 10px;
+  padding-top: 20px;
 }
 
 .form-buttons {
@@ -367,10 +367,14 @@ h1 {
 }
 
 .error-feedback {
-  display: none;
-  color: #dc3545;
-  font-size: 0.875em;
+  color: red;
+  font-size: 0.875rem;
   margin-top: 0.25rem;
+  display: block;
+}
+
+.is-invalid {
+  border-color: red !important;
 }
 
 .eyeToggler {

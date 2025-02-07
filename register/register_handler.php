@@ -113,7 +113,7 @@ function formatPhoneNumber($phone) {
 function sendVerificationSMS($phoneNumber) {
     try {
         $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-        $token = "e8b25acb4e646642c43f8d751c75aaf8"; 
+        $token = "5f9d1a083156c3c38a641129fdf07be1"; 
         $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
@@ -143,7 +143,7 @@ function verifyTwilioCode($code) {
         }
 
         $sid = "ACc1f1f89f87b2b2e23e7c037aad8abae0";
-        $token = "e8b25acb4e646642c43f8d751c75aaf8";
+        $token = "5f9d1a083156c3c38a641129fdf07be1";
         $verifyServiceId = "VA48723f597c526f0dcf1203976de0780f";
 
         $twilio = new Client($sid, $token);
