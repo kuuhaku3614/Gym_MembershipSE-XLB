@@ -112,7 +112,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="service.css">
 <style>
+    body {
+        height: 100vh;
+    }
+    .main-container {
+        max-height: 100vh;
+    }
     .bg-custom-red {
         background-color: #ff0000;
     }
@@ -132,60 +140,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <div class="avail-membership-page">
     <div class="container-fluid p-0">
-        <!-- Header -->
-        <div class="bg-custom-red text-white p-3 d-flex align-items-center">
+    <div class="bg-custom-red text-white p-3 d-flex align-items-center">
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
         </div>
 
-        <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-            <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
-                <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $membership['plan_type'] ?> Membership</h2>
+        <div class="container-fluid" style="height: 70vh;">
+            <div class="row flex-grow-1 overflow-auto">
+            <div class="col-12 col-lg-8 mx-auto py-3 main-container">
+                <div class="card shadow main-content">
+                <div class="card-header py-3">
+                    <h2 class="h4 fw-bold mb-0 text-center"><?= $membership['plan_type'] ?> Membership</h2>
                 </div>
-                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    <h3 class="fs-5 fw-bold mb-4"><?= $membership['plan_name'] ?></h3>
-                    <div class="mb-3 p-2 border rounded">
+                <div class="card-body p-4">
+                    <h3 class="h5 fw-bold text-center mb-4"><?= $membership['plan_name'] ?></h3>
+
+                <section class="scrollable-section" style="max-height: calc(100vh - 300px); overflow-y: auto;">
+
+                    <div class="row g-3">
+                    <div class="col-12">
+                        <div class="border rounded p-3">
                         <p class="mb-0">Validity: <?= $membership['validity'] ?></p>
+                        </div>
                     </div>
-                    <div class="mb-3 p-2 border rounded">
-                        <label for="start_date" class="form-label">Start Date:</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" 
+
+                    <div class="col-12">
+                        <div class="border rounded p-3">
+                        <div class="form-group">
+                            <label for="start_date" class="form-label">Start Date:</label>
+                            <input type="date" 
+                               class="form-control form-control-lg" 
+                               id="start_date" 
+                               name="start_date" 
                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
                                value="<?= $start_date ?>"
                                required
                                onchange="updateEndDate(this.value, <?= $membership['duration'] ?>)">
-                        <?php if(!empty($start_dateErr)): ?>
-                            <span class="text-danger"><?= $start_dateErr ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
-                    </div>
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
-                    </div>
-                    <?php if (!empty($membership['description'])) { ?>
-                        <div class="mb-3 p-2 border rounded">
-                            <p class="mb-0">Description: <?= nl2br(htmlspecialchars($membership['description'])) ?></p>
+                            <?php if(!empty($start_dateErr)): ?>
+                            <div class="text-danger mt-1"><?= $start_dateErr ?></div>
+                            <?php endif; ?>
                         </div>
-                    <?php } ?>
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
-                        <?php if (isset($_SESSION['user_id'])) { ?>
-                            <form method="POST" style="width: 48%;" onsubmit="return validateForm(event)">
-                                <input type="hidden" name="membership_id" value="<?= $membership_id ?>">
-                                <input type="hidden" name="start_date" id="hidden_start_date">
-                                <input type="hidden" name="end_date" id="hidden_end_date">
-                                <button type="submit" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
-                            </form>
-                        <?php } else { ?>
-                            <a href="../../login/login.php" class="btn btn-custom-red btn-lg" style="width: 48%;">Login to Add</a>
-                        <?php } ?>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="border rounded p-3">
+                        <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="border rounded p-3">
+                        <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($membership['description'])): ?>
+                    <div class="col-12">
+                        <div class="border rounded p-3">
+                        <p class="mb-0">Description: <?= nl2br(htmlspecialchars($membership['description'])) ?></p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    </div>
+                </section>
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
+                    <a href="../services.php" class="btn btn-outline-danger btn-lg flex-fill">Return</a>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <form method="POST" class="flex-fill" onsubmit="return validateForm(event)">
+                        <input type="hidden" name="membership_id" value="<?= $membership_id ?>">
+                        <input type="hidden" name="start_date" id="hidden_start_date">
+                        <input type="hidden" name="end_date" id="hidden_end_date">
+                        <button type="submit" class="btn btn-custom-red btn-lg w-100" style="height: 48px!;">Add to Cart</button>
+                        </form>
+                    <?php else: ?>
+                        <button  class="btn btn-custom-red btn-lg "><a href="../../login/login.php">Login to Add</a></button>
+                    <?php endif; ?>
                     </div>
                 </div>
+                </div>
+            </div>
             </div>
         </div>
     </div>

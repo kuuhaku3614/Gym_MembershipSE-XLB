@@ -222,6 +222,22 @@
 </div>
 </section>
 
+<!-- Service Details Modal
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content" style="height: 90vh;">
+            <div class="modal-header py-2">
+            <h5 id="serviceModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: calc(100% - 42px); overflow-y: auto;">
+                <!-- Content will be loaded here dynamically -->
+            </div>
+        </div>
+    </div>
+</div> -->
+
+
 <!-- Cart Overlay -->
 <div class="cart-overlay" id="cartOverlay"></div>
 
@@ -248,6 +264,24 @@
 <script src="js/cart.js"></script>
 
 <script>
+
+// document.addEventListener('DOMContentLoaded', function() {
+//         // Prevent default link behavior and show modal instead
+//         document.querySelectorAll('.program-link').forEach(link => {
+//                 link.addEventListener('click', function(e) {
+//                         e.preventDefault();
+//                         const url = this.href;
+//                         fetch(url)
+//                                 .then(response => response.text())
+//                                 .then(data => {
+//                                         const modal = new bootstrap.Modal(document.getElementById('serviceModal'));
+//                                         document.querySelector('.modal-body').innerHTML = data;
+//                                         document.getElementById('serviceModalLabel').textContent = this.querySelector('.fw-bold').textContent;
+//                                         modal.show();
+//                                 });
+//                 });
+//         });
+// });
 
       // Add event listeners to all buttons with the class "scroll-btn"
   document.querySelectorAll('.scroll-btn').forEach(button => {
