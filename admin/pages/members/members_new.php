@@ -49,12 +49,12 @@
                   <?php foreach($membersList as $member): ?>
                   <tr class="text-center">
                       <td>
-                          <img src="/Gym_MembershipSE-XLB/<?php echo $member['photo_path'] ?? 'uploads/default.jpg'; ?>" 
+                          <img src="../<?php echo $member['photo_path'] ?? 'uploads/default.jpg'; ?>" 
                                class="rounded-circle"
                                alt="Profile Photo" 
                                width="50" 
                                height="50"
-                               onerror="this.src='/Gym_MembershipSE-XLB/uploads/default.jpg'"
+                               onerror="this.src='../uploads/default.jpg'"
                                style="object-fit: cover;">
                       </td>
                       <td><?php echo htmlspecialchars($member['full_name']); ?></td>
@@ -179,7 +179,7 @@ function viewMemberDetails(userId) {
     modal.show();
 
     // Fetch member details with full path
-    fetch(`/Gym_MembershipSE-XLB/admin/pages/members/members_new.php?ajax_view_member=1&user_id=${userId}`)
+    fetch(`../admin/pages/members/members_new.php?ajax_view_member=1&user_id=${userId}`)
         .then(response => {
             if (!response.ok) {
                 return response.text().then(text => {
@@ -197,7 +197,7 @@ function viewMemberDetails(userId) {
             const modalContent = `
                 <div class="row">
                     <div class="col-md-4 text-center mb-3">
-                        <img src="${data.photo_path ? '/Gym_MembershipSE-XLB/' + data.photo_path : '/Gym_MembershipSE-XLB/assets/img/default-profile.jpg'}" 
+                        <img src="${data.photo_path ? '../' + data.photo_path : '../assets/img/default-profile.jpg'}" 
                              alt="Profile Photo" 
                              class="img-fluid rounded-circle mb-2" 
                              style="width: 150px; height: 150px; object-fit: cover;">

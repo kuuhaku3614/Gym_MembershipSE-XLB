@@ -774,7 +774,7 @@ function renderRentalServices($rentals) {
             formData.append('generate_credentials', '1');
             
             console.log("Sending request to generate credentials...");
-            fetch('/Gym_MembershipSE-XLB/admin/pages/members/add_member.php', {
+            fetch('../admin/pages/members/add_member.php', {
                 method: 'POST',
                 body: formData
             })
@@ -1011,7 +1011,7 @@ function renderRentalServices($rentals) {
         }
         
         // Submit the form
-        fetch('/Gym_MembershipSE-XLB/admin/pages/members/add_member.php', {
+        fetch('../admin/pages/members/add_member.php', {
             method: 'POST',
             body: formData
         })

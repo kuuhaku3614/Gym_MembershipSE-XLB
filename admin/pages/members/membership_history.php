@@ -71,7 +71,7 @@ $pdo = $database->connect();
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h2 class="card-title mb-0">Membership History</h2>
-                            <a href="/Gym_MembershipSE-XLB/admin/member_status" class="btn btn-secondary">
+                            <a href="../admin/member_status" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Back to Member Status
                             </a>
                         </div>
@@ -127,7 +127,7 @@ $pdo = $database->connect();
             // Initialize DataTable
             const historyTable = $('#historyTable').DataTable({
                 ajax: {
-                    url: '/Gym_MembershipSE-XLB/admin/pages/members/functions/membership_history.class.php?action=getAll',
+                    url: '../admin/pages/members/functions/membership_history.class.php?action=getAll',
                     dataSrc: function(json) {
                         if (json.error) {
                             console.error('Error:', json.error);
@@ -160,7 +160,7 @@ $pdo = $database->connect();
                 const membershipId = $(this).data('membership');
                 // Load membership details via AJAX
                 $.ajax({
-                    url: '/Gym_MembershipSE-XLB/admin/pages/members/functions/membership_history.class.php',
+                    url: '../admin/pages/members/functions/membership_history.class.php',
                     method: 'GET',
                     data: { 
                         action: 'getDetails',
