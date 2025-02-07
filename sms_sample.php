@@ -17,7 +17,7 @@ function formatPhilippinesNumber($number) {
 try {
     // Your Twilio Account SID and Auth Token
     $account_sid = 'ACc1f1f89f87b2b2e23e7c037aad8abae0';
-    $auth_token = 'e8b25acb4e646642c43f8d751c75aaf8';
+    $auth_token = '5f9d1a083156c3c38a641129fdf07be1';
     $verify_sid = 'VA48723f597c526f0dcf1203976de0780f';
     
     // Format the test number
