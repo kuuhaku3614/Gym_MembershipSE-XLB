@@ -1,9 +1,14 @@
 /* Scope all styles to only affect elements within services-page */
+@font-face {
+  font-family: myFont;
+  src: url(../AC.ttf);
+}
+
 .services-page * {
   margin: 0;
   padding: 0;
   border: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: myFont;
 }
 
 .services-page body {
@@ -14,6 +19,25 @@
 .services-page .bg-custom-red {
   background-color: rgba(255, 0, 0, 0.9);
   backdrop-filter: blur(10px);
+}
+.services-header {
+  height: 60vh;
+  background-image: url(services-header.jpeg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: fadeIn 1.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .services-page .card {
@@ -31,7 +55,7 @@
 }
 
 .services-page .card-header {
-  background-color: var(--primary-color) !important;
+  background: linear-gradient(45deg, #ff0000, #cc0000) !important;
   flex: 3;
   display: flex;
   align-items: center;
@@ -49,15 +73,17 @@
   background: rgba(255, 255, 255, 0.8);
   border: none;
 }
-
 .services-page .card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  align-items: flex-start; /* Added this line */
+  text-align: left; /* Added this line */
   padding: 0.8rem 1rem;
   background: rgba(255, 255, 255, 0.5);
   margin-top: 0;
+  line-height: 1;
 }
 
 .services-page .card-header h3 {
@@ -75,11 +101,21 @@
 }
 
 .services-page .content-wrapper {
-  width: 95%;
+  width: 80%;
   max-width: 1400px;
   margin: 0 auto;
   padding: 1.5rem;
   position: relative;
+}
+
+.button-shortcuts button {
+  font-size: 1.2rem;
+  width: 100%;
+  background: linear-gradient(45deg, #cc0000, #ff3333);
+}
+
+.button-shortcuts button:hover {
+  background: linear-gradient(45deg, #ff3333, #cc0000);
 }
 
 .services-page .container-fluid {
@@ -101,7 +137,8 @@
 /* Price text styling */
 .services-page .card-text.mb-1 {
   font-weight: 600;
-  color: #ff0000;
+  font-family: Helvetica, sans-serif;
+  color: #404040;
   margin-bottom: 0.5rem !important;
 }
 
@@ -150,6 +187,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  border-radius: 0;
   height: 100%;
 }
 
@@ -164,11 +202,10 @@
 }
 
 .services-page .section-heading {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 2.5rem;
   margin-bottom: 0;
   padding: 10px;
-  color: #333;
+  color: #414141;
 }
 
 .services-page .row {
@@ -393,7 +430,6 @@
 }
 
 .section-heading {
-  color: var(--primary-color);
   margin-bottom: 1.5rem;
   font-weight: bold;
 }
@@ -420,8 +456,4 @@
 /* Make sure these important rules are applied */
 .card .card-header {
   background-color: var(--primary-color) !important;
-}
-
-.section-heading {
-  color: var(--primary-color) !important;
 }
