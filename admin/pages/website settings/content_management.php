@@ -3,10 +3,10 @@
 session_start();
 
 // Include database connection
-require_once '../config.php';
+require_once 'config.php';
 
 // Define upload directory
-$uploadDir = dirname(__DIR__, 1) . '/cms_img';
+$uploadDir = dirname(__DIR__, 3) . '/cms_img';
 
 // Ensure upload directory exists
 if (!file_exists($uploadDir)) {
@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Redirect to prevent form resubmission
-    header("Location: content_management.php");
+    header("Location: /Gym_MembershipSE-XLB/admin/content_management");
     exit();
 }
 

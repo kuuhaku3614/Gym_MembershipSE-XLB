@@ -191,10 +191,11 @@ $galleryImages = fetchExistingContent('gallery_images');
 
 </style>
 
-<h1 class="nav-title">Website Settings</h1>
+<h1 class="nav-title">Website</h1>
 <!-- HTML -->
-<a class="button-link" href="../../../website/content_management.php"><button type="button" class="btn btn-primary">Update website</button></a>
-
+<a href="/Gym_MembershipSE-XLB/admin/content_management" class="button-link">
+    <button type="button" class="btn btn-primary">Update website</button>
+</a>
     <!-- Welcome Section Update -->
     <div class="section" data-section="welcome">
         <h2>Welcome Section</h2>

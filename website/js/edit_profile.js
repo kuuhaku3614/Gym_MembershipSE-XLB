@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Save changes with success animation
+    // Save changes with success message and reload
     saveBtn.addEventListener('click', async function() {
         if (!hasChanges) return;
 
@@ -121,28 +121,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (success) {
-                // Show success animation
-                saveBtn.innerHTML = '<i class="fas fa-check"></i>';
-                saveBtn.classList.add('success');
+                // Show success message
+                showSuccessMessage('Changes saved successfully!');
                 
-                // Update original values
-                originalUsername = usernameInput.value;
-                originalPhoto = document.getElementById('profilePhoto').src;
-                
-                // Update UI after successful save
+                // Reload the page after a short delay
                 setTimeout(() => {
-                    hasChanges = false;
-                    isEditing = false;
-                    inputWrapper.classList.remove('editing');
-                    saveActions.classList.remove('visible');
-                    saveBtn.innerHTML = originalContent;
-                    saveBtn.classList.remove('success');
-                    saveBtn.disabled = false;
-                    cancelBtn.style.display = 'block';
-                    
-                    // Update header UI
-                    updateHeaderUI(usernameInput.value, originalPhoto);
-                }, 1000);
+                    window.location.reload();
+                }, 2000);
             } else {
                 resetSaveButton(originalContent);
             }
@@ -167,6 +152,17 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDiv.textContent = message;
         errorDiv.classList.add('visible');
         inputWrapper.classList.add('error');
+    }
+
+    // Show success message
+    function showSuccessMessage(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.textContent = message;
+        document.body.appendChild(successDiv);
+        setTimeout(() => {
+            successDiv.remove();
+        }, 1000);
     }
 
     // Reset all changes
@@ -205,17 +201,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function checkUsername(username) {
         try {
-            // Log the current page URL for debugging
             console.log('Current page URL:', window.location.href);
+            const fetchUrl = '/gym_membershipse-xlb/website/includes/update_profile.php';
+            console.log('Attempting to fetch from:', fetchUrl);
             
-            // Get the base URL dynamically
-            const pathArray = window.location.pathname.split('/');
-            const baseUrl = '/' + pathArray[1]; // Adjust this based on your actual path structure
-            
-            const url = `${baseUrl}/includes/update_profile.php`;
-            console.log('Attempting to fetch from:', url);
-    
-            const response = await fetch(url, {
+            const response = await fetch(fetchUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -223,14 +213,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: `action=check_username&username=${encodeURIComponent(username)}`
             });
             
-            console.log('Response status:', response.status);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('Response data:', data);
             
             if (data.exists) {
                 showUsernameError('Username already exists');
@@ -240,9 +227,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             }
         } catch (error) {
+            console.error('Response status:', error.message);
             console.error('Detailed error checking username:', error);
             console.error('Error stack:', error.stack);
-            showUsernameError('Error checking username availability');
             return false;
         }
     }
@@ -271,17 +258,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return errorDiv;
     }
 
-
-    
     async function updateUsername(username) {
         try {
-            const pathArray = window.location.pathname.split('/');
-            const baseUrl = '/' + pathArray[1];
-            const url = `${baseUrl}/includes/update_profile.php`;
-            
-            console.log('Attempting to update username at:', url);
-            
-            const response = await fetch(url, {
+            const response = await fetch('/gym_membershipse-xlb/website/includes/update_profile.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -289,22 +268,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: `action=update_username&username=${encodeURIComponent(username)}`
             });
             
-            console.log('Update username response status:', response.status);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('Update username response data:', data);
-            
             return {
                 success: data.status === 'success',
                 message: data.message
             };
         } catch (error) {
-            console.error('Detailed error updating username:', error);
-            console.error('Error stack:', error.stack);
+            console.error('Error updating username:', error);
             return {
                 success: false,
                 message: 'Error updating username'
@@ -313,38 +287,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function updatePhoto(file) {
+        const formData = new FormData();
+        formData.append('action', 'update_photo');
+        formData.append('photo', file);
+
         try {
-            const pathArray = window.location.pathname.split('/');
-            const baseUrl = '/' + pathArray[1];
-            const url = `${baseUrl}/includes/update_profile.php`;
-            
-            console.log('Attempting to update photo at:', url);
-            
-            const formData = new FormData();
-            formData.append('action', 'update_photo');
-            formData.append('photo', file);
-    
-            const response = await fetch(url, {
+            const response = await fetch('/gym_membershipse-xlb/website/includes/update_profile.php', {
                 method: 'POST',
                 body: formData
             });
-            
-            console.log('Update photo response status:', response.status);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('Update photo response data:', data);
-            
             return {
                 success: data.status === 'success',
                 message: data.message
             };
         } catch (error) {
-            console.error('Detailed error updating photo:', error);
-            console.error('Error stack:', error.stack);
+            console.error('Error updating photo:', error);
             return {
                 success: false,
                 message: 'Error updating photo'

@@ -11,8 +11,6 @@ if (session_status() === PHP_SESSION_NONE) {
 // Set JSON content type header
 header('Content-Type: application/json');
 
-// Include database configuration
-require_once 'config.php';
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
@@ -100,56 +98,75 @@ try {
                 }
                 break;
                 
-            case 'update_photo':
-                if (!isset($_FILES['photo'])) {
-                    throw new Exception("No photo file uploaded");
-                }
-                
-                $file = $_FILES['photo'];
-                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-                
-                if (!in_array($file['type'], $allowedTypes)) {
-                    $response = ['status' => 'error', 'message' => 'Invalid file type'];
-                    break;
-                }
-                
-                $uploadDir = '../../uploads/';
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                
-                $fileName = 'profile_' . $userId . '_' . uniqid() . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filePath = $uploadDir . $fileName;
-                
-                if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                    // Deactivate old photo
-                    $stmt = $conn->prepare("UPDATE profile_photos SET is_active = 0 WHERE user_id = ?");
+                case 'update_photo':
+                    if (!isset($_FILES['photo'])) {
+                        throw new Exception("No photo file uploaded");
+                    }
+                    
+                    $file = $_FILES['photo'];
+                    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    
+                    if (!in_array($file['type'], $allowedTypes)) {
+                        $response = ['status' => 'error', 'message' => 'Invalid file type'];
+                        break;
+                    }
+                    
+                    $uploadDir = '../../uploads/';
+                    if (!file_exists($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    // Get existing photo path
+                    $stmt = $conn->prepare("SELECT photo_path FROM profile_photos WHERE user_id = ? AND is_active = 1");
                     if (!$stmt) {
                         throw new Exception("Prepare failed: " . $conn->error);
                     }
                     
                     $stmt->bind_param("i", $userId);
                     $stmt->execute();
+                    $result = $stmt->get_result();
+                    $existingPhoto = $result->fetch_assoc();
                     
-                    // Insert new photo
-                    $relativeFilePath = '../../uploads/' . $fileName;
-                    $stmt = $conn->prepare("INSERT INTO profile_photos (user_id, photo_path, is_active) VALUES (?, ?, 1)");
-                    if (!$stmt) {
-                        throw new Exception("Prepare failed: " . $conn->error);
+                    // Generate new filename
+                    $fileName = 'profile_' . $userId . '_' . uniqid() . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filePath = $uploadDir . $fileName;
+                    
+                    // Delete existing photo file if it exists
+                    if ($existingPhoto && file_exists($existingPhoto['photo_path'])) {
+                        unlink($existingPhoto['photo_path']);
                     }
                     
-                    $stmt->bind_param("is", $userId, $relativeFilePath);
-                    
-                    if ($stmt->execute()) {
-                        $_SESSION['user_photo'] = $relativeFilePath;
-                        $response = ['status' => 'success', 'message' => 'Photo updated successfully', 'path' => $relativeFilePath];
+                    if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                        $relativeFilePath = 'uploads/' . $fileName;
+                        
+                        if ($existingPhoto) {
+                            // Update existing photo record
+                            $stmt = $conn->prepare("UPDATE profile_photos SET photo_path = ? WHERE user_id = ? AND is_active = 1");
+                            if (!$stmt) {
+                                throw new Exception("Prepare failed: " . $conn->error);
+                            }
+                            
+                            $stmt->bind_param("si", $relativeFilePath, $userId);
+                        } else {
+                            // Insert new photo record if none exists
+                            $stmt = $conn->prepare("INSERT INTO profile_photos (user_id, photo_path, is_active) VALUES (?, ?, 1)");
+                            if (!$stmt) {
+                                throw new Exception("Prepare failed: " . $conn->error);
+                            }
+                            
+                            $stmt->bind_param("is", $userId, $relativeFilePath);
+                        }
+                        
+                        if ($stmt->execute()) {
+                            $_SESSION['user_photo'] = $relativeFilePath;
+                            $response = ['status' => 'success', 'message' => 'Photo updated successfully', 'path' => $relativeFilePath];
+                        } else {
+                            throw new Exception("Execute failed: " . $stmt->error);
+                        }
                     } else {
-                        throw new Exception("Execute failed: " . $stmt->error);
+                        throw new Exception("Failed to move uploaded file");
                     }
-                } else {
-                    throw new Exception("Failed to move uploaded file");
-                }
-                break;
+                    break;
                 
             default:
                 $response = ['status' => 'error', 'message' => 'Invalid action'];
