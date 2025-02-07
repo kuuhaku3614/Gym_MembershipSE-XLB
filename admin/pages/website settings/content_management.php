@@ -125,10 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([':desc' => $_POST['about_description']]);
         }
 
-        // In your POST handler, update contact section
         if (isset($_POST['update_contact'])) {
             $stmt = $pdo->prepare("UPDATE website_content SET 
-                location_name = :location_name,
+                location = :location_name,
                 phone = :phone, 
                 email = :email,
                 latitude = :lat,
@@ -141,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':lat' => $_POST['latitude'] ?? null,
                 ':lon' => $_POST['longitude'] ?? null
             ]);
-        }
+         }
 
         // Gym Offer Upload
         if (isset($_POST['add_offer'])) {
@@ -581,6 +580,9 @@ $galleryImages = fetchExistingContent('gallery_images');
             <label>Email:</label>
             <input type="email" name="email" required>
 
+            <label>Selected Location:</label>
+            <input type="text" id="displayLocation" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+
             <div id="mapModalTrigger" class="btn btn-primary">Select Location on Map</div>
             <br>
             <input type="submit" name="update_contact" value="Update Contact Information">
@@ -624,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const locationNameInput = document.getElementById('locationName');
 
     // Pre-fill existing contact info
-    const existingLocation = "<?php echo htmlspecialchars($contactContent['location_name'] ?? ''); ?>";
+    const existingLocation = "<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>";
     const existingLat = <?php echo $contactContent['latitude'] ?? 6.913126; ?>;
     const existingLng = <?php echo $contactContent['longitude'] ?? 122.072516; ?>;
     const existingPhone = "<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>";
@@ -640,33 +642,142 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let map, marker;
 
-    function initMap() {
-        map = L.map('location-picker-map').setView([initialLat, initialLng], 16);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
-        selectedLocationDisplay.value = existingLocation || `${initialLat.toFixed(6)}, ${initialLng.toFixed(6)}`;
-
-        marker.on('dragend', function(e) {
-            const { lat, lng } = e.target.getLatLng();
-            updateLocationDetails(lat, lng);
-        });
-
-        map.on('click', function(e) {
-            const { lat, lng } = e.latlng;
-            marker.setLatLng([lat, lng]);
-            updateLocationDetails(lat, lng);
-        });
-    }
-
+    // Define the updateLocationDetails function
     function updateLocationDetails(lat, lng) {
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+    // Update marker position
+    marker.setLatLng([lat, lng]);
+    
+    // Update hidden inputs with coordinates
+    latInput.value = lat;
+    lngInput.value = lng;
+    
+    // Fetch location details using reverse geocoding with detailed address components
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en`)
+        .then(response => response.json())
+        .then(data => {
+            // Create a more readable location string
+            const address = data.address;
+            const components = [];
+            
+            // Add relevant address components if they exist
+            if (address.road) components.push(address.road);
+            if (address.suburb) components.push(address.suburb);
+            if (address.city || address.town || address.village) {
+                components.push(address.city || address.town || address.village);
+            }
+            if (address.state) components.push(address.state);
+            if (address.country) components.push(address.country);
+            
+            // Join components with commas
+            const locationName = components.join(', ');
+            
+            // Update display and hidden inputs
+            selectedLocationDisplay.value = locationName;
+            locationNameInput.value = locationName;
+        })
+        .catch(error => {
+            console.error('Error fetching location details:', error);
+            const fallbackLocation = `Location at ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            selectedLocationDisplay.value = fallbackLocation;
+            locationNameInput.value = fallbackLocation;
+        });
+}
+function addSearchControl() {
+    const searchContainer = document.createElement('div');
+    searchContainer.style.cssText = 'position: absolute; top: 10px; left: 50px; z-index: 1000; width: 300px;';
+    
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search location...';
+    searchInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+    
+    searchContainer.appendChild(searchInput);
+    document.getElementById('location-picker-map').appendChild(searchContainer);
+    
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = this.value;
+            if (query.length > 2) {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            const location = data[0];
+                            map.setView([location.lat, location.lon], 16);
+                            updateLocationDetails(location.lat, location.lon);
+                        }
+                    })
+                    .catch(error => console.error('Error searching location:', error));
+            }
+        }, 500);
+    });
+}
+function initMap() {
+    map = L.map('location-picker-map').setView([initialLat, initialLng], 16);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+    
+    // Initialize with existing location details
+    updateLocationDetails(initialLat, initialLng);
+    
+    // Add search control
+    addSearchControl();
+    
+    // Update location details when marker is dragged
+    marker.on('dragend', function(e) {
+        const { lat, lng } = e.target.getLatLng();
+        updateLocationDetails(lat, lng);
+    });
+
+    // Update location details when map is clicked
+    map.on('click', function(e) {
+        const { lat, lng } = e.latlng;
+        updateLocationDetails(lat, lng);
+    });
+}
+
+    // Modal event listeners
+    modalTrigger.addEventListener('click', function () {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        if (!map) {
+            initMap();
+        }
+    });
+
+    closeModalButton.addEventListener('click', function () {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    saveLocationButton.addEventListener('click', function() {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    });
+
+
+    function updateLocationInfo(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1`)
             .then(response => response.json())
             .then(data => {
-                let locationName = data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                // Create a detailed location string
+                let locationName = data.display_name;
+                
+                // Update input fields
                 selectedLocationDisplay.value = locationName;
                 latInput.value = lat;
                 lngInput.value = lng;
@@ -674,10 +785,12 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(error => {
                 console.error('Error fetching location details:', error);
-                selectedLocationDisplay.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                const fallbackLocation = `Location at ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                
+                selectedLocationDisplay.value = fallbackLocation;
                 latInput.value = lat;
                 lngInput.value = lng;
-                locationNameInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                locationNameInput.value = fallbackLocation;
             });
     }
 
@@ -706,6 +819,26 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.style.overflow = '';
         }
     });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    const displayLocation = document.getElementById('displayLocation');
+    const locationNameInput = document.getElementById('locationName');
+
+    // Update display when location is selected
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                displayLocation.value = locationNameInput.value;
+            }
+        });
+    });
+
+    observer.observe(locationNameInput, {
+        attributes: true
+    });
+
+    // Set initial value if exists
+    displayLocation.value = locationNameInput.value || '';
 });
 </script>
     <!-- Add New Product -->
