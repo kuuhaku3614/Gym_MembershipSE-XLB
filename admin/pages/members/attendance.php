@@ -1,209 +1,127 @@
 <?php
+$_SESSION['allow_checkin_access'] = true;
 require_once 'config.php';
+require_once 'functions/attendance_class.php';
 
-class AttendanceSystem {
-    private $pdo;
-    
-    public function __construct($pdo) {
-        $this->pdo = $pdo;
-    }
-    
-    public function getMembers($searchTerm = '') {
-        $query = "SELECT 
-            u.id AS user_id,
-            CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
-            u.username,
-            pp.photo_path,
-            a.time_in,
-            a.time_out,
-            a.status,
-            a.date
-        FROM personal_details pd
-        JOIN users u ON pd.user_id = u.id
-        LEFT JOIN profile_photos pp ON u.id = pp.user_id
-        LEFT JOIN attendance a ON u.id = a.user_id 
-            AND a.date = CURRENT_DATE()
-            AND a.status = 'checked_in'
-        JOIN transactions t ON u.id = t.user_id AND t.status = 'confirmed'
-        JOIN memberships m ON t.id = m.transaction_id AND m.status != 'expired'
-        WHERE u.role_id = (SELECT id FROM roles WHERE role_name = 'member')
-            AND u.is_active = 1
-            AND m.is_paid = 1";
-
-        if ($searchTerm) {
-            $query .= " AND (pd.first_name LIKE :search 
-                       OR pd.last_name LIKE :search 
-                       OR u.username LIKE :search)";
-        }
-
-        $query .= " GROUP BY u.id, full_name, u.username, pp.photo_path, a.time_in, a.time_out, a.status, a.date
-                    ORDER BY a.time_in DESC";
-
-        $stmt = $this->pdo->prepare($query);
-        
-        if ($searchTerm) {
-            $searchTerm = "%$searchTerm%";
-            $stmt->bindParam(':search', $searchTerm, PDO::PARAM_STR);
-        }
-        
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getAttendanceHistory($userId) {
-        $query = "SELECT 
-            ah.id AS history_id,
-            u.id AS user_id,
-            CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
-            u.username,
-            a.date,
-            ah.time_in,
-            ah.time_out,
-            ah.status,
-            ah.created_at AS history_timestamp
-        FROM attendance_history ah
-        JOIN attendance a ON ah.attendance_id = a.id
-        JOIN users u ON a.user_id = u.id
-        JOIN personal_details pd ON u.id = pd.user_id
-        WHERE u.id = :user_id
-        ORDER BY ah.created_at DESC";
-
-        $stmt = $this->pdo->prepare($query);
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-}
 ?>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-    <div class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Member Attendance</h1>
-                <div class="relative">
-                    <input type="text" 
-                           id="searchInput" 
-                           class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                           placeholder="Search members...">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                </div>
+<div class="container-fluid px-4 py-5">
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h2 class="card-title mb-0">Today's Member Attendance</h2>
+            <div class="mt-2">
+                <a href="/gym_membershipse-xlb/website/checkin_page.php" class="me-2">
+                    <button class="btn btn-primary">Checkin Page</button>
+                </a>
+                <button onclick="openHistoryModal()" class="btn btn-info">
+                    <i class="bi bi-clock-history"></i> Overall History
+                </button>
             </div>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full table-auto">
+        </div>
+        <div class="card-body">
+            <?php
+            $attendance = new AttendanceSystem($pdo);
+            $members = $attendance->getTodayCheckins();
+            
+            if (empty($members)): ?>
+                <div class="alert alert-info">
+                    No members have checked in today.
+                </div>
+            <?php else: ?>
+            <div class="table-responsive">
+                <table id="attendanceTable" class="table table-striped table-bordered">
                     <thead>
-                        <tr class="bg-gray-50">
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Check-in Time</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <?php
-                        $attendance = new AttendanceSystem($pdo);
-                        $searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
-                        $members = $attendance->getMembers($searchTerm);
-                        
-                        foreach ($members as $member):
+                    <tbody>
+                        <?php foreach ($members as $member): 
+                            $isRecent = (time() - strtotime($member['time_in'])) <= 300; // 5 minutes = 300 seconds
                         ?>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <img src="<?= htmlspecialchars($member['photo_path'] ?? 'default-avatar.png') ?>" 
+                        <tr>
+                            <td>
+                                <img src="../<?= htmlspecialchars($member['photo_path'] ?? 'default-avatar.png') ?>" 
                                      alt="Profile" 
-                                     class="h-10 w-10 rounded-full object-cover">
+                                     class="rounded-circle"
+                                     style="width: 40px; height: 40px; object-fit: cover;">
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
-                                    <?= htmlspecialchars($member['full_name']) ?>
-                                </div>
+                            <td>
+                                <?= htmlspecialchars($member['full_name']) ?>
+                                <?php if ($isRecent): ?>
+                                    <span class="badge bg-warning text-dark">New</span>
+                                <?php endif; ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-500">
-                                    <?= htmlspecialchars($member['username']) ?>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-500">
-                                    <?= $member['time_in'] ? date('h:i A', strtotime($member['time_in'])) : 'Not checked in' ?>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    <?= $member['status'] === 'checked_in' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' ?>">
-                                    <?= $member['status'] ?? 'Not checked in' ?>
+                            <td><?= htmlspecialchars($member['username']) ?></td>
+                            <td><?= date('h:i A', strtotime($member['time_in'])) ?></td>
+                            <td>
+                                <span class="badge bg-success">
+                                    checked in
                                 </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <button onclick="openHistoryModal(<?= $member['user_id'] ?>)" 
-                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                                    View History
-                                </button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
+            <?php endif; ?>
         </div>
     </div>
+</div>
 
-    <!-- History Modal -->
-    <div id="historyModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-4/5 lg:w-3/4 shadow-lg rounded-md bg-white">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">Attendance History</h3>
-                <button onclick="closeHistoryModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
+<!-- History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Overall Attendance History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div id="historyContent" class="overflow-x-auto">
-                <!-- History content will be loaded here -->
+            <div class="modal-body">
+                <div id="historyContent"></div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value;
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set('search', searchTerm);
-        window.location.href = currentUrl.toString();
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#attendanceTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
     });
+});
 
-    // Modal functionality
-    function openHistoryModal(userId) {
-        document.getElementById('historyModal').classList.remove('hidden');
-        fetchAttendanceHistory(userId);
-    }
-
-    function closeHistoryModal() {
-        document.getElementById('historyModal').classList.add('hidden');
-    }
-
-    function fetchAttendanceHistory(userId) {
-        fetch(`get_history.php?user_id=${userId}`)
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('historyContent').innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('historyContent').innerHTML = 'Error loading history';
-            });
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('historyModal');
-        if (event.target === modal) {
-            closeHistoryModal();
+// Modal functionality
+function openHistoryModal() {
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    
+    // Show loading state
+    $('#historyContent').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
+    
+    // Fetch history data
+    $.ajax({
+        url: 'pages/members/functions/get_history.php',
+        success: function(response) {
+            $('#historyContent').html(response);
+            modal.show();
+        },
+        error: function() {
+            $('#historyContent').html('<div class="alert alert-danger">Error loading history</div>');
+            modal.show();
         }
-    }
-    </script>
+    });
+}
+</script>
