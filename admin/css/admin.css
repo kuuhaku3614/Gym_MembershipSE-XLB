@@ -50,7 +50,7 @@ h5 {
 
 .table-rowHead {
   background-color: #212529;
-  color: #ffffff;
+  color: black;
 }
 
 /* tables */
@@ -70,7 +70,7 @@ h5 {
 }
 .table thead th {
   background-color: #333;
-  color: white;
+  color: black;
 }
 .table tbody tr:nth-child(even) {
   background-color: #f2f2f2;

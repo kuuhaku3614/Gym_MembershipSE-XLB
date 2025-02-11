@@ -215,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }).get();
             const otherReason = $('#otherReasonText').val();
 
-            $.post('/admin/pages/accounts/accounts.php', {
+            $.post('pages/accounts/accounts.php', {
                 id: userId,
                 action: 'ban',
                 reasons: reasons,
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             e.preventDefault();
             const userId = $(this).data('userId');
 
-            $.post('/admin/pages/accounts/accounts.php', {
+            $.post('pages/accounts/accounts.php', {
                 id: userId,
                 action: 'unban'
             }, function(data) {

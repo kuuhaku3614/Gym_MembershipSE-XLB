@@ -1,6 +1,6 @@
 <?php
 session_start();
-
+$_SESSION['allow_checkin_access'] = true;
 require_once '../config.php';
 // Ensure the session contains the necessary information
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
@@ -19,8 +19,8 @@ if ($page === 'members') {
 }
 
 // Define role-based page access
-$adminPages = ['dashboard', 'members', 'members_new', 'add_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'announcement', 'website_settings', 'report', 'staff_management', 'staff_activity_log', 'coach_log'];
-$staffPages = ['dashboard', 'members', 'members_new', 'add_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'announcement', 'website_settings', 'report', 'staff_activity_log', 'coach_log'];
+$adminPages = ['dashboard', 'members', 'members_new', 'add_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'accounts', 'announcement', 'website_settings', 'report', 'staff_management', 'staff_activity_log', 'coach_log'];
+$staffPages = ['dashboard', 'members', 'members_new', 'add_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'accounts', 'announcement', 'website_settings', 'report', 'staff_activity_log', 'coach_log'];
 
 // Check if the user is authorized for the requested page
 if (

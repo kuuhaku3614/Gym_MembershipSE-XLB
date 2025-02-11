@@ -186,3 +186,9 @@
     [action] => update_photo
 )
 
+2025-02-11 06:08:41 - Request received
+2025-02-11 06:08:41 - POST data: Array
+(
+    [action] => update_photo
+)
+
