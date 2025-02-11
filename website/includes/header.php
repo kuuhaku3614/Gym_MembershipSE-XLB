@@ -128,7 +128,11 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                     id="user-dropdown" 
                     role="menu" 
                     aria-label="User menu options">
-                    <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
+                    <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+                        <a href="coach_profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
+                    <?php else: ?>
+                        <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
+                    <?php endif; ?>
                     <hr class="dropdown-divider" aria-hidden="true">
                     <a href="notifications.php" role="menuitem"> <i class="fas fa-bell pe-3"></i> Notifications</a>
                     <a href="" class="edit-profile-link" role="menuitem"> <i class="fas fa-user-edit pe-3"></i> Edit Profile</a>

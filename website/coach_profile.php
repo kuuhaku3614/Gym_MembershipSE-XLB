@@ -32,24 +32,102 @@
     include('includes/header.php');
 ?>
 
-    <header class="container-fluid" id="title">
-        <div class="container-xl" id="name" style="position: relative;">
-            <h1><?= $_SESSION['personal_details']['name'] ?></h1>
-            <?php if (isset($_SESSION['personal_details']['role_name'])): ?>
-                <?php if ($_SESSION['personal_details']['role_name'] === 'member'): ?>
-                    <h5>Member</h5>
-                <?php elseif ($_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                    <h5>Coach</h5>
-                <?php endif; ?>
-            <?php endif; ?>
-            <a href="profile.php" class="btn btn-link" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
-                <i class="fas fa-dumbbell"></i>
-            </a>
-        </div>
-    </header>
+<!-- Add required CSS for calendar -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<!-- Add required JS for calendar -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
-    <section>
-        <div class="container">
+<style>
+    .wrapper {
+        display: flex;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    #sidebar {
+        min-width: 250px;
+        max-width: 250px;
+        min-height: 100vh;
+        background: #343a40;
+        color: #fff;
+        transition: all 0.3s;
+    }
+
+    #sidebar .sidebar-header {
+        padding: 20px;
+        background: #2c3136;
+    }
+
+    #sidebar ul.components {
+        padding: 20px 0;
+    }
+
+    #sidebar ul li a {
+        padding: 10px 20px;
+        font-size: 1.1em;
+        display: block;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    #sidebar ul li a:hover {
+        background: #2c3136;
+    }
+
+    #content {
+        width: 100%;
+        padding: 20px;
+        min-height: 100vh;
+    }
+
+    #calendar {
+        background: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+
+    .active-nav {
+        background: #2c3136;
+    }
+</style>
+
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3><?= $_SESSION['personal_details']['name'] ?></h3>
+            <h5>Coach</h5>
+        </div>
+
+        <ul class="list-unstyled components">
+            <li>
+                <a href="#" class="active-nav" onclick="showSection('programs'); return false;">
+                    <i class="fas fa-dumbbell"></i> My Programs
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="showSection('members'); return false;">
+                    <i class="fas fa-users"></i> Program Members
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="showSection('calendar'); return false;">
+                    <i class="fas fa-calendar"></i> Calendar
+                </a>
+            </li>
+            <li>
+                <a href="profile.php">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <!-- Programs Section -->
+        <div id="programs-section">
             <div class="card">
                 <div class="card-header">
                     <h4>My Programs</h4>
@@ -109,10 +187,11 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-
-            <!-- Program Members Table -->
-            <div class="card mt-4 mb-4">
+        <!-- Members Section -->
+        <div id="members-section" style="display: none;">
+            <div class="card">
                 <div class="card-header">
                     <h4>Program Members</h4>
                 </div>
@@ -144,21 +223,17 @@
                                             <td><?= date('M d, Y', strtotime($member['start_date'])) ?></td>
                                             <td><?= date('M d, Y', strtotime($member['end_date'])) ?></td>
                                             <td>
-                                                <?php if ($member['membership_status'] === 'active'): ?>
+                                                <?php if (strtotime($member['end_date']) >= time()): ?>
                                                     <span class="badge bg-success">Active</span>
-                                                <?php elseif ($member['membership_status'] === 'expired'): ?>
-                                                    <span class="badge bg-danger">Expired</span>
-                                                <?php elseif ($member['membership_status'] === 'pending'): ?>
-                                                    <span class="badge bg-warning">Pending</span>
                                                 <?php else: ?>
-                                                    <span class="badge bg-secondary"><?= ucfirst($member['membership_status']) ?></span>
+                                                    <span class="badge bg-danger">Expired</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="7" class="text-center">No members have subscribed to your programs yet</td>
+                                        <td colspan="7" class="text-center">No members enrolled in your programs</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -166,85 +241,55 @@
                     </div>
                 </div>
             </div>
-
         </div>
-    </section>
 
-    <style>
-        :root {
-            --red: #ff0000 !important;
-            --white: #ffffff !important;
-            --black: #000000 !important;
-        }
+        <!-- Calendar Section -->
+        <div id="calendar-section" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Schedule Calendar</h4>
+                </div>
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        body {
-            background-color: whitesmoke !important;
-        }
+<script>
+    // Initialize calendar
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: [] // You can add events here
+        });
+        calendar.render();
+    });
 
-        header {
-            margin-bottom: 2rem !important;
-        }
+    // Function to switch between sections
+    function showSection(sectionName) {
+        // Hide all sections
+        document.getElementById('programs-section').style.display = 'none';
+        document.getElementById('members-section').style.display = 'none';
+        document.getElementById('calendar-section').style.display = 'none';
 
-        #title {
-            background-color: <?php echo (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach') ? '#000000' : 'var(--red)'; ?> !important;
-            color: white !important;
-            padding: 2rem 0 !important;
-            box-shadow: 0px 5px 10px gray !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
+        // Show selected section
+        document.getElementById(sectionName + '-section').style.display = 'block';
 
-        #name h1 {
-            font-size: 2.5rem !important;
-            font-weight: 900 !important;
-            font-style: italic !important;
-            font-family: arial !important;
-            margin: 0 !important;
-        }
+        // Update active state in sidebar
+        document.querySelectorAll('#sidebar a').forEach(a => a.classList.remove('active-nav'));
+        document.querySelector(`#sidebar a[onclick*="${sectionName}"]`).classList.add('active-nav');
 
-        #name h5 {
-            font-size: 1.25rem !important;
-            font-family: arial !important;
+        // Refresh calendar if calendar section is shown
+        if (sectionName === 'calendar') {
+            window.dispatchEvent(new Event('resize'));
         }
-
-        #name {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-        }
-
-        section {
-            width: 100% !important;
-            padding: 0 5% !important;
-            display: flex !important;
-            flex-wrap: wrap !important;
-        }
-
-        .card {
-            width: 100%;
-            margin-bottom: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .card-header {
-            background-color: var(--black);
-            color: var(--white);
-            padding: 1rem;
-            border-radius: 10px 10px 0 0;
-        }
-
-        .card-header h4 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .table {
-            margin-bottom: 0;
-        }
-
-        .table th {
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
-        }
-    </style>
+    }
+</script>
