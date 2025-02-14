@@ -212,7 +212,7 @@ require_once('includes/header.php');
 <section class="S-Staffs">
     
 <div class="design-container">
-    <div class="rhombus rhombus-3"></div>
+    <div class="rhombus rhombus-6"></div>
     <div class="rhombus rhombus-2"></div>
     <div class="rhombus rhombus-4"></div>
     </div>
