@@ -8,22 +8,29 @@
     }
 
     $coach = new Coach_class();
-    $message = '';
 
-    // Handle status toggle
-    if (isset($_POST['toggle_status']) && isset($_POST['program_id'])) {
-        $currentStatus = $_POST['current_status'];
+    // Handle program status toggle
+    if (isset($_POST['toggle_status'])) {
         $programId = $_POST['program_id'];
-        if ($coach->toggleProgramStatus($programId, $_SESSION['user_id'], $currentStatus)) {
-            echo "<script>alert('Program status updated successfully!');</script>";
-        } else {
-            echo "<script>alert('Failed to update program status.');</script>";
+        $currentStatus = $_POST['current_status'];
+        $success = $coach->toggleProgramStatus($programId, $_SESSION['user_id'], $currentStatus);
+        // For AJAX responses
+        if (isset($_POST['ajax'])) {
+            echo json_encode(['success' => $success]);
+            exit;
         }
     }
 
     $coachPrograms = $coach->getCoachPrograms($_SESSION['user_id']);
     include('../coach.nav.php');
 ?>
+
+<?php if (!empty($message)): ?>
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <?= $message ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php endif; ?>
 
 <div id="content">
     <div class="container-fluid">
@@ -51,36 +58,32 @@
                                         <?php foreach ($coachPrograms as $program): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($program['program_name']) ?></td>
-                                                <td><?= htmlspecialchars($program['description']) ?></td>
-                                                <td><?= htmlspecialchars($program['program_duration']) ?></td>
-                                                <td>₱<?= number_format($program['program_price'], 2) ?></td>
+                                                <td><?= htmlspecialchars($program['coach_program_description']) ?></td>
+                                                <td><?= htmlspecialchars($program['duration'] . ' ' . $program['duration_type']) ?></td>
+                                                <td>₱<?= number_format($program['coach_program_price'], 2) ?></td>
                                                 <td>
-                                                    <?php if ($program['program_status'] === 'active'): ?>
+                                                    <?php if ($program['coach_program_status'] === 'active'): ?>
                                                         <span class="badge bg-success">Active</span>
                                                     <?php else: ?>
                                                         <span class="badge bg-danger">Inactive</span>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
-                                                    <form method="POST" style="display: inline;">
-                                                        <input type="hidden" name="program_id" value="<?= $program['program_id'] ?>">
-                                                        <input type="hidden" name="current_status" value="<?= $program['program_status'] ?>">
-                                                        <?php if ($program['program_status'] === 'active'): ?>
-                                                            <button type="submit" name="toggle_status" class="btn btn-danger btn-sm">
-                                                                <i class="fas fa-times-circle"></i> Deactivate
-                                                            </button>
+                                                    <button type="button" 
+                                                            class="btn <?= $program['coach_program_status'] === 'active' ? 'btn-danger' : 'btn-success' ?> btn-sm"
+                                                            onclick="toggleStatus(<?= $program['coach_program_type_id'] ?>, '<?= $program['coach_program_status'] ?>', this)">
+                                                        <?php if ($program['coach_program_status'] === 'active'): ?>
+                                                            <i class="fas fa-times-circle"></i> Deactivate
                                                         <?php else: ?>
-                                                            <button type="submit" name="toggle_status" class="btn btn-success btn-sm">
-                                                                <i class="fas fa-check-circle"></i> Activate
-                                                            </button>
+                                                            <i class="fas fa-check-circle"></i> Activate
                                                         <?php endif; ?>
-                                                    </form>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="6" class="text-center">No programs available</td>
+                                            <td colspan="6" class="text-center">No programs found</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
@@ -92,3 +95,51 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleStatus(programId, currentStatus, button) {
+    // Create form data
+    const formData = new FormData();
+    formData.append('program_id', programId);
+    formData.append('current_status', currentStatus);
+    formData.append('toggle_status', '1');
+    formData.append('ajax', '1');
+
+    // Send AJAX request
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button and badge without page reload
+            const row = button.closest('tr');
+            const badge = row.querySelector('.badge');
+            const isCurrentlyActive = currentStatus === 'active';
+            
+            // Update badge
+            badge.className = isCurrentlyActive ? 'badge bg-danger' : 'badge bg-success';
+            badge.textContent = isCurrentlyActive ? 'Inactive' : 'Active';
+            
+            // Update button
+            button.className = isCurrentlyActive ? 'btn btn-success btn-sm' : 'btn btn-danger btn-sm';
+            button.innerHTML = isCurrentlyActive ? 
+                '<i class="fas fa-check-circle"></i> Activate' : 
+                '<i class="fas fa-times-circle"></i> Deactivate';
+            
+            // Update onclick handler
+            button.setAttribute('onclick', `toggleStatus(${programId}, '${isCurrentlyActive ? 'inactive' : 'active'}', this)`);
+            
+            // Show alert
+            alert('Program status updated successfully!');
+        } else {
+            alert('Failed to update program status.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update program status.');
+    });
+}
+</script>

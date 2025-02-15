@@ -198,6 +198,3 @@
 <button id="burgerMenu" class="burger-menu">
     <i class="fas fa-bars"></i>
 </button>
-
-<!-- Include navbar.js for mobile responsiveness -->
-<script src="../admin/js/navbar.js"></script>

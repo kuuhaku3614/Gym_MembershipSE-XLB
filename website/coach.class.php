@@ -4,84 +4,67 @@ require_once __DIR__ . '/../config.php';
 class Coach_class {
     protected $db;
 
-    function __construct() {
-        $this->db = new Database();
+    public function __construct() {
+        $this->db = new mysqli('localhost', 'root', '', 'gym_managementdb');
+        if ($this->db->connect_error) {
+            die("Connection failed: " . $this->db->connect_error);
+        }
     }
 
     public function getCoachPrograms($coachId) {
-        try {
-            $sql = "SELECT cpt.program_id, cpt.coach_id, cpt.status,
-                           pt.program_name, pt.description, 
-                           CONCAT(pt.duration, ' ', dt.type_name) as program_duration,
-                           cpt.price as program_price,
-                           cpt.status as program_status
-                    FROM coach_program_types cpt
-                    JOIN programs pt ON cpt.program_id = pt.id
-                    JOIN duration_types dt ON pt.duration_type_id = dt.id
-                    WHERE cpt.coach_id = ?";
-            
-            $stmt = $this->db->connect()->prepare($sql);
-            $stmt->execute([$coachId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error in getCoachPrograms: " . $e->getMessage());
-            return [];
-        }
+        $sql = "SELECT p.*, cpt.id as coach_program_type_id, cpt.price, cpt.status as coach_program_status, 
+                dt.type_name as duration_type,
+                cpt.price as coach_program_price,
+                cpt.status as coach_program_status,
+                cpt.description as coach_program_description
+                FROM programs p 
+                INNER JOIN coach_program_types cpt ON p.id = cpt.program_id 
+                JOIN duration_types dt ON p.duration_type_id = dt.id
+                WHERE cpt.coach_id = ? AND p.is_removed = 0";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $coachId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
     public function getProgramMembers($coachId) {
-        try {
-            $sql = "SELECT DISTINCT 
-                        u.user_id,
-                        CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) as member_name,
-                        p.program_name,
-                        CONCAT(p.duration, ' ', dt.type_name) as program_duration,
-                        cpt.price as program_price,
-                        ps.start_date,
-                        ps.end_date,
-                        ps.status as membership_status
-                    FROM coach_program_types cpt
-                    JOIN programs p ON cpt.program_id = p.id
-                    JOIN duration_types dt ON p.duration_type_id = dt.id
-                    JOIN program_subscriptions ps ON ps.program_id = cpt.program_id
-                    JOIN users u ON ps.user_id = u.user_id
-                    JOIN personal_details pd ON u.user_id = pd.user_id
-                    LEFT JOIN transactions t ON ps.transaction_id = t.id
-                    LEFT JOIN memberships m ON t.membership_id = m.id
-                    WHERE cpt.coach_id = ? 
-                    AND (t.status = 'confirmed' OR t.status IS NULL)
-                    ORDER BY ps.start_date DESC";
-            
-            $stmt = $this->db->connect()->prepare($sql);
-            $stmt->execute([$coachId]);
-            
-            // Add debug logging
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            error_log("Number of program members found: " . count($results));
-            return $results;
-        } catch (PDOException $e) {
-            error_log("Error in getProgramMembers: " . $e->getMessage());
-            return [];
-        }
+        $sql = "SELECT 
+                    ps.id as subscription_id,
+                    u.id as member_id,
+                    ps.program_id,
+                    ps.start_date,
+                    ps.end_date,
+                    ps.status as subscription_status,
+                    pd.first_name,
+                    pd.last_name,
+                    pd.phone_number as contact_no,
+                    p.program_name,
+                    p.duration,
+                    dt.type_name as duration_type
+                FROM program_subscriptions ps
+                INNER JOIN programs p ON ps.program_id = p.id
+                INNER JOIN users u ON ps.transaction_id IN (SELECT id FROM transactions WHERE user_id = u.id)
+                INNER JOIN personal_details pd ON u.id = pd.user_id
+                INNER JOIN duration_types dt ON p.duration_type_id = dt.id
+                WHERE ps.coach_id = ? AND ps.is_paid = 1
+                ORDER BY ps.created_at DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $coachId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function toggleProgramStatus($programId, $coachId, $currentStatus) {
+    public function toggleProgramStatus($coachProgramTypeId, $coachId, $currentStatus) {
         try {
-            $newStatus = ($currentStatus === 'active') ? 'inactive' : 'active';
-            
-            $sql = "UPDATE coach_program_types 
-                    SET status = ? 
-                    WHERE program_id = ? AND coach_id = ?";
-            
-            $stmt = $this->db->connect()->prepare($sql);
-            $result = $stmt->execute([$newStatus, $programId, $coachId]);
-            
-            if (!$result) {
-                error_log("Failed to update program status. Program ID: $programId, Coach ID: $coachId");
-            }
-            return $result;
-        } catch (PDOException $e) {
-            error_log("Error in toggleProgramStatus: " . $e->getMessage());
+            $newStatus = $currentStatus === 'active' ? 'inactive' : 'active';
+            $sql = "UPDATE coach_program_types SET status = ? WHERE id = ? AND coach_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param("sii", $newStatus, $coachProgramTypeId, $coachId);
+            return $stmt->execute() && $stmt->affected_rows > 0;
+        } catch (Exception $e) {
             return false;
         }
     }

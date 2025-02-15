@@ -28,7 +28,7 @@
                                         <th>Member Name</th>
                                         <th>Program</th>
                                         <th>Duration</th>
-                                        <th>Price</th>
+                                        <th>Contact</th>
                                         <th>Start Date</th>
                                         <th>End Date</th>
                                         <th>Status</th>
@@ -38,24 +38,23 @@
                                     <?php if (!empty($members)): ?>
                                         <?php foreach ($members as $member): ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($member['member_name']) ?></td>
+                                                <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?></td>
                                                 <td><?= htmlspecialchars($member['program_name']) ?></td>
-                                                <td><?= htmlspecialchars($member['program_duration']) ?></td>
-                                                <td>₱<?= number_format($member['program_price'], 2) ?></td>
+                                                <td><?= htmlspecialchars($member['duration'] . ' ' . $member['duration_type']) ?></td>
+                                                <td><?= htmlspecialchars($member['contact_no']) ?></td>
                                                 <td><?= date('M d, Y', strtotime($member['start_date'])) ?></td>
                                                 <td><?= date('M d, Y', strtotime($member['end_date'])) ?></td>
                                                 <td>
-                                                    <?php if (strtotime($member['end_date']) >= time()): ?>
-                                                        <span class="badge bg-success">Active</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-danger">Expired</span>
-                                                    <?php endif; ?>
+                                                    <span class="badge bg-<?= $member['subscription_status'] === 'active' ? 'success' : 
+                                                        ($member['subscription_status'] === 'expiring' ? 'warning' : 'danger') ?>">
+                                                        <?= ucfirst($member['subscription_status']) ?>
+                                                    </span>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="7" class="text-center">No members enrolled in your programs</td>
+                                            <td colspan="7" class="text-center">No members found</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
