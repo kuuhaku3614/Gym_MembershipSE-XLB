@@ -44,9 +44,13 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: [], // You can add events here
-            editable: true,
-            selectable: true
+            events: <?php echo json_encode($coach->getCalendarEvents($_SESSION['user_id'])); ?>,
+            editable: false,
+            selectable: true,
+            eventClick: function(info) {
+                // Show event details when clicked
+                alert('Member: ' + info.event.title + '\nFrom: ' + info.event.startStr + '\nTo: ' + info.event.endStr);
+            }
         });
         calendar.render();
     });

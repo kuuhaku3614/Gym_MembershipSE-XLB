@@ -68,5 +68,46 @@ class Coach_class {
             return false;
         }
     }
+
+    public function getCalendarEvents($coachId) {
+        $sql = "SELECT 
+                    ps.id as subscription_id,
+                    ps.program_id,
+                    ps.start_date,
+                    ps.end_date,
+                    ps.status as subscription_status,
+                    pd.first_name,
+                    pd.last_name,
+                    p.program_name,
+                    p.duration,
+                    dt.type_name as duration_type
+                FROM program_subscriptions ps
+                INNER JOIN programs p ON ps.program_id = p.id
+                INNER JOIN users u ON ps.transaction_id IN (SELECT id FROM transactions WHERE user_id = u.id)
+                INNER JOIN personal_details pd ON u.id = pd.user_id
+                INNER JOIN duration_types dt ON p.duration_type_id = dt.id
+                WHERE ps.coach_id = ? AND ps.is_paid = 1 AND ps.status = 'active'";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $coachId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $events = array();
+        while ($row = $result->fetch_assoc()) {
+            $events[] = array(
+                'id' => $row['subscription_id'],
+                'title' => $row['first_name'] . ' ' . $row['last_name'] . ' - ' . $row['program_name'],
+                'start' => $row['start_date'],
+                'end' => date('Y-m-d', strtotime($row['end_date'] . ' +1 day')), // Add 1 day to include the end date
+                'backgroundColor' => '#3788d8',
+                'borderColor' => '#3788d8',
+                'textColor' => '#ffffff',
+                'allDay' => true
+            );
+        }
+        
+        return $events;
+    }
 }
 ?>
