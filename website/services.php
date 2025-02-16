@@ -23,7 +23,7 @@
             background-color: #efefef!important;
         }
         .home-navbar{
-            background-color: red;
+            background-color: #c92f2f;
             position: fixed;
             border-radius: 0;
         }
@@ -114,7 +114,7 @@
                 <?php foreach ($special_plans as $arr){ ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">
                         <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
-                            <div class="card shadow">
+                            <div class="card">
                                 <div class="card-header text-white text-center">
                                     <h2 class="fw-bold mb-0"><?= $arr['plan_name'] ?></h2>
                                 </div>
@@ -137,7 +137,7 @@
                 <?php foreach ($standard_plans as $arr){ ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">
                         <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
-                            <div class="card shadow">
+                            <div class="card">
                                 <div class="card-header text-white text-center">
                                     <h2 class="fw-bold mb-0"><?= $arr['plan_name'] ?></h2>
                                 </div>
@@ -160,7 +160,7 @@
                 <?php foreach ($walkin as $arr){ ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">
                         <a href="services/avail_walkin.php?id=<?= $arr['walkin_id'] ?>" class="program-link">
-                            <div class="card shadow">
+                            <div class="card">
                                 <div class="card-header text-white text-center">
                                     <h2 class="fw-bold mb-0">Walk-in</h2>
                                 </div>

@@ -50,7 +50,7 @@ $result = $pdo->query($sql);
 
 include('includes/header.php');
 ?>
-
+<link rel="stylesheet" href="../css/browse_services.css">
 <style>
         html{
             background-color: transparent;

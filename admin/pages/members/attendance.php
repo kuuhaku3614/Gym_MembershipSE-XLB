@@ -60,7 +60,7 @@ require_once 'functions/attendance_class.php';
                             <td><?= date('h:i A', strtotime($member['time_in'])) ?></td>
                             <td>
                                 <span class="badge bg-success">
-                                    checked in
+                                    <?= htmlspecialchars($member['status']) ?>
                                 </span>
                             </td>
                         </tr>

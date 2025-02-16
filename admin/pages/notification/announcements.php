@@ -294,6 +294,11 @@ body {
     </form>
     <!-- Manage Announcements Section -->
     <div class="table-responsive">
+    <div class="mt-4">
+        <button type="button" class="btn btn-secondary" id="showPreviousBtn">
+            <i class="fas fa-history me-2"></i>View Previous Announcements
+        </button>
+    </div>
     <table id="announcementsTable" class="table table-striped table-hover">
     <thead>
         <tr>
@@ -312,7 +317,7 @@ body {
                 <td><?= ucfirst(htmlspecialchars($announcement['announcement_type'])) ?></td>
                 <td><?= htmlspecialchars($announcement['message']) ?></td>
                 <td>
-                    <button class="btn btn-danger btn-sm remove-btn" data-id="<?= $announcement['id'] ?>">
+                    <button class='btn btn-danger btn-sm remove-btn' data-id='<?= $announcement["id"] ?>'>
                         <i class="fas fa-trash-alt me-1"></i>Remove
                     </button>
                 </td>
@@ -354,7 +359,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: '../admin/pages/notification/functions/insert_announcement.php',
+            url: 'pages/notification/functions/insert_announcement.php',
             method: 'POST',
             data: {
                 message: message,
@@ -384,32 +389,40 @@ $(document).ready(function() {
 
     // Remove Announcement Button Handler
     $('#announcementsTable').on('click', '.remove-btn', function() {
-        const id = $(this).data('id');
+    const id = $(this).data('id');
+    
+    // Add validation to ensure ID exists and is a number
+    if (!id || isNaN(id)) {
+        alert('Invalid announcement ID');
+        return;
+    }
 
-        if (confirm('Are you sure you want to remove this announcement?')) {
-            $.ajax({
-                url: '../admin/pages/notification/functions/remove_announcement.php',
-                method: 'POST',
-                data: { id: id },
-                success: function(response) {
-                    try {
-                        const res = JSON.parse(response);
-                        if (res.status === 'success') {
-                            alert(res.message);
-                            location.reload(); // Refresh page to remove announcement
-                        } else {
-                            alert(res.message);
-                        }
-                    } catch (e) {
-                        console.error('Error parsing response:', response);
-                        alert('Unexpected error occurred');
-                    }
-                },
-                error: function() {
-                    alert('Error removing announcement. Please try again.');
+    if (confirm('Are you sure you want to remove this announcement?')) {
+        $.ajax({
+            url: 'pages/notification/functions/remove_announcement.php',
+            method: 'POST',
+            data: { id: id },
+            dataType: 'json', // Explicitly expect JSON response
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Remove the row from DataTable instead of reloading
+                    const row = $(this).closest('tr');
+                    table.row(row).remove().draw();
+                    alert(response.message);
+                } else {
+                    alert(response.message || 'Error removing announcement');
                 }
-            });
-        }
-    });
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', {
+                    response: xhr.responseText,
+                    status: status,
+                    error: error
+                });
+                alert('Error removing announcement. Please try again.');
+            }
+        });
+    }
+});
 });
 </script>

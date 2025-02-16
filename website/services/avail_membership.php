@@ -133,9 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
-    .card-body {
-        border: 2px solid #ff0000;
-    }
 </style>
 
 <div class="avail-membership-page">
@@ -147,17 +144,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
         </div>
 
-        <div class="container-fluid" style="height: 70vh;">
+        <div class="container-fluid">
             <div class="row flex-grow-1 overflow-auto">
             <div class="col-12 col-lg-8 mx-auto py-3 main-container">
-                <div class="card shadow main-content">
+                <div class="card main-content" style="width: 100%;">
                 <div class="card-header py-3">
                     <h2 class="h4 fw-bold mb-0 text-center"><?= $membership['plan_type'] ?> Membership</h2>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <h3 class="h5 fw-bold text-center mb-4"><?= $membership['plan_name'] ?></h3>
 
-                <section class="scrollable-section" style="max-height: calc(100vh - 300px); overflow-y: auto;">
+                <section class="scrollable-section">
 
                     <div class="row g-3">
                     <div class="col-12">
@@ -207,13 +204,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
                 </section>
                     <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
-                    <a href="../services.php" class="btn btn-outline-danger btn-lg flex-fill">Return</a>
+                    <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <form method="POST" class="flex-fill" onsubmit="return validateForm(event)">
                         <input type="hidden" name="membership_id" value="<?= $membership_id ?>">
                         <input type="hidden" name="start_date" id="hidden_start_date">
                         <input type="hidden" name="end_date" id="hidden_end_date">
-                        <button type="submit" class="btn btn-custom-red btn-lg w-100" style="height: 48px!;">Add to Cart</button>
+                        <button type="submit" class="btn btn-lg w-100 add-cart" style="height: 48px!;">Add to Cart</button>
                         </form>
                     <?php else: ?>
                         <button  class="btn btn-custom-red btn-lg "><a href="../../login/login.php">Login to Add</a></button>

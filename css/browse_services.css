@@ -11,6 +11,10 @@
   font-family: myFont;
 }
 
+.home-navbar {
+  background-color: #c92f2f !important;
+}
+
 .services-page body {
   background: linear-gradient(45deg, #f3f4f6, #ffffff);
   min-height: 100vh;
