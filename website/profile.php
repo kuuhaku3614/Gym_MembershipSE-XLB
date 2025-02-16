@@ -58,6 +58,9 @@
         .main-content{
            padding-top: 100px;
         }
+        strong{
+            font-weight: 500!important;
+        }
     </style>
   
 
@@ -919,7 +922,7 @@
 
         .modal-header {
             background-color: var(--red);
-            color: white;
+            color: #333;
             border: none;
             border-radius: 10px 10px 0 0;
         }

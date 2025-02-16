@@ -20,6 +20,7 @@
         }
         body{
             height: 100vh;
+            background-color: #efefef!important;
         }
         .home-navbar{
             background-color: red;
@@ -232,10 +233,10 @@
             </div>
             <div class="modal-body p-0" style="height: calc(100% - 42px); overflow-y: auto;">
                 <!-- Content will be loaded here dynamically -->
-            </div>
+            <!-- </div>
         </div>
     </div>
-</div> -->
+</div> --> -->
 
 
 <!-- Cart Overlay -->

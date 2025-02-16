@@ -92,192 +92,107 @@ class Members {
 
     public function getMemberDetails($userId) {
         try {
-            $connection = $this->pdo;
-            if (!$connection) {
-                throw new PDOException("Database connection failed");
-            }
-            
             $query = "SELECT 
-                u.id AS user_id, 
-                u.username, 
-                pd.first_name, 
-                pd.middle_name, 
-                pd.last_name, 
-                pd.sex, 
-                pd.birthdate, 
-                pd.phone_number, 
-                COALESCE(pp.photo_path, NULL) AS photo_path, 
-                
+                u.id as user_id,
+                u.username,
+                pd.first_name,
+                pd.middle_name,
+                pd.last_name,
+                pd.sex,
+                pd.birthdate,
+                pd.phone_number,
+                pp.photo_path,
+                m.id as membership_id,
+                m.start_date as membership_start,
+                m.end_date as membership_end,
+                m.is_paid,
+                m.status as membership_status,
                 CASE 
-                    WHEN EXISTS (
-                        SELECT 1 FROM memberships m 
-                        JOIN transactions t ON m.transaction_id = t.id
-                        WHERE t.user_id = u.id 
-                        AND m.status = 'active' 
-                        AND m.end_date >= CURDATE()
-                        AND m.is_paid = 1
-                    ) THEN 'Active'
-                    WHEN EXISTS (
-                        SELECT 1 FROM memberships m 
-                        JOIN transactions t ON m.transaction_id = t.id
-                        WHERE t.user_id = u.id 
-                        AND m.status = 'active' 
-                        AND m.end_date >= CURDATE()
-                        AND m.is_paid = 0
-                    ) THEN 'Pending'
-                    ELSE 'Inactive'
-                END AS membership_status,
+                    WHEN m.is_paid = 1 THEN 'Paid'
+                    ELSE 'Unpaid'
+                END as payment_status,
+                mp.plan_name as membership_plan_name,
+                mp.price as membership_amount,
+                COALESCE(rr.amount, 0) as registration_fee,
+                CASE WHEN rr.amount IS NOT NULL THEN 'Yes' ELSE 'No' END as has_registration_fee,
+                COALESCE(m.amount + COALESCE(rr.amount, 0), 0) as total_price,
                 
-                CONCAT(mp.plan_name, ' - ', mp.plan_type) AS membership_plan_name,
-                mp.plan_name, 
-                mp.plan_type,
-                m.start_date,
-                m.end_date,
-                rr.amount as registration_fee,
-                CASE 
-                    WHEN rr.amount > 0 THEN 'Yes'
-                    ELSE 'No'
-                END as has_registration_fee,
-                DATE_FORMAT(m.start_date, '%M %d, %Y') AS membership_start,
-                DATE_FORMAT(m.end_date, '%M %d, %Y') AS membership_end,
-                
-                CASE 
-                    WHEN EXISTS (
-                        SELECT 1 FROM memberships m 
-                        JOIN transactions t ON m.transaction_id = t.id
-                        WHERE t.user_id = u.id 
-                        AND m.status = 'active'
-                        AND m.end_date >= CURDATE()
-                    ) THEN 
-                        CASE 
-                            WHEN EXISTS (
-                                SELECT 1 FROM memberships m 
-                                JOIN transactions t ON m.transaction_id = t.id
-                                WHERE t.user_id = u.id 
-                                AND m.status = 'active'
-                                AND m.end_date >= CURDATE()
-                                AND m.is_paid = 1
-                            ) THEN 'Paid'
-                            ELSE 'Unpaid'
-                        END
-                    ELSE ' '
-                END AS payment_status,
-                
-                (
-                    COALESCE(m.amount, 0) + 
-                    COALESCE(
-                        (SELECT SUM(amount) 
-                         FROM program_subscriptions ps 
-                         WHERE ps.transaction_id = t.id), 
-                        0
-                    ) + 
-                    COALESCE(
-                        (SELECT SUM(amount) 
-                         FROM rental_subscriptions rs 
-                         WHERE rs.transaction_id = t.id), 
-                        0
-                    ) + 
-                    COALESCE(rr.amount, 0)
-                ) AS total_price,
-
+                -- Program subscriptions with IDs
                 GROUP_CONCAT(
                     DISTINCT
                     CASE 
-                        WHEN ps.end_date >= CURDATE() AND ps.status = 'active' THEN
+                        WHEN ps.id IS NOT NULL THEN
                             CONCAT(
                                 p.program_name, ' | ',
-                                'Coach: ', COALESCE(CONCAT(coach_details.last_name, ', ', coach_details.first_name, ' ', COALESCE(coach_details.middle_name, '')), 'Not Assigned'), ' | ',
+                                'Coach: ', coach_details.first_name, ' ', coach_details.last_name, ' | ',
                                 'Duration: ', DATE_FORMAT(ps.start_date, '%M %d, %Y'), ' to ', DATE_FORMAT(ps.end_date, '%M %d, %Y'), ' | ',
-                                'Price: ₱', FORMAT(COALESCE(ps.amount, 0), 2), ' | ',
-                                'Status: ', CASE WHEN ps.is_paid = 1 THEN 'Paid' ELSE 'Pending' END
+                                'Price: ₱', ps.amount, ' | ',
+                                'Status: ', CASE 
+                                    WHEN ps.is_paid = 1 THEN 'Paid'
+                                    ELSE 'Pending'
+                                END, ' | ',
+                                'program_id:', ps.id
                             )
-                        END
+                    END
                     SEPARATOR '\n'
                 ) as program_details,
-
+                
+                -- Rental services with IDs
                 GROUP_CONCAT(
                     DISTINCT
                     CASE 
-                        WHEN rs.end_date >= CURDATE() AND rs.status = 'active' THEN
+                        WHEN rs.id IS NOT NULL THEN
                             CONCAT(
                                 srv.service_name, ' | ',
                                 'Duration: ', DATE_FORMAT(rs.start_date, '%M %d, %Y'), ' to ', DATE_FORMAT(rs.end_date, '%M %d, %Y'), ' | ',
                                 'Price: ₱', rs.amount, ' | ',
                                 'Status: ', CASE 
-                                    WHEN rs.is_paid = 1 THEN 'Active'
+                                    WHEN rs.is_paid = 1 THEN 'Paid'
                                     ELSE 'Pending'
-                                END
+                                END, ' | ',
+                                'rental_id:', rs.id
                             )
-                        END
+                    END
                     SEPARATOR '\n'
                 ) as rental_details,
                 
+                m.id as membership_id,
                 m.amount as membership_amount
 
-            FROM 
-                users u 
-            JOIN 
-                roles roles ON u.role_id = roles.id AND roles.id = 3 
-            LEFT JOIN 
-                transactions t ON u.id = t.user_id
-            LEFT JOIN 
-                memberships m ON t.id = m.transaction_id
-            LEFT JOIN 
-                membership_plans mp ON m.membership_plan_id = mp.id
-            LEFT JOIN 
-                personal_details pd ON u.id = pd.user_id 
-            LEFT JOIN 
-                profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
-            LEFT JOIN 
-                registration_records rr ON t.id = rr.transaction_id
-            LEFT JOIN 
-                program_subscriptions ps ON t.id = ps.transaction_id AND ps.status = 'active'
-            LEFT JOIN 
-                programs p ON ps.program_id = p.id
-            LEFT JOIN 
-                users coach ON ps.coach_id = coach.id
-            LEFT JOIN 
-                personal_details coach_details ON coach.id = coach_details.user_id
-            LEFT JOIN 
-                rental_subscriptions rs ON t.id = rs.transaction_id
-            LEFT JOIN 
-                rental_services srv ON rs.rental_service_id = srv.id
-            WHERE 
-                u.id = :userId
-            GROUP BY 
-                u.id, 
-                u.username, 
-                pd.first_name, 
-                pd.middle_name, 
-                pd.last_name, 
-                pd.sex, 
-                pd.birthdate, 
-                pd.phone_number, 
-                pp.photo_path,
-                m.id,
-                m.start_date,
-                m.end_date,
-                mp.plan_name
-            ORDER BY 
-                m.start_date DESC, 
-                m.id DESC
-            LIMIT 1";
+            FROM users u 
+            JOIN roles roles ON u.role_id = roles.id AND roles.id = 3 
+            LEFT JOIN transactions t ON u.id = t.user_id
+            LEFT JOIN memberships m ON t.id = m.transaction_id
+            LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
+            LEFT JOIN personal_details pd ON u.id = pd.user_id 
+            LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
+            LEFT JOIN registration_records rr ON t.id = rr.transaction_id
+            LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id AND ps.status = 'active'
+            LEFT JOIN programs p ON ps.program_id = p.id
+            LEFT JOIN users coach ON ps.coach_id = coach.id
+            LEFT JOIN personal_details coach_details ON coach.id = coach_details.user_id
+            LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
+            LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
+            WHERE u.id = :userId
+            GROUP BY u.id, u.username, pd.first_name, pd.middle_name, pd.last_name, 
+                     pd.sex, pd.birthdate, pd.phone_number, pp.photo_path,
+                     m.id, m.start_date, m.end_date, mp.plan_name";
 
-            $stmt = $this->pdo->prepare($query);
-            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-            $stmt->execute();
-            
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$result) {
-                throw new PDOException("Member not found");
-            }
-
-            return $result;
-        } catch (PDOException $e) {
-            throw $e;
+        $stmt = $this->pdo->prepare($query);
+        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$result) {
+            throw new PDOException("Member not found");
         }
+
+        return $result;
+    } catch (PDOException $e) {
+        throw $e;
     }
+}
 
     public function getMembershipPlans() {
         try {
@@ -930,6 +845,108 @@ class Members {
             error_log('General error in addMember: ' . $e->getMessage());
             error_log('Stack trace: ' . $e->getTraceAsString());
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+
+    public function processPayment($userId, $type = 'all', $itemId = null) {
+        try {
+            error_log("Processing payment - Type: $type, User: $userId, Item: $itemId");
+            $this->pdo->beginTransaction();
+
+            $success = false;
+            
+            if ($type === 'all') {
+                // Update membership payment status
+                $sql = "UPDATE memberships m 
+                       JOIN transactions t ON m.transaction_id = t.id 
+                       SET m.is_paid = 1, t.status = 'confirmed'
+                       WHERE t.user_id = ? AND m.status = 'active'";
+                $stmt = $this->pdo->prepare($sql);
+                $success = $stmt->execute([$userId]);
+                error_log("Membership payment update result: " . ($success ? "Success" : "Failed"));
+
+                // Update program subscriptions payment status
+                $sql = "UPDATE program_subscriptions ps 
+                       JOIN transactions t ON ps.transaction_id = t.id 
+                       SET ps.is_paid = 1 
+                       WHERE t.user_id = ? AND ps.status = 'active'";
+                $stmt = $this->pdo->prepare($sql);
+                $success = $stmt->execute([$userId]) && $success;
+                error_log("Program subscriptions payment update result: " . ($success ? "Success" : "Failed"));
+
+                // Update rental subscriptions payment status
+                $sql = "UPDATE rental_subscriptions rs 
+                       JOIN transactions t ON rs.transaction_id = t.id 
+                       SET rs.is_paid = 1 
+                       WHERE t.user_id = ? AND rs.status = 'active'";
+                $stmt = $this->pdo->prepare($sql);
+                $success = $stmt->execute([$userId]) && $success;
+                error_log("Rental subscriptions payment update result: " . ($success ? "Success" : "Failed"));
+            } else {
+                // Keep the original single-item payment logic
+                switch($type) {
+                    case 'membership':
+                        $sql = "UPDATE memberships m 
+                               SET m.is_paid = 1 
+                               WHERE m.id = ? AND EXISTS (
+                                   SELECT 1 FROM transactions t 
+                                   WHERE t.id = m.transaction_id 
+                                   AND t.user_id = ?
+                               )";
+                        $stmt = $this->pdo->prepare($sql);
+                        $success = $stmt->execute([$itemId, $userId]);
+                        
+                        if ($success) {
+                            $sql = "UPDATE transactions t 
+                                   JOIN memberships m ON t.id = m.transaction_id 
+                                   SET t.status = 'confirmed' 
+                                   WHERE m.id = ? AND t.user_id = ?";
+                            $stmt = $this->pdo->prepare($sql);
+                            $success = $stmt->execute([$itemId, $userId]);
+                        }
+                        break;
+
+                    case 'program':
+                        $sql = "UPDATE program_subscriptions ps 
+                               SET ps.is_paid = 1 
+                               WHERE ps.id = ? AND EXISTS (
+                                   SELECT 1 FROM transactions t 
+                                   WHERE t.id = ps.transaction_id 
+                                   AND t.user_id = ?
+                               )";
+                        $stmt = $this->pdo->prepare($sql);
+                        $success = $stmt->execute([$itemId, $userId]);
+                        break;
+
+                    case 'rental':
+                        $sql = "UPDATE rental_subscriptions rs 
+                               SET rs.is_paid = 1 
+                               WHERE rs.id = ? AND EXISTS (
+                                   SELECT 1 FROM transactions t 
+                                   WHERE t.id = rs.transaction_id 
+                                   AND t.user_id = ?
+                               )";
+                        $stmt = $this->pdo->prepare($sql);
+                        $success = $stmt->execute([$itemId, $userId]);
+                        break;
+                }
+            }
+
+            if ($success) {
+                $this->pdo->commit();
+                error_log("Transaction committed successfully");
+                return ['success' => true, 'message' => 'Payment processed successfully'];
+            } else {
+                $this->pdo->rollBack();
+                error_log("Transaction rolled back - no rows updated");
+                return ['success' => false, 'message' => 'No records were updated'];
+            }
+        } catch (PDOException $e) {
+            error_log("Database error in processPayment: " . $e->getMessage());
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 

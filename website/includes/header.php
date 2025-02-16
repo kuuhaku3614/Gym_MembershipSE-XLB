@@ -85,8 +85,13 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home</title>
-  <link rel="stylesheet" href="../css/landing1.css">
-  <link rel="stylesheet" href="../css/browse_services.css">
+  <?php
+  // Check if we're in the coach folder
+  $isCoachFolder = strpos($_SERVER['PHP_SELF'], '/coach/') !== false;
+  $basePath = $isCoachFolder ? '../../' : '../';
+  ?>
+  <link rel="stylesheet" href="<?php echo $basePath; ?>css/landing1.css">
+  <link rel="stylesheet" href="<?php echo $basePath; ?>css/browse_services.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -94,13 +99,13 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 <nav class="home-navbar">
     <div class="home-logo">
-        <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
+        <img src="<?php echo $basePath; ?>cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
     </div>
     <ul class="nav-links">
-        <li><a href="website.php">Home</a></li>
-        <li><a href="<?php echo $isLoggedIn ? 'services.php' : '../login/login.php'; ?>">Services</a></li>
-        <li><a href="#S-AboutUs">About</a></li>
-        <li><a href="#S-ContactUs">Contact</a></li>
+        <li><a href="<?php echo $isCoachFolder ? '../website.php' : 'website.php'; ?>">Home</a></li>
+        <li><a href="<?php echo $isCoachFolder ? '../services.php' : 'services.php'; ?>">Services</a></li>
+        <li><a href="<?php echo $isCoachFolder ? '../website.php#S-AboutUs' : '#S-AboutUs'; ?>">About</a></li>
+        <li><a href="<?php echo $isCoachFolder ? '../website.php#S-ContactUs' : '#S-ContactUs'; ?>">Contact</a></li>
     </ul>
 
     <div class="nav-right">
@@ -122,25 +127,25 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                         aria-expanded="false"
                         aria-controls="user-dropdown"
                         title="User Menu" 
-                        style="background-image: url('../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>');">
+                        style="background-image: url('<?php echo $basePath; ?><?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : 'cms_img/user.png'; ?>');">
                 </button>
                 <div class="dropdown-content" 
                     id="user-dropdown" 
                     role="menu" 
                     aria-label="User menu options">
                     <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                        <a href="coach_profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
+                        <a href="<?php echo $isCoachFolder ? 'programs.php' : './coach/programs.php'; ?>" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php else: ?>
                         <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php endif; ?>
                     <hr class="dropdown-divider" aria-hidden="true">
-                    <a href="notifications.php" role="menuitem"> <i class="fas fa-bell pe-3"></i> Notifications</a>
+                    <a href="<?php echo $isCoachFolder ? '../notifications.php' : 'notifications.php'; ?>"> <i class="fas fa-bell pe-3"></i> Notifications</a>
                     <a href="" class="edit-profile-link" role="menuitem"> <i class="fas fa-user-edit pe-3"></i> Edit Profile</a>
-                    <a href="../login/logout.php" role="menuitem"> <i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
+                    <a href="<?php echo $basePath; ?>login/logout.php" role="menuitem"> <i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
                 </div>
             </div>
         <?php else: ?>
-            <a href="../login/login.php" class="home-signIn">Sign Up</a>
+            <a href="<?php echo $basePath; ?>login/login.php" class="home-signIn">Sign Up</a>
         <?php endif; ?>
     </div>
 </nav>
@@ -152,7 +157,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         <div class="profile-edit-container">
             <div class="profile-photo-container">
                 <div class="photo-wrapper">
-                    <img src="<?php echo isset($_SESSION['user_photo']) ? '../' . $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" 
+                    <img src="<?php echo $basePath; ?><?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : 'cms_img/user.png'; ?>" 
                          alt="Profile Photo" 
                          id="profilePhoto">
                     <div class="photo-edit-overlay">
@@ -184,5 +189,5 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         </div>
     </div>
 </div>
-<script src="js/edit_profile.js"></script>
-<script src="js/dropdown.js"></script>
+<script src="<?php echo $isCoachFolder ? '../../website/js/edit_profile.js' : 'js/edit_profile.js'; ?>"></script>
+<script src="<?php echo $isCoachFolder ? '../../website/js/dropdown.js' : 'js/dropdown.js'; ?>"></script>

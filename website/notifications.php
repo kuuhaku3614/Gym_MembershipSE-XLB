@@ -57,6 +57,7 @@ include('includes/header.php');
         }
         body{
             height: 100vh;
+            background-color: #efefef!important;
         }
         .home-navbar{
             background-color: red;
@@ -65,6 +66,10 @@ include('includes/header.php');
         }
         .main-content{
            padding-top: 100px;
+        }
+        .list-group{
+            height: 70vh;
+            overflow-y: auto;
         }
 </style>
  
@@ -108,7 +113,7 @@ include('includes/header.php');
 
 <!-- Modal -->
 <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog justify-content-center">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="notificationModalLabel"></h5>

@@ -1,6 +1,11 @@
 <?php
   require_once("functions/members.class.php");
   
+  // Debug output
+  error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
+  error_log("GET params: " . print_r($_GET, true));
+  error_log("POST params: " . print_r($_POST, true));
+  
   // Handle AJAX request for member details
   if(isset($_GET['ajax_view_member']) && isset($_GET['user_id'])) {
     header('Content-Type: application/json');
@@ -9,20 +14,44 @@
         $memberDetails = $members->getMemberDetails($_GET['user_id']);
         
         if ($memberDetails === null) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to fetch member details']);
-        } else {
-            echo json_encode($memberDetails);
+            http_response_code(404);
+            echo json_encode(['error' => 'Member not found']);
+            exit;
         }
+        echo json_encode($memberDetails);
+        exit;
     } catch (Exception $e) {
+        error_log("Error in member details: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['error' => $e->getMessage()]);
+        exit;
     }
-    exit;
   }
-  
-  $members = new Members();
-  $membersList = $members->getAllMembers();
+
+  // Handle payment processing
+  if(isset($_POST['process_payment'])) {
+    header('Content-Type: application/json');
+    try {
+        $members = new Members();
+        $result = $members->processPayment(
+            $_POST['user_id'],
+            $_POST['payment_type'],
+            $_POST['item_id']
+        );
+        echo json_encode($result);
+        exit;
+    } catch (Exception $e) {
+        error_log("Error in payment processing: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
+    }
+  }
+
+  // Only proceed with HTML output if not an AJAX request
+  if(!isset($_GET['ajax_view_member']) && !isset($_POST['process_payment'])) {
+    $members = new Members();
+    $membersList = $members->getAllMembers();
 ?>
 
 <div class="container mt-4">
@@ -171,6 +200,40 @@
 </style>
 
 <script>
+function processPayment(userId, type, itemId) {
+    if (!confirm('Are you sure you want to mark this as paid?')) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('process_payment', '1');
+    formData.append('user_id', userId);
+    formData.append('payment_type', type);
+    formData.append('item_id', itemId);
+
+    // Use relative path for AJAX request
+    fetch('./pages/members/members_new.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment processed successfully!');
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('memberDetailsModal'));
+            modal.hide();
+            // Force a fresh reload of the page
+            location.reload(true);
+        } else {
+            alert('Failed to process payment: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error processing payment: ' + error.message);
+    });
+}
+
 function viewMemberDetails(userId) {
     // Show loading state
     const loadingHtml = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading member details...</p></div>';
@@ -178,13 +241,11 @@ function viewMemberDetails(userId) {
     document.querySelector('#memberDetailsModal .modal-body').innerHTML = loadingHtml;
     modal.show();
 
-    // Fetch member details with full path
-    fetch(`../admin/pages/members/members_new.php?ajax_view_member=1&user_id=${userId}`)
+    // Use relative path for AJAX request
+    fetch('./pages/members/members_new.php?ajax_view_member=1&user_id=' + userId)
         .then(response => {
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`Server responded with status ${response.status}: ${text}`);
-                });
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
@@ -193,8 +254,14 @@ function viewMemberDetails(userId) {
                 throw new Error('Failed to load member details');
             }
 
-            // Prepare the modal content
-            const modalContent = `
+            // Check if there are any unpaid items
+            const hasUnpaidMembership = data.payment_status === 'Unpaid';
+            const hasUnpaidPrograms = data.program_details && data.program_details.includes('Pending');
+            const hasUnpaidRentals = data.rental_details && data.rental_details.includes('Pending');
+            const hasUnpaidItems = hasUnpaidMembership || hasUnpaidPrograms || hasUnpaidRentals;
+
+            // Basic information that's always shown
+            let modalContent = `
                 <div class="row">
                     <div class="col-md-4 text-center mb-3">
                         <img src="${data.photo_path ? '../' + data.photo_path : '../assets/img/default-profile.jpg'}" 
@@ -212,29 +279,35 @@ function viewMemberDetails(userId) {
                                 <p><strong>Phone:</strong> ${data.phone_number || 'N/A'}</p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Membership Status:</strong> 
-                                    <span class="badge ${getBadgeClass(data.membership_status)}">
-                                        ${data.membership_status}
-                                    </span>
-                                </p>
-                                ${data.membership_status !== 'Inactive' ? `
-                                    <p><strong>Payment Status:</strong> 
-                                        <span class="badge ${getPaymentBadgeClass(data.payment_status)}">
-                                            ${data.payment_status}
-                                        </span>
-                                    </p>
-                                    <p><strong>Total Price:</strong> ₱${data.total_price || '0'}</p>
+                                ${data.membership_status ? `
+                                    <p><strong>Membership Status:</strong> ${
+                                        data.membership_status !== 'Inactive' ? 
+                                        `<span class="badge ${getBadgeClass(data.membership_status)}">${data.membership_status}</span>` : 
+                                        data.membership_status
+                                    }</p>
+                                    ${data.membership_status !== 'Inactive' && data.payment_status ? `
+                                        <p><strong>Payment Status:</strong> 
+                                            <span class="badge ${getPaymentBadgeClass(data.payment_status)}">
+                                                ${data.payment_status}
+                                            </span>
+                                        </p>
+                                        <p><strong>Total Price:</strong> ₱${data.total_price || '0'}</p>
+                                    ` : ''}
                                 ` : ''}
                             </div>
                         </div>
                     </div>
-                </div>
-                ${data.membership_status !== 'Inactive' ? `
+                </div>`;
+
+            // Only add additional sections if member is not inactive and has actual data
+            if (data.membership_status !== 'Inactive' && data.membership_plan_name && data.membership_plan_name !== 'N/A') {
+                // Add membership details
+                modalContent += `
                     <hr>
                     <div class="row mt-3">
                         <div class="col-12">
                             <h5>Membership Details</h5>
-                            <p><strong>Plan:</strong> ${data.membership_plan_name || 'N/A'}</p>
+                            <p><strong>Plan:</strong> ${data.membership_plan_name}</p>
                             <p><strong>Price:</strong> ₱${data.membership_amount || '0'}</p>
                             <p><strong>Start Date:</strong> ${data.membership_start || 'N/A'}</p>
                             <p><strong>End Date:</strong> ${data.membership_end || 'N/A'}</p>
@@ -243,85 +316,105 @@ function viewMemberDetails(userId) {
                                 : ''
                             }
                         </div>
-                    </div>
-                    <hr>
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h5>Program Subscriptions</h5>
-                            ${data.program_details ? 
-                                `<div class="list-group">
+                    </div>`;
+
+                // Add program subscriptions if any
+                if (data.program_details) {
+                    modalContent += `
+                        <hr>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5>Program Subscriptions</h5>
+                                <div class="list-group">
                                     ${data.program_details.split('\n').map(program => {
-                                        const [name, coach, duration, price, status] = program.split(' | ');
+                                        const [name, coach, duration, price] = program.split(' | ');
                                         return `
                                             <div class="list-group-item">
-                                                <h6 class="mb-1">${name}</h6>
-                                                <p class="mb-1 text-muted small">${coach}</p>
-                                                <p class="mb-1 text-muted small">${duration}</p>
-                                                <p class="mb-0 text-muted small">${price}</p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1">${name}</h6>
+                                                        <p class="mb-1 text-muted small">${coach}</p>
+                                                        <p class="mb-1 text-muted small">${duration}</p>
+                                                        <p class="mb-0 text-muted small">${price}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         `;
                                     }).join('')}
-                                </div>`
-                                : '<p class="text-muted">No program subscriptions</p>'
-                            }
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h5>Rental Services</h5>
-                            ${data.rental_details ? 
-                                `<div class="list-group">
+                                </div>
+                            </div>
+                        </div>`;
+                }
+
+                // Add rental services if any
+                if (data.rental_details) {
+                    modalContent += `
+                        <hr>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5>Rental Services</h5>
+                                <div class="list-group">
                                     ${data.rental_details.split('\n').map(rental => {
-                                        const [name, duration, price, status] = rental.split(' | ');
+                                        const [name, duration, price] = rental.split(' | ');
                                         return `
                                             <div class="list-group-item">
-                                                <h6 class="mb-1">${name}</h6>
-                                                <p class="mb-1 text-muted small">${duration}</p>
-                                                <p class="mb-0 text-muted small">${price}</p>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1">${name}</h6>
+                                                        <p class="mb-1 text-muted small">${duration}</p>
+                                                        <p class="mb-0 text-muted small">${price}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         `;
                                     }).join('')}
-                                </div>`
-                                : '<p class="text-muted">No rental services</p>'
-                            }
-                        </div>
-                    </div>
-                ` : ''}
-            `;
+                                </div>
+                            </div>
+                        </div>`;
+                }
+
+                // Add payment button if there are unpaid items
+                if (hasUnpaidItems) {
+                    modalContent += `
+                        <div class="text-end mt-4">
+                            <button onclick="processPayment(${userId}, 'all')" 
+                                    class="btn btn-success btn-lg">
+                                Mark as Paid
+                            </button>
+                        </div>`;
+                }
+            }
 
             // Update modal content
             document.querySelector('#memberDetailsModal .modal-body').innerHTML = modalContent;
         })
         .catch(error => {
+            console.error('Error:', error);
             document.querySelector('#memberDetailsModal .modal-body').innerHTML = `
                 <div class="alert alert-danger" role="alert">
-                    Failed to load member details. Please try again later.
+                    Failed to load member details. Please try again later.<br>
+                    Error: ${error.message}
                 </div>
             `;
         });
 }
 
+// Helper functions for badge classes
 function getBadgeClass(status) {
-    switch (status?.toLowerCase()) {
+    switch(status) {
         case 'active':
             return 'bg-success';
-        case 'pending':
+        case 'Pending':
             return 'bg-warning';
-        case 'inactive':
-            return 'bg-danger';
+        case 'Inactive':
+            return 'bg-secondary';
         default:
             return 'bg-secondary';
     }
 }
 
 function getPaymentBadgeClass(status) {
-    switch (status?.toLowerCase()) {
-        case 'paid':
-            return 'bg-success';
-        case 'unpaid':
-            return 'bg-danger';
-    }
+    return status === 'Paid' ? 'bg-success' : 'bg-danger';
 }
 </script>
 
@@ -375,3 +468,5 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<?php } ?>
