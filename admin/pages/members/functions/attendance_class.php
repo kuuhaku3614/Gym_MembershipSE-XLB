@@ -21,7 +21,7 @@ class AttendanceSystem {
         JOIN personal_details pd ON u.id = pd.user_id
         LEFT JOIN profile_photos pp ON u.id = pp.user_id
         WHERE a.date = CURRENT_DATE()
-        AND a.status = 'checked_in'
+        AND a.status = 'checked_in' OR a.status = 'checked_out'
         ORDER BY a.time_in DESC";
 
         $stmt = $this->pdo->prepare($query);
@@ -32,15 +32,17 @@ class AttendanceSystem {
     public function getAllAttendanceHistory() {
         $query = "SELECT 
             a.date,
-            a.time_in,
-            a.time_out,
-            a.status,
+            ah.time_in,
+            ah.time_out,
+            ah.status,
+            ah.created_at as action_timestamp,
             CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) AS full_name,
             u.username
-        FROM attendance a
+        FROM attendance_history ah
+        JOIN attendance a ON ah.attendance_id = a.id
         JOIN users u ON a.user_id = u.id
         JOIN personal_details pd ON u.id = pd.user_id
-        ORDER BY a.date DESC, a.time_in DESC
+        ORDER BY ah.created_at DESC
         LIMIT 1000"; // Limiting to last 1000 records for performance
 
         $stmt = $this->pdo->prepare($query);

@@ -12,9 +12,9 @@ $history = $attendance->getAllAttendanceHistory();
                 <th>Date</th>
                 <th>Member Name</th>
                 <th>Username</th>
-                <th>Time In</th>
-                <th>Time Out</th>
-                <th>Status</th>
+                <th>Action Time</th>
+                <th>Action Type</th>
+                <th>Details</th>
             </tr>
         </thead>
         <tbody>
@@ -26,24 +26,30 @@ $history = $attendance->getAllAttendanceHistory();
                     <td>
                         <span class="text-primary">
                             <i class="bi bi-clock"></i>
-                            <?= date('h:i A', strtotime($record['time_in'])) ?>
+                            <?= date('h:i A', strtotime($record['action_timestamp'])) ?>
                         </span>
                     </td>
                     <td>
-                        <?php if ($record['time_out']): ?>
-                            <span class="text-success">
-                                <i class="bi bi-clock-history"></i>
-                                <?= date('h:i A', strtotime($record['time_out'])) ?>
-                            </span>
+                        <?php if ($record['status'] === 'checked_in'): ?>
+                            <span class="badge bg-success">Check In</span>
+                        <?php elseif ($record['status'] === 'checked_out'): ?>
+                            <span class="badge bg-danger">Check Out</span>
                         <?php else: ?>
-                            <span class="text-muted">-</span>
+                            <span class="badge bg-secondary"><?= ucfirst($record['status']) ?></span>
                         <?php endif; ?>
                     </td>
                     <td>
-                        <span class="badge <?= $record['status'] === 'checked_in' ? 'bg-success' : 
-                                        ($record['status'] === 'checked_out' ? 'bg-danger' : 'bg-secondary') ?>">
-                            <?= ucfirst($record['status']) ?>
-                        </span>
+                        <?php if ($record['status'] === 'checked_in'): ?>
+                            <span class="text-success">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                Time In: <?= date('h:i A', strtotime($record['time_in'])) ?>
+                            </span>
+                        <?php elseif ($record['status'] === 'checked_out'): ?>
+                            <span class="text-danger">
+                                <i class="bi bi-box-arrow-right"></i>
+                                Time Out: <?= date('h:i A', strtotime($record['time_out'])) ?>
+                            </span>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -55,7 +61,7 @@ $history = $attendance->getAllAttendanceHistory();
 $(document).ready(function() {
     $('#historyTable').DataTable({
         responsive: true,
-        order: [[0, 'desc'], [3, 'desc']], // Sort by date and time descending
+        order: [[0, 'desc'], [3, 'desc']], // Sort by date and action time descending
         pageLength: 10,
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         language: {
