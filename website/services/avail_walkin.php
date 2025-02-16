@@ -83,6 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="service.css">
 <style>
     .bg-custom-red {
         background-color: #ff0000;
@@ -96,9 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
-    .card-body {
-        border: 2px solid #ff0000;
-    }
 </style>
 
 <div class="avail-walkin-page">
@@ -111,48 +110,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
         </div>
 
-        <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-            <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
-                <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0">Walk-in Service</h2>
+        <div class="container-fluid">
+    <div class="row flex-grow-1 overflow-auto">
+        <div class="col-12 col-lg-8 mx-auto py-3 main-container">
+            <div class="card main-content" style="width: 100%;">
+                <div class="card-header py-3">
+                    <h2 class="h4 fw-bold mb-0 text-center">Walk-in Service</h2>
                 </div>
-                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity: <?= $duration ?> <?= strtolower($duration_type) ?></p>
-                    </div>
-                    
-                    <div class="mb-3 p-2 border rounded">
-                        <label for="start_date" class="form-label">Start Date:</label>
-                        <input type="date" class="form-control" id="start_date" name="date" 
-                               min="<?= date('Y-m-d') ?>" 
-                               value="<?= $start_date ?>"
-                               required
-                               onchange="updateEndDate(this.value)">
-                        <?php if(!empty($start_dateErr)): ?>
-                            <span class="text-danger"><?= $start_dateErr ?></span>
-                        <?php endif; ?>
-                    </div>
-                    
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
-                    </div>
-                    
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
-                        <?php if (isset($_SESSION['user_id'])) { ?>
-                            <form method="POST" style="width: 48%;" onsubmit="return validateForm(event)">
+                <div class="card-body p-3">
+                    <section class="scrollable-section">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <p class="mb-0">Validity: <?= $duration ?> <?= strtolower($duration_type) ?></p>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <div class="form-group">
+                                        <label for="start_date" class="form-label">Start Date:</label>
+                                        <input type="date" 
+                                            class="form-control form-control-lg" 
+                                            id="start_date" 
+                                            name="date" 
+                                            min="<?= date('Y-m-d') ?>" 
+                                            value="<?= $start_date ?>"
+                                            required
+                                            onchange="updateEndDate(this.value)">
+                                        <?php if(!empty($start_dateErr)): ?>
+                                            <div class="text-danger mt-1"><?= $start_dateErr ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
+                        <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
+                        <?php if (isset($_SESSION['user_id'])): ?>
+                            <form method="POST" class="flex-fill" onsubmit="return validateForm(event)">
                                 <input type="hidden" name="walkin_id" value="1">
                                 <input type="hidden" name="date" id="hidden_start_date">
-                                <button type="submit" class="btn btn-custom-red btn-lg w-100">Add to Cart</button>
+                                <button type="submit" class="btn btn-lg w-100 add-cart" style="height: 48px!;">Add to Cart</button>
                             </form>
-                        <?php } else { ?>
-                            <a href="../../login/login.php" class="btn btn-custom-red btn-lg" style="width: 48%;">Login to Add</a>
-                        <?php } ?>
+                        <?php else: ?>
+                            <a href="../../login/login.php" class="btn btn-custom-red btn-lg w-100">Login to Add</a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

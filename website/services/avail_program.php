@@ -137,6 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="service.css">
 <style>
     .bg-custom-red {
         background-color: #ff0000;
@@ -150,9 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
-    .card-body {
-        border: 2px solid #ff0000;
-    }
 </style>
 
 <div class="avail-program-page">
@@ -165,67 +163,91 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
         </div>
 
-        <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-            <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
-                <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $program_type ?> Program</h2>
+        <div class="container-fluid">
+    <div class="row flex-grow-1 overflow-auto">
+        <div class="col-12 col-lg-8 mx-auto py-3 main-container">
+            <div class="card main-content" style="width: 100%;">
+                <div class="card-header py-3">
+                    <h2 class="h4 fw-bold mb-0 text-center"><?= $program_type ?> Program</h2>
                 </div>
-                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    <h3 class="fs-5 fw-bold mb-4"><?= $program_name ?></h3>
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
-                    </div>
-                    
-                    <form method="POST" onsubmit="return validateForm()">
-                        <input type="hidden" name="program_id" value="<?= htmlspecialchars($program_id) ?>">
-                        <input type="hidden" name="program_name" value="<?= htmlspecialchars($program_name) ?>">
-                        
-                        <div class="mb-3 p-2 border rounded">
-                            <label for="coach" class="form-label">Select Coach:</label>
-                            <select class="form-select" id="coach" name="coach_id" required>
-                                <option value="">Choose a coach</option>
-                                <?php foreach ($coaches as $coach) { ?>
-                                    <option value="<?= $coach['coach_id'] ?>" 
-                                            data-coach-name="<?= htmlspecialchars($coach['coach_name']) ?>"
-                                            data-price="<?= $coach['coach_price'] ?>">
-                                        <?= htmlspecialchars($coach['coach_name']) ?>
-                                    </option>
-                                <?php } ?>
-                            </select>
-                            <?php if(!empty($coach_idErr)): ?>
-                                <span class="text-danger"><?= $coach_idErr ?></span>
-                            <?php endif; ?>
-                        </div>
+                <div class="card-body p-3">
+                    <h3 class="h5 fw-bold text-center mb-4"><?= $program_name ?></h3>
 
-                        <div class="mb-3 p-2 border rounded">
-                            <p class="mb-0">Price: ₱<span id="price_display">0.00</span></p>
-                        </div>
+                    <section class="scrollable-section">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="border rounded p-3">
+                                    <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                                </div>
+                            </div>
 
-                        <div class="mb-3 p-2 border rounded">
-                            <label for="start_date" class="form-label">Start Date:</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" 
-                                   min="<?= date('Y-m-d', strtotime('today')) ?>" 
-                                   value="<?= $start_date ?>"
-                                   required
-                                   onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
-                            <?php if(!empty($start_dateErr)): ?>
-                                <span class="text-danger"><?= $start_dateErr ?></span>
-                            <?php endif; ?>
-                        </div>
+                            <form method="POST" onsubmit="return validateForm()" class="col-12">
+                                <input type="hidden" name="program_id" value="<?= htmlspecialchars($program_id) ?>">
+                                <input type="hidden" name="program_name" value="<?= htmlspecialchars($program_name) ?>">
 
-                        <div class="mb-3 p-2 border rounded">
-                            <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
-                        </div>
+                                <div class="col-12 mb-3">
+                                    <div class="border rounded p-3">
+                                        <div class="form-group">
+                                            <label for="coach" class="form-label">Select Coach:</label>
+                                            <select class="form-select form-select-lg" id="coach" name="coach_id" required>
+                                                <option value="">Choose a coach</option>
+                                                <?php foreach ($coaches as $coach) { ?>
+                                                    <option value="<?= $coach['coach_id'] ?>" 
+                                                            data-coach-name="<?= htmlspecialchars($coach['coach_name']) ?>"
+                                                            data-price="<?= $coach['coach_price'] ?>">
+                                                        <?= htmlspecialchars($coach['coach_name']) ?>
+                                                    </option>
+                                                <?php } ?>
+                                            </select>
+                                            <?php if(!empty($coach_idErr)): ?>
+                                                <div class="text-danger mt-1"><?= $coach_idErr ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <input type="hidden" name="coach_name" id="selected_coach_name">
-                        <input type="hidden" name="price" id="selected_price">
-                        <input type="hidden" name="end_date" id="hidden_end_date">
+                                <div class="col-12 mb-3">
+                                    <div class="border rounded p-3">
+                                        <p class="mb-0">Price: ₱<span id="price_display">0.00</span></p>
+                                    </div>
+                                </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="../services.php" class="btn btn-outline-danger btn-lg" style="width: 48%;">Return</a>
-                            <button type="submit" class="btn btn-custom-red btn-lg" style="width: 48%;">Add to Cart</button>
+                                <div class="col-12 mb-3">
+                                    <div class="border rounded p-3">
+                                        <div class="form-group">
+                                            <label for="start_date" class="form-label">Start Date:</label>
+                                            <input type="date" 
+                                                class="form-control form-control-lg" 
+                                                id="start_date" 
+                                                name="start_date" 
+                                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
+                                                value="<?= $start_date ?>"
+                                                required
+                                                onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
+                                            <?php if(!empty($start_dateErr)): ?>
+                                                <div class="text-danger mt-1"><?= $start_dateErr ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mb-3">
+                                    <div class="border rounded p-3">
+                                        <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="coach_name" id="selected_coach_name">
+                                <input type="hidden" name="price" id="selected_price">
+                                <input type="hidden" name="end_date" id="hidden_end_date">
+                                </section>
+                                <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
+                                    <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
+                                    <button type="submit" class="btn btn-lg flex-fill add-cart">Add to Cart</button>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+                   
                 </div>
             </div>
         </div>
