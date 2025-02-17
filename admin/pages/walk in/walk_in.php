@@ -225,16 +225,20 @@
                     <h6 class="alert-heading">Current Walk-in Rate</h6>
                     <h4 class="mb-0">₱<?php echo number_format($current_price, 2); ?></h4>
                 </div>
-                <form id="updatePriceForm">
-                    <div class="mb-3">
-                        <label for="newPrice" class="form-label">New Walk-in Price</label>
-                        <div class="input-group">
-                            <span class="input-group-text">₱</span>
-                            <input type="number" step="0.01" class="form-control" id="newPrice" name="price" required min="0">
+                    <form id="updatePriceForm">
+                        <div class="mb-3">
+                            <label for="newPrice" class="form-label">New Walk-in Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₱</span>
+                                <input type="number" step="0.01" class="form-control" id="newPrice" name="price" required min="0">
+                            </div>
                         </div>
-                    </div>
-                    <input type="hidden" name="action" value="update_price">
-                </form>
+                        <input type="hidden" name="action" value="update_price">
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
             </div>
             <div class="modal-footer">
                 
@@ -339,8 +343,10 @@ $(document).ready(function() {
         });
     });
 
-    // Handle price update
-    $('#savePriceBtn').click(function() {
+        // Handle price update form submission
+    $('#updatePriceForm').on('submit', function(e) {
+        e.preventDefault();
+        
         var price = $('#newPrice').val();
         
         if (!price || price <= 0) {
@@ -351,7 +357,7 @@ $(document).ready(function() {
         $.ajax({
             url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
             type: 'POST',
-            data: $('#updatePriceForm').serialize(),
+            data: $(this).serialize(),
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {

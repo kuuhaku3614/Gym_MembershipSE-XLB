@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 29, 2025 at 12:25 PM
+-- Generation Time: Feb 17, 2025 at 01:16 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -42,8 +42,8 @@ CREATE TABLE `announcements` (
 --
 
 INSERT INTO `announcements` (`id`, `message`, `applied_date`, `applied_time`, `announcement_type`, `is_active`, `created_at`) VALUES
-(0, 'hehe', '2024-11-28', '18:35:00', 'activity', 1, '2024-11-28 10:35:48'),
-(0, 'haha', '2024-11-28', '18:36:00', 'administrative', 1, '2024-11-28 10:36:12');
+(5, 'dasdasdw', '2025-02-16', '11:11:00', 'activity', 0, '2025-02-15 22:15:47'),
+(6, 'dafqwfqwfasd', '2025-02-16', '14:34:00', 'administrative', 0, '2025-02-15 22:16:35');
 
 -- --------------------------------------------------------
 
@@ -66,13 +66,7 @@ CREATE TABLE `attendance` (
 --
 
 INSERT INTO `attendance` (`id`, `user_id`, `date`, `time_in`, `time_out`, `created_at`, `status`) VALUES
-(36, 39, '2025-01-19', '17:14:11', '14:53:26', '2025-01-19 13:53:24', 'checked_in'),
-(37, 33, '2025-01-19', '17:14:02', '16:29:50', '2025-01-19 15:29:48', 'checked_in'),
-(38, 42, '2025-01-19', '17:13:54', '17:13:34', '2025-01-19 16:12:33', 'checked_in'),
-(39, 40, '2025-01-19', '17:13:59', '17:13:35', '2025-01-19 16:13:28', 'checked_in'),
-(40, 44, '2025-01-26', '05:26:10', '05:26:12', '2025-01-26 04:26:10', 'checked_out'),
-(41, 45, '2025-01-26', '05:27:32', '05:27:34', '2025-01-26 04:27:32', 'checked_out'),
-(42, 40, '2025-01-26', '05:27:45', NULL, '2025-01-26 04:27:45', 'checked_in');
+(84, 59, '2025-02-17', '20:01:37', NULL, '2025-02-17 12:01:37', 'checked_in');
 
 -- --------------------------------------------------------
 
@@ -94,24 +88,7 @@ CREATE TABLE `attendance_history` (
 --
 
 INSERT INTO `attendance_history` (`id`, `attendance_id`, `time_in`, `time_out`, `created_at`, `status`) VALUES
-(51, 36, '14:53:24', NULL, '2025-01-19 13:53:24', 'checked_in'),
-(52, 36, '14:53:24', '14:53:26', '2025-01-19 13:53:26', 'checked_out'),
-(53, 37, '16:29:48', NULL, '2025-01-19 15:29:48', 'checked_in'),
-(54, 37, '16:29:48', '16:29:50', '2025-01-19 15:29:50', 'checked_out'),
-(55, 38, '17:12:33', NULL, '2025-01-19 16:12:33', 'checked_in'),
-(56, 39, '17:13:28', NULL, '2025-01-19 16:13:28', 'checked_in'),
-(57, 38, '17:13:33', NULL, '2025-01-19 16:13:33', 'checked_in'),
-(58, 38, '17:13:33', '17:13:34', '2025-01-19 16:13:34', 'checked_out'),
-(59, 39, '17:13:28', '17:13:35', '2025-01-19 16:13:35', 'checked_out'),
-(60, 38, '17:13:54', NULL, '2025-01-19 16:13:54', 'checked_in'),
-(61, 39, '17:13:59', NULL, '2025-01-19 16:13:59', 'checked_in'),
-(62, 37, '17:14:02', NULL, '2025-01-19 16:14:02', 'checked_in'),
-(63, 36, '17:14:11', NULL, '2025-01-19 16:14:11', 'checked_in'),
-(64, 40, '05:26:10', NULL, '2025-01-26 04:26:10', 'checked_in'),
-(65, 40, '05:26:10', '05:26:12', '2025-01-26 04:26:12', 'checked_out'),
-(66, 41, '05:27:32', NULL, '2025-01-26 04:27:32', 'checked_in'),
-(67, 41, '05:27:32', '05:27:34', '2025-01-26 04:27:34', 'checked_out'),
-(68, 42, '05:27:45', NULL, '2025-01-26 04:27:45', 'checked_in');
+(152, 84, '20:01:37', NULL, '2025-02-17 12:01:37', 'checked_in');
 
 -- --------------------------------------------------------
 
@@ -176,10 +153,10 @@ CREATE TABLE `gallery_images` (
 --
 
 INSERT INTO `gallery_images` (`id`, `image_path`, `alt_text`) VALUES
-(5, 'cms_img/gallery/674eea5fcefdd_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image'),
-(6, 'cms_img/gallery/674eea67340d3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 2'),
-(7, 'cms_img/gallery/674eea6d46d28_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 3'),
-(8, 'cms_img/gallery/674eea7452fb3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg', 'image 4');
+(9, 'cms_img/gallery/67b1d7b91e83f_gallery5.jpg', ''),
+(10, 'cms_img/gallery/67b1e69622c99_475751120_1663639264548208_3184291561432859418_n.jpg', ''),
+(12, 'cms_img/gallery/67b1e91a4395c_476787992_1387925502172232_7754806762146922739_n.jpg', ''),
+(13, 'cms_img/gallery/67b1e920c8d9b_476583676_558958270508330_2625154709478558915_n.jpg', '');
 
 -- --------------------------------------------------------
 
@@ -201,9 +178,10 @@ CREATE TABLE `gym_offers` (
 --
 
 INSERT INTO `gym_offers` (`id`, `title`, `description`, `image_path`, `created_at`, `updated_at`) VALUES
-(1, 'standard', '100', 'cms_img/offers/674ee394e32d1_461323753_504421532393159_5499801553050918367_n.jpg', '2024-12-03 10:55:16', '2024-12-03 10:55:16'),
-(2, '1231', '4wqe', 'cms_img/offers/674ee9cd2cbab_1805200.jpg', '2024-12-03 11:21:49', '2024-12-03 11:21:49'),
-(3, 'rqrqwr', 'rqw', 'cms_img/offers/67510b32320ae_462638319_1025131135758893_3299917056877386691_n.jpg', '2024-12-05 02:08:50', '2024-12-05 02:08:50');
+(5, ' ', ' ', 'cms_img/offers/67b1e92b5dae7_475188469_645727571186517_4162057490619452205_n.jpg', '2025-02-16 13:33:31', '2025-02-16 13:33:31'),
+(6, ' ', ' ', 'cms_img/offers/67b1e93247939_478039537_3004914946325748_6232555270493290314_n.jpg', '2025-02-16 13:33:38', '2025-02-16 13:33:38'),
+(8, ' ', ' ', 'cms_img/offers/67b1e95c25b06_475188469_645727571186517_4162057490619452205_n.jpg', '2025-02-16 13:34:20', '2025-02-16 13:34:20'),
+(9, ' ', ' ', 'cms_img/offers/67b1e961c917a_478039537_3004914946325748_6232555270493290314_n.jpg', '2025-02-16 13:34:25', '2025-02-16 13:34:25');
 
 -- --------------------------------------------------------
 
@@ -230,20 +208,8 @@ CREATE TABLE `memberships` (
 --
 
 INSERT INTO `memberships` (`id`, `transaction_id`, `membership_plan_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
-(80, 73, 20, '2024-12-06', '2025-01-06', 500.00, 'active', 1, NULL, '2024-12-04 23:51:05', '2024-12-05 01:55:13'),
-(81, 74, 20, '2024-12-06', '2025-01-06', 500.00, 'active', 1, NULL, '2024-12-05 01:45:22', '2024-12-05 01:55:13'),
-(82, 75, 20, '2024-12-05', '2025-01-05', 500.00, 'active', 1, '2024-12-05 10:01:36', '2024-12-05 02:01:36', '2024-12-05 02:01:36'),
-(83, 76, 21, '2024-12-05', '2025-01-05', 400.00, 'active', 1, '2024-12-05 10:06:06', '2024-12-05 02:06:06', '2024-12-05 02:06:06'),
-(84, 77, 20, '2025-01-19', '2025-02-19', 500.00, 'active', 1, '2025-01-19 21:46:55', '2025-01-19 13:46:55', '2025-01-19 13:46:55'),
-(85, 78, 20, '2025-01-19', '2025-02-19', 500.00, 'active', 0, NULL, '2025-01-19 13:59:32', '2025-01-19 13:59:32'),
-(86, 81, 21, '2025-01-19', '2025-02-19', 400.00, 'active', 0, NULL, '2025-01-19 14:16:36', '2025-01-19 14:16:36'),
-(87, 82, 20, '2025-01-21', '2025-02-21', 500.00, 'expiring', 0, NULL, '2025-01-19 14:19:50', '2025-01-19 16:16:04'),
-(88, 83, 21, '2025-01-19', '2025-02-19', 400.00, 'expired', 1, '2025-01-19 23:44:54', '2025-01-19 15:44:54', '2025-01-19 15:53:17'),
-(89, 84, 20, '2025-01-21', '2025-02-21', 500.00, 'active', 1, '2025-01-21 14:46:27', '2025-01-21 06:46:27', '2025-01-21 06:46:27'),
-(90, 85, 21, '2025-01-21', '2025-02-21', 400.00, 'active', 1, '2025-01-21 18:58:20', '2025-01-21 10:58:20', '2025-01-21 10:58:20'),
-(91, 86, 20, '2025-02-21', '2025-03-21', 500.00, 'active', 1, '2025-02-21 18:59:27', '2025-02-21 10:59:27', '2025-02-21 10:59:27'),
-(92, 87, 20, '2025-02-21', '2025-03-21', 500.00, 'active', 1, '2025-01-21 19:00:53', '2025-01-21 11:00:53', '2025-01-21 11:00:53'),
-(93, 88, 21, '2025-01-21', '2025-02-21', 400.00, 'active', 1, '2025-01-21 19:01:31', '2025-01-21 11:01:31', '2025-01-21 11:01:31');
+(94, 89, 20, '2025-02-06', '2025-03-06', 500.00, 'active', 1, NULL, '2025-02-06 15:12:56', '2025-02-06 15:12:56'),
+(95, 90, 20, '2025-02-14', '2025-03-14', 500.00, 'active', 0, NULL, '2025-02-14 11:17:47', '2025-02-14 11:17:47');
 
 -- --------------------------------------------------------
 
@@ -300,21 +266,11 @@ CREATE TABLE `personal_details` (
 --
 
 INSERT INTO `personal_details` (`id`, `user_id`, `first_name`, `middle_name`, `last_name`, `sex`, `birthdate`, `phone_number`, `created_at`, `updated_at`) VALUES
-(29, 33, 'Reign', 'Carreon', 'Magno', 'Male', '2004-08-02', '12312312312', '2024-12-03 14:29:47', '2024-12-03 14:29:47'),
 (30, 34, 'admin', '', 'admin', 'Male', '2024-12-03', '12312312312', '2024-12-03 14:30:35', '2024-12-03 14:30:35'),
 (31, 35, 'coach', '', 'coach', 'Female', '2024-12-03', '12312312312', '2024-12-03 14:31:06', '2024-12-03 14:31:06'),
 (32, 36, 'coach2', '', 'coach2', 'Male', '2024-12-03', '12312312312', '2024-12-03 14:31:30', '2024-12-03 14:31:30'),
-(33, 37, 'bai', NULL, 'bai', 'Female', '2024-12-05', '09752441070', '2024-12-05 02:01:36', '2024-12-05 02:01:36'),
-(34, 38, 'bai', NULL, 'bai', 'Female', '2024-12-03', '09752441070', '2024-12-05 02:06:06', '2024-12-05 02:06:06'),
-(35, 39, 'sofia', 'the', 'first', 'Female', '2000-08-11', '09876543211', '2025-01-19 13:46:55', '2025-01-19 13:46:55'),
-(36, 40, 'kiel', 'the', 'great', 'Male', '2025-01-19', '09123456789', '2025-01-19 13:58:19', '2025-01-19 13:58:19'),
-(37, 41, 'Gerby', '', 'Hallasgo', 'Male', '2025-01-19', '09562307646', '2025-01-19 15:43:44', '2025-01-19 15:43:44'),
-(38, 42, 'Gerbyy', NULL, 'Hallasgoo', 'Male', '2025-01-19', '09562307647', '2025-01-19 15:44:54', '2025-01-19 15:44:54'),
-(39, 43, 'test', 'test', 'test', 'Female', '2025-01-21', '09562307647', '2025-01-21 06:46:27', '2025-01-21 06:46:27'),
-(40, 44, 'febbb', 'febbb', 'febbb', 'Male', '2025-01-21', '09562307647', '2025-01-21 10:58:20', '2025-01-21 10:58:20'),
-(41, 45, 'feb', 'feb', 'feb', 'Female', '2025-02-21', '09562307647', '2025-02-21 10:59:27', '2025-02-21 10:59:27'),
-(42, 46, 'march', 'march', 'march', 'Male', '2025-02-21', '09562307648', '2025-01-21 11:00:53', '2025-01-21 11:00:53'),
-(43, 47, 'march2', 'march2', 'march2', 'Male', '2025-01-21', '09562307649', '2025-01-21 11:01:31', '2025-01-21 11:01:31');
+(49, 57, 'nosjay', '', 'jayson', 'Male', '2000-11-11', '09562307645', '2025-02-06 15:12:56', '2025-02-06 15:12:56'),
+(51, 59, 'Gerby', '', 'Hallasgo', 'Male', '2000-11-11', '09562307646', '2025-02-07 14:49:25', '2025-02-07 14:49:25');
 
 -- --------------------------------------------------------
 
@@ -334,10 +290,13 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `name`, `description`, `image_path`) VALUES
-(6, 'product', '100', 'cms_img/products/674ee9eb68c0e_206268.jpg'),
-(7, 'product 2', '100', 'cms_img/products/674ee9fa55ac3_1805129.jpg'),
-(8, 'product 3', '100', 'cms_img/products/674eea0eb8ef8_peakpx2.jpg'),
-(9, 'product 4', '100', 'cms_img/products/674eea2122479_pexels-caleboquendo-7772559.jpg');
+(10, 'Whey Protein ', ' ', 'cms_img/products/67b1e4ca71a2c_458330064_408284761927377_6870281540302547404_n.jpg'),
+(11, 'Mass Gainer', ' ', 'cms_img/products/67b1e4d6a8e2e_458293900_845031824277780_8545647259483522998_n.jpg'),
+(12, 'Isopure', ' ', 'cms_img/products/67b1e4e95ddfb_459022515_3849345398675399_6099214958007690975_n.jpg'),
+(13, 'Rule 1', ' ', 'cms_img/products/67b1e4f32684d_458651943_825429683134590_790091522809318674_n.jpg'),
+(14, 'Rule 1', ' ', 'cms_img/products/67b1e4fe8743f_458376327_1454293141905163_1689636008975345724_n.jpg'),
+(15, 'Rule 1', ' ', 'cms_img/products/67b1e504a909c_458935169_984694713428384_7002601172150561970_n.jpg'),
+(16, 'Amino 2222', ' ', 'cms_img/products/67b1e519bf808_458291718_495506383284388_4877429357951674690_n.jpg');
 
 -- --------------------------------------------------------
 
@@ -358,20 +317,11 @@ CREATE TABLE `profile_photos` (
 --
 
 INSERT INTO `profile_photos` (`id`, `user_id`, `photo_path`, `is_active`, `uploaded_at`) VALUES
-(19, 33, 'uploads/profile_33_674f15db64255.jpg', 1, '2024-12-03 14:29:47'),
 (20, 34, 'uploads/profile_34_674f160b69d41.jpg', 1, '2024-12-03 14:30:35'),
 (21, 35, 'uploads/profile_35_674f162a2c762.png', 1, '2024-12-03 14:31:06'),
 (22, 36, 'uploads/profile_36_674f164225640.png', 1, '2024-12-03 14:31:30'),
-(23, 37, 'uploads/profile_37_675109803519e.png', 1, '2024-12-05 02:01:36'),
-(24, 38, 'uploads/profile_38_67510a8ecc7b7.jpg', 1, '2024-12-05 02:06:06'),
-(25, 39, 'uploads/profile_39_678d024fb276b.png', 1, '2025-01-19 13:46:55'),
-(26, 40, 'uploads/profile_40_678d04fb9e423.png', 1, '2025-01-19 13:58:19'),
-(27, 42, 'uploads/profile_42_678d1df6e98cd.png', 1, '2025-01-19 15:44:54'),
-(28, 43, 'uploads/profile_43_678f42c349956.png', 1, '2025-01-21 06:46:27'),
-(29, 44, 'uploads/profile_44_678f7dcca6adf.png', 1, '2025-01-21 10:58:20'),
-(30, 45, 'uploads/profile_45_67b85c8fe5d0a.png', 1, '2025-02-21 10:59:27'),
-(31, 46, 'uploads/profile_46_678f7e6524889.jpg', 1, '2025-01-21 11:00:53'),
-(32, 47, 'uploads/profile_47_678f7e8b6694f.jpg', 1, '2025-01-21 11:01:31');
+(44, 57, 'uploads/profile_57_67a4d178272a3.jpg', 1, '2025-02-06 15:12:56'),
+(46, 59, 'uploads/profile_59_67aadb596c528.jpg', 1, '2025-02-07 14:49:25');
 
 -- --------------------------------------------------------
 
@@ -426,8 +376,7 @@ CREATE TABLE `program_subscriptions` (
 --
 
 INSERT INTO `program_subscriptions` (`id`, `transaction_id`, `program_id`, `coach_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
-(35, 73, 3, 35, '2024-12-06', '2025-01-06', 450.00, 'active', 1, NULL, '2024-12-04 23:51:05', '2024-12-05 01:55:13'),
-(36, 76, 3, 36, '2024-12-05', '2025-01-05', 450.00, 'active', 1, '2024-12-05 10:06:06', '2024-12-05 02:06:06', '2024-12-05 02:06:06');
+(37, 89, 3, 35, '2025-02-06', '2025-03-06', 500.00, 'active', 1, NULL, '2025-02-06 15:12:56', '2025-02-06 15:12:56');
 
 -- --------------------------------------------------------
 
@@ -486,17 +435,7 @@ CREATE TABLE `registration_records` (
 --
 
 INSERT INTO `registration_records` (`id`, `transaction_id`, `registration_id`, `amount`, `created_at`) VALUES
-(20, 73, 1, 150.00, '2024-12-04 23:51:05'),
-(21, 75, 1, 150.00, '2024-12-05 02:01:36'),
-(22, 76, 1, 150.00, '2024-12-05 02:06:06'),
-(23, 77, 1, 150.00, '2025-01-19 13:46:55'),
-(24, 78, 1, 150.00, '2025-01-19 13:59:32'),
-(25, 83, 1, 200.00, '2025-01-19 15:44:54'),
-(26, 84, 1, 200.00, '2025-01-21 06:46:27'),
-(27, 85, 1, 200.00, '2025-01-21 10:58:20'),
-(28, 86, 1, 200.00, '2025-02-21 10:59:27'),
-(29, 87, 1, 200.00, '2025-01-21 11:00:53'),
-(30, 88, 1, 200.00, '2025-01-21 11:01:31');
+(31, 89, 1, 200.00, '2025-02-06 15:12:56');
 
 -- --------------------------------------------------------
 
@@ -546,14 +485,6 @@ CREATE TABLE `rental_subscriptions` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `rental_subscriptions`
---
-
-INSERT INTO `rental_subscriptions` (`id`, `transaction_id`, `rental_service_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
-(36, 73, 5, '2024-12-06', '2025-01-06', 150.00, 'active', 1, NULL, '2024-12-04 23:51:05', '2024-12-05 01:55:13'),
-(37, 76, 5, '2024-12-05', '2025-01-05', 150.00, 'active', 1, '2024-12-05 10:06:06', '2024-12-05 02:06:06', '2024-12-05 02:06:06');
-
 -- --------------------------------------------------------
 
 --
@@ -594,10 +525,9 @@ CREATE TABLE `staff` (
 --
 
 INSERT INTO `staff` (`id`, `name`, `status`, `image_path`) VALUES
-(5, 'gerby', 'Trainer', 'cms_img/staff/674eea3654d6a_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg'),
-(6, 'jamal', 'Trainer', 'cms_img/staff/674eea3e5c85e_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg'),
-(7, 'reign', 'Trainer', 'cms_img/staff/674eea472ace9_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg'),
-(8, 'jerd', 'Trainer', 'cms_img/staff/674eea4df3dc3_3d1d304e-c58e-4838-9f04-e65597c09dfb.jpg');
+(13, 'Jayson', 'Trainer/Owner', 'cms_img/staff/67b1d790bea77_gallery3.jpg'),
+(14, 'alexandra ', 'Staff', 'cms_img/staff/67b1e8f69d8fb_477906399_1141990593946324_8140196602381044715_n.jpg'),
+(15, 'Walter', 'Staff/Trainer', 'cms_img/staff/67b1e90d1fee0_474274014_1291475002070511_6598343183032821899_n.png');
 
 -- --------------------------------------------------------
 
@@ -626,7 +556,31 @@ INSERT INTO `staff_activity_log` (`id`, `activity`, `description`, `timestamp`, 
 (6, 'User Unbanned', 'Unbanned user reign', '2025-01-27 04:59:01', 34),
 (7, 'User Banned', 'Banned user reign - Reasons: Security Threats', '2025-01-27 05:00:18', 34),
 (8, 'User Unbanned', 'Unbanned user reign', '2025-01-27 05:00:21', 34),
-(9, 'User Banned', 'Banned user reign - Reasons: Violation of Terms of Service', '2025-01-27 05:01:12', 34);
+(9, 'User Banned', 'Banned user reign - Reasons: Violation of Terms of Service', '2025-01-27 05:01:12', 34),
+(10, 'User Banned', 'Banned user Gerby123 - Reasons: Violation of Terms of Service', '2025-02-11 08:21:03', 34),
+(11, 'User Unbanned', 'Unbanned user Gerby123', '2025-02-11 08:21:06', 34),
+(12, 'User Banned', 'Banned user Gerby123 - Reasons: Security Threats', '2025-02-11 08:21:10', 34),
+(13, 'User Unbanned', 'Unbanned user Gerby123', '2025-02-11 08:39:49', 34);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `system_controls`
+--
+
+CREATE TABLE `system_controls` (
+  `key_name` varchar(50) NOT NULL,
+  `value` text NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `system_controls`
+--
+
+INSERT INTO `system_controls` (`key_name`, `value`, `updated_at`) VALUES
+('last_attendance_reset', '2025-02-17 13:01:33', '2025-02-17 12:01:33'),
+('last_missed_attendance_record', '2025-02-17 05:43:17', '2025-02-17 04:43:17');
 
 -- --------------------------------------------------------
 
@@ -647,22 +601,9 @@ CREATE TABLE `transactions` (
 --
 
 INSERT INTO `transactions` (`id`, `staff_id`, `user_id`, `status`, `created_at`) VALUES
-(73, NULL, 33, 'confirmed', '2024-12-04 23:51:05'),
-(74, NULL, 33, 'confirmed', '2024-12-05 01:45:22'),
-(75, 34, 37, 'confirmed', '2024-12-05 02:01:36'),
-(76, 34, 38, 'confirmed', '2024-12-05 02:06:06'),
-(77, 34, 39, 'confirmed', '2025-01-19 13:46:55'),
-(78, NULL, 40, 'confirmed', '2025-01-19 13:59:32'),
-(79, NULL, NULL, 'confirmed', '2025-01-19 14:03:09'),
-(80, NULL, 40, 'confirmed', '2025-01-19 14:03:25'),
-(81, NULL, 33, 'confirmed', '2025-01-19 14:16:36'),
-(82, NULL, 33, 'confirmed', '2025-01-19 14:19:50'),
-(83, 34, 42, 'confirmed', '2025-01-19 15:44:54'),
-(84, 34, 43, 'confirmed', '2025-01-21 06:46:27'),
-(85, 34, 44, 'confirmed', '2025-01-21 10:58:20'),
-(86, 34, 45, 'confirmed', '2025-02-21 10:59:27'),
-(87, 34, 46, 'confirmed', '2025-01-21 11:00:53'),
-(88, 34, 47, 'confirmed', '2025-01-21 11:01:31');
+(89, NULL, 57, 'confirmed', '2025-02-06 15:12:56'),
+(90, NULL, 59, 'confirmed', '2025-02-14 11:17:47'),
+(91, NULL, NULL, 'confirmed', '2025-02-17 12:03:02');
 
 -- --------------------------------------------------------
 
@@ -678,29 +619,20 @@ CREATE TABLE `users` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_banned` tinyint(1) DEFAULT 0
+  `is_banned` tinyint(1) DEFAULT 0,
+  `last_password_change` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role_id`, `is_active`, `created_at`, `updated_at`, `is_banned`) VALUES
-(33, 'reign', '$2y$10$Gej8JD.h1Lo9enEaEtRNb.gXcarqSXwo9uJSk3wt7RV1j.nW1RcPS', 5, 1, '2024-12-03 14:29:47', '2025-01-27 07:47:06', 1),
-(34, 'admin', '$2y$10$jFClQzi6TkhZvQfTaXjDQOnqnNXOxRSehXfV14EiQ1l96GahuBT92', 1, 1, '2024-12-03 14:30:35', '2024-12-03 14:31:46', 0),
-(35, 'coach', '$2y$10$pjk6.DxDk100djz9iZ.u2ul6brXXvm95yUbFDJmzBFAhfHDZQPrWC', 4, 1, '2024-12-03 14:31:06', '2024-12-03 14:31:51', 0),
-(36, 'coach2', '$2y$10$u4vKNjQXzbx9dRW.S950meSICjRzNn12/0gjm2GdcPrSvH8qrIvO2', 4, 1, '2024-12-03 14:31:30', '2024-12-03 14:31:56', 0),
-(37, 'bai', '$2y$10$zVaoEdg8TGb/LJEGuS06p.M.nocykoEs.ak2FAPY36VOkgnDyW2Yq', 3, 1, '2024-12-05 02:01:36', '2024-12-05 02:01:36', 0),
-(38, 'bai2', '$2y$10$UEX0b7O0upwCRPloDYBFdesuXWkwMpUYaLvYuSvtQzh9ihkQemmRu', 3, 1, '2024-12-05 02:06:06', '2024-12-05 02:06:06', 0),
-(39, 'sofia', '$2y$10$aT9HT0aRE/DCbCaNU/T.z.6UFxe2NROVPK3IZi9jY9hGqJerRxQgC', 3, 1, '2025-01-19 13:46:55', '2025-01-19 13:46:55', 0),
-(40, 'kiel', '$2y$10$rnEhRal7OocaGpeHOJeP8OXzFAn91gf5ukjJtZpvqlrlFzT6ZCBi2', 3, 1, '2025-01-19 13:58:19', '2025-01-19 13:59:58', 0),
-(41, 'gerby', '$2y$10$MqTtSMBy.kVi66shs3YUp.lhF68bsLGzwf5hUqxP2yY7vajtRzMfW', 2, 1, '2025-01-19 15:43:44', '2025-01-19 15:43:44', 0),
-(42, 'Gerbyy', '$2y$10$idWVokYzmol1tNFvcPJXReRJ0gDwI6ZD7Ipk9RrJUXr30Ks.p1z3.', 3, 1, '2025-01-19 15:44:54', '2025-01-19 15:44:54', 0),
-(43, 'test', '$2y$10$8DMjoFXi2eLtyfbWMlkLUeq2RbWGxJa35DLfnBI9x3owGUGr0AL8e', 3, 1, '2025-01-21 06:46:27', '2025-01-21 06:46:27', 0),
-(44, 'febbb', '$2y$10$7SEbiiW0FtlC25Kez3pQVunsyxceaZvorflBLGLANX82B9IBAcvoC', 3, 1, '2025-01-21 10:58:20', '2025-01-21 10:58:20', 0),
-(45, 'feb', '$2y$10$q6wQAo/UTkIp50988RYqKuhTsm0EpCUs0hF1VBbkwc423XWmAbEoW', 3, 1, '2025-02-21 10:59:27', '2025-02-21 10:59:27', 0),
-(46, 'march', '$2y$10$Mh3JBQv5xreVrFa6TnTD1eNDGtIJb61lyUaoduyjyXX4axP22FQYW', 3, 1, '2025-01-21 11:00:53', '2025-01-21 11:00:53', 0),
-(47, 'march2', '$2y$10$.AG8QjgrVOFwLZQ1OOFAaeJ5eYOZCo0R4uVFwYJkJHuK7WukplHfW', 3, 1, '2025-01-21 11:01:31', '2025-01-21 11:01:31', 0);
+INSERT INTO `users` (`id`, `username`, `password`, `role_id`, `is_active`, `created_at`, `updated_at`, `is_banned`, `last_password_change`) VALUES
+(34, 'admin', '$2y$10$jFClQzi6TkhZvQfTaXjDQOnqnNXOxRSehXfV14EiQ1l96GahuBT92', 1, 1, '2024-12-03 14:30:35', '2024-12-03 14:31:46', 0, '2025-02-04 11:57:51'),
+(35, 'coach', '$2y$10$pjk6.DxDk100djz9iZ.u2ul6brXXvm95yUbFDJmzBFAhfHDZQPrWC', 4, 1, '2024-12-03 14:31:06', '2024-12-03 14:31:51', 0, '2025-02-04 11:57:51'),
+(36, 'coach2', '$2y$10$u4vKNjQXzbx9dRW.S950meSICjRzNn12/0gjm2GdcPrSvH8qrIvO2', 4, 1, '2024-12-03 14:31:30', '2024-12-03 14:31:56', 0, '2025-02-04 11:57:51'),
+(57, 'nosjay6991', '$2y$10$CY0DcwMlUe0qXamoAhVnFOkavzkQFYbX2X9Fzme7lKapqwnwOt7oi', 3, 1, '2025-02-06 15:12:56', '2025-02-06 15:12:56', 0, '2025-02-06 15:12:56'),
+(59, 'Gerby123', '$2y$10$Z1xhWrLsNBycQNxpimjFXOBIL6Eb4JNBMyId9vjAf4r.FnAL6mUNy', 3, 1, '2025-02-07 14:49:25', '2025-02-11 08:39:49', 0, '0000-00-00 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -735,7 +667,7 @@ CREATE TABLE `walk_in` (
 --
 
 INSERT INTO `walk_in` (`id`, `price`, `duration`, `duration_type_id`, `updated_at`) VALUES
-(1, 50.00, 1, 1, '2024-12-04 11:55:09');
+(1, 100.00, 1, 1, '2025-02-17 12:07:46');
 
 -- --------------------------------------------------------
 
@@ -761,8 +693,7 @@ CREATE TABLE `walk_in_records` (
 --
 
 INSERT INTO `walk_in_records` (`id`, `transaction_id`, `walk_in_id`, `name`, `phone_number`, `date`, `time_in`, `amount`, `is_paid`, `status`) VALUES
-(16, 79, 1, '8080', '09876543211', '2025-01-19', '22:03:09', 50.00, 1, 'walked-in'),
-(17, 80, 1, 'kiel great', '09123456789', '2025-01-19', '22:03:57', 50.00, 1, 'walked-in');
+(18, 91, 1, 'gerby', '09562307646', '2025-02-17', '20:03:02', 50.00, 1, 'walked-in');
 
 -- --------------------------------------------------------
 
@@ -777,22 +708,30 @@ CREATE TABLE `website_content` (
   `description` text DEFAULT NULL,
   `location` varchar(255) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL
+  `email` varchar(100) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `website_content`
 --
 
-INSERT INTO `website_content` (`id`, `section`, `company_name`, `description`, `location`, `phone`, `email`) VALUES
-(1, 'welcome', 'Xiao Long Bai need\'s help', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. please let us pass hehe', NULL, NULL, NULL),
-(2, 'offers', 'Gym Offers', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. please let us pass hehe', NULL, NULL, NULL),
-(3, 'about_us', 'About Our Gym', 'We are dedicated to helping gerby', NULL, NULL, NULL),
-(4, 'contact', NULL, NULL, 'gerby\'s house', '09562307646', 'hallasgogerby@gmail.com');
+INSERT INTO `website_content` (`id`, `section`, `company_name`, `description`, `location`, `phone`, `email`, `latitude`, `longitude`) VALUES
+(1, 'welcome', 'Xiao Long Bai', 'Your Journey to Wellness Begins Here!\r\n\r\nAt Xiao Long Bai Fitness Center, we believe that fitness is not just a routine; it\'s a lifestyle. Our state-of-the-art facility is dedicated to helping you achieve your health and fitness goals, no matter your level of experience.', NULL, NULL, NULL, NULL, NULL),
+(2, 'offers', 'Gym Offers', 'Unlock your fitness potential with our exclusive deals! At JC PowerZone, we believe in making fitness accessible and fun for everyone. Take advantage of our limited-time offers designed to help you get started on your health journey without breaking the bank.', NULL, NULL, NULL, NULL, NULL),
+(3, 'about_us', 'About Our Gym', 'Xiao Long Bai Fitness Center: Where Wellness Meets Excellence\r\n\r\nAt Xiao Long Bai Fitness Center, we are more than just a gym; we are a community dedicated to fostering health, wellness, and personal growth. Founded with a passion for fitness and a commitment to excellence, our goal is to create an environment where everyone—from beginners to seasoned athletes—can thrive and reach their full potential.', NULL, NULL, NULL, NULL, NULL),
+(4, 'contact', NULL, NULL, 'Mayor M.S. Jaldon Street, Baliwasan, Zamboanga City, Philippines', '09562307646', 'jcpowerzone@gmail.com', 6.91308407, 122.07251215);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `announcements`
+--
+ALTER TABLE `announcements`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `attendance`
@@ -945,6 +884,12 @@ ALTER TABLE `staff_activity_log`
   ADD KEY `staff_id` (`staff_id`);
 
 --
+-- Indexes for table `system_controls`
+--
+ALTER TABLE `system_controls`
+  ADD PRIMARY KEY (`key_name`);
+
+--
 -- Indexes for table `transactions`
 --
 ALTER TABLE `transactions`
@@ -994,16 +939,22 @@ ALTER TABLE `website_content`
 --
 
 --
+-- AUTO_INCREMENT for table `announcements`
+--
+ALTER TABLE `announcements`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT for table `attendance`
 --
 ALTER TABLE `attendance`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
 
 --
 -- AUTO_INCREMENT for table `attendance_history`
 --
 ALTER TABLE `attendance_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
 
 --
 -- AUTO_INCREMENT for table `coach_program_types`
@@ -1021,19 +972,19 @@ ALTER TABLE `duration_types`
 -- AUTO_INCREMENT for table `gallery_images`
 --
 ALTER TABLE `gallery_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `gym_offers`
 --
 ALTER TABLE `gym_offers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `memberships`
 --
 ALTER TABLE `memberships`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=94;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=96;
 
 --
 -- AUTO_INCREMENT for table `membership_plans`
@@ -1045,19 +996,19 @@ ALTER TABLE `membership_plans`
 -- AUTO_INCREMENT for table `personal_details`
 --
 ALTER TABLE `personal_details`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `profile_photos`
 --
 ALTER TABLE `profile_photos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT for table `programs`
@@ -1069,7 +1020,7 @@ ALTER TABLE `programs`
 -- AUTO_INCREMENT for table `program_subscriptions`
 --
 ALTER TABLE `program_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `program_types`
@@ -1087,7 +1038,7 @@ ALTER TABLE `registration`
 -- AUTO_INCREMENT for table `registration_records`
 --
 ALTER TABLE `registration_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `rental_services`
@@ -1111,25 +1062,25 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `staff`
 --
 ALTER TABLE `staff`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `staff_activity_log`
 --
 ALTER TABLE `staff_activity_log`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `verification_codes`
@@ -1147,7 +1098,7 @@ ALTER TABLE `walk_in`
 -- AUTO_INCREMENT for table `walk_in_records`
 --
 ALTER TABLE `walk_in_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `website_content`

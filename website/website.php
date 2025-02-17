@@ -42,7 +42,7 @@ $latitude = $contactContent['latitude'] ?? 6.913126;
 $longitude = $contactContent['longitude'] ?? 122.072516;
 
 $offers = executeQuery("SELECT * FROM gym_offers LIMIT 4");
-$products = executeQuery("SELECT * FROM products LIMIT 8");
+$products = executeQuery("SELECT * FROM products LIMIT 6");
 $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
 require_once('includes/header.php');

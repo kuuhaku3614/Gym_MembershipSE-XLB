@@ -153,17 +153,17 @@ try {
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h2 class="card-title mb-0">Check-in System</h2>
             <div class="d-flex align-items-center">
+                <?php if ($resetButtonVisible): ?>
+                <button id="resetButton" class="btn btn-warning">
+                    Reset Attendance
+                </button>
+                <?php endif; ?>
                 <span class="me-3">
                     <strong>Date:</strong> <?= $currentDateTime->format('F d, Y') ?>
                 </span>
                 <span class="me-3">
                     <strong>Time:</strong> <span id="currentTime"><?= $currentTime ?></span>
                 </span>
-                <?php if ($resetButtonVisible): ?>
-                <button id="resetButton" class="btn btn-warning">
-                    Reset Attendance
-                </button>
-                <?php endif; ?>
             </div>
         </div>
         <div class="card-body">
