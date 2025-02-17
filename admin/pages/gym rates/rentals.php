@@ -40,25 +40,21 @@ try {
 }
 ?>
 
-<h1 class="nav-title">Facility and Service Rentals</h1>
 
-<div class="search-section">
-    <div class="row align-items-center">
-        <div class="col-md-6">
-            <div class="search-controls">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">Add Service</button>
+
+<div class="container-fluid py-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Facility and Service Rentals</h2>
+            <div class="col-md-6 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">Add Service</button>
+            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
             </div>
         </div>
-        <div class="col-md-6 d-flex justify-content-end">
-            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
-        </div>
-    </div>
-</div>
-
-<div class="table-responsive">
-    <table class="table table-bordered table-hover">
-        <thead class="table-dark">
-            <tr class="text-center">
+<div class="card">
+<div class="card-body">
+    <table id="rentalsTable" class="table table-bordered table-hover">
+        <thead>
+            <tr>
                 <th>No.</th>
                 <th>Service Name</th>
                 <th>Duration</th>
@@ -102,18 +98,22 @@ try {
                         </span>
                     </td>
                     <td class="text-center">
-                        <button class="btn btn-sm <?= $toggleBtnClass ?> toggle-status" 
-                                data-id="<?= $rental['id'] ?>" data-status="<?= $rental['status'] ?>">
-                            <?= $toggleBtnText ?>
-                        </button>
-                        <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>">Edit</button>
-                        <button class="btn btn-sm btn-danger remove-btn" data-id="<?= $rental['id'] ?>">Remove</button>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-sm <?= $toggleBtnClass ?> toggle-status" 
+                                    data-id="<?= $rental['id'] ?>" data-status="<?= $rental['status'] ?>">
+                                <?= $toggleBtnText ?>
+                            </button>
+                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>">Edit</button>
+                            <button class="btn btn-sm btn-danger remove-btn" data-id="<?= $rental['id'] ?>">Remove</button>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
     </table>
+</div>
+</div>
 </div>
 
 <!-- Add Service Modal -->
@@ -268,6 +268,21 @@ try {
 </div>
 
 <script>
+    $(document).ready(function() {
+    // Initialize DataTable
+    $('#rentalsTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+    });
 $(document).ready(function () {
     
     // Save button handler

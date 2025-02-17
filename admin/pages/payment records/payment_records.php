@@ -109,7 +109,7 @@ try {
 <div class="container my-5">
     <h2 class="text-center mb-4">Transaction Records</h2>
     <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover align-middle">
+        <table id="transactionTable" class="table table-bordered table-striped table-hover align-middle">
             <thead class="table-primary">
                 <tr>
                     <th>Transaction ID</th>
@@ -255,6 +255,22 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+       $(document).ready(function() {
+    // Initialize DataTable
+    $('#transactionTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+    });
+    
     function printReceipt(contentId) {
         // Get the content of the receipt
         const content = document.getElementById(contentId).innerHTML;
@@ -262,7 +278,7 @@ try {
         const printWindow = window.open('', '_blank', 'width=800,height=600');
         // Write the receipt content to the new window
         printWindow.document.open();
-        printWindow.document.write(``
+        printWindow.document.write(`
             <html>
                 <head>
                     <title>Print Receipt</title>
@@ -294,7 +310,7 @@ try {
                     ${content}
                 </body>
             </html>
-        ``
+        `
         );
         printWindow.document.close();
     }

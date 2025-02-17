@@ -241,3 +241,34 @@ $pdo = $database->connect();
  
   
 </body>
+
+<script>
+  $(document).ready(function() {
+    // Initialize DataTable
+    $('#attendanceTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+
+    $('#utilizationTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+    });
+</script>

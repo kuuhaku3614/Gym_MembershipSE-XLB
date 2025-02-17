@@ -204,25 +204,19 @@ foreach ($programs as $program) {
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="nav-title">Programs</h1>
 
-        <div class="search-section">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="search-controls">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProgramModal">Add Program</button>
-                    </div>
-                </div>
-                <div class="col-md-6 d-flex justify-content-end">
-                    <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
-                </div>
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Programs</h2>
+            <div class="col-md-6 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProgramModal">Add Program</button>
+            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
             </div>
         </div>
 
         <div class="table-responsive">
             <table id="programsTable" class="table table-striped table-bordered">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>No.</th>
                         <th>Program Name</th>
@@ -261,15 +255,17 @@ foreach ($programs as $program) {
                     echo "</td>";
                     echo "<td>" . htmlspecialchars($program['status']) . "</td>";
                     echo "<td>";
+                    echo "<div class='d-grid gap-2'>";
                     echo "<button class='btn btn-info btn-sm view-coaches-btn' data-id='" . $program['id'] . "' data-coaches='" . $coachDataJson . "' 
-                            data-program-name='" . htmlspecialchars($program['program_name'], ENT_QUOTES) . "'>View Coaches</button> ";
+                            data-program-name='" . htmlspecialchars($program['program_name'], ENT_QUOTES) . "'>View Coaches</button>";
                     if ($program['status'] === 'active') {
                         echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='inactive'>Deactivate</button>";
                     } else {
                         echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='active'>Activate</button>";
                     }
-                    echo " <button class='btn btn-primary btn-sm edit-btn' data-id='" . $program['id'] . "'>Edit</button>";
-                    echo " <button class='btn btn-danger btn-sm remove-btn' data-id='" . $program['id'] . "'>Remove</button>";
+                    echo "<button class='btn btn-primary btn-sm edit-btn' data-id='" . $program['id'] . "'>Edit</button>";
+                    echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . $program['id'] . "'>Remove</button>";
+                    echo "</div>";
                     echo "</td>";
                     echo "</tr>";
                 }
@@ -291,8 +287,8 @@ foreach ($programs as $program) {
                     <h6 class="program-name-display mb-3"></h6>
                     <div class="table-responsive" id="coachesTableContainer">
                         <table class="table table-bordered table-hover">
-                            <thead class="table-dark">
-                                <tr class="text-center">
+                            <thead>
+                                <tr>
                                     <th>No.</th>
                                     <th>Coach Name</th>
                                     <th>Price</th>
@@ -372,7 +368,7 @@ foreach ($programs as $program) {
     </div>
 
     <!-- Add Program Modal -->
-    <div class="modal fade" id="addProgramModal" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
+    <div class="modal" id="addProgramModal" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
@@ -523,18 +519,25 @@ foreach ($programs as $program) {
         </div>
     </div>
 
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        
     $(document).ready(function() {
-        $('#programsTable').DataTable({
-            "ordering": false,
-            "searching": true,
-            "responsive": true,
-            "lengthChange": true,
-            "pageLength": 10,
-            "language": {
-                "emptyTable": "No programs available"
-            }
-        });
+        // Initialize DataTable
+    $('#programsTable').dataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+});
 
         // Function to validate a field and show error message
         function validateField(fieldId, errorMessage) {
@@ -1012,12 +1015,8 @@ foreach ($programs as $program) {
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').text('');
         });
-    });
 
 
     </script>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

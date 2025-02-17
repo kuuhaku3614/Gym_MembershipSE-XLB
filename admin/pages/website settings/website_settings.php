@@ -190,106 +190,156 @@ $galleryImages = fetchExistingContent('gallery_images');
 }
 
 </style>
+<div class="container-fluid px-4 py-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Website Settings</h2>
+        <div class="mt-2">
+        <a href="/Gym_MembershipSE-XLB/admin/content_management" class="btn btn-primary mb-3">Update website</a>
+        </div>
+        </div>
 
-<h1 class="nav-title">Website</h1>
-<!-- HTML -->
-<a href="/Gym_MembershipSE-XLB/admin/content_management" class="button-link">
-    <button type="button" class="btn btn-primary">Update website</button>
-</a>
-    <!-- Welcome Section Update -->
-    <div class="section" data-section="welcome">
+<!-- Welcome Section Update -->
+<div class="card mb-3" data-section="welcome">
+    <div class="card-header">
         <h2>Welcome Section</h2>
-        <form method="post">
-            <label>Company Name:</label>
-            <input type="text" name="company_name" value="<?php echo htmlspecialchars($welcomeContent['company_name'] ?? ''); ?>" readonly>
-            
-            <label>Welcome Description:</label>
-            <textarea name="welcome_description" readonly><?php echo htmlspecialchars($welcomeContent['description'] ?? ''); ?></textarea>
-        </form>
     </div>
-
-    <!-- Offers Section Update -->
-    <div class="section" data-section="offers">
-        <h2>Offers Section</h2>
+    <div class="card-body">
         <form method="post">
-            <label>Offers Description:</label>
-            <textarea name="offers_description" readonly><?php echo htmlspecialchars($offersContent['description'] ?? ''); ?></textarea>
-        </form>
-    </div>
-
-    <div class="section" data-section="manage-gym-offers">
-    <h2>Manage Existing Gym Offers</h2>
-    <div class="existing-items-container">
-        <?php foreach ($gymOffers as $offer): ?>
-            <div class="existing-item">
-                <h3><?php echo htmlspecialchars($offer['name'] ?? $offer['title']); ?></h3>
-                <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" alt="<?php echo htmlspecialchars($offer['title']); ?>">
-
+            <div class="mb-3">
+                <label class="form-label">Company Name:</label>
+                <input type="text" class="form-control" name="company_name" value="<?php echo htmlspecialchars($welcomeContent['company_name'] ?? ''); ?>" readonly>
             </div>
-        <?php endforeach; ?>
+            <div class="mb-3">
+                <label class="form-label">Welcome Description:</label>
+                <textarea class="form-control" name="welcome_description" readonly><?php echo htmlspecialchars($welcomeContent['description'] ?? ''); ?></textarea>
+            </div>
+        </form>
     </div>
 </div>
-    <!-- About Us Section -->
-    <div class="section" data-section="about-us">
+
+<!-- Offers Section Update -->
+<div class="card mb-3" data-section="offers">
+    <div class="card-header">
+        <h2>Offers Section</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Offers Description:</label>
+                <textarea class="form-control" name="offers_description" readonly><?php echo htmlspecialchars($offersContent['description'] ?? ''); ?></textarea>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Manage Existing Gym Offers -->
+<div class="card mb-3" data-section="manage-gym-offers">
+    <div class="card-header">
+        <h2>Manage Existing Gym Offers</h2>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
+            <?php foreach ($gymOffers as $offer): ?>
+                <div class="card" style="width: 18rem;">
+                    <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($offer['title']); ?>">
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo htmlspecialchars($offer['name'] ?? $offer['title']); ?></h5>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+
+<!-- About Us Section -->
+<div class="card mb-3" data-section="about-us">
+    <div class="card-header">
         <h2>About Us Section</h2>
+    </div>
+    <div class="card-body">
         <form method="post">
-            <label>About Us Description:</label>
-            <textarea name="about_description" readonly><?php echo htmlspecialchars($aboutUsContent['description'] ?? ''); ?> </textarea>
-
+            <div class="mb-3">
+                <label class="form-label">About Us Description:</label>
+                <textarea class="form-control" name="about_description" readonly><?php echo htmlspecialchars($aboutUsContent['description'] ?? ''); ?></textarea>
+            </div>
         </form>
     </div>
+</div>
 
-    <!-- Contact Information -->
-    <div class="section" data-section="contact">
+<!-- Contact Information -->
+<div class="card mb-3" data-section="contact">
+    <div class="card-header">
         <h2>Contact Information</h2>
+    </div>
+    <div class="card-body">
         <form method="post">
-            <label>Location:</label>
-            <input type="text" name="location" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>" readonly>
-            
-            <label>Phone Number:</label>
-            <input type="tel" name="phone" value="<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>" readonly>
-            
-            <label>Email:</label>
-            <input type="email" name="email" value="<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>" readonly>
-            
-
+            <div class="mb-3">
+                <label class="form-label">Location:</label>
+                <input type="text" class="form-control" name="location" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Phone Number:</label>
+                <input type="tel" class="form-control" name="phone" value="<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email:</label>
+                <input type="email" class="form-control" name="email" value="<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>" readonly>
+            </div>
         </form>
     </div>
+</div>
 
-
-    <div class="section" data-section="products">
+<!-- Manage Existing Products -->
+<div class="card mb-3" data-section="products">
+    <div class="card-header">
         <h2>Manage Existing Products</h2>
-        <div class="existing-items-container">
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
             <?php foreach ($products as $product): ?>
-                <div class="existing-item">
-                    <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-                    <img src="../<?php echo 'cms_img/products/' . basename($product['image_path']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-
+                <div class="card" style="width: 18rem;">
+                    <img src="../<?php echo 'cms_img/products/' . basename($product['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo htmlspecialchars($product['name']); ?></h5>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
-    <?php endforeach; ?>
     </div>
 </div>
 
-    <div class="section" data-section="staff">
+<!-- Manage Staff Members -->
+<div class="card mb-3" data-section="staff">
+    <div class="card-header">
         <h2>Manage Staff Members</h2>
-        <div class="existing-items-container">
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
             <?php foreach ($staffMembers as $staff): ?>
-                <div class="existing-item">
-                    <h3><?php echo htmlspecialchars($staff['name']); ?> (<?php echo htmlspecialchars($staff['status']); ?>)</h3>
-                    <img src="../<?php echo 'cms_img/staff/' . basename($staff['image_path']); ?>" alt="<?php echo htmlspecialchars($staff['name']); ?>">
-
+                <div class="card" style="width: 18rem;">
+                    <img src="../<?php echo 'cms_img/staff/' . basename($staff['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($staff['name']); ?>">
+                    <div class="card-body">
+                        <h5 class="card-title"><?php echo htmlspecialchars($staff['name']); ?> (<?php echo htmlspecialchars($staff['status']); ?>)</h5>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
-    <?php endforeach; ?>
+    </div>
 </div>
 
-    <div class="section" data-section="gallery">
+<!-- Manage Gallery Images -->
+<div class="card mb-3" data-section="gallery">
+    <div class="card-header">
         <h2>Manage Gallery Images</h2>
-        <div class="existing-items-container">
-            <?php foreach ($galleryImages as $image): ?>
-                <div class="existing-item">
-                    <img src="../<?php echo 'cms_img/gallery/' . basename($image['image_path']); ?>" alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>">
-            
-        </div>
-    <?php endforeach; ?>
     </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-3">
+            <?php foreach ($galleryImages as $image): ?>
+                <div class="card" style="width: 18rem;">
+                    <img src="../<?php echo 'cms_img/gallery/' . basename($image['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>">
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
 </div>

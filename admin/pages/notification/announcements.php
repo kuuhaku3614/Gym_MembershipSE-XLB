@@ -72,11 +72,6 @@ body {
     transition: var(--transition-smooth);
 }
 
-.card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
 .card-header {
     background: var(--gradient-primary);
     color: white;
@@ -252,7 +247,7 @@ body {
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-danger text-white">
+                <div class="card-header text-white bg-primary">
                     <h5 class="card-title mb-0">Make Announcements</h5>
                 </div>
                 <div class="card-body">
@@ -281,7 +276,7 @@ body {
                         </div>
                         <div class="row">
                             <div class="col-12 d-flex justify-content-end">
-                                <button type="submit" class="btn btn-danger">
+                                <button type="submit" class="btn bg-primary text-white">
                                     <i class="fas fa-paper-plane me-2"></i>Send Announcement
                                 </button>
                             </div>

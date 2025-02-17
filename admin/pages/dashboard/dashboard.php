@@ -82,10 +82,6 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             transition: transform 0.2s;
         }
 
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
         .stats-card {
             display: flex;
             flex-direction: column;
@@ -106,7 +102,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .stats-title {
-            font-size: 1rem;
+            font-size: 1.25rem;
             font-weight: 600;
             color: var(--primary-color);
         }
@@ -120,7 +116,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         .stats-value {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--secondary-color);
+            color: #404040;
             margin-top: auto;
         }
 
@@ -290,7 +286,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         $notifications_stmt->execute();
         $notifications = $notifications_stmt->fetch(PDO::FETCH_ASSOC);
         ?>
-        <div class="card notification-card">
+        <div class="card notification-card stats-card">
             <div class="notification-badge"><?= $notifications['total_notifications'] ?: '0' ?></div>
             <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
         </div>

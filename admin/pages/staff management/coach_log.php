@@ -1,26 +1,18 @@
 <body class="bg-light">
-    <div class="container">
-        <h1 class="nav-title">Coach Activity Log</h1>
-        
-        <div class="search-section">
-            <div class="row align-items-center">
-                <div class="col-md-6 ">
-                    <div class="search-controls">
-                        <input type="text" id="dateFilter" class="form-control date-filter" placeholder="DD/MM/YYYY">
-                        <button class="btn btn-danger" type="button" id="filterBtn">Filter</button>
-                    </div>
-                </div>
 
-                <div class="col-md-6 d-flex justify-content-end">
-                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="container-fluid py-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Coach Activity Log</h2>
+    <div class="d-flex align-items-center">
+        <input type="text" id="dateFilter" class="form-control date-filter me-2" placeholder="DD/MM/YYYY" style="width: 40vh;">
+        <button class="btn btn-danger me-2" type="button" id="filterBtn">Filter</button>
+        <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+    </div>
+</div>
 
         <div class="table-responsive">
         <table id="coachLogTable" class="table table-striped table-bordered">
-        <thead class="table-dark">
+        <thead>
                     <tr>
                         <th>No.</th>
                         <th>Timestamp</th>

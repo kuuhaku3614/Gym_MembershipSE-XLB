@@ -85,9 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-    <div class="container mt-5">
-        <h1 class="nav-title">User Management</h1>
-        <table class="table">
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>User Management</h2>
+    </div>
+        <div class="table-responsive">
+        <table id="accountTable" class="table table-striped table-bordered scrollable-table">
             <thead>
                 <tr>
                     <th>User Name</th>
@@ -121,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ?>
             </tbody>
         </table>
+        </div>
 
         <!-- Ban Modal -->
         <div class="modal fade" id="banModal" tabindex="-1" aria-labelledby="banModalLabel" aria-hidden="true">
@@ -188,6 +192,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#accountTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+    });
     $(document).ready(function() {
         // Show/hide other reason input when "Others" checkbox is checked
         $('#otherReasons').on('change', function() {
