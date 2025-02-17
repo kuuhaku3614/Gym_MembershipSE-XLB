@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 17, 2025 at 03:07 PM
+-- Generation Time: Feb 17, 2025 at 04:39 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -103,6 +103,14 @@ CREATE TABLE `coach_availability` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `coach_availability`
+--
+
+INSERT INTO `coach_availability` (`id`, `coach_program_type_id`, `day`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
+(1, 4, 'Monday', '08:00:00', '18:00:00', '2025-02-17 15:35:25', '2025-02-17 15:35:25'),
+(2, 4, 'Tuesday', '08:00:00', '18:00:00', '2025-02-17 15:38:32', '2025-02-17 15:38:32');
 
 -- --------------------------------------------------------
 
@@ -411,6 +419,14 @@ CREATE TABLE `program_subscription_schedule` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `program_subscription_schedule`
+--
+
+INSERT INTO `program_subscription_schedule` (`id`, `program_subcription_id`, `day`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
+(1, 72, 'Monday', '08:00:00', '10:00:00', '2025-02-17 15:36:25', '2025-02-17 15:36:25'),
+(2, 72, 'Tuesday', '08:00:00', '10:00:00', '2025-02-17 15:39:04', '2025-02-17 15:39:04');
 
 -- --------------------------------------------------------
 
@@ -976,6 +992,12 @@ ALTER TABLE `attendance_history`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
+-- AUTO_INCREMENT for table `coach_availability`
+--
+ALTER TABLE `coach_availability`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `coach_program_types`
 --
 ALTER TABLE `coach_program_types`
@@ -1045,7 +1067,7 @@ ALTER TABLE `program_subscriptions`
 -- AUTO_INCREMENT for table `program_subscription_schedule`
 --
 ALTER TABLE `program_subscription_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `program_types`
