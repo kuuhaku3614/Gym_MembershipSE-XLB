@@ -236,8 +236,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <!-- Staff Activity Log Section -->
-<div class="container mt-5">
-    <h1 class="nav-title">Activity Logs</h1>
+<div class="container-fluid py-4">
+    <h2>Activity Logs</h2>
     <div class="table-responsive">
         <?php
         // Fetch activity log data with staff details
@@ -257,8 +257,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $logResult = $logStmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
         
-        <table id="activityLogTable" class="table table-striped table-bordered">
-            <thead class="table-dark">
+        <table id="activityLogTable" class="table table-striped table-bordered w-100">
+            <thead>
                 <tr>
                     <th>Activity</th>
                     <th>Description</th>
