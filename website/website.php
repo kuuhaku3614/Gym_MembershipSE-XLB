@@ -115,7 +115,7 @@ require_once('includes/header.php');
 
     <div class="offers-text">
         <h1 class="title">Gym Offers</h1>
-        <p><?php 
+        <p class="text-secondary"><?php 
             echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
         ?></p>
     </div>
@@ -141,7 +141,7 @@ require_once('includes/header.php');
     </div>
     <div class="products-text">
         <h1 class="title">Products you may like</h1>
-        <p>Check out our latest fitness products!</p>
+        <p class="text-secondary">Check out our latest fitness products!</p>
     </div>
     <div class="product-container">
         <?php foreach ($products as $product): ?>
@@ -173,7 +173,7 @@ require_once('includes/header.php');
     <div class="aboutUs-text">
     
         <h1 class="title">About Us</h1>
-        <p><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
+        <p class="text-secondary"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
 
         <div class="joinNow-container">
             <h1 class="tagline">Go Home or Go Hard</h1>
