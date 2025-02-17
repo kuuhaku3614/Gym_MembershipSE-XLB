@@ -4,12 +4,11 @@ require_once 'config.php';
 require_once 'functions/attendance_class.php';
 
 ?>
-
-<div class="container-fluid px-4 py-5">
-    <div class="card shadow">
-        <div class="card-header py-3">
-            <h2 class="card-title mb-0">Today's Member Attendance</h2>
-            <div class="mt-2">
+ 
+<div class="container-fluid px-4 py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Today's Member Attendance</h2>
+        <div class="mt-2">
                 <a href="/gym_membershipse-xlb/website/checkin_page.php" class="me-2">
                     <button class="btn btn-primary">Checkin Page</button>
                 </a>
@@ -18,6 +17,8 @@ require_once 'functions/attendance_class.php';
                 </button>
             </div>
         </div>
+
+    <div class="card">
         <div class="card-body">
             <?php
             $attendance = new AttendanceSystem($pdo);
@@ -28,7 +29,7 @@ require_once 'functions/attendance_class.php';
                     No members have checked in today.
                 </div>
             <?php else: ?>
-            <div class="table-responsive">
+            
                 <table id="attendanceTable" class="table table-striped table-bordered">
                     <thead>
                         <tr>
@@ -67,7 +68,6 @@ require_once 'functions/attendance_class.php';
                         <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
             <?php endif; ?>
         </div>
     </div>
@@ -94,6 +94,7 @@ $(document).ready(function() {
     $('#attendanceTable').DataTable({
         responsive: true,
         order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
         language: {
             search: "_INPUT_",
             searchPlaceholder: "Search members..."
@@ -102,7 +103,6 @@ $(document).ready(function() {
             { orderable: false, targets: [0] } // Disable sorting for photo column
         ]
     });
-});
 
 // Modal functionality
 function openHistoryModal() {
@@ -124,4 +124,5 @@ function openHistoryModal() {
         }
     });
 }
+});
 </script>

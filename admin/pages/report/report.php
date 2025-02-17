@@ -137,7 +137,8 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 1.5rem;
         }
         .stats-card {
-            background: linear-gradient(45deg, #4158D0, #C850C0);
+            /* background: linear-gradient(45deg, #4158D0, #C850C0); */
+            background: linear-gradient(45deg, #cc0000, #ff3333);
             color: white;
         }
         .export-btn {

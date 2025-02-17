@@ -194,84 +194,84 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- Main Table -->
         <div class="card">
             <div class="card-body">
-                <table id="subscriptionsTable" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Member Name</th>
-                            <th>Membership Status</th>
-                            <th>Program Status</th>
-                            <th>Service Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach($members as $row): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($row['full_name']); ?></td>
-                            <td>
-                                <?php echo htmlspecialchars($row['membership_plan']); ?>
-                                <br>
-                                <span class="badge <?php 
-                                    echo strpos($row['membership_status'], 'Expired') !== false ? 'bg-danger' : 'bg-success'; 
-                                    ?>">
-                                    <?php echo $row['membership_status']; ?>
-                                </span>
-                                <br>
-                                <span class="badge <?php 
-                                    echo strpos($row['days_remaining'], 'Expired') !== false ? 'bg-danger' : 'bg-success'; 
-                                    ?>">
-                                    <?php echo $row['days_remaining']; ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php
-                                if ($row['program_details']) {
-                                    $programs = explode(';', $row['program_details']);
-                                    foreach ($programs as $program) {
-                                        $details = explode('|', $program);
-                                        echo htmlspecialchars($details[0]); // Program name
-                                        echo '<br>';
-                                        echo '<span class="badge ' . 
-                                            (strpos($details[4], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
-                                            '">' . htmlspecialchars($details[4]) . '</span>';
-                                        echo '<br><br>';
-                                    }
-                                } else {
-                                    echo '<span class="text-muted">No program</span>';
-                                }
-                                ?>
-                            </td>
-                            <td>
-                                <?php
-                                if ($row['service_details']) {
-                                    $services = explode(';', $row['service_details']);
-                                    foreach ($services as $service) {
-                                        $details = explode('|', $service);
-                                        echo htmlspecialchars($details[0]); // Service name
-                                        echo '<br>';
-                                        echo '<span class="badge ' . 
-                                            (strpos($details[3], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
-                                            '">' . htmlspecialchars($details[3]) . '</span>';
-                                        echo '<br><br>';
-                                    }
-                                } else {
-                                    echo '<span class="text-muted">No service</span>';
-                                }
-                                ?>
-                            </td>
-                            <td>
-                                <button type="button" 
-                                        class="btn btn-primary btn-sm view-details" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#detailsModal"
-                                        data-details='<?php echo json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>'>
-                                    <i class="bi bi-eye"></i> View Details
-                                </button>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+            <table id="subscriptionsTable" class="table table-striped table-bordered scrollable-table w-100">
+                <thead>
+                <tr>
+                    <th>Member Name</th>
+                    <th>Membership Status</th>
+                    <th>Program Status</th>
+                    <th>Service Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach($members as $row): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($row['full_name']); ?></td>
+                    <td>
+                    <?php echo htmlspecialchars($row['membership_plan']); ?>
+                    <br>
+                    <span class="badge <?php 
+                        echo strpos($row['membership_status'], 'Expired') !== false ? 'bg-danger' : 'bg-success'; 
+                        ?>">
+                        <?php echo $row['membership_status']; ?>
+                    </span>
+                    <br>
+                    <span class="badge <?php 
+                        echo strpos($row['days_remaining'], 'Expired') !== false ? 'bg-danger' : 'bg-success'; 
+                        ?>">
+                        <?php echo $row['days_remaining']; ?>
+                    </span>
+                    </td>
+                    <td>
+                    <?php
+                    if ($row['program_details']) {
+                        $programs = explode(';', $row['program_details']);
+                        foreach ($programs as $program) {
+                        $details = explode('|', $program);
+                        echo htmlspecialchars($details[0]); // Program name
+                        echo '<br>';
+                        echo '<span class="badge ' . 
+                            (strpos($details[4], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
+                            '">' . htmlspecialchars($details[4]) . '</span>';
+                        echo '<br><br>';
+                        }
+                    } else {
+                        echo '<span class="text-muted">No program</span>';
+                    }
+                    ?>
+                    </td>
+                    <td>
+                    <?php
+                    if ($row['service_details']) {
+                        $services = explode(';', $row['service_details']);
+                        foreach ($services as $service) {
+                        $details = explode('|', $service);
+                        echo htmlspecialchars($details[0]); // Service name
+                        echo '<br>';
+                        echo '<span class="badge ' . 
+                            (strpos($details[3], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
+                            '">' . htmlspecialchars($details[3]) . '</span>';
+                        echo '<br><br>';
+                        }
+                    } else {
+                        echo '<span class="text-muted">No service</span>';
+                    }
+                    ?>
+                    </td>
+                    <td>
+                    <button type="button" 
+                        class="btn btn-primary btn-sm view-details" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#detailsModal"
+                        data-details='<?php echo json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT); ?>'>
+                        <i class="bi bi-eye"></i> View Details
+                    </button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
             </div>
         </div>
 

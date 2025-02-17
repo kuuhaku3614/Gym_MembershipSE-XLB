@@ -26,31 +26,20 @@ $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<div class="container mt-4">
-    <h1 class="nav-title">Staff Management</h1>
 
-    <div class="search-section">
-            <div class="row align-items-center">
-                <div class="col-md-6 ">
-                    <div class="search-controls">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">Add New Staff</button>
-                    </div>
-                </div>
-
-                <div class="col-md-6 d-flex justify-content-end">
-                          <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
-                    </div>
-                </div>
+<div class="container-fluid py-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Staff Management</h2>
+            <div class="col-md-6 text-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">Add New Staff</button>
+            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
             </div>
         </div>
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-    </div>
 
     <!-- Staff Table -->
     <div class="table-responsive">
     <table id="staffManagementTable" class="table table-striped table-bordered" id="staffTable">
-        <thead class="table-dark" >
+        <thead >
             <tr>
                 <th >Full Name</th>
                 <th>Username</th>
@@ -247,8 +236,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <!-- Staff Activity Log Section -->
-<div class="container mt-5">
-    <h1 class="nav-title">Activity Logs</h1>
+<div class="container-fluid py-4">
+    <h2>Activity Logs</h2>
     <div class="table-responsive">
         <?php
         // Fetch activity log data with staff details
@@ -268,8 +257,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $logResult = $logStmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
         
-        <table id="activityLogTable" class="table table-striped table-bordered">
-            <thead class="table-dark">
+        <table id="activityLogTable" class="table table-striped table-bordered w-100">
+            <thead>
                 <tr>
                     <th>Activity</th>
                     <th>Description</th>

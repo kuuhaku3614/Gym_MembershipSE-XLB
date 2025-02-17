@@ -80,22 +80,23 @@
 
 
 <div class="container mt-4">
-    <h1 class="nav-title">Walk-in</h1>  
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWalkInModal">
-                Add Walk-in
-            </button>
-            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updatePriceModal">
-                Update Walk-in Price
-            </button>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Walk-In</h2>
+        <div class="mt-2">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWalkInModal">
+            Add Walk-in
+        </button>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updatePriceModal">
+            Update Walk-in Price
+        </button>
         </div>
     </div>
 
     <div class="table-responsive">
-          <table class="table table-bordered table-hover">
-              <thead class="table-dark">
-                  <tr class="text-center">
+          <table id="walk_inTable" class="table table-striped table-bordered">
+              <thead>
+                  <tr>
                       <th>No.</th>
                       <th>Name</th>
                       <th>Phone Number</th>
@@ -341,6 +342,19 @@ $(document).ready(function() {
                 alert('An error occurred while processing your request');
             }
         });
+    });
+    // Initialize DataTable
+    $('#walk_inTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
     });
 
         // Handle price update form submission

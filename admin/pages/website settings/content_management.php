@@ -484,11 +484,14 @@ $galleryImages = fetchExistingContent('gallery_images');
   color: white; /* Keep link color on hover */
   text-decoration: none; /* Ensure link underline stays removed */
 }
-
+<?php require_once '../../includes/header.php'; ?>
 </style>
 
-<h1 class="nav-title">Website Settings</h1>
-<a class="button-link" href="../admin/index.php?page=website_settings"><button type="button" class="btn btn-primary">Return</button></a>
+<div class="container-fluid px-4 py-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Website Settings</h2>
+        <div class="mt-2">
+        <a class="button-link" href="../admin/index.php?page=website_settings"><button type="button" class="btn btn-primary">Return</button></a>
     <div class="message-container" id="message-container">
         <?php if (isset($error)): ?>
             <div class="error" id="message-alert"><?php echo htmlspecialchars($error); ?></div>
@@ -498,6 +501,9 @@ $galleryImages = fetchExistingContent('gallery_images');
             <div class="success" id="message-alert">Content updated successfully!</div>
         <?php endif; ?>
     </div>
+        </div>
+        </div>
+
 
     <!-- Welcome Section Update -->
     <div class="section" data-section="welcome">
@@ -588,6 +594,7 @@ $galleryImages = fetchExistingContent('gallery_images');
             <input type="submit" name="update_contact" value="Update Contact Information">
         </form>
     </div>
+</div>
 
 <!-- Modal for Map -->
 <div id="locationModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); overflow:auto;">
@@ -613,7 +620,7 @@ $galleryImages = fetchExistingContent('gallery_images');
         </div>
     </div>
 </div>
-
+<?php require_once '../../includes/footer.php'; ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const modalTrigger = document.getElementById('mapModalTrigger');
@@ -933,6 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endforeach; ?>
     </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Always try to scroll to the appropriate section

@@ -12,21 +12,6 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<h1 class="nav-title">Gym Rates</h1>
-
-<div class="search-section">
-    <div class="row align-items-center">
-        <div class="col-md-6">
-            <div class="search-controls">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGymRateModal">Add Gym Rate</button>
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateRegistrationModal">Update Registration</button>
-            </div>
-        </div>
-        <div class="col-md-6 d-flex justify-content-end">
-            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
-        </div>
-    </div>
-</div>
 
 <!-- Update Registration Modal -->
 <div class="modal fade" id="updateRegistrationModal" tabindex="-1" aria-labelledby="updateRegistrationModalLabel" aria-hidden="true">
@@ -55,9 +40,20 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<div class="container-fluid py-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Gym Rates</h2>
+            <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGymRateModal">Add Gym Rate</button>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateRegistrationModal">Update Registration</button>
+                <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
+            </div>
+        </div>
+
+
     <div class="table-responsive">
     <table id="gymRatesTable" class="table table-striped table-bordered">
-    <thead class="table-dark">
+    <thead>
         <tr>
             <th>No.</th>
             <th>Promo Name</th>
@@ -91,14 +87,14 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     htmlspecialchars($description);
                 echo "</td>";
                 echo "<td>" . htmlspecialchars($row['status']) . "</td>";
-                echo "<td>";
+                echo "<td class='d-flex flex-column align-items-center'>";
                 if ($row['status'] === 'active') {
-                    echo "<button class='btn btn-sm btn-warning toggle-status-btn' data-id='" . $row['id'] . "'>Deactivate</button>";
+                    echo "<button class='btn btn-sm btn-warning toggle-status-btn mb-1' data-id='" . $row['id'] . "' style='width: 100%;'>Deactivate</button>";
                 } else {
-                    echo "<button class='btn btn-sm btn-success toggle-status-btn' data-id='" . $row['id'] . "'>Activate</button>";
+                    echo "<button class='btn btn-sm btn-success toggle-status-btn mb-1' data-id='" . $row['id'] . "' style='width: 100%;'>Activate</button>";
                 }
-                echo "<button class='btn btn-sm btn-primary edit-gym-rate' data-id='" . $row['id'] . "'>Edit</button>";
-                echo " <button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>";
+                echo "<button class='btn btn-sm btn-primary edit-gym-rate mb-1' data-id='" . $row['id'] . "' style='width: 100%;'>Edit</button>";
+                echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "' style='width: 100%;'>Remove</button>";
                 echo "</td>";
                 echo "</tr>";
                 $count++;
@@ -109,6 +105,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
     </tbody>
 </table>
+</div>
 </div>
 
 <!-- Modified Modal -->
@@ -284,6 +281,23 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 <script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#gymRatesTable').DataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+    });
+    
+    http://localhost/gym_membershipse-xlb/admin/member_status
 // Validate form before submission
 $('#saveGymRateBtn').click(function() {
     // Clear previous error messages
@@ -677,4 +691,5 @@ $('#confirmDeactivate').click(function() {
 $('#refreshBtn').click(function() {
         location.reload();
     });
+
 </script>
