@@ -13,29 +13,62 @@ $baseUrl = isset($config['base_url']) ? $config['base_url'] : (
     str_replace('/admin/pages/members/add_member.php', '', $_SERVER['SCRIPT_NAME'])
 );
 
-// Generate credentials when moving to Phase 4
-if (isset($_POST['generate_credentials'])) {
+// Handle AJAX requests
+if (isset($_GET['action']) || isset($_POST['generate_credentials'])) {
     header('Content-Type: application/json');
     
-    try {
-        if (empty($_POST['first_name'])) {
-            throw new Exception('First name is required');
+    // Handle schedule request
+    if (isset($_GET['action']) && $_GET['action'] === 'get_schedule' && isset($_GET['program_type_id'])) {
+        $program_type_id = intval($_GET['program_type_id']);
+        
+        error_log("Debug - Fetching schedule for program_type_id: " . $program_type_id);
+        
+        // Verify coach program type exists
+        $query = "SELECT id FROM coach_program_types WHERE id = :id AND status = 'active'";
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':id', $program_type_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        if (!$stmt->fetch()) {
+            error_log("Debug - Invalid program type ID: " . $program_type_id);
+            echo json_encode(['success' => false, 'message' => 'Invalid program type']);
+            exit;
         }
         
-        $credentials = $members->generateCredentials($_POST['first_name']);
-        echo json_encode([
-            'success' => true,
-            'username' => $credentials['username'],
-            'password' => $credentials['password']
-        ]);
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
+        $result = $members->getCoachSchedule($program_type_id);
+        error_log("Debug - Schedule response: " . json_encode($result));
+        
+        echo json_encode($result);
+        exit;
     }
-    exit;
+    
+    // Handle credential generation
+    if (isset($_POST['generate_credentials'])) {
+        $firstName = $_POST['first_name'] ?? '';
+        
+        if (empty($firstName)) {
+            echo json_encode(['success' => false, 'message' => 'First name is required']);
+            exit;
+        }
+        
+        try {
+            $username = strtolower($firstName) . rand(1000, 9999);
+            $password = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+            
+            echo json_encode([
+                'success' => true,
+                'username' => $username,
+                'password' => $password
+            ]);
+        } catch (Exception $e) {
+            error_log("Error generating credentials: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to generate credentials'
+            ]);
+        }
+        exit;
+    }
 }
 
 // Handle form submission to save all data
@@ -129,9 +162,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
+// Handle AJAX request for coach schedule
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    
+    if ($_GET['action'] === 'get_schedule' && isset($_GET['program_type_id'])) {
+        $program_type_id = intval($_GET['program_type_id']);
+        
+        error_log("Debug - Fetching schedule for program_type_id: " . $program_type_id);
+        
+        // Verify coach program type exists
+        $query = "SELECT id FROM coach_program_types WHERE id = :id AND status = 'active'";
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':id', $program_type_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        if (!$stmt->fetch()) {
+            error_log("Debug - Invalid program type ID: " . $program_type_id);
+            echo json_encode(['success' => false, 'message' => 'Invalid program type']);
+            exit;
+        }
+        
+        $result = $members->getCoachSchedule($program_type_id);
+        error_log("Debug - Schedule response: " . json_encode($result));
+        
+        echo json_encode($result);
+        exit;
+    }
+    // Handle other AJAX actions here
+    exit;
+}
+
 function renderPrograms($programs) {
     global $members;
     $programCoaches = $members->getProgramCoaches();
+    
+    error_log("Program coaches data: " . json_encode($programCoaches));
     
     // Organize coaches by program
     $coachesByProgram = [];
@@ -159,6 +225,18 @@ function renderPrograms($programs) {
             $html .= '</p>';
             
             if (isset($coachesByProgram[$program['id']])) {
+                // Add type filter radios
+                $html .= '<div class="form-group mb-3">';
+                $html .= '<label class="form-label d-block">Training Type:</label>';
+                $html .= '<div class="btn-group" role="group">';
+                $html .= '<input type="radio" class="btn-check training-type-radio" name="training_type_' . $program['id'] . '" id="personal_' . $program['id'] . '" value="personal" checked>';
+                $html .= '<label class="form-label btn btn-outline-primary btn-sm" for="personal_' . $program['id'] . '">Personal</label>';
+                $html .= '<input type="radio" class="btn-check training-type-radio" name="training_type_' . $program['id'] . '" id="group_' . $program['id'] . '" value="group">';
+                $html .= '<label class="form-label btn btn-outline-primary btn-sm" for="group_' . $program['id'] . '">Group</label>';
+                $html .= '</div>';
+                $html .= '</div>';
+
+                // Add coach dropdown
                 $html .= '<div class="form-group">';
                 $html .= '<label class="form-label">Select Coach:</label>';
                 $html .= '<select class="form-select program-coach" ';
@@ -167,14 +245,21 @@ function renderPrograms($programs) {
                 $html .= '<option value="">Choose a coach</option>';
                 
                 foreach ($coachesByProgram[$program['id']] as $coach) {
-                    $html .= '<option value="' . $coach['coach_id'] . '" ';
-                    $html .= 'data-price="' . $coach['price'] . '">';
+                    error_log("Coach option data: " . json_encode($coach));
+                    $html .= '<option value="' . htmlspecialchars($coach['coach_id']) . '" ';
+                    $html .= 'data-price="' . htmlspecialchars($coach['price']) . '" ';
+                    $html .= 'data-program-type-id="' . htmlspecialchars($coach['program_type_id']) . '" ';
+                    $html .= 'data-type="' . htmlspecialchars($coach['type']) . '">';
                     $html .= htmlspecialchars($coach['coach_name']) . ' - ₱';
                     $html .= number_format($coach['price'], 2);
                     $html .= '</option>';
                 }
                 
                 $html .= '</select>';
+                
+                // Add schedule display container
+                $html .= '<div id="coach-schedule-' . $program['id'] . '" class="mt-2"></div>';
+                
                 $html .= '</div>';
             }
             
@@ -195,15 +280,6 @@ function renderRentalServices($rentals) {
             $html .= '<div class="col">';
             $html .= '<div class="card h-100">';
             $html .= '<div class="card-body">';
-            $html .= '<div class="form-check">';
-            $html .= '<input class="form-check-input rental-checkbox" type="checkbox" ';
-            $html .= 'name="rental_services[]" ';
-            $html .= 'value="' . $rental['id'] . '" ';
-            $html .= 'data-price="' . $rental['price'] . '" ';
-            $html .= 'data-duration="' . $rental['duration'] . '" ';
-            $html .= 'data-duration-type="' . $rental['duration_type'] . '">';
-            $html .= '<label class="form-check-label">Select Service</label>';
-            $html .= '</div>';
             $html .= '<h6 class="card-title">' . htmlspecialchars($rental['rental_name']) . '</h6>';
             $html .= '<p class="card-text">' . htmlspecialchars($rental['description']) . '</p>';
             $html .= '<p class="card-text">';
@@ -216,6 +292,15 @@ function renderRentalServices($rentals) {
             $html .= 'Price: ₱' . number_format($rental['price'], 2);
             $html .= '</small>';
             $html .= '</p>';
+            $html .= '<div class="form-check">';
+            $html .= '<input class="form-check-input rental-checkbox" type="checkbox" ';
+            $html .= 'name="rental_services[]" ';
+            $html .= 'value="' . $rental['id'] . '" ';
+            $html .= 'data-price="' . $rental['price'] . '" ';
+            $html .= 'data-duration="' . $rental['duration'] . '" ';
+            $html .= 'data-duration-type="' . $rental['duration_type'] . '">';
+            $html .= '<label class="form-check-label">Select Service</label>';
+            $html .= '</div>';
             $html .= '</div>';
             $html .= '</div>';
             $html .= '</div>';
@@ -230,7 +315,7 @@ function renderRentalServices($rentals) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New Member - Gym Management System</title>
+    <title>Add Member</title>
     <?php include '../../includes/header.php'; ?>
     <style>
         /* Card styles */
@@ -288,10 +373,7 @@ function renderRentalServices($rentals) {
             border: 1px solid #dc3545 !important;
         }
         .invalid-feedback {
-            display: block;
-            width: 100%;
-            margin-top: 0.25rem;
-            font-size: 0.875em;
+            display: none;
             color: #dc3545;
         }
     </style>
@@ -459,52 +541,8 @@ function renderRentalServices($rentals) {
                             <div class="row row-cols-1 row-cols-md-3 g-4 programs-container">
                                 <?php 
                                 $programs = $members->getPrograms();
-                                $programCoaches = $members->getProgramCoaches();
-                                
-                                // Organize coaches by program
-                                $coachesByProgram = [];
-                                foreach ($programCoaches as $coach) {
-                                    if (!isset($coachesByProgram[$coach['program_id']])) {
-                                        $coachesByProgram[$coach['program_id']] = [];
-                                    }
-                                    $coachesByProgram[$coach['program_id']][] = $coach;
-                                }
-                                
-                                if (empty($programs)) {
-                                    echo '<div class="col-12"><div class="alert alert-info">No programs available.</div></div>';
-                                } else {
-                                    foreach ($programs as $program): ?>
-                                    <div class="col">
-                                        <div class="card h-100">
-                                            <div class="card-body">
-                                                <h6 class="card-title"><?php echo htmlspecialchars($program['program_name']); ?></h6>
-                                                <p class="card-text"><?php echo htmlspecialchars($program['description']); ?></p>
-                                                <p class="card-text">
-                                                    <small class="text-muted">
-                                                        Duration: <?php echo htmlspecialchars($program['duration'] . ' ' . $program['duration_type']); ?>
-                                                    </small>
-                                                </p>
-                                                <?php if (isset($coachesByProgram[$program['id']])): ?>
-                                                <div class="form-group">
-                                                    <label class="form-label">Select Coach:</label>
-                                                    <select class="form-select program-coach" 
-                                                            name="program_coaches[<?php echo $program['id']; ?>]"
-                                                            data-program-id="<?php echo $program['id']; ?>">
-                                                        <option value="">Choose a coach</option>
-                                                        <?php foreach ($coachesByProgram[$program['id']] as $coach): ?>
-                                                        <option value="<?php echo $coach['coach_id']; ?>"
-                                                                data-price="<?php echo $coach['price']; ?>">
-                                                            <?php echo htmlspecialchars($coach['coach_name']); ?> - ₱<?php echo number_format($coach['price'], 2); ?>
-                                                        </option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?php endforeach;
-                                } ?>
+                                echo renderPrograms($programs);
+                                ?>
                             </div>
                         </div>
                         
@@ -624,16 +662,469 @@ function renderRentalServices($rentals) {
     </div>
 
     <script>
-    // Make base URL available to JavaScript
-    const BASE_URL = '<?php echo $baseUrl; ?>';
+    // Global variables
+    var BASE_URL = '<?php echo $baseUrl; ?>';
+    console.log('BASE_URL:', BASE_URL);
     
-    // Initialize registration fee as a number, not a string
+    // Initialize registration fee as a number
     let registrationFee = parseFloat(<?php echo $members->getRegistrationFee(); ?>) || 0;
+    
+    $(document).ready(function() {
+        console.log('Document ready - Setting up event listeners');
+        
+        // Debug - Log all program coach dropdowns
+        const dropdowns = $('.program-coach');
+        console.log('Found program coach dropdowns:', dropdowns.length);
+        dropdowns.each(function() {
+            console.log('Dropdown:', {
+                id: $(this).attr('id'),
+                programId: $(this).data('program-id'),
+                value: $(this).val(),
+                options: Array.from(this.options).map(opt => ({
+                    value: opt.value,
+                    text: opt.text,
+                    programTypeId: $(opt).data('program-type-id')
+                }))
+            });
+        });
+
+        // Using event delegation for dynamic elements
+        $(document).on('change', '.program-coach', function() {
+            console.log('Coach dropdown changed!');
+            const $dropdown = $(this);
+            const programId = $dropdown.data('program-id');
+            const $selected = $dropdown.find(':selected');
+            const programTypeId = $selected.data('program-type-id');
+            
+            console.log('Change event details:', {
+                dropdownId: $dropdown.attr('id'),
+                programId: programId,
+                selectedValue: $dropdown.val(),
+                programTypeId: programTypeId,
+                selectedOption: $selected.text(),
+                allOptions: Array.from(this.options).map(opt => ({
+                    value: opt.value,
+                    text: opt.text,
+                    programTypeId: $(opt).data('program-type-id')
+                }))
+            });
+
+            // Find schedule container
+            const $scheduleContainer = $('#coach-schedule-' + programId);
+            console.log('Schedule container:', {
+                selector: '#coach-schedule-' + programId,
+                found: $scheduleContainer.length > 0,
+                html: $scheduleContainer.html()
+            });
+
+            if (!$dropdown.val() || !programTypeId) {
+                console.log('No valid selection');
+                $scheduleContainer.empty();
+                return;
+            }
+
+            $scheduleContainer.html('<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i> Loading schedule...</div>');
+
+            // Make the AJAX request
+            const url = `${BASE_URL}/admin/pages/members/add_member.php?action=get_schedule&program_type_id=${programTypeId}`;
+            console.log('Making AJAX request to:', url);
+            
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function(response) {
+                    console.log('AJAX Success - Raw response:', response);
+                    
+                    try {
+                        const data = (typeof response === 'string') ? JSON.parse(response) : response;
+                        console.log('Parsed schedule data:', data);
+                        
+                        if (data.success && data.schedule && data.schedule.length > 0) {
+                            let hasAvailableSlots = false;
+                            data.schedule.forEach(day => {
+                                if (day.available && day.time_slots.length > 0) {
+                                    hasAvailableSlots = true;
+                                }
+                            });
+                            
+                            if (!hasAvailableSlots) {
+                                console.log('No available slots found in schedule');
+                                $scheduleContainer.html('<div class="alert alert-info mt-2">No schedule available for this coach.</div>');
+                                return;
+                            }
+                            
+                            // Create schedule template
+                            let html = '<div class="schedule-container mt-3">';
+                            html += '<div class="card">';
+                            html += '<div class="card-header bg-primary text-white">Weekly Schedule</div>';
+                            html += '<div class="card-body p-0">';
+                            html += '<div class="row g-0">';
+                            
+                            // Create columns for each day
+                            data.schedule.forEach(daySchedule => {
+                                console.log('Processing day:', daySchedule);
+                                html += `
+                                    <div class="col">
+                                        <div class="day-column">
+                                            <div class="day-header">${daySchedule.day}</div>
+                                            <div class="time-slots" id="slots-${daySchedule.day.toLowerCase()}">`;
+                                
+                                if (daySchedule.available && daySchedule.time_slots.length > 0) {
+                                    daySchedule.time_slots.forEach(slot => {
+                                        html += `
+                                            <div class="time-slot">
+                                                <div class="time-range">${slot.start_time} - ${slot.end_time}</div>
+                                            </div>
+                                        `;
+                                    });
+                                } else {
+                                    html += '<div class="no-schedule">Not Available</div>';
+                                }
+                                
+                                html += `
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            html += '</div>'; // row
+                            html += '</div>'; // card-body
+                            html += '</div>'; // card
+                            html += '</div>'; // schedule-container
+                            
+                            // Add the schedule to the container
+                            $scheduleContainer.html(html);
+                            
+                            // Add custom styles if not already added
+                            const styleId = 'schedule-custom-styles';
+                            if (!$('#' + styleId).length) {
+                                $('<style>')
+                                    .attr('id', styleId)
+                                    .text(`
+                                        .schedule-container {
+                                            font-size: 0.9em;
+                                        }
+                                        .day-column {
+                                            border-right: 1px solid #dee2e6;
+                                            min-height: 150px;
+                                        }
+                                        .day-column:last-child {
+                                            border-right: none;
+                                        }
+                                        .day-header {
+                                            padding: 8px;
+                                            background-color: #f8f9fa;
+                                            border-bottom: 1px solid #dee2e6;
+                                            text-align: center;
+                                            font-weight: 500;
+                                        }
+                                        .time-slots {
+                                            padding: 8px;
+                                        }
+                                        .time-slot {
+                                            background-color: #e8f5e9;
+                                            border: 1px solid #c8e6c9;
+                                            border-radius: 4px;
+                                            padding: 6px 8px;
+                                            margin: 4px 0;
+                                        }
+                                        .time-range {
+                                            color: #2e7d32;
+                                            font-size: 0.85em;
+                                            text-align: center;
+                                        }
+                                        .no-schedule {
+                                            color: #6c757d;
+                                            text-align: center;
+                                            padding: 8px;
+                                            font-size: 0.85em;
+                                        }
+                                    `)
+                                    .appendTo('head');
+                            }
+                        } else {
+                            console.error('Invalid or empty schedule data:', data);
+                            $scheduleContainer.html('<div class="alert alert-danger mt-2">Error processing schedule data.</div>');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing response:', error);
+                        $scheduleContainer.html('<div class="alert alert-danger mt-2">Error processing schedule data.</div>');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('AJAX Error:', {
+                        status: jqXHR.status,
+                        textStatus: textStatus,
+                        error: errorThrown,
+                        response: jqXHR.responseText
+                    });
+                    $scheduleContainer.html('<div class="alert alert-danger mt-2">Failed to load schedule.</div>');
+                }
+            });
+        });
+
+        // Function to filter coaches based on selected type
+        function filterCoachesByType(selectElement, selectedType) {
+            const $select = $(selectElement);
+            const $options = $select.find('option');
+            
+            // Show all options first
+            $options.show();
+            
+            // Hide options that don't match the selected type
+            $options.each(function() {
+                const $option = $(this);
+                const type = $option.data('type');
+                
+                // Skip the default "Choose a coach" option
+                if (!type) return;
+                
+                if (type !== selectedType) {
+                    $option.hide();
+                }
+            });
+            
+            // If the currently selected option is now hidden, reset to default
+            if ($select.find('option:selected').is(':hidden')) {
+                $select.val('');
+            }
+            
+            // Clear the schedule display when changing types
+            const programId = $select.data('program-id');
+            $('#coach-schedule-' + programId).empty();
+        }
+        
+        // Handle radio button changes
+        $(document).on('change', '.training-type-radio', function() {
+            const programId = this.id.split('_')[1];
+            const selectedType = $(this).val();
+            const selectElement = $(`select[data-program-id="${programId}"]`);
+            
+            filterCoachesByType(selectElement, selectedType);
+        });
+        
+        // Initial filter application
+        $('.training-type-radio:checked').each(function() {
+            const programId = this.id.split('_')[1];
+            const selectedType = $(this).val();
+            const selectElement = $(`select[data-program-id="${programId}"]`);
+            
+            filterCoachesByType(selectElement, selectedType);
+        });
+        
+        // Other event listeners
+        $('input[name="membership_plan"]').on('change', updateTotalAmount);
+        $('.program-coach').on('change', updateTotalAmount);
+        $('input[name="rental_services[]"]').on('change', updateTotalAmount);
+        
+        // Initial calculation
+        updateTotalAmount();
+        
+        // Debug - Log initial state
+        console.log('Initial state:', {
+            baseUrl: BASE_URL,
+            dropdowns: $('.program-coach').length,
+            containers: $('[id^=coach-schedule-]').length
+        });
+    });
+    
+    // Update total amount function
+    function updateTotalAmount() {
+        // Get membership plan price
+        const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
+        const membershipPrice = selectedPlan ? parseFloat(selectedPlan.dataset.price) || 0 : 0;
+        
+        // Get selected programs prices from coach dropdowns
+        const programCoachDropdowns = document.querySelectorAll('.program-coach');
+        let programTotal = 0;
+        programCoachDropdowns.forEach(dropdown => {
+            if (dropdown.value) {
+                const selectedOption = dropdown.options[dropdown.selectedIndex];
+                programTotal += parseFloat(selectedOption.dataset.price) || 0;
+            }
+        });
+        
+        // Get selected rental services prices
+        const selectedRentals = document.querySelectorAll('input[name="rental_services[]"]:checked');
+        let rentalTotal = 0;
+        selectedRentals.forEach(rental => {
+            rentalTotal += parseFloat(rental.dataset.price) || 0;
+        });
+
+        // Update all subtotals
+        document.getElementById('registrationFee').textContent = formatPrice(registrationFee);
+        document.getElementById('membershipSubtotal').textContent = formatPrice(membershipPrice);
+        document.getElementById('programsSubtotal').textContent = formatPrice(programTotal);
+        document.getElementById('rentalsSubtotal').textContent = formatPrice(rentalTotal);
+
+        // Calculate and update total
+        const total = registrationFee + membershipPrice + programTotal + rentalTotal;
+        document.getElementById('totalAmount').textContent = formatPrice(total);
+    }
     
     function formatPrice(amount) {
         // Ensure amount is a number
         amount = parseFloat(amount) || 0;
         return `₱${amount.toFixed(2)}`;
+    }
+    
+    function nextPhase(currentPhase) {
+        if (currentPhase === 1) {
+            if (!validatePhase1()) return;
+
+            // Generate credentials after Phase 1 validation
+            console.log("Generating credentials after Phase 1...");
+            const firstNameInput = document.querySelector('input[name="first_name"]');
+            console.log("First name input element:", firstNameInput);
+            
+            if (!firstNameInput) {
+                console.error('First name input not found');
+                return;
+            }
+
+            const firstName = firstNameInput.value;
+            console.log("First name value:", firstName);
+            
+            if (!firstName) {
+                console.error('First name is empty');
+                alert('Please enter a first name');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('first_name', firstName);
+            formData.append('generate_credentials', '1');
+            
+            console.log("Sending request to generate credentials...");
+            fetch('../admin/pages/members/add_member.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log("Got response:", response);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error("Error response:", text);
+                        throw new Error('Network response was not ok');
+                    });
+                }
+                return response.text().then(text => {
+                    console.log("Raw response:", text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("Failed to parse JSON:", e);
+                        throw new Error('Invalid JSON response');
+                    }
+                });
+            })
+            .then(data => {
+                console.log("Got data:", data);
+                if (data.success) {
+                    // Store credentials in hidden fields
+                    document.getElementById('usernameField').value = data.username;
+                    document.getElementById('passwordField').value = data.password;
+
+                    // Move to Phase 2
+                    document.getElementById('phase1').style.display = 'none';
+                    document.getElementById('phase2').style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Failed to generate credentials');
+                }
+            })
+            .catch(error => {
+                console.error('Error generating credentials:', error);
+                alert('Error generating credentials. Please try again.');
+            });
+            return; // Don't proceed with normal phase transition
+        } else if (currentPhase === 2) {
+            if (!validatePhase2()) return;
+            
+            // Get selected membership plan
+            const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
+            if (!selectedPlan) return;
+            
+            // Get membership plan duration and filter programs/rentals
+            fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=get_membership_duration&plan_id=${selectedPlan.value}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fetch filtered programs and rentals
+                    return fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `action=get_filtered_items&duration=${data.duration}&duration_type_id=${data.duration_type_id}`
+                    });
+                }
+                throw new Error('Failed to get membership duration');
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update programs list
+                    const programsContainer = document.querySelector('#phase3 .programs-container');
+                    if (programsContainer) {
+                        programsContainer.innerHTML = data.programs_html;
+                    }
+                    
+                    // Update rentals list
+                    const rentalsContainer = document.querySelector('#phase3 .rentals-container');
+                    if (rentalsContainer) {
+                        rentalsContainer.innerHTML = data.rentals_html;
+                    }
+                    
+                    // Show phase 3
+                    document.getElementById('phase2').style.display = 'none';
+                    document.getElementById('phase3').style.display = 'block';
+                } else {
+                    throw new Error('Failed to get filtered items');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request. Please try again.');
+            });
+            
+            return; // Don't proceed with normal phase transition
+        }
+
+        if (currentPhase === 3) {
+            const username = document.getElementById('usernameField').value;
+            const password = document.getElementById('passwordField').value;
+            
+            if (!username || !password) {
+                alert('Error: Credentials not found. Please go back to Phase 1.');
+                return;
+            }
+
+            // Display the stored credentials
+            document.getElementById('generatedUsername').textContent = username;
+            document.getElementById('generatedPassword').textContent = password;
+        }
+
+        // For all other phase transitions
+        document.getElementById('phase' + currentPhase).style.display = 'none';
+        document.getElementById('phase' + (currentPhase + 1)).style.display = 'block';
+        
+        // Update total amount
+        updateTotalAmount();
+    }
+
+    function prevPhase(currentPhase) {
+        document.getElementById('phase' + currentPhase).style.display = 'none';
+        document.getElementById('phase' + (currentPhase - 1)).style.display = 'block';
+        
+        // Update total amount when changing phases
+        updateTotalAmount();
     }
 
     function validatePhase1() {
@@ -746,206 +1237,6 @@ function renderRentalServices($rentals) {
         document.getElementById('membershipError').style.display = 'none';
     }
 
-    function nextPhase(currentPhase) {
-        if (currentPhase === 1) {
-            if (!validatePhase1()) return;
-
-            // Generate credentials after Phase 1 validation
-            console.log("Generating credentials after Phase 1...");
-            const firstNameInput = document.querySelector('input[name="first_name"]');
-            console.log("First name input element:", firstNameInput);
-            
-            if (!firstNameInput) {
-                console.error('First name input not found');
-                return;
-            }
-
-            const firstName = firstNameInput.value;
-            console.log("First name value:", firstName);
-            
-            if (!firstName) {
-                console.error('First name is empty');
-                alert('Please enter a first name');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('first_name', firstName);
-            formData.append('generate_credentials', '1');
-            
-            console.log("Sending request to generate credentials...");
-            fetch('../admin/pages/members/add_member.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                console.log("Got response:", response);
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        console.error("Error response:", text);
-                        throw new Error('Network response was not ok');
-                    });
-                }
-                return response.text().then(text => {
-                    console.log("Raw response:", text);
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        console.error("Failed to parse JSON:", e);
-                        throw new Error('Invalid JSON response');
-                    }
-                });
-            })
-            .then(data => {
-                console.log("Got data:", data);
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to generate credentials');
-                }
-                
-                // Store credentials in hidden fields
-                document.getElementById('usernameField').value = data.username;
-                document.getElementById('passwordField').value = data.password;
-
-                // Move to Phase 2
-                document.getElementById('phase1').style.display = 'none';
-                document.getElementById('phase2').style.display = 'block';
-            })
-            .catch(error => {
-                console.error('Error generating credentials:', error);
-                alert('Error generating credentials. Please try again.');
-            });
-            return; // Don't proceed with normal phase transition
-        } else if (currentPhase === 2) {
-            if (!validatePhase2()) return;
-            
-            // Get selected membership plan
-            const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
-            if (!selectedPlan) return;
-            
-            // Get membership plan duration and filter programs/rentals
-            fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `action=get_membership_duration&plan_id=${selectedPlan.value}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Fetch filtered programs and rentals
-                    return fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `action=get_filtered_items&duration=${data.duration}&duration_type_id=${data.duration_type_id}`
-                    });
-                }
-                throw new Error('Failed to get membership duration');
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update programs list
-                    const programsContainer = document.querySelector('#phase3 .programs-container');
-                    if (programsContainer) {
-                        programsContainer.innerHTML = data.programs_html;
-                    }
-                    
-                    // Update rentals list
-                    const rentalsContainer = document.querySelector('#phase3 .rentals-container');
-                    if (rentalsContainer) {
-                        rentalsContainer.innerHTML = data.rentals_html;
-                    }
-                    
-                    // Show phase 3
-                    document.getElementById('phase2').style.display = 'none';
-                    document.getElementById('phase3').style.display = 'block';
-                } else {
-                    throw new Error('Failed to get filtered items');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while processing your request. Please try again.');
-            });
-            
-            return; // Don't proceed with normal phase transition
-        }
-
-        if (currentPhase === 3) {
-            const username = document.getElementById('usernameField').value;
-            const password = document.getElementById('passwordField').value;
-            
-            if (!username || !password) {
-                alert('Error: Credentials not found. Please go back to Phase 1.');
-                return;
-            }
-
-            // Display the stored credentials
-            document.getElementById('generatedUsername').textContent = username;
-            document.getElementById('generatedPassword').textContent = password;
-        }
-
-        // For all other phase transitions
-        document.getElementById('phase' + currentPhase).style.display = 'none';
-        document.getElementById('phase' + (currentPhase + 1)).style.display = 'block';
-        
-        // Update total amount
-        updateTotalAmount();
-    }
-
-    function prevPhase(currentPhase) {
-        document.getElementById('phase' + currentPhase).style.display = 'none';
-        document.getElementById('phase' + (currentPhase - 1)).style.display = 'block';
-        
-        // Update total amount when changing phases
-        updateTotalAmount();
-    }
-
-    function updateTotalAmount() {
-        // Get membership plan price
-        const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
-        const membershipPrice = selectedPlan ? parseFloat(selectedPlan.dataset.price) || 0 : 0;
-        
-        // Get selected programs prices from coach dropdowns
-        const programCoachDropdowns = document.querySelectorAll('.program-coach');
-        let programTotal = 0;
-        programCoachDropdowns.forEach(dropdown => {
-            if (dropdown.value) {
-                const selectedOption = dropdown.options[dropdown.selectedIndex];
-                programTotal += parseFloat(selectedOption.dataset.price) || 0;
-            }
-        });
-        
-        // Get selected rental services prices
-        const selectedRentals = document.querySelectorAll('input[name="rental_services[]"]:checked');
-        let rentalTotal = 0;
-        selectedRentals.forEach(rental => {
-            rentalTotal += parseFloat(rental.dataset.price) || 0;
-        });
-
-        // Update all subtotals
-        document.getElementById('registrationFee').textContent = formatPrice(registrationFee);
-        document.getElementById('membershipSubtotal').textContent = formatPrice(membershipPrice);
-        document.getElementById('programsSubtotal').textContent = formatPrice(programTotal);
-        document.getElementById('rentalsSubtotal').textContent = formatPrice(rentalTotal);
-
-        // Calculate and update total
-        const total = registrationFee + membershipPrice + programTotal + rentalTotal;
-        document.getElementById('totalAmount').textContent = formatPrice(total);
-
-        // Debug output
-        console.log({
-            registrationFee,
-            membershipPrice,
-            programTotal,
-            rentalTotal,
-            total
-        });
-    }
-
     function submitForm() {
         // Get all form data
         const formData = new FormData();
@@ -1048,65 +1339,6 @@ function renderRentalServices($rentals) {
             alert('Error registering member. Please try again.');
         });
     }
-
-    // Add event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add submit event listener to the form
-        const form = document.getElementById('memberForm');
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Collect selected programs and coaches
-            const selectedPrograms = [];
-            const programCoaches = {};
-            const programCoachDropdowns = document.querySelectorAll('.program-coach');
-            
-            programCoachDropdowns.forEach(dropdown => {
-                if (dropdown.value) {
-                    const programId = dropdown.getAttribute('data-program-id');
-                    selectedPrograms.push(programId);
-                    programCoaches[programId] = dropdown.value;
-                }
-            });
-
-            // Add hidden fields for programs and coaches
-            const programsInput = document.createElement('input');
-            programsInput.type = 'hidden';
-            programsInput.name = 'programs';
-            programsInput.value = JSON.stringify(selectedPrograms);
-            form.appendChild(programsInput);
-
-            const programCoachInput = document.createElement('input');
-            programCoachInput.type = 'hidden';
-            programCoachInput.name = 'program_coach';
-            programCoachInput.value = JSON.stringify(programCoaches);
-            form.appendChild(programCoachInput);
-
-            // Submit the form
-            form.submit();
-        });
-
-        // Add change event listener to membership plan radios
-        const membershipPlans = document.querySelectorAll('input[name="membership_plan"]');
-        membershipPlans.forEach(plan => {
-            plan.addEventListener('change', updateTotalAmount);
-        });
-
-        // Add change event listener to program coach dropdowns
-        const programCoachDropdowns = document.querySelectorAll('.program-coach');
-        programCoachDropdowns.forEach(dropdown => {
-            dropdown.addEventListener('change', updateTotalAmount);
-        });
-
-        // Add change event listener to rental service checkboxes
-        const rentalServices = document.querySelectorAll('input[name="rental_services[]"]');
-        rentalServices.forEach(service => {
-            service.addEventListener('change', updateTotalAmount);
-        });
-
-        // Initial calculation
-        updateTotalAmount();
-    });
     </script>
 </body>
 </html>

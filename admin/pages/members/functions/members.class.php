@@ -387,27 +387,25 @@ class Members {
 
     public function getProgramCoaches() {
         try {
-            $connection = $this->pdo;
             $query = "SELECT 
-                        cpt.program_id,
+                        cpt.id as program_type_id,
                         cpt.coach_id,
+                        cpt.program_id,
                         cpt.price,
-                        CONCAT(pd.last_name, ', ', pd.first_name, ' ', COALESCE(pd.middle_name, '')) as coach_name
-                      FROM coach_program_types cpt
-                      JOIN users u ON cpt.coach_id = u.id
-                      JOIN personal_details pd ON u.id = pd.user_id
-                      WHERE cpt.status = 'active'";
+                        cpt.type,
+                        CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
+                    FROM coach_program_types cpt
+                    JOIN users u ON cpt.coach_id = u.id
+                    JOIN personal_details pd ON u.id = pd.user_id
+                    WHERE cpt.status = 'active'
+                    ORDER BY pd.last_name, pd.first_name";
             
-            error_log("Executing coach query: " . $query);
-            $stmt = $connection->prepare($query);
+            $stmt = $this->pdo->prepare($query);
             $stmt->execute();
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            error_log("Coach query result: " . print_r($result, true));
-            return $result;
-        } catch (Exception $e) {
-            error_log("Error getting program coaches: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
-            return [];
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error in getProgramCoaches: " . $e->getMessage());
+            return array();
         }
     }
 
@@ -967,6 +965,170 @@ class Members {
         } catch (Exception $e) {
             error_log('Error in handleRequest: ' . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function getCoachSchedule($programTypeId) {
+        try {
+            error_log("Getting schedule for program type ID: " . $programTypeId);
+            
+            // First get the coach's full availability
+            $query = "SELECT day, start_time, end_time 
+                     FROM coach_availability 
+                     WHERE coach_program_type_id = :program_type_id
+                     ORDER BY 
+                        CASE day
+                            WHEN 'Monday' THEN 1
+                            WHEN 'Tuesday' THEN 2
+                            WHEN 'Wednesday' THEN 3
+                            WHEN 'Thursday' THEN 4
+                            WHEN 'Friday' THEN 5
+                            WHEN 'Saturday' THEN 6
+                            WHEN 'Sunday' THEN 7
+                        END,
+                        start_time";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':program_type_id', $programTypeId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $coachAvailability = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Coach availability: " . json_encode($coachAvailability));
+            
+            // Get all reserved times for this coach program type
+            $query = "SELECT pss.day, pss.start_time, pss.end_time
+                     FROM program_subscription_schedule pss
+                     JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+                     JOIN coach_program_types cpt ON ps.coach_id = cpt.coach_id 
+                        AND cpt.program_id = ps.program_id
+                     WHERE cpt.id = :program_type_id
+                        AND ps.status = 'active'
+                     ORDER BY 
+                        CASE pss.day
+                            WHEN 'Monday' THEN 1
+                            WHEN 'Tuesday' THEN 2
+                            WHEN 'Wednesday' THEN 3
+                            WHEN 'Thursday' THEN 4
+                            WHEN 'Friday' THEN 5
+                            WHEN 'Saturday' THEN 6
+                            WHEN 'Sunday' THEN 7
+                        END,
+                        pss.start_time";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':program_type_id', $programTypeId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $reservedTimes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Reserved times: " . json_encode($reservedTimes));
+            
+            // Process each day's availability
+            $availableDays = array();
+            
+            // Group availability by day
+            $availabilityByDay = array();
+            foreach ($coachAvailability as $availability) {
+                $day = $availability['day'];
+                if (!isset($availabilityByDay[$day])) {
+                    $availabilityByDay[$day] = array();
+                }
+                $availabilityByDay[$day][] = $availability;
+            }
+            
+            // Process each day
+            foreach ($availabilityByDay as $day => $dayAvailabilities) {
+                $dayReservations = array_filter($reservedTimes, function($res) use ($day) {
+                    return $res['day'] === $day;
+                });
+                
+                $timeSlots = array();
+                
+                // Process each availability slot for the day
+                foreach ($dayAvailabilities as $availability) {
+                    $availStart = strtotime($availability['start_time']);
+                    $availEnd = strtotime($availability['end_time']);
+                    $currentStart = $availStart;
+                    
+                    // Find reservations that overlap with this availability slot
+                    $slotReservations = array_filter($dayReservations, function($res) use ($availStart, $availEnd) {
+                        $resStart = strtotime($res['start_time']);
+                        $resEnd = strtotime($res['end_time']);
+                        return ($resStart < $availEnd && $resEnd > $availStart);
+                    });
+                    
+                    // Sort reservations by start time
+                    usort($slotReservations, function($a, $b) {
+                        return strtotime($a['start_time']) - strtotime($b['start_time']);
+                    });
+                    
+                    // Process each reservation within this availability slot
+                    foreach ($slotReservations as $reservation) {
+                        $resStart = strtotime($reservation['start_time']);
+                        $resEnd = strtotime($reservation['end_time']);
+                        
+                        // If there's a gap before this reservation, add it
+                        if ($currentStart < $resStart) {
+                            $timeSlots[] = array(
+                                'start_time' => date("g:i A", $currentStart),
+                                'end_time' => date("g:i A", $resStart)
+                            );
+                        }
+                        
+                        $currentStart = $resEnd;
+                    }
+                    
+                    // Add remaining time after last reservation in this slot
+                    if ($currentStart < $availEnd) {
+                        $timeSlots[] = array(
+                            'start_time' => date("g:i A", $currentStart),
+                            'end_time' => date("g:i A", $availEnd)
+                        );
+                    }
+                }
+                
+                if (!empty($timeSlots)) {
+                    if (!isset($availableDays[$day])) {
+                        $availableDays[$day] = array();
+                    }
+                    $availableDays[$day] = $timeSlots;
+                }
+                
+                error_log("Processed day $day: " . json_encode($timeSlots));
+            }
+            
+            // Create a complete week schedule
+            $allDays = array('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
+            $schedule = array();
+            
+            foreach ($allDays as $day) {
+                if (isset($availableDays[$day]) && !empty($availableDays[$day])) {
+                    $schedule[] = array(
+                        'day' => $day,
+                        'time_slots' => $availableDays[$day],
+                        'available' => true
+                    );
+                } else {
+                    $schedule[] = array(
+                        'day' => $day,
+                        'time_slots' => array(),
+                        'available' => false
+                    );
+                }
+            }
+            
+            $response = array(
+                'success' => true,
+                'schedule' => $schedule
+            );
+            error_log("Final schedule response: " . json_encode($response));
+            return $response;
+            
+        } catch (PDOException $e) {
+            error_log("Error in getCoachSchedule: " . $e->getMessage());
+            return array(
+                'success' => false,
+                'message' => 'Error fetching schedule: ' . $e->getMessage()
+            );
         }
     }
 }

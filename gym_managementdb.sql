@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 17, 2025 at 04:39 PM
+-- Generation Time: Feb 17, 2025 at 07:42 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -109,8 +109,9 @@ CREATE TABLE `coach_availability` (
 --
 
 INSERT INTO `coach_availability` (`id`, `coach_program_type_id`, `day`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
-(1, 4, 'Monday', '08:00:00', '18:00:00', '2025-02-17 15:35:25', '2025-02-17 15:35:25'),
-(2, 4, 'Tuesday', '08:00:00', '18:00:00', '2025-02-17 15:38:32', '2025-02-17 15:38:32');
+(1, 4, 'Monday', '08:00:00', '11:00:00', '2025-02-17 15:35:25', '2025-02-17 17:21:18'),
+(2, 4, 'Tuesday', '08:00:00', '18:00:00', '2025-02-17 15:38:32', '2025-02-17 15:38:32'),
+(3, 4, 'Monday', '13:00:00', '17:00:00', '2025-02-17 17:21:47', '2025-02-17 17:24:49');
 
 -- --------------------------------------------------------
 
@@ -137,7 +138,8 @@ CREATE TABLE `coach_program_types` (
 INSERT INTO `coach_program_types` (`id`, `coach_id`, `program_id`, `type`, `price`, `description`, `status`, `created_at`, `updated_at`) VALUES
 (4, 35, 3, 'personal', 500.00, 'hakdog', 'active', '2024-12-03 14:35:24', '2025-02-15 17:19:23'),
 (10, 36, 3, 'personal', 450.00, 'Lorem ipsum odor amet, consectetuer adipiscing elit. Sollicitudin donec dolor sagittis per egestas montes tellus vel. Cursus imperdiet faucibus habitasse finibus accumsan pellentesque eget. Senectus nam integer laoreet ornare cursus metus. Lobortis aliquet cras himenaeos neque lectus pharetra condimentum ante. Auctor erat mattis class metus mollis lacus ex. Euismod hac habitant ac aenean mauris. Mus eros vestibulum interdum fermentum tempor quisque. Ante porttitor maecenas ornare ex vel fringilla euismod lacus bibendum.', 'active', '2024-12-03 16:14:34', '2024-12-03 16:14:34'),
-(11, 35, 3, 'personal', 150.00, 'fordago', 'active', '2025-01-19 14:07:34', '2025-02-15 17:20:46');
+(11, 35, 3, 'group', 150.00, 'fordago', 'active', '2025-01-19 14:07:34', '2025-02-17 17:52:29'),
+(12, 35, 7, 'personal', 15.00, 'gegegegege', 'active', '2025-02-17 17:48:47', '2025-02-17 17:48:47');
 
 -- --------------------------------------------------------
 
@@ -230,8 +232,8 @@ CREATE TABLE `memberships` (
 --
 
 INSERT INTO `memberships` (`id`, `transaction_id`, `membership_plan_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
-(160, 165, 20, '2025-02-16', '2025-02-25', 500.00, 'active', 1, NULL, '2025-02-15 18:53:47', '2025-02-15 19:49:04'),
-(162, 166, 20, '2025-02-16', '2025-02-25', 500.00, 'active', 1, NULL, '2025-02-15 19:50:37', '2025-02-15 19:51:50');
+(160, 165, 20, '2025-02-16', '2025-02-25', 500.00, 'expiring', 1, NULL, '2025-02-15 18:53:47', '2025-02-17 16:01:26'),
+(162, 166, 20, '2025-02-16', '2025-02-25', 500.00, 'expiring', 1, NULL, '2025-02-15 19:50:37', '2025-02-17 16:01:26');
 
 -- --------------------------------------------------------
 
@@ -373,7 +375,8 @@ CREATE TABLE `programs` (
 
 INSERT INTO `programs` (`id`, `program_name`, `program_type_id`, `duration`, `duration_type_id`, `description`, `status`, `is_removed`, `created_at`, `updated_at`) VALUES
 (3, 'Coaching', 1, 10, 1, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.', 'active', 0, '2024-12-03 14:34:54', '2025-02-02 17:30:40'),
-(6, 'ako', 1, 1, 2, 'dadada', 'inactive', 1, '2025-01-19 14:08:05', '2025-01-31 18:57:46');
+(6, 'ako', 1, 1, 2, 'dadada', 'inactive', 1, '2025-01-19 14:08:05', '2025-01-31 18:57:46'),
+(7, 'another', 1, 11, 1, 'agagagagg', 'active', 0, '2025-02-17 17:48:24', '2025-02-17 17:48:24');
 
 -- --------------------------------------------------------
 
@@ -412,7 +415,7 @@ INSERT INTO `program_subscriptions` (`id`, `transaction_id`, `program_id`, `coac
 
 CREATE TABLE `program_subscription_schedule` (
   `id` int(11) NOT NULL,
-  `program_subcription_id` int(11) NOT NULL,
+  `program_subscription_id` int(11) NOT NULL,
   `day` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
@@ -424,7 +427,7 @@ CREATE TABLE `program_subscription_schedule` (
 -- Dumping data for table `program_subscription_schedule`
 --
 
-INSERT INTO `program_subscription_schedule` (`id`, `program_subcription_id`, `day`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
+INSERT INTO `program_subscription_schedule` (`id`, `program_subscription_id`, `day`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
 (1, 72, 'Monday', '08:00:00', '10:00:00', '2025-02-17 15:36:25', '2025-02-17 15:36:25'),
 (2, 72, 'Tuesday', '08:00:00', '10:00:00', '2025-02-17 15:39:04', '2025-02-17 15:39:04');
 
@@ -865,7 +868,7 @@ ALTER TABLE `program_subscriptions`
 --
 ALTER TABLE `program_subscription_schedule`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `program_subcription_id` (`program_subcription_id`);
+  ADD KEY `program_subcription_id` (`program_subscription_id`);
 
 --
 -- Indexes for table `program_types`
@@ -995,13 +998,13 @@ ALTER TABLE `attendance_history`
 -- AUTO_INCREMENT for table `coach_availability`
 --
 ALTER TABLE `coach_availability`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `coach_program_types`
 --
 ALTER TABLE `coach_program_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `duration_types`
@@ -1025,7 +1028,7 @@ ALTER TABLE `gym_offers`
 -- AUTO_INCREMENT for table `memberships`
 --
 ALTER TABLE `memberships`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=163;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
 
 --
 -- AUTO_INCREMENT for table `membership_plans`
@@ -1037,7 +1040,7 @@ ALTER TABLE `membership_plans`
 -- AUTO_INCREMENT for table `personal_details`
 --
 ALTER TABLE `personal_details`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=151;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=155;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -1055,13 +1058,13 @@ ALTER TABLE `profile_photos`
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `program_subscriptions`
 --
 ALTER TABLE `program_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
 
 --
 -- AUTO_INCREMENT for table `program_subscription_schedule`
@@ -1085,7 +1088,7 @@ ALTER TABLE `registration`
 -- AUTO_INCREMENT for table `registration_records`
 --
 ALTER TABLE `registration_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=74;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
 
 --
 -- AUTO_INCREMENT for table `rental_services`
@@ -1097,7 +1100,7 @@ ALTER TABLE `rental_services`
 -- AUTO_INCREMENT for table `rental_subscriptions`
 --
 ALTER TABLE `rental_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -1121,13 +1124,13 @@ ALTER TABLE `staff_activity_log`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=171;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=165;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=170;
 
 --
 -- AUTO_INCREMENT for table `verification_codes`
@@ -1226,7 +1229,7 @@ ALTER TABLE `program_subscriptions`
 -- Constraints for table `program_subscription_schedule`
 --
 ALTER TABLE `program_subscription_schedule`
-  ADD CONSTRAINT `program_subscription_schedule_ibfk_1` FOREIGN KEY (`program_subcription_id`) REFERENCES `program_subscriptions` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `program_subscription_schedule_ibfk_1` FOREIGN KEY (`program_subscription_id`) REFERENCES `program_subscriptions` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `registration_records`

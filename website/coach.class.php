@@ -90,7 +90,7 @@ class Coach_class {
             INNER JOIN users u ON ps.transaction_id IN (SELECT id FROM transactions WHERE user_id = u.id)
             INNER JOIN personal_details pd ON u.id = pd.user_id
             INNER JOIN duration_types dt ON p.duration_type_id = dt.id
-            LEFT JOIN program_subscription_schedule pss ON ps.id = pss.program_subcription_id
+            LEFT JOIN program_subscription_schedule pss ON ps.id = pss.program_subscription_id
             WHERE ps.coach_id = ? AND ps.is_paid = 1 AND ps.status = 'active'";
             
         $stmt = $this->db->prepare($sql);
