@@ -55,11 +55,6 @@ $(document).ready(function () {
     // Sub nav items for Notification
     "announcement-link": () =>
       loadContent("pages/notification/announcements.php"),
-
-    // Sub nav items for Staff Management
-    "activity_log-link": () =>
-      loadContent("pages/staff management/staff_log.php"),
-    "coach_log-link": () => loadContent("pages/staff management/coach_log.php"),
   };
 
   // Attach click handlers to all navigation items
@@ -106,8 +101,6 @@ $(document).ready(function () {
     website_settings: "website_settings-link",
     report: "report-link",
     staff_management: "staff_management-link",
-    activity_log: "activity_log-link",
-    coach_log: "coach_log-link",
   };
 
   let matched = false;
