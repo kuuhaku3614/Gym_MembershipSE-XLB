@@ -197,8 +197,6 @@ function renderPrograms($programs) {
     global $members;
     $programCoaches = $members->getProgramCoaches();
     
-    error_log("Program coaches data: " . json_encode($programCoaches));
-    
     // Organize coaches by program
     $coachesByProgram = [];
     foreach ($programCoaches as $coach) {
@@ -230,9 +228,9 @@ function renderPrograms($programs) {
                 $html .= '<label class="form-label d-block">Training Type:</label>';
                 $html .= '<div class="btn-group" role="group">';
                 $html .= '<input type="radio" class="btn-check training-type-radio" name="training_type_' . $program['id'] . '" id="personal_' . $program['id'] . '" value="personal" checked>';
-                $html .= '<label class="form-label btn btn-outline-primary btn-sm" for="personal_' . $program['id'] . '">Personal</label>';
+                $html .= '<label class="btn btn-outline-primary btn-sm" for="personal_' . $program['id'] . '">Personal</label>';
                 $html .= '<input type="radio" class="btn-check training-type-radio" name="training_type_' . $program['id'] . '" id="group_' . $program['id'] . '" value="group">';
-                $html .= '<label class="form-label btn btn-outline-primary btn-sm" for="group_' . $program['id'] . '">Group</label>';
+                $html .= '<label class="btn btn-outline-primary btn-sm" for="group_' . $program['id'] . '">Group</label>';
                 $html .= '</div>';
                 $html .= '</div>';
 
@@ -244,12 +242,13 @@ function renderPrograms($programs) {
                 $html .= 'data-program-id="' . $program['id'] . '">';
                 $html .= '<option value="">Choose a coach</option>';
                 
+                // Pre-filter coaches to show only personal trainers by default
                 foreach ($coachesByProgram[$program['id']] as $coach) {
-                    error_log("Coach option data: " . json_encode($coach));
+                    $style = $coach['type'] !== 'personal' ? ' style="display:none;"' : '';
                     $html .= '<option value="' . htmlspecialchars($coach['coach_id']) . '" ';
                     $html .= 'data-price="' . htmlspecialchars($coach['price']) . '" ';
                     $html .= 'data-program-type-id="' . htmlspecialchars($coach['program_type_id']) . '" ';
-                    $html .= 'data-type="' . htmlspecialchars($coach['type']) . '">';
+                    $html .= 'data-type="' . htmlspecialchars($coach['type']) . '"' . $style . '>';
                     $html .= htmlspecialchars($coach['coach_name']) . ' - ₱';
                     $html .= number_format($coach['price'], 2);
                     $html .= '</option>';
@@ -483,9 +482,9 @@ function renderRentalServices($rentals) {
                                 </div>
                                 <div class="row">
                                     <?php 
-                                    $membershipPlans = $members->getMembershipPlans();
-                                    error_log("Membership plans: " . print_r($membershipPlans, true));
-                                    foreach ($membershipPlans as $plan): ?>
+                                    $plans = $members->getMembershipPlans();
+                                    error_log("Membership plans: " . print_r($plans, true));
+                                    foreach ($plans as $plan): ?>
                                     <div class="col-md-6 mb-4">
                                         <div class="card membership-option">
                                             <div class="card-body">
@@ -497,14 +496,14 @@ function renderRentalServices($rentals) {
                                                     Duration: <?php echo $plan['duration'] . ' ' . $plan['duration_type']; ?>
                                                 </p>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="radio" 
+                                                    <input class="form-check-input membership-plan-radio" type="radio" 
                                                            name="membership_plan" 
                                                            value="<?php echo $plan['id']; ?>"
                                                            data-price="<?php echo $plan['price']; ?>"
-                                                           id="membership_plan_<?php echo $plan['id']; ?>">
-                                                    <label class="form-check-label" for="membership_plan_<?php echo $plan['id']; ?>">
-                                                        Select Plan
-                                                    </label>
+                                                           data-duration="<?php echo $plan['duration']; ?>"
+                                                           data-duration-type="<?php echo $plan['duration_type']; ?>"
+                                                           data-name="<?php echo htmlspecialchars($plan['plan_name']); ?>">
+                                                    <label class="form-check-label">Select Plan</label>
                                                 </div>
                                             </div>
                                         </div>
@@ -741,9 +740,13 @@ function renderRentalServices($rentals) {
                         
                         if (data.success && data.schedule && data.schedule.length > 0) {
                             let hasAvailableSlots = false;
+                            let availableTimesByDay = {};
+                            
+                            // Process available times by day
                             data.schedule.forEach(day => {
                                 if (day.available && day.time_slots.length > 0) {
                                     hasAvailableSlots = true;
+                                    availableTimesByDay[day.day] = day.time_slots;
                                 }
                             });
                             
@@ -753,23 +756,67 @@ function renderRentalServices($rentals) {
                                 return;
                             }
                             
-                            // Create schedule template
+                            // Create schedule selection form
                             let html = '<div class="schedule-container mt-3">';
                             html += '<div class="card">';
-                            html += '<div class="card-header bg-primary text-white">Weekly Schedule</div>';
-                            html += '<div class="card-body p-0">';
+                            html += '<div class="card-header bg-primary text-white">Schedule Selection</div>';
+                            html += '<div class="card-body">';
+                            
+                            // Selected schedules display
+                            html += '<div class="selected-schedules mb-3"></div>';
+                            
+                            // Schedule selection form
+                            html += '<div class="schedule-form">';
+                            
+                            // Day selection
+                            html += '<div class="form-group mb-3">';
+                            html += '<label class="form-label">Select Day:</label>';
+                            html += '<select class="form-select schedule-day-select">';
+                            html += '<option value="">Choose a day</option>';
+                            
+                            Object.keys(availableTimesByDay).forEach(day => {
+                                html += `<option value="${day}">${day}</option>`;
+                            });
+                            
+                            html += '</select>';
+                            html += '</div>';
+                            
+                            // Time selection (initially hidden)
+                            html += '<div class="form-group mb-3 time-selection" style="display: none;">';
+                            html += '<label class="form-label">Select Time:</label>';
+                            html += '<div class="row">';
+                            html += '<div class="col-md-5">';
+                            html += '<select class="form-select schedule-start-time" name="start_time">';
+                            html += '<option value="">Start Time</option>';
+                            html += '</select>';
+                            html += '</div>';
+                            html += '<div class="col-md-5">';
+                            html += '<select class="form-select schedule-end-time" name="end_time" disabled>';
+                            html += '<option value="">End Time</option>';
+                            html += '</select>';
+                            html += '</div>';
+                            html += '<div class="col-md-2">';
+                            html += '<button type="button" class="btn btn-success add-schedule-btn" disabled>Add</button>';
+                            html += '</div>';
+                            html += '</div>';
+                            html += '</div>';
+                            
+                            html += '</div>'; // schedule-form
+                            
+                            // Available schedule display
+                            html += '<div class="mt-3">';
+                            html += '<h6>Available Schedules:</h6>';
                             html += '<div class="row g-0">';
                             
-                            // Create columns for each day
                             data.schedule.forEach(daySchedule => {
-                                console.log('Processing day:', daySchedule);
-                                html += `
-                                    <div class="col">
-                                        <div class="day-column">
-                                            <div class="day-header">${daySchedule.day}</div>
-                                            <div class="time-slots" id="slots-${daySchedule.day.toLowerCase()}">`;
-                                
                                 if (daySchedule.available && daySchedule.time_slots.length > 0) {
+                                    html += `
+                                        <div class="col">
+                                            <div class="day-column">
+                                                <div class="day-header">${daySchedule.day}</div>
+                                                <div class="time-slots">
+                                    `;
+                                    
                                     daySchedule.time_slots.forEach(slot => {
                                         html += `
                                             <div class="time-slot">
@@ -777,24 +824,193 @@ function renderRentalServices($rentals) {
                                             </div>
                                         `;
                                     });
-                                } else {
-                                    html += '<div class="no-schedule">Not Available</div>';
-                                }
-                                
-                                html += `
+                                    
+                                    html += `
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                `;
+                                    `;
+                                }
                             });
                             
                             html += '</div>'; // row
+                            html += '</div>'; // Available schedule display
+                            
                             html += '</div>'; // card-body
                             html += '</div>'; // card
                             html += '</div>'; // schedule-container
                             
                             // Add the schedule to the container
                             $scheduleContainer.html(html);
+                            
+                            // Store available times data
+                            $scheduleContainer.data('availableTimes', availableTimesByDay);
+                            $scheduleContainer.data('selectedSchedules', []);
+                            
+                            // Handle day selection change
+                            $scheduleContainer.on('change', '.schedule-day-select', function() {
+                                const selectedDay = $(this).val();
+                                const $timeSelection = $(this).closest('.card-body').find('.time-selection');
+                                const $startTime = $timeSelection.find('.schedule-start-time');
+                                const $endTime = $timeSelection.find('.schedule-end-time');
+                                const $addBtn = $timeSelection.find('.add-schedule-btn');
+                                
+                                if (selectedDay) {
+                                    const availableTimes = availableTimesByDay[selectedDay];
+                                    
+                                    // Generate time options with 30-minute intervals
+                                    let startTimeOptions = ['<option value="">Start Time</option>'];
+                                    availableTimes.forEach(slot => {
+                                        const start = new Date(`2000-01-01 ${slot.start_time}`);
+                                        const end = new Date(`2000-01-01 ${slot.end_time}`);
+                                        
+                                        while (start < end) {
+                                            const timeStr = start.toLocaleTimeString('en-US', { 
+                                                hour: 'numeric', 
+                                                minute: '2-digit', 
+                                                hour12: true 
+                                            });
+                                            startTimeOptions.push(`<option value="${timeStr}">${timeStr}</option>`);
+                                            start.setMinutes(start.getMinutes() + 30);
+                                        }
+                                    });
+                                    
+                                    $startTime.html(startTimeOptions.join(''));
+                                    $timeSelection.show();
+                                } else {
+                                    $timeSelection.hide();
+                                    $startTime.html('<option value="">Start Time</option>');
+                                    $endTime.html('<option value="">End Time</option>');
+                                    $addBtn.prop('disabled', true);
+                                }
+                                
+                                $endTime.prop('disabled', true);
+                            });
+                            
+                            // Handle start time selection
+                            $scheduleContainer.on('change', '.schedule-start-time', function() {
+                                const selectedDay = $(this).closest('.card-body').find('.schedule-day-select').val();
+                                const selectedStart = $(this).val();
+                                const $endTime = $(this).closest('.row').find('.schedule-end-time');
+                                const $addBtn = $(this).closest('.row').find('.add-schedule-btn');
+                                
+                                if (selectedStart && selectedDay) {
+                                    const availableTimes = availableTimesByDay[selectedDay];
+                                    const selectedSlot = availableTimes.find(slot => {
+                                        const slotStart = new Date(`2000-01-01 ${slot.start_time}`);
+                                        const slotEnd = new Date(`2000-01-01 ${slot.end_time}`);
+                                        const selected = new Date(`2000-01-01 ${selectedStart}`);
+                                        return selected >= slotStart && selected < slotEnd;
+                                    });
+                                    
+                                    if (selectedSlot) {
+                                        const start = new Date(`2000-01-01 ${selectedStart}`);
+                                        const end = new Date(`2000-01-01 ${selectedSlot.end_time}`);
+                                        let endTimeOptions = ['<option value="">End Time</option>'];
+                                        
+                                        start.setMinutes(start.getMinutes() + 30);
+                                        while (start <= end) {
+                                            const timeStr = start.toLocaleTimeString('en-US', { 
+                                                hour: 'numeric', 
+                                                minute: '2-digit', 
+                                                hour12: true 
+                                            });
+                                            endTimeOptions.push(`<option value="${timeStr}">${timeStr}</option>`);
+                                            start.setMinutes(start.getMinutes() + 30);
+                                        }
+                                        
+                                        $endTime.html(endTimeOptions.join(''));
+                                        $endTime.prop('disabled', false);
+                                    }
+                                } else {
+                                    $endTime.html('<option value="">End Time</option>');
+                                    $endTime.prop('disabled', true);
+                                    $addBtn.prop('disabled', true);
+                                }
+                            });
+                            
+                            // Handle end time selection
+                            $scheduleContainer.on('change', '.schedule-end-time', function() {
+                                const $addBtn = $(this).closest('.row').find('.add-schedule-btn');
+                                $addBtn.prop('disabled', !$(this).val());
+                            });
+                            
+                            // Handle add schedule button
+                            $scheduleContainer.on('click', '.add-schedule-btn:not(:disabled)', function() {
+                                const $form = $(this).closest('.schedule-form');
+                                const selectedDay = $form.find('.schedule-day-select').val();
+                                const selectedStart = $form.find('.schedule-start-time').val();
+                                const selectedEnd = $form.find('.schedule-end-time').val();
+                                
+                                if (selectedDay && selectedStart && selectedEnd) {
+                                    const schedules = $scheduleContainer.data('selectedSchedules') || [];
+                                    
+                                    // Check for overlapping schedules
+                                    const isOverlapping = schedules.some(schedule => {
+                                        if (schedule.day !== selectedDay) return false;
+                                        
+                                        const existingStart = new Date(`2000-01-01 ${schedule.startTime}`);
+                                        const existingEnd = new Date(`2000-01-01 ${schedule.endTime}`);
+                                        const newStart = new Date(`2000-01-01 ${selectedStart}`);
+                                        const newEnd = new Date(`2000-01-01 ${selectedEnd}`);
+                                        
+                                        return (newStart < existingEnd && newEnd > existingStart);
+                                    });
+                                    
+                                    if (isOverlapping) {
+                                        alert('This schedule overlaps with an existing schedule. Please choose a different time.');
+                                        return;
+                                    }
+                                    
+                                    // Add the schedule
+                                    schedules.push({
+                                        day: selectedDay,
+                                        startTime: selectedStart,
+                                        endTime: selectedEnd
+                                    });
+                                    
+                                    // Update the display
+                                    const $selectedSchedules = $scheduleContainer.find('.selected-schedules');
+                                    $selectedSchedules.html(schedules.map((schedule, index) => `
+                                        <div class="selected-schedule alert alert-success alert-dismissible fade show mb-2">
+                                            <strong>${schedule.day}:</strong> ${schedule.startTime} - ${schedule.endTime}
+                                            <input type="hidden" name="schedule[${index}][day]" value="${schedule.day}">
+                                            <input type="hidden" name="schedule[${index}][start_time]" value="${schedule.startTime}">
+                                            <input type="hidden" name="schedule[${index}][end_time]" value="${schedule.endTime}">
+                                            <button type="button" class="btn-close remove-schedule" data-index="${index}"></button>
+                                        </div>
+                                    `).join(''));
+                                    
+                                    // Store updated schedules
+                                    $scheduleContainer.data('selectedSchedules', schedules);
+                                    
+                                    // Reset form
+                                    $form.find('select').val('');
+                                    $form.find('.time-selection').hide();
+                                    $form.find('.add-schedule-btn').prop('disabled', true);
+                                }
+                            });
+                            
+                            // Handle remove schedule
+                            $scheduleContainer.on('click', '.remove-schedule', function() {
+                                const index = $(this).data('index');
+                                const schedules = $scheduleContainer.data('selectedSchedules');
+                                
+                                schedules.splice(index, 1);
+                                $scheduleContainer.data('selectedSchedules', schedules);
+                                
+                                // Update the display
+                                const $selectedSchedules = $scheduleContainer.find('.selected-schedules');
+                                $selectedSchedules.html(schedules.map((schedule, index) => `
+                                    <div class="selected-schedule alert alert-success alert-dismissible fade show mb-2">
+                                        <strong>${schedule.day}:</strong> ${schedule.startTime} - ${schedule.endTime}
+                                        <input type="hidden" name="schedule[${index}][day]" value="${schedule.day}">
+                                        <input type="hidden" name="schedule[${index}][start_time]" value="${schedule.startTime}">
+                                        <input type="hidden" name="schedule[${index}][end_time]" value="${schedule.endTime}">
+                                        <button type="button" class="btn-close remove-schedule" data-index="${index}"></button>
+                                    </div>
+                                `).join(''));
+                            });
                             
                             // Add custom styles if not already added
                             const styleId = 'schedule-custom-styles';
@@ -834,11 +1050,8 @@ function renderRentalServices($rentals) {
                                             font-size: 0.85em;
                                             text-align: center;
                                         }
-                                        .no-schedule {
-                                            color: #6c757d;
-                                            text-align: center;
-                                            padding: 8px;
-                                            font-size: 0.85em;
+                                        .selected-schedule {
+                                            margin-bottom: 0.5rem;
                                         }
                                     `)
                                     .appendTo('head');
@@ -869,19 +1082,14 @@ function renderRentalServices($rentals) {
             const $select = $(selectElement);
             const $options = $select.find('option');
             
-            // Show all options first
-            $options.show();
-            
-            // Hide options that don't match the selected type
+            // First hide all options except the default one
             $options.each(function() {
                 const $option = $(this);
-                const type = $option.data('type');
-                
-                // Skip the default "Choose a coach" option
-                if (!type) return;
-                
-                if (type !== selectedType) {
-                    $option.hide();
+                if ($option.val() === '') {
+                    $option.show(); // Keep "Choose a coach" visible
+                } else {
+                    const type = $option.data('type');
+                    $option.toggle(type === selectedType);
                 }
             });
             
@@ -890,7 +1098,7 @@ function renderRentalServices($rentals) {
                 $select.val('');
             }
             
-            // Clear the schedule display when changing types
+            // Clear the schedule display
             const programId = $select.data('program-id');
             $('#coach-schedule-' + programId).empty();
         }
@@ -904,13 +1112,18 @@ function renderRentalServices($rentals) {
             filterCoachesByType(selectElement, selectedType);
         });
         
-        // Initial filter application
-        $('.training-type-radio:checked').each(function() {
-            const programId = this.id.split('_')[1];
-            const selectedType = $(this).val();
-            const selectElement = $(`select[data-program-id="${programId}"]`);
+        // Apply initial filtering to all coach dropdowns
+        $('.program-coach').each(function() {
+            const $select = $(this);
+            const programId = $select.data('program-id');
+            const $radioGroup = $(`input[name="training_type_${programId}"]`);
+            const selectedType = $radioGroup.filter(':checked').val() || 'personal';
             
-            filterCoachesByType(selectElement, selectedType);
+            // Ensure the radio button is checked
+            $radioGroup.filter(`[value="${selectedType}"]`).prop('checked', true);
+            
+            // Apply the filter
+            filterCoachesByType(this, selectedType);
         });
         
         // Other event listeners
@@ -1001,32 +1214,11 @@ function renderRentalServices($rentals) {
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                console.log("Got response:", response);
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        console.error("Error response:", text);
-                        throw new Error('Network response was not ok');
-                    });
-                }
-                return response.text().then(text => {
-                    console.log("Raw response:", text);
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        console.error("Failed to parse JSON:", e);
-                        throw new Error('Invalid JSON response');
-                    }
-                });
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log("Got data:", data);
                 if (data.success) {
-                    // Store credentials in hidden fields
                     document.getElementById('usernameField').value = data.username;
                     document.getElementById('passwordField').value = data.password;
-
-                    // Move to Phase 2
                     document.getElementById('phase1').style.display = 'none';
                     document.getElementById('phase2').style.display = 'block';
                 } else {
@@ -1034,89 +1226,184 @@ function renderRentalServices($rentals) {
                 }
             })
             .catch(error => {
-                console.error('Error generating credentials:', error);
-                alert('Error generating credentials. Please try again.');
-            });
-            return; // Don't proceed with normal phase transition
-        } else if (currentPhase === 2) {
-            if (!validatePhase2()) return;
-            
-            // Get selected membership plan
-            const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
-            if (!selectedPlan) return;
-            
-            // Get membership plan duration and filter programs/rentals
-            fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `action=get_membership_duration&plan_id=${selectedPlan.value}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Fetch filtered programs and rentals
-                    return fetch(`${BASE_URL}/admin/pages/members/add_member.php`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `action=get_filtered_items&duration=${data.duration}&duration_type_id=${data.duration_type_id}`
-                    });
-                }
-                throw new Error('Failed to get membership duration');
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update programs list
-                    const programsContainer = document.querySelector('#phase3 .programs-container');
-                    if (programsContainer) {
-                        programsContainer.innerHTML = data.programs_html;
-                    }
-                    
-                    // Update rentals list
-                    const rentalsContainer = document.querySelector('#phase3 .rentals-container');
-                    if (rentalsContainer) {
-                        rentalsContainer.innerHTML = data.rentals_html;
-                    }
-                    
-                    // Show phase 3
-                    document.getElementById('phase2').style.display = 'none';
-                    document.getElementById('phase3').style.display = 'block';
-                } else {
-                    throw new Error('Failed to get filtered items');
-                }
-            })
-            .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while processing your request. Please try again.');
+                alert('Error generating credentials: ' + error.message);
             });
             
             return; // Don't proceed with normal phase transition
-        }
-
-        if (currentPhase === 3) {
-            const username = document.getElementById('usernameField').value;
-            const password = document.getElementById('passwordField').value;
+        } else if (currentPhase === 3) {
+            if (!validatePhase3()) return;
             
-            if (!username || !password) {
-                alert('Error: Credentials not found. Please go back to Phase 1.');
-                return;
+            // Calculate dates
+            const today = new Date();
+            const membershipPlan = document.querySelector('input[name="membership_plan"]:checked');
+            const membershipDuration = parseInt(membershipPlan.dataset.duration);
+            const membershipDurationType = membershipPlan.dataset.durationType;
+            
+            const startDate = today;
+            const endDate = new Date(today);
+            if (membershipDurationType === 'days') {
+                endDate.setDate(endDate.getDate() + membershipDuration);
+            } else if (membershipDurationType === 'months') {
+                endDate.setMonth(endDate.getMonth() + membershipDuration);
+            } else if (membershipDurationType === 'year') {
+                endDate.setFullYear(endDate.getFullYear() + membershipDuration);
             }
 
-            // Display the stored credentials
-            document.getElementById('generatedUsername').textContent = username;
-            document.getElementById('generatedPassword').textContent = password;
+            // Function to format date in words
+            function formatDateInWords(date) {
+                const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+            }
+
+            // Build summary HTML
+            let summaryHtml = '<div class="card mb-4">';
+            summaryHtml += '<div class="card-header bg-primary text-white">Registration Summary</div>';
+            summaryHtml += '<div class="card-body">';
+            
+            // Personal Details
+            summaryHtml += '<h5 class="card-title mb-3">Personal Information</h5>';
+            summaryHtml += '<div class="table-responsive mb-4">';
+            summaryHtml += '<table class="table table-bordered">';
+            summaryHtml += '<tr><th>Full Name</th><td>' + 
+                document.querySelector('input[name="first_name"]').value + ' ' + 
+                (document.querySelector('input[name="middle_name"]').value ? document.querySelector('input[name="middle_name"]').value + ' ' : '') + 
+                document.querySelector('input[name="last_name"]').value + '</td></tr>';
+            summaryHtml += '<tr><th>Sex</th><td>' + document.querySelector('input[name="sex"]:checked').value + '</td></tr>';
+            
+            // Format date of birth
+            const birthdate = new Date(document.querySelector('input[name="birthdate"]').value);
+            summaryHtml += '<tr><th>Date of Birth</th><td>' + formatDateInWords(birthdate) + '</td></tr>';
+            
+            summaryHtml += '<tr><th>Phone Number</th><td>' + document.querySelector('input[name="phone"]').value + '</td></tr>';
+            summaryHtml += '</table>';
+            summaryHtml += '</div>';
+
+            // Membership Details
+            summaryHtml += '<h5 class="card-title mb-3">Membership Plan</h5>';
+            summaryHtml += '<div class="table-responsive mb-4">';
+            summaryHtml += '<table class="table table-bordered">';
+            summaryHtml += '<tr><th>Plan</th><td>' + membershipPlan.getAttribute('data-name') + '</td></tr>';
+            summaryHtml += '<tr><th>Duration</th><td>' + membershipDuration + ' ' + membershipPlan.getAttribute('data-duration-type') + '</td></tr>';
+            summaryHtml += '<tr><th>Start Date</th><td>' + formatDateInWords(startDate) + '</td></tr>';
+            summaryHtml += '<tr><th>End Date</th><td>' + formatDateInWords(endDate) + '</td></tr>';
+            summaryHtml += '<tr><th>Price</th><td>₱' + parseFloat(membershipPlan.dataset.price).toFixed(2) + '</td></tr>';
+            summaryHtml += '</table>';
+            summaryHtml += '</div>';
+
+            // Programs Details
+            const selectedPrograms = document.querySelectorAll('.program-coach');
+            let hasPrograms = false;
+            selectedPrograms.forEach(select => {
+                if (select.value) {
+                    if (!hasPrograms) {
+                        summaryHtml += '<h5 class="card-title mb-3">Selected Programs</h5>';
+                        summaryHtml += '<div class="table-responsive mb-4">';
+                        summaryHtml += '<table class="table table-bordered">';
+                        hasPrograms = true;
+                    }
+
+                    const programCard = select.closest('.card');
+                    const programName = programCard.querySelector('.card-title').textContent;
+                    const coachOption = select.options[select.selectedIndex];
+                    const coachName = coachOption.text.split(' - ')[0]; // Remove the price part
+                    const scheduleContainer = document.getElementById('coach-schedule-' + select.dataset.programId);
+                    const selectedSchedules = $(scheduleContainer).data('selectedSchedules') || [];
+
+                    summaryHtml += '<tr class="table-primary"><th colspan="2">' + programName + '</th></tr>';
+                    summaryHtml += '<tr><th>Coach</th><td>' + coachName + '</td></tr>';
+                    summaryHtml += '<tr><th>Training Type</th><td>' + coachOption.dataset.type.charAt(0).toUpperCase() + coachOption.dataset.type.slice(1) + '</td></tr>';
+                    summaryHtml += '<tr><th>Price</th><td>₱' + parseFloat(coachOption.dataset.price).toFixed(2) + '</td></tr>';
+                    summaryHtml += '<tr><th>Start Date</th><td>' + formatDateInWords(startDate) + '</td></tr>';
+                    summaryHtml += '<tr><th>End Date</th><td>' + formatDateInWords(endDate) + '</td></tr>';
+                    summaryHtml += '<tr><th>Schedules</th><td>';
+                    selectedSchedules.forEach(schedule => {
+                        summaryHtml += '<div class="mb-1">' + schedule.day + ': ' + schedule.startTime + ' - ' + schedule.endTime + '</div>';
+                    });
+                    summaryHtml += '</td></tr>';
+                }
+            });
+            if (hasPrograms) {
+                summaryHtml += '</table>';
+                summaryHtml += '</div>';
+            }
+
+            // Rental Services Details
+            const selectedServices = document.querySelectorAll('.rental-checkbox:checked');
+            if (selectedServices.length > 0) {
+                summaryHtml += '<h5 class="card-title mb-3">Selected Services</h5>';
+                summaryHtml += '<div class="table-responsive mb-4">';
+                summaryHtml += '<table class="table table-bordered">';
+                selectedServices.forEach(service => {
+                    const serviceCard = service.closest('.card');
+                    const serviceName = serviceCard.querySelector('.card-title').textContent;
+                    const serviceEndDate = new Date(startDate);
+                    if (service.dataset.durationType === 'days') {
+                        serviceEndDate.setDate(serviceEndDate.getDate() + parseInt(service.dataset.duration));
+                    } else if (service.dataset.durationType === 'months') {
+                        serviceEndDate.setMonth(serviceEndDate.getMonth() + parseInt(service.dataset.duration));
+                    }
+                    
+                    summaryHtml += '<tr class="table-info"><th colspan="2">' + serviceName + '</th></tr>';
+                    summaryHtml += '<tr><th>Duration</th><td>' + service.dataset.duration + ' ' + service.dataset.durationType + '</td></tr>';
+                    summaryHtml += '<tr><th>Start Date</th><td>' + formatDateInWords(startDate) + '</td></tr>';
+                    summaryHtml += '<tr><th>End Date</th><td>' + formatDateInWords(serviceEndDate) + '</td></tr>';
+                    summaryHtml += '<tr><th>Price</th><td>₱' + parseFloat(service.dataset.price).toFixed(2) + '</td></tr>';
+                });
+                summaryHtml += '</table>';
+                summaryHtml += '</div>';
+            }
+
+            // Total Amount
+            summaryHtml += '<div class="row">';
+            summaryHtml += '<div class="col-md-6 offset-md-6">';
+            summaryHtml += '<table class="table table-bordered">';
+            summaryHtml += '<tr><th>Registration Fee</th><td class="text-end">₱' + parseFloat(registrationFee).toFixed(2) + '</td></tr>';
+            summaryHtml += '<tr><th>Membership</th><td class="text-end">₱' + parseFloat(membershipPlan.dataset.price).toFixed(2) + '</td></tr>';
+            
+            let programTotal = 0;
+            selectedPrograms.forEach(select => {
+                if (select.value) {
+                    programTotal += parseFloat(select.options[select.selectedIndex].dataset.price);
+                }
+            });
+            summaryHtml += '<tr><th>Programs</th><td class="text-end">₱' + programTotal.toFixed(2) + '</td></tr>';
+            
+            let servicesTotal = 0;
+            selectedServices.forEach(service => {
+                servicesTotal += parseFloat(service.dataset.price);
+            });
+            summaryHtml += '<tr><th>Services</th><td class="text-end">₱' + servicesTotal.toFixed(2) + '</td></tr>';
+            
+            const totalAmount = registrationFee + parseFloat(membershipPlan.dataset.price) + programTotal + servicesTotal;
+            summaryHtml += '<tr class="table-primary"><th>Total Amount</th><td class="text-end">₱' + totalAmount.toFixed(2) + '</td></tr>';
+            summaryHtml += '</table>';
+            summaryHtml += '</div>';
+            summaryHtml += '</div>';
+
+            // Credentials
+            summaryHtml += '<h5 class="card-title mb-3">Account Credentials</h5>';
+            summaryHtml += '<div class="table-responsive">';
+            summaryHtml += '<table class="table table-bordered">';
+            summaryHtml += '<tr><th>Username</th><td>' + document.getElementById('usernameField').value + '</td></tr>';
+            summaryHtml += '<tr><th>Password</th><td>' + document.getElementById('passwordField').value + '</td></tr>';
+            summaryHtml += '</table>';
+            summaryHtml += '</div>';
+
+            summaryHtml += '</div>'; // card-body
+            summaryHtml += '</div>'; // card
+
+            // Update the summary container
+            document.getElementById('phase4').innerHTML = summaryHtml + 
+                '<div class="mt-3">' +
+                '<button type="button" class="btn btn-secondary" onclick="prevPhase(4)">Previous</button> ' +
+                '<button type="submit" class="btn btn-primary">Submit Registration</button>' +
+                '</div>';
         }
 
         // For all other phase transitions
         document.getElementById('phase' + currentPhase).style.display = 'none';
         document.getElementById('phase' + (currentPhase + 1)).style.display = 'block';
-        
-        // Update total amount
-        updateTotalAmount();
     }
 
     function prevPhase(currentPhase) {
@@ -1214,6 +1501,32 @@ function renderRentalServices($rentals) {
         }
 
         return !hasErrors;
+    }
+
+    function validatePhase3() {
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Check each program coach dropdown
+        $('.program-coach').each(function() {
+            const $select = $(this);
+            if ($select.val()) { // If a coach is selected
+                const programId = $select.data('program-id');
+                const $scheduleContainer = $('#coach-schedule-' + programId);
+                const selectedSchedules = $scheduleContainer.data('selectedSchedules') || [];
+                
+                if (selectedSchedules.length === 0) {
+                    isValid = false;
+                    const programName = $select.closest('.card').find('.card-title').text();
+                    errorMessage += `Please select at least one schedule for ${programName}\n`;
+                }
+            }
+        });
+        
+        if (!isValid) {
+            alert(errorMessage);
+        }
+        return isValid;
     }
 
     function showError(input, message) {
