@@ -199,7 +199,7 @@ body {
 }
 
 .nav-links-container::-webkit-scrollbar {
-  width: 0; /* Hide scrollbar by default */
+  width: 8; /* Hide scrollbar by default */
 }
 
 .nav-links-container:hover::-webkit-scrollbar {

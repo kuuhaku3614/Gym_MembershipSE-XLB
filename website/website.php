@@ -41,7 +41,7 @@ $contactContent = executeQuery("SELECT * FROM website_content WHERE section = 'c
 $latitude = $contactContent['latitude'] ?? 6.913126;
 $longitude = $contactContent['longitude'] ?? 122.072516;
 
-$offers = executeQuery("SELECT * FROM gym_offers LIMIT 4");
+$offers = executeQuery("SELECT * FROM gym_offers LIMIT 8");
 $products = executeQuery("SELECT * FROM products LIMIT 6");
 $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
@@ -105,12 +105,13 @@ require_once('includes/header.php');
    
 
        <!-- Offers Section -->
+<!-- Offers Section -->
 <section class="S-Offers" id="S-Offers">
 
     <div class="design-container">
-    <div class="rhombus rhombus-3"></div>
-    <div class="rhombus rhombus-1"></div>
-    <div class="rhombus rhombus-4"></div>
+        <div class="rhombus rhombus-3"></div>
+        <div class="rhombus rhombus-1"></div>
+        <div class="rhombus rhombus-4"></div>
     </div>
 
     <div class="offers-text">
@@ -118,6 +119,14 @@ require_once('includes/header.php');
         <p class="text-secondary"><?php 
             echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
         ?></p>
+  
+    </div>
+
+    <!-- Navigation Buttons -->
+  
+    <div class="slider-navigation d-flex justify-content-end">
+        <button class="nav-button prev-button btn btn-secondary" style="font-size: 1.5em;">‹</button>
+        <button class="nav-button next-button btn btn-secondary" style="font-size: 1.5em;">›</button>
     </div>
 
     <div class="offers-container">
@@ -297,17 +306,17 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
             </div>
             <div class="contact-info">
-                <p>9464 Columbia Ave.<br>
-                New York, NY 10029</p>
-                <p>info@bull.com</p>
+                <p>Simosa<br>
+               Canelar, Zamboanga City 7000</p>
+                <p>+ (63) 9056013159</p>    
             </div>
-            <div class="social-icons">
+            <!-- <div class="social-icons">
                 <a href="#"><img src="facebook.png" alt="Facebook"></a>
                 <a href="#"><img src="twitter.png" alt="Twitter"></a>
                 <a href="#"><img src="instagram.png" alt="Instagram"></a>
                 <a href="#"><img src="linkedin.png" alt="LinkedIn"></a>
-            </div>
-        </div>
+            </div>-->
+        </div> 
 
         <div class="menu-section">
             <h3>Menu</h3>
@@ -335,7 +344,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
                 <p>Every day: 9:00 – 22:00<br>
                 Sat - Sun: 8:00 – 21:00</p>
                 <p>New Schedule?</p>
-                <p>+ (123) 1600-567-8990</p>
+                <p>+ (63) 9056013159</p>
             </div>
         </div>
     </div>
@@ -348,6 +357,22 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
 </main>
 
     <!-- Add JavaScript for Carousel Functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const wrapper = document.querySelector('.offers-wrapper');
+    const prevButton = document.querySelector('.prev-button');
+    const nextButton = document.querySelector('.next-button');
+    const slideWidth = wrapper.querySelector('.offer-slide').offsetWidth + 20; // Include gap
+
+    prevButton.addEventListener('click', () => {
+        wrapper.scrollBy({ left: -slideWidth * 4, behavior: 'smooth' }); // Scroll 4 slides left
+    });
+
+    nextButton.addEventListener('click', () => {
+        wrapper.scrollBy({ left: slideWidth * 4, behavior: 'smooth' }); // Scroll 4 slides right
+    });
+});
+  </script>
   <script>
 // document.addEventListener('DOMContentLoaded', function() {
 //     const carousel = document.querySelector('.carousel-wrapper');

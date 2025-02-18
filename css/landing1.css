@@ -771,22 +771,52 @@ nav.sticky {
 }
 
 .offers-wrapper {
-  max-height: 250px;
+  max-height: 300px;
   display: flex;
   gap: 20px;
-  overflow-y: hidden;
+  overflow-x: auto; /* Change to horizontal scrolling */
   margin-bottom: 1.5rem;
+  scrollbar-width: none; /* For Firefox */
+  -ms-overflow-style: none; /* For Internet Explorer and Edge */
+  scroll-behavior: smooth; /* Smooth scrolling */
+}
+
+.offers-wrapper::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
 }
 
 .offer-slide {
-  flex: 0 0 auto;
+  flex: 0 0 25%; /* Ensure each slide takes up 25% of the wrapper */
+  box-sizing: border-box;
 }
 
 .offer-slide img {
-  width: 400px;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 8px;
+}
+
+.slider-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.nav-button {
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 1.5rem;
+  width: 50px;
+}
+
+.nav-button:hover {
+  background-color: #555;
 }
 
 /* Staff Section Specific Styles */

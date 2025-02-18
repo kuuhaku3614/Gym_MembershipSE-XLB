@@ -86,20 +86,15 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 
 <style>
-.current-user-container2, .current-user-container {
+/* .current-user-container2, .current-user-container {
     padding: 10px;
     background-color: #f8f9fa;
     text-align: center;
-}
+} */
 
-.current-user-container {
-    background-color: #c92f2f!important;
-    border-bottom-right-radius: 10px;
-    border-right: 2px solid #be2222;
-}
 
 .current-user-container2 {
-    border-radius: 10px;
+    border-top: 1px solid #ececec;
 }
 
 .user-info {
@@ -250,16 +245,6 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             </nav>
         </div>
 
-        <!-- Updated Logout Link and Modal -->
-    <div class="logout-container">
-        <a href="#" class="nav-item" id="logoutLink">
-            <div class="nav-item-content">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </div>
-        </a>
-    </div>
-
     <!-- Updated Modal Structure without backdrop -->
     <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true" data-bs-backdrop="false">
         <div class="modal-dialog modal-dialog-centered">
@@ -280,13 +265,15 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     </div>
 
     <!-- Current User Container -->
-    <div class="current-user-container bg-danger">
     <div class="current-user-container2">
-        <div class="user-info d-flex align-items-center justify-content-center flex-column">
-            <div class="d-flex align-items-center justify-content-start w-100">
+        <div class="user-info d-flex align-items-center justify-content-center flex-column" style="padding:15px 25px">
+        <a href="#" class="logout-item d-flex align-items-center justify-content-between w-100" id="logoutLink" style="padding: 15px;">
+
             <span class="user-name"><?php echo getFullName(); ?></span>
+                <i class="fas fa-sign-out-alt"></i>
+
+        </a>
             </div>
-            <span class="user-role"><?php echo ucfirst($_SESSION['role']); ?></span>
         </div>
     </div>
     </div>
