@@ -103,8 +103,8 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     <ul class="nav-links">
         <li><a href="<?php echo $isCoachFolder ? '../website.php' : 'website.php'; ?>">Home</a></li>
         <li><a href="<?php echo $isCoachFolder ? '../services.php' : 'services.php'; ?>">Services</a></li>
-        <li><a href="<?php echo $isCoachFolder ? '../website.php#S-AboutUs' : '#S-AboutUs'; ?>">About</a></li>
-        <li><a href="<?php echo $isCoachFolder ? '../website.php#S-ContactUs' : '#S-ContactUs'; ?>">Contact</a></li>
+        <li><a href="<?php echo $isCoachFolder ? '../website.php#S-AboutUs' : 'website.php#S-AboutUs'; ?>">About</a></li>
+        <li><a href="<?php echo $isCoachFolder ? '../website.php#S-ContactUs' : 'website.php#S-ContactUs'; ?>">Contact</a></li>
     </ul>
 
     <div class="nav-right">
