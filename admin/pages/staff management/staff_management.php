@@ -32,7 +32,6 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Staff Management</h2>
             <div class="col-md-6 text-end">
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">Add New Staff</button>
-            <button class="btn btn-secondary" type="button" id="refreshBtn">Refresh</button>
             </div>
         </div>
 

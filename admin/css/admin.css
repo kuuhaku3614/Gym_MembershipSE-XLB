@@ -67,11 +67,11 @@ h4,
 h5 {
   font-weight: bold;
 }
-
+/* 
 .table-rowHead {
   background-color: #212529;
   color: black;
-}
+} */
 
 /* tables */
 
@@ -88,9 +88,9 @@ h5 {
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-.table thead th {
+/* .table thead th {
   color: black;
-}
+} */
 .table tbody tr:nth-child(even) {
   background-color: #f2f2f2;
 }
