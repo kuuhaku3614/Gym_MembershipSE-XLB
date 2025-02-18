@@ -53,7 +53,7 @@
 
 
     <div class="container mt-4">
-        <h1 class="nav-title">Notifications</h1>
+        <h2>Notifications</h2>
 
         <div class="notification-container">
             <?php if (empty($notifications)): ?>

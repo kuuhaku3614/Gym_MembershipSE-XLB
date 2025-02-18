@@ -166,7 +166,7 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h1 class="display-6 mb-0">Analytics Report</h1>
+                        <h2> Analytics Report</h2>
                         <p class="text-muted">Generated on <?= date('F j, Y') ?></p>
                     </div>
                 </div>

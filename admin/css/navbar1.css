@@ -151,28 +151,24 @@ body {
   position: fixed;
   left: 0;
   top: 0;
-  background: var(--white);
+  background-color: #ffffff;
+  /* box-shadow: 3px 0 6px rgba(0, 0, 0, 0.1); */
   display: flex;
   flex-direction: column;
+  border-right: 1px solid #dee2e6;
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
-  border-right: 2px solid #be2222;
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
 }
 
 .logo-container {
   height: auto;
   min-height: 130px;
-  background: #c92f2f;
   display: flex;
   align-items: center;
   padding: 15px;
   gap: 10px;
   font-family: myFont;
-  border-right: 2px solid #be2222;
-  border-bottom: 1px solid var(--gray-200);
-  border-top-right-radius: 10px;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .logo-image {
@@ -184,8 +180,19 @@ body {
 /* Navbar Navigation Styles */
 .nav-links-container {
   flex-grow: 1;
-  background: #c92f2f;
   overflow-y: auto;
+}
+.logout-item {
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 15px;
+  border: 1px solid #ccc;
+  text-decoration: none;
+  color: #404040;
+}
+.logout-item:hover {
+  background-color: #e6e6e6;
+  color: #404040;
 }
 .nav-item,
 .sub-nav-item {
@@ -194,7 +201,7 @@ body {
 }
 .nav-item {
   padding: 15px 25px;
-  color: var(--white);
+  color: #404040;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -232,7 +239,6 @@ body {
 }
 
 .sub-nav {
-  background: #a82727;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease-out;
@@ -244,7 +250,7 @@ body {
 
 .sub-nav-item {
   padding: 12px 25px 12px 60px;
-  color: var(--white);
+  color: #404040;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -259,12 +265,11 @@ body {
 
 .sub-nav-item:hover {
   background-color: #990000;
-  color: var(--white);
+  color: var(--white) !important;
 }
 
 .sub-nav-item.active {
-  background-color: #990000;
-  color: var(--white);
+  color: #990000;
   border-left: 4px solid var(--white);
 }
 
@@ -299,7 +304,6 @@ body {
 
 /* Logout Container */
 .logout-container {
-  background: #c92f2f;
   padding: 15px 25px;
   border-top: 1px solid var(--gray-200);
 }
@@ -325,7 +329,7 @@ body {
   margin-right: 15px;
 }
 .admin-text {
-  color: var(--white);
+  color: #404040;
   text-transform: uppercase;
   letter-spacing: 2px;
   font-size: 1.5rem;

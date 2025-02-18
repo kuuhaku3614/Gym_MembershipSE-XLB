@@ -110,7 +110,7 @@ try {
     <h2 class="text-center mb-4">Transaction Records</h2>
     <div class="table-responsive">
         <table id="transactionTable" class="table table-bordered table-striped table-hover align-middle">
-            <thead class="table-primary">
+            <thead>
                 <tr>
                     <th>Transaction ID</th>
                     <th>Member/Client</th>
