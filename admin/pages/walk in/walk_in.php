@@ -93,7 +93,8 @@
         </div>
     </div>
 
-    <div class="table-responsive">
+    <div class="card">
+        <div class="card-body">
           <table id="walk_inTable" class="table table-striped table-bordered">
               <thead>
                   <tr>

@@ -56,16 +56,16 @@
 
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="nav-title">Members</h1>
+    <h2>Members</h2>
     <a href="#" class="btn btn-primary" id="add_member-link">
       <i class="fas fa-user-plus"></i> Add Member
     </a>
   </div>
 
-  <div class="table-responsive">
-        <table class="table table-bordered table-hover">
-            <thead class="table-dark">
-                <tr class="text-center">
+<div class="table-responsive">
+        <table id="membersTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
                     <th>Photo</th>
                     <th>Member</th>
                     <th>Status</th>
@@ -419,6 +419,23 @@ function getPaymentBadgeClass(status) {
 </script>
 
 <script>
+
+$(document).ready(function() {
+        // Initialize DataTable
+    $('#membersTable').dataTable({
+        responsive: true,
+        order: [[3, 'desc']], // Sort by check-in time by default
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search members..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [0] } // Disable sorting for photo column
+        ]
+    });
+});
+
 $(document).ready(function() {
     // Add member button click handler
     $('#add_member-link').on('click', function(e) {

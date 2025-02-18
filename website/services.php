@@ -85,7 +85,6 @@
             <?php endif; ?>
 
             <div class="container text-center mb-4 button-shortcuts">
-                <h2 class="mb-2 text-start">Browse Offers</h2>
                 <div class="row justify-content-between">
                     <div class="col-md-4 mb-2">
                         <button class="btn scroll-btn py-4" data-target="#Gym-Rates">
