@@ -284,7 +284,6 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     <div class="current-user-container2">
         <div class="user-info d-flex align-items-center justify-content-center flex-column">
             <div class="d-flex align-items-center justify-content-start w-100">
-            <img src="<?php echo $_SESSION['user_photo']; ?>" alt="Profile Photo" class="user-photo me-2">
             <span class="user-name"><?php echo getFullName(); ?></span>
             </div>
             <span class="user-role"><?php echo ucfirst($_SESSION['role']); ?></span>

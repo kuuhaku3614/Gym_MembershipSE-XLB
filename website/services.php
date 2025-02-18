@@ -85,7 +85,6 @@
             <?php endif; ?>
 
             <div class="container text-center mb-4 button-shortcuts">
-                <h2 class="mb-2 text-start">Browse Offers</h2>
                 <div class="row justify-content-between">
                     <div class="col-md-4 mb-2">
                         <button class="btn scroll-btn py-4" data-target="#Gym-Rates">
@@ -328,4 +327,110 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script>
+<!-- Add this right after your last <script> tag in services.php -->
+<script>
+  // Set login status based on PHP session
+  const userLoggedIn = <?php echo isset($_SESSION['personal_details']) ? 'true' : 'false'; ?>;
+  
+  // Function to check if user is logged in and show popup if not
+  function checkLoginAndShowPopup(event) {
+    if (!userLoggedIn) {
+      event.preventDefault();
+      
+      // Create modal overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '1000';
+      
+      // Create modal container
+      const modal = document.createElement('div');
+      modal.className = 'login-modal';
+      modal.style.position = 'fixed';
+      modal.style.top = '50%';
+      modal.style.left = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      modal.style.backgroundColor = 'white';
+      modal.style.padding = '20px';
+      modal.style.borderRadius = '8px';
+      modal.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+      modal.style.zIndex = '1001';
+      modal.style.maxWidth = '400px';
+      modal.style.width = '90%';
+      modal.style.textAlign = 'center';
+      
+      // Create modal content
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-exclamation-circle';
+      icon.style.fontSize = '3rem';
+      icon.style.color = '#c92f2f';
+      icon.style.marginBottom = '1rem';
+      
+      const title = document.createElement('h3');
+      title.textContent = 'Login Required';
+      title.style.marginBottom = '15px';
+      title.style.fontSize = '1.5rem';
+      
+      const message = document.createElement('p');
+      message.textContent = 'Please log in first to avail Gym offers, programs, and services.';
+      message.style.marginBottom = '20px';
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.justifyContent = 'center';
+      buttonContainer.style.gap = '10px';
+      
+      const loginButton = document.createElement('button');
+      loginButton.textContent = 'Login';
+      loginButton.style.backgroundColor = '#c92f2f';
+      loginButton.style.color = 'white';
+      loginButton.style.padding = '10px 20px';
+      loginButton.style.border = 'none';
+      loginButton.style.borderRadius = '4px';
+      loginButton.style.cursor = 'pointer';
+      loginButton.style.fontWeight = 'bold';
+      loginButton.addEventListener('click', function() {
+        window.location.href = '../login/login.php';
+      });
+      
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Cancel';
+      cancelButton.style.backgroundColor = '#6c757d';
+      cancelButton.style.color = 'white';
+      cancelButton.style.padding = '10px 20px';
+      cancelButton.style.border = 'none';
+      cancelButton.style.borderRadius = '4px';
+      cancelButton.style.cursor = 'pointer';
+      cancelButton.addEventListener('click', function() {
+        document.body.removeChild(overlay);
+      });
+      
+      // Assemble the modal
+      buttonContainer.appendChild(loginButton);
+      buttonContainer.appendChild(cancelButton);
+      
+      modal.appendChild(icon);
+      modal.appendChild(title);
+      modal.appendChild(message);
+      modal.appendChild(buttonContainer);
+      
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+    }
+  }
+
+  // Add the event listener to all program links when the document is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add the event listeners to all program links
+    const programLinks = document.querySelectorAll('.program-link');
+    programLinks.forEach(link => {
+      link.addEventListener('click', checkLoginAndShowPopup);
+    });
+  });
 </script>

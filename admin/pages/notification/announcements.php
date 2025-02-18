@@ -73,7 +73,7 @@ body {
 }
 
 .card-header {
-    background: var(--gradient-primary);
+
     color: white;
     padding: 1.5rem;
     display: flex;
@@ -100,7 +100,6 @@ body {
 #type {
     font-family: var(--font-family);
     font-size: var(--font-size-base);
-    border: 2px solid var(--border-color);
     border-radius: 12px;
     padding: 0.875rem 1.25rem;
     transition: var(--transition-smooth);
@@ -112,8 +111,6 @@ body {
 #dateInput:focus,
 #time:focus,
 #type:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(201, 47, 47, 0.1);
     outline: none;
 }
 

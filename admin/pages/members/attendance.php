@@ -6,17 +6,17 @@ require_once 'functions/attendance_class.php';
 ?>
  
 <div class="container-fluid px-4 py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Today's Member Attendance</h2>
         <div class="mt-2">
-                <a href="/gym_membershipse-xlb/website/checkin_page.php" class="me-2">
-                    <button class="btn btn-primary">Checkin Page</button>
-                </a>
-                <button onclick="openHistoryModal()" class="btn btn-info">
-                    <i class="bi bi-clock-history"></i> Overall History
-                </button>
-            </div>
+            <a href="/gym_membershipse-xlb/website/checkin_page.php" class="me-2">
+                <button class="btn btn-primary">Checkin Page</button>
+            </a>
+            <button onclick="openHistoryModal()" class="btn btn-info">
+                <i class="bi bi-clock-history"></i> Overall History
+            </button>
         </div>
+    </div>
 
     <div class="card">
         <div class="card-body">
@@ -29,7 +29,6 @@ require_once 'functions/attendance_class.php';
                     No members have checked in today.
                 </div>
             <?php else: ?>
-            
                 <table id="attendanceTable" class="table table-striped table-bordered">
                     <thead>
                         <tr>
@@ -74,7 +73,7 @@ require_once 'functions/attendance_class.php';
 </div>
 
 <!-- History Modal -->
-<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="historyModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -89,6 +88,30 @@ require_once 'functions/attendance_class.php';
 </div>
 
 <script>
+function openHistoryModal() {
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    
+    // Show loading state
+    $('#historyContent').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
+    
+    // Fetch history data
+    $.ajax({
+        url: 'pages/members/functions/get_history.php',
+        success: function(response) {
+            $('#historyContent').html(response);
+            modal.show();
+
+            // Move focus to the close button when the modal opens
+            const closeButton = document.querySelector('#historyModal .btn-close');
+            closeButton.focus();
+        },
+        error: function() {
+            $('#historyContent').html('<div class="alert alert-danger">Error loading history</div>');
+            modal.show();
+        }
+    });
+}
+
 $(document).ready(function() {
     // Initialize DataTable
     $('#attendanceTable').DataTable({
@@ -103,26 +126,5 @@ $(document).ready(function() {
             { orderable: false, targets: [0] } // Disable sorting for photo column
         ]
     });
-
-// Modal functionality
-function openHistoryModal() {
-    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
-    
-    // Show loading state
-    $('#historyContent').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
-    
-    // Fetch history data
-    $.ajax({
-        url: 'pages/members/functions/get_history.php',
-        success: function(response) {
-            $('#historyContent').html(response);
-            modal.show();
-        },
-        error: function() {
-            $('#historyContent').html('<div class="alert alert-danger">Error loading history</div>');
-            modal.show();
-        }
-    });
-}
 });
 </script>
