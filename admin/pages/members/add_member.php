@@ -1662,12 +1662,16 @@ function renderRentalServices($rentals) {
                 programs.push({
                     program_id: programId,
                     coach_id: coachSelect.value,
-                    schedules: selectedSchedules
+                    schedules: selectedSchedules.map(schedule => ({
+                        day: schedule.day,
+                        start_time: schedule.startTime,
+                        end_time: schedule.endTime
+                    }))
                 });
             }
         });
-        formData.append('programs', JSON.stringify(programs));
-        console.log('Programs and schedules added:', programs);
+        formData.append('program_coach', JSON.stringify(programs));
+        console.log('Programs and schedules:', JSON.parse(formData.get('program_coach')));
 
         // Get selected rentals
         const selectedRentals = [];
