@@ -6,96 +6,55 @@ $(document).ready(function () {
       e.preventDefault();
       let url = $(this).attr("href");
       window.history.pushState({ path: url }, "", url);
-      window.location.reload();
     }
   );
 
   // Special handler for logout
   $("a[href*='logout']").on("click", function (e) {
     e.preventDefault();
+
+    // Perform a synchronous redirect to logout page
     window.location.href = $(this).attr("href");
   });
 
   // Navigation click handlers
   const navigationHandlers = {
     // Main nav items
-    "dashboard-link": () => {
-      loadContent("pages/dashboard/dashboard.php");
-      window.location.reload();
-    },
+    "dashboard-link": () => loadContent("pages/dashboard/dashboard.php"),
     "members-link": () => {
       loadContent("pages/members/members_new.php");
       if (window.location.pathname.endsWith('members')) {
         window.history.replaceState({ path: 'members_new' }, "", 'members_new');
       }
-      window.location.reload();
     },
-    "walk_in-link": () => {
-      loadContent("pages/walk in/walk_in.php");
-      window.location.reload();
-    },
-    "gym_rates-link": () => {
-      loadContent("pages/gym rates/gym_rates.php");
-      window.location.reload();
-    },
-    "payment_records-link": () => {
-      loadContent("pages/payment records/payment_records.php");
-      window.location.reload();
-    },
-    "notification-link": () => {
-      loadContent("pages/notification/notification.php");
-      window.location.reload();
-    },
-    "accounts-link": () => {
-      loadContent("pages/accounts/accounts.php");
-      window.location.reload();
-    },
-    "website_settings-link": () => {
-      loadContent("pages/website settings/website_settings.php");
-      window.location.reload();
-    },
-    "report-link": () => {
-      loadContent("pages/report/report.php");
-      window.location.reload();
-    },
-    "staff_management-link": () => {
-      loadContent("pages/staff management/staff_management.php");
-      window.location.reload();
-    },
+    "walk_in-link": () => loadContent("pages/walk in/walk_in.php"),
+    "gym_rates-link": () => loadContent("pages/gym rates/gym_rates.php"),
+    "payment_records-link": () =>
+      loadContent("pages/payment records/payment_records.php"),
+    "notification-link": () =>
+      loadContent("pages/notification/notification.php"),
+    "accounts-link": () =>
+      loadContent("pages/accounts/accounts.php"),
+    "website_settings-link": () =>
+      loadContent("pages/website settings/website_settings.php"),
+    "report-link": () => loadContent("pages/report/report.php"),
+    "staff_management-link": () =>
+      loadContent("pages/staff management/staff_management.php"),
 
     // Sub nav items for Members
-    "attendance-link": () => {
-      loadContent("pages/members/attendance.php");
-      window.location.reload();
-    },
-    "attendance_history-link": () => {
-      loadContent("pages/members/attendance_history.php");
-      window.location.reload();
-    },
-    "member_status-link": () => {
-      loadContent("pages/members/members_status.php");
-      window.location.reload();
-    },
-    "add_member-link": () => {
-      loadContent("pages/members/add_member.php");
-      window.location.reload();
-    },
+    "attendance-link": () => loadContent("pages/members/attendance.php"),
+    "attendance_history-link": () =>
+      loadContent("pages/members/attendance_history.php"),
+    "member_status-link": () => loadContent("pages/members/members_status.php"),
+    "add_member-link": () => loadContent("pages/members/add_member.php"),
 
     // Sub nav items for Gym Rates
-    "programs-link": () => {
-      loadContent("pages/gym rates/programs.php");
-      window.location.reload();
-    },
-    "rentals-link": () => {
-      loadContent("pages/gym rates/rentals.php");
-      window.location.reload();
-    },
+    "programs-link": () => loadContent("pages/gym rates/programs.php"),
+    "rentals-link": () => loadContent("pages/gym rates/rentals.php"),
 
     // Sub nav items for Notification
-    "announcement-link": () => {
-      loadContent("pages/notification/announcements.php");
-      window.location.reload();
-    },
+    "announcement-link": () =>
+      loadContent("pages/notification/announcements.php"),
   };
 
   // Attach click handlers to all navigation items
@@ -114,12 +73,10 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
       error: function () {
         $(".main-content").html("<p>Error loading the page content.</p>");
         alert("Error loading the page content.");
-        window.location.reload();
       },
     });
   }
@@ -128,7 +85,7 @@ $(document).ready(function () {
   let url = window.location.href;
   const urlMappings = {
     dashboard: "dashboard-link",
-    members_new: "members-link",
+    members_new: "members-link", // Only support members_new
     add_member: "add_member-link",
     attendance: "attendance-link",
     attendance_history: "attendance_history-link",
@@ -158,86 +115,73 @@ $(document).ready(function () {
     $("#dashboard-link").trigger("click");
   }
 
-  // Click handlers with reload
+  // Your existing click handlers (these are kept for backwards compatibility)
   $("#dashboard-link").on("click", function (e) {
     e.preventDefault();
     viewAnalytics();
-    window.location.reload();
   });
 
   $("#members-link").on("click", function (e) {
     e.preventDefault();
     viewMembersNew();
-    window.location.reload();
   });
 
   $("#attendance-link").on("click", function (e) {
     e.preventDefault();
     viewAttendance();
-    window.location.reload();
   });
 
   $("#attendance_history-link").on("click", function (e) {
     e.preventDefault();
     viewAttendanceHistory();
-    window.location.reload();
   });
 
   $("#member_status-link").on("click", function (e) {
     e.preventDefault();
     viewMemberStatus();
-    window.location.reload();
   });
 
   $("#walk_in-link").on("click", function (e) {
     e.preventDefault();
     viewWalkIn();
-    window.location.reload();
   });
 
   $("#gym_rates-link").on("click", function (e) {
     e.preventDefault();
     viewGymRates();
-    window.location.reload();
   });
 
   $("#payment_records-link").on("click", function (e) {
     e.preventDefault();
     viewPaymentRecords();
-    window.location.reload();
   });
 
   $("#notification-link").on("click", function (e) {
     e.preventDefault();
     viewNotification();
-    window.location.reload();
   });
 
   $("#accounts-link").on("click", function (e) {
     e.preventDefault();
     viewAccounts();
-    window.location.reload();
   });
 
   $("#website_settings-link").on("click", function (e) {
     e.preventDefault();
     websiteSettings();
-    window.location.reload();
   });
 
   $("#report-link").on("click", function (e) {
     e.preventDefault();
     getReport();
-    window.location.reload();
   });
 
   $("#staff_management-link").on("click", function (e) {
     e.preventDefault();
     viewStaff();
-    window.location.reload();
   });
 
-  // View functions with reload
+  // Your existing functions
   function viewAnalytics() {
     $.ajax({
       type: "GET",
@@ -245,12 +189,10 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
       error: function () {
         $(".main-content").html("<p>Error loading the page content.</p>");
         alert("Error loading the page content.");
-        window.location.reload();
       },
     });
   }
@@ -262,7 +204,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -274,7 +215,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -286,7 +226,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -298,7 +237,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -310,12 +248,10 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
       error: function () {
         $(".main-content").html("<p>Error loading the page content.</p>");
         alert("Error loading the page content.");
-        window.location.reload();
       },
     });
   }
@@ -327,12 +263,10 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
       error: function () {
         $(".main-content").html("<p>Error loading the page content.</p>");
         alert("Error loading the page content.");
-        window.location.reload();
       },
     });
   }
@@ -344,7 +278,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -356,7 +289,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -368,7 +300,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -380,7 +311,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -392,7 +322,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -404,7 +333,6 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
-        window.location.reload();
       },
     });
   }
@@ -416,6 +344,7 @@ $(document).ready(function () {
       method: 'POST',
       success: function(response) {
         if (response.success) {
+          // Only reload if we're on the members_status page
           if (window.location.pathname.includes('members_status.php')) {
             location.reload();
           }
