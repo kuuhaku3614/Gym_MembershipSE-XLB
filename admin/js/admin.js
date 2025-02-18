@@ -208,38 +208,38 @@ $(document).ready(function () {
     });
   }
 
-  function viewAttendance() {
-    $.ajax({
-      type: "GET",
-      url: "../admin/members/attendance.php",
-      dataType: "html",
-      success: function (response) {
-        $(".main-content").html(response);
-      },
-    });
-  }
+  // function viewAttendance() {
+  //   $.ajax({
+  //     type: "GET",
+  //     url: "../admin/members/attendance.php",
+  //     dataType: "html",
+  //     success: function (response) {
+  //       $(".main-content").html(response);
+  //     },
+  //   });
+  // }
 
-  function viewAttendanceHistory() {
-    $.ajax({
-      type: "GET",
-      url: "../admin/members/attendance_history.php",
-      dataType: "html",
-      success: function (response) {
-        $(".main-content").html(response);
-      },
-    });
-  }
+  // function viewAttendanceHistory() {
+  //   $.ajax({
+  //     type: "GET",
+  //     url: "../admin/members/attendance_history.php",
+  //     dataType: "html",
+  //     success: function (response) {
+  //       $(".main-content").html(response);
+  //     },
+  //   });
+  // }
 
-  function viewMemberStatus() {
-    $.ajax({
-      type: "GET",
-      url: "../admin/members/member_status.php",
-      dataType: "html",
-      success: function (response) {
-        $(".main-content").html(response);
-      },
-    });
-  }
+  // function viewMemberStatus() {
+  //   $.ajax({
+  //     type: "GET",
+  //     url: "../admin/members/member_status.php",
+  //     dataType: "html",
+  //     success: function (response) {
+  //       $(".main-content").html(response);
+  //     },
+  //   });
+  // }
 
   function viewWalkIn() {
     $.ajax({
