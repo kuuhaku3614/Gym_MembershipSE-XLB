@@ -86,6 +86,8 @@ $utilization_sql = "
     LEFT JOIN memberships m ON t.id = m.transaction_id
     LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
     LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
+    JOIN roles r ON u.role_id = r.id
+    WHERE r.role_name = 'member'
     GROUP BY u.id
     ORDER BY membership_count DESC";
 $utilization_stmt = $pdo->prepare($utilization_sql);
@@ -119,6 +121,9 @@ $rentals_sql = "
 $rentals_stmt = $pdo->prepare($rentals_sql);
 $rentals_stmt->execute();
 $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+date_default_timezone_set('Asia/Manila');
+
 ?>
     
     <style>
@@ -153,6 +158,67 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
                 break-inside: avoid;
             }
         }
+       /* Add these styles to your existing CSS */
+@media print {
+    /* Hide the entire dashboard container */
+    .container-fluid {
+        display: none !important;
+    }
+    
+    /* Hide specific sections */
+    .report-section {
+        display: none !important;
+    }
+    
+    /* Hide all cards */
+    .card {
+        display: none !important;
+    }
+    
+    /* Hide all buttons */
+    .btn, 
+    button {
+        display: none !important;
+    }
+    
+    /* Hide the canvas element (chart) */
+    canvas {
+        display: none !important;
+    }
+    
+    /* Hide table responsive wrappers */
+    .table-responsive {
+        display: none !important;
+    }
+    
+    /* Hide all rows */
+    .row {
+        display: none !important;
+    }
+    
+    /* Hide specific elements */
+    .stats-card,
+    .card-header,
+    .card-body {
+        display: none !important;
+    }
+    
+    /* Ensure the print-only template is visible */
+    .print-only {
+        display: block !important;
+    }
+    
+    /* Reset any conflicting styles */
+    body {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Ensure proper page breaks */
+    .page-break {
+        page-break-before: always;
+    }
+}
     </style>
 <body class="bg-light">
     <button class="btn btn-primary export-btn" onclick="window.print()">
@@ -165,7 +231,7 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card">
                     <div class="card-body">
                         <h2> Analytics Report</h2>
-                        <p class="text-muted">Generated on <?= date('F j, Y') ?></p>
+                        <p class="text-muted">Generated on <?= date('F d, Y') ?></p>
                     </div>
                 </div>
             </div>
@@ -184,7 +250,7 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card stats-card">
                     <div class="card-body">
                         <h5 class="card-title">Total Revenue</h5>
-                        <h2 class="mb-0">$<?= number_format($total_revenue, 2) ?></h2>
+                        <h2 class="mb-0">₱<?= number_format($total_revenue, 2) ?></h2>
                     </div>
                 </div>
             </div>
@@ -380,7 +446,6 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-    
     <script>
     $(document).ready(function() {
         // Initialize DataTables

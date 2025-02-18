@@ -282,8 +282,10 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
-    $('#gymRatesTable').DataTable({
+    if ($.fn.DataTable.isDataTable('#gymRatesTable')) {
+        $('#gymRatesTable').DataTable().destroy();  // Destroy existing instance
+    }
+    $('#gymRatesTable').DataTable({ 
         responsive: true,
         order: [[3, 'desc']], // Sort by check-in time by default
         dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
