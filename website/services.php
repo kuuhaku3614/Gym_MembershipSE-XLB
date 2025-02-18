@@ -37,9 +37,6 @@
         }
 
         /* Black color only for OFFER PROGRAMS section */
-        .coach-section {
-            color: #000000 !important;
-        }
 
         .coach-card .card-header {
             background-color: #000000 !important;
@@ -101,7 +98,7 @@
                     <div class="col-md-4 mb-2">
                         <button class="btn scroll-btn py-4" data-target="#Optional-Services">
                             <i class="fas fa-plus-circle me-2 text-white" style="font-size: 1.4rem;"></i>
-                            <span class="text-white">Optional Services</span>
+                            <span class="text-white">Other Services</span>
                         </button>
                     </div>
                 </div>
@@ -199,7 +196,7 @@
             <hr class="my-4" style="border: 2px solid #000;">
 
             <!-- Rental Services Section -->
-            <h2 class="section-heading">OPTIONAL SERVICES</h2>
+            <h2 class="section-heading">OTHERS SERVICES</h2>
             <div class="row g-4 mb-4">
                 <?php foreach ($rental_services as $rental){ ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">

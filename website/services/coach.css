@@ -1,0 +1,72 @@
+@font-face {
+  font-family: myFont;
+  src: url(../../AC.ttf);
+}
+
+body {
+  font-family: myFont;
+}
+
+.main-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+}
+.bg-custom-red {
+  background-color: #c92f2f !important;
+}
+.card-header {
+  background: linear-gradient(45deg, #cc0000, #ff3333);
+}
+.card-body p-4 {
+  height: 60vh;
+}
+.scrollable-section {
+  max-height: calc(100vh - 350px);
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.flex-fill {
+  height: 48px !important;
+}
+
+.return-btn {
+  background-color: #6e6e6e;
+  color: white;
+}
+.return-btn:hover {
+  background-color: #616161;
+  color: white;
+}
+.d-grid {
+  height: 48px;
+}
+.add-cart {
+  background-color: #4361ee;
+  color: white;
+}
+.add-cart:hover {
+  background-color: rgb(39, 75, 238);
+  color: white;
+}
+body {
+  height: 100vh;
+}
+.main-container {
+  max-height: 100vh;
+}
+.bg-custom-red {
+  background-color: #ff0000;
+}
+.card-header,
+.btn-custom-red {
+  background-color: #ff0000;
+  color: white;
+}
+.card-header {
+  background-color: #ff0000;
+  border-bottom: 2px solid #ff0000;
+  padding: 1rem;
+}
