@@ -241,7 +241,7 @@ try {
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary" onclick="window.print()">Print Receipt</button>
+                                <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
                             </div>
                         </div>
                     </div>

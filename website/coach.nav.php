@@ -14,11 +14,11 @@
         background-color: transparent;
     }
     body {
-        height: 100vh;
+        max-height: 100vh;
         background-color: #efefef!important;
     }
     .home-navbar {
-        background-color: #000000!important;
+        background-color: #c92f2f;
         position: fixed;
         border-radius: 0;
         width: 100%;
@@ -31,18 +31,35 @@
         top: 80px; /* Match header height */
         height: calc(100vh - 60px); /* Adjust for header height */
         width: 250px;
-        background: #343a40;
-        color: #fff;
+        background: #ffffff;
+        color: #404040;
         transition: 0.3s;
         z-index: 0;
         display: flex;
         flex-direction: column;
     }
 
+    th{
+        font-weight: 500;
+        font-size: 1.25em;
+    }
+    td{
+        font-family: "Inter", sans-serif!important;
+        font-weight: 600;
+    }
+
+    h4{
+        font-weight: 500;
+        font-size: 1.75em;
+    }
+
     .logo-container {
         padding: 20px;
         text-align: center;
-        background: #2c3136;
+        background: #ffffff;
+        color: #404040;
+        border-right: 1px solid #ccc;
+
     }
 
     .admin-text {
@@ -53,24 +70,24 @@
     .nav-links-container {
         flex: 1;
         overflow-y: auto;
+        border-right: 1px solid #ccc;
     }
 
     .nav-item {
         display: flex;
         align-items: center;
         padding: 12px 20px;
-        color: #fff;
+        color:rgb(82, 82, 82);
         text-decoration: none;
         transition: 0.2s;
     }
 
     .nav-item:hover {
-        background: #000000;
+        background: #efefef;
     }
 
     .nav-item.active {
-        background: #ffffff;
-        color: #000;
+        color: #000000;
     }
 
     .nav-item-content {
@@ -180,15 +197,7 @@
         </nav>
     </div>
 
-    <!-- Logout Container -->
-    <div class="logout-container">
-        <a href="../login/logout.php" class="nav-item">
-            <div class="nav-item-content">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </div>
-        </a>
-    </div>
+
 </div>
 
 <!-- Sidebar Overlay -->

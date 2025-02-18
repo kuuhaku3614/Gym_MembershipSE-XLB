@@ -91,6 +91,7 @@ body {
 .card-body {
     background-color: var(--background-light);
     padding: 2rem;
+    box-shadow: none!important;
 }
 
 /* Form Input Styling */

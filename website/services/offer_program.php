@@ -109,102 +109,142 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
 <style>
-    .bg-custom-black {
-        background-color: #000000;
-    }
-    .card-header, .btn-custom-black {
-        background-color: #000000;
-        color: white;
-    }
-    .card-header {
-        background-color: #000000;
-        border-bottom: 2px solid #000000;
-        padding: 1rem;
-    }
-    .card-body {
-        border: 2px solid #000000;
-    }
-    .btn-outline-black {
-        color: #000000;
-        border-color: #000000;
-    }
-    .btn-outline-black:hover {
-        background-color: #000000;
-        color: white;
-    }
-    .btn-custom-black {
-        background-color: #000000;
-        color: white;
-    }
-    .btn-custom-black:hover {
-        background-color: #333333;
-        color: white;
-    }
+@font-face {
+  font-family: myFont;
+  src: url(../../AC.ttf);
+}
+
+body {
+  font-family: myFont;
+}
+
+.main-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+}
+.bg-custom-red {
+  background-color: #c92f2f !important;
+}
+.card-header {
+  background: linear-gradient(45deg, #cc0000, #ff3333);
+}
+.card-body p-4 {
+  height: 60vh;
+}
+.scrollable-section {
+  max-height: calc(100vh - 350px);
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.flex-fill {
+  height: 48px !important;
+}
+
+.return-btn {
+  background-color: #6e6e6e;
+  color: white;
+}
+.return-btn:hover {
+  background-color: #616161;
+  color: white;
+}
+.d-grid {
+  height: 48px;
+}
+.add-cart {
+  background-color: #4361ee;
+  color: white;
+}
+.add-cart:hover {
+  background-color: rgb(39, 75, 238);
+  color: white;
+}
+
 </style>
 
 <div class="avail-program-page">
     <div class="container-fluid p-0">
-        <!-- Header -->
-        <div class="bg-custom-black text-white p-3 d-flex align-items-center">
-            <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
+        <div class="bg-custom-red text-white p-3 d-flex align-items-center">
+            <button class="btn text-white me-3" style="color: white!important;" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
-            <h1 class="mb-0 fs-4 fw-bold">OFFER PROGRAM</h1>
+            <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
         </div>
 
-        <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-            <div class="card shadow" style="width: 90%; max-width: 800px; min-height: 400px;">
-                <div class="card-header text-center">
-                    <h2 class="fs-4 fw-bold mb-0"><?= $program_type ?> Program</h2>
-                </div>
-                <div class="card-body text-center d-flex flex-column justify-content-between" style="padding: 2rem;">
-                    <h3 class="fs-5 fw-bold mb-4"><?= $program_name ?></h3>
-                    <div class="mb-3 p-2 border rounded">
-                        <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+        <div class="container-fluid">
+            <div class="row flex-grow-1 overflow-auto">
+                <div class="col-12 col-lg-8 mx-auto py-3 main-container">
+                    <div class="card main-content" style="width: 100%;">
+                        <div class="card-header py-3">
+                            <h2 class="h4 fw-bold mb-0 text-white text-center"><?= $program_type ?> Program</h2>
+                        </div>
+                        <div class="card-body p-3">
+                            <h3 class="h5 fw-bold text-center mb-4"><?= $program_name ?></h3>
+
+                            <section class="scrollable-section">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                                        </div>
+                                    </div>
+
+                                    <form method="POST" onsubmit="return confirmAndValidate()">
+                                        <input type="hidden" name="program_id" value="<?= htmlspecialchars($program_id) ?>">
+                                        <input type="hidden" name="program_name" value="<?= htmlspecialchars($program_name) ?>">
+                                        
+                                        <div class="col-12">
+                                            <div class="border rounded p-3 mb-3">
+                                                <div class="form-group">
+                                                    <label for="price" class="form-label">Program Price:</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">₱</span>
+                                                        <input type="number" 
+                                                               class="form-control form-control-lg" 
+                                                               id="price" 
+                                                               name="price" 
+                                                               step="0.01" 
+                                                               min="0" 
+                                                               required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <div class="border rounded p-3">
+                                                <div class="form-group">
+                                                    <label for="description" class="form-label">Program Description:</label>
+                                                    <textarea class="form-control form-control-lg" 
+                                                              id="description" 
+                                                              name="description" 
+                                                              rows="3" 
+                                                              required></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    
+                                        <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
+                                            <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
+                                            <button type="submit" class="btn btn-lg flex-fill add-cart">Offer Program</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </section>
+                        </div>
                     </div>
-                    
-                    <form method="POST" onsubmit="return confirmAndValidate()">
-                        <input type="hidden" name="program_id" value="<?= htmlspecialchars($program_id) ?>">
-                        <input type="hidden" name="program_name" value="<?= htmlspecialchars($program_name) ?>">
-                        
-                        <!-- Price Input -->
-                        <div class="mb-3 p-2 border rounded">
-                            <label for="price" class="form-label">Program Price:</label>
-                            <div class="input-group">
-                                <span class="input-group-text">₱</span>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="price" 
-                                       name="price" 
-                                       step="0.01" 
-                                       min="0" 
-                                       required>
-                            </div>
-                        </div>
-
-                        <!-- Description Input -->
-                        <div class="mb-3 p-2 border rounded">
-                            <label for="description" class="form-label">Program Description:</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
-                                      rows="3" 
-                                      required></textarea>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="../services.php" class="btn btn-outline-black btn-lg" style="width: 48%;">Return</a>
-                            <button type="submit" class="btn btn-custom-black btn-lg" style="width: 48%;">Offer Program</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 <script>
 function confirmAndValidate() {
     // First validate the form
