@@ -120,9 +120,9 @@ try {
         JOIN transactions t ON u.id = t.user_id 
         JOIN memberships m ON t.id = m.transaction_id 
         WHERE a.date = CURRENT_DATE() OR a.date < CURRENT_DATE() 
-        AND m.status = 'active' 
+        AND m.status = 'active' AND m.is_paid = 1
         AND CURRENT_DATE() BETWEEN m.start_date AND m.end_date 
-        ORDER BY a.time_in DESC";
+        GROUP BY full_name ORDER BY a.time_in DESC";
 
     $stmt = $pdo->prepare($attendanceQuery);
     $stmt->execute();
@@ -369,6 +369,8 @@ $('#checkinForm').on('submit', function(e) {
                         checkinTable.row(rowIndex).data(rowData).draw(false);
                         
                         alert('Check-out successful!');
+                        
+                        window.location.reload();
                     } else {
                         alert(response.message);
                     }

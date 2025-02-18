@@ -40,10 +40,10 @@ require_once __DIR__ . '/cart.class.php';
 require_once __DIR__ . '/services.class.php';
 
 try {
-    // Check session
-    if (!isset($_SESSION['user_id'])) {
-        handle_error('Not logged in');
-    }
+    // // Check session
+    // if (!isset($_SESSION['user_id'])) {
+    //     handle_error('Not logged in');
+    // }
 
     // Get the action
     $input = file_get_contents('php://input');

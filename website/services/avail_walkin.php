@@ -5,10 +5,10 @@ require_once __DIR__ . '/../../functions/sanitize.php';
 require_once __DIR__ . '/services.class.php';
 require_once __DIR__ . '/cart.class.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('location: ../../login/login.php');
-    exit;
-}
+// if (!isset($_SESSION['user_id'])) {
+//     header('location: ../../login/login.php');
+//     exit;
+// }
 
 // Initialize Services class
 $Services = new Services_Class();

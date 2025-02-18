@@ -87,13 +87,19 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 <style>
 .current-user-container2, .current-user-container {
-    padding: 15px 25px;
-    /* background-color: #f8f9fa; */
+    padding: 10px;
+    background-color: #f8f9fa;
     text-align: center;
 }
 
+.current-user-container {
+    background-color: #c92f2f!important;
+    border-bottom-right-radius: 10px;
+    border-right: 2px solid #be2222;
+}
+
 .current-user-container2 {
-    border-top: 1px solid #dee2e6;
+    border-radius: 10px;
 }
 
 .user-info {
@@ -135,7 +141,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         <img src="../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
         <p class="admin-text">JC Powerzone</p>
     </div>
-    
+
     <!-- Navigation Links Container -->
     <div class="nav-links-container">
         <nav>
@@ -244,6 +250,15 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             </nav>
         </div>
 
+        <!-- Updated Logout Link and Modal -->
+    <div class="logout-container">
+        <a href="#" class="nav-item" id="logoutLink">
+            <div class="nav-item-content">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </div>
+        </a>
+    </div>
 
     <!-- Updated Modal Structure without backdrop -->
     <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true" data-bs-backdrop="false">
@@ -265,18 +280,16 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     </div>
 
     <!-- Current User Container -->
+    <div class="current-user-container bg-danger">
     <div class="current-user-container2">
-    <a href="#" class="logout-item d-flex align-items-center justify-content-around w-100" id="logoutLink">
-        <div class="user-info d-flex align-items-center justify-content-center flex-column w-100">
-            <div class="d-flex align-items-center justify-content-between w-100" style="padding: 5px;">
+        <div class="user-info d-flex align-items-center justify-content-center flex-column">
+            <div class="d-flex align-items-center justify-content-start w-100">
             <span class="user-name"><?php echo getFullName(); ?></span>
-            <i class="fas fa-sign-out-alt "></i>
             </div>
-            <!-- <span class="user-role"><?php echo ucfirst($_SESSION['role']); ?></span> -->
+            <span class="user-role"><?php echo ucfirst($_SESSION['role']); ?></span>
         </div>
-        </a>
     </div>
-
+    </div>
 </div>
 
 

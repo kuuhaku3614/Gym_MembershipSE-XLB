@@ -299,16 +299,13 @@ function loadCart() {
             ? response.data.message
             : "Unknown error";
         console.error("Server error:", message);
-        if (message === "Not logged in") {
-          window.location.href = "login/login.php";
-        } else {
-          updateCartDisplay({
-            memberships: [],
-            programs: [],
-            rentals: [],
-            total: 0,
-          });
-        }
+        // Removed the redirect check and just update cart display
+        updateCartDisplay({
+          memberships: [],
+          programs: [],
+          rentals: [],
+          total: 0,
+        });
       }
     })
     .catch((error) => {
@@ -359,9 +356,7 @@ function clearCart() {
             : "Failed to clear cart";
         console.error("Clear cart failed:", message);
         alert(message);
-        if (message === "Not logged in") {
-          window.location.href = "login/login.php";
-        }
+        // Removed the redirect check
       }
     })
     .catch((error) => {
