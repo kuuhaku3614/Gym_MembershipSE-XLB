@@ -740,6 +740,22 @@ class Members {
                             ':end_date' => $programEndDate,
                             ':amount' => $programInfo['price']
                         ]);
+                        $programSubscriptionId = $this->pdo->lastInsertId();
+
+                        // Insert schedules for this program subscription
+                        if (isset($program['schedules']) && !empty($program['schedules'])) {
+                            $scheduleQuery = "INSERT INTO program_subscription_schedule (program_subscription_id, day, start_time, end_time) 
+                                            VALUES (:program_subscription_id, :day, :start_time, :end_time)";
+                            $scheduleStmt = $this->pdo->prepare($scheduleQuery);
+                            foreach ($program['schedules'] as $schedule) {
+                                $scheduleStmt->execute([
+                                    ':program_subscription_id' => $programSubscriptionId,
+                                    ':day' => $schedule['day'],
+                                    ':start_time' => $schedule['start_time'],
+                                    ':end_time' => $schedule['end_time']
+                                ]);
+                            }
+                        }
                     }
                 }
             }

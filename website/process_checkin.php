@@ -26,7 +26,8 @@ try {
                       JOIN memberships m ON t.id = m.transaction_id 
                       JOIN personal_details pd ON u.id = pd.user_id 
                       WHERE (u.username = :identifier OR pd.first_name = :identifier)
-                      AND m.status = 'active' 
+                      AND (m.status = 'active' OR m.status = 'expiring')
+                      AND m.is_paid = 1
                       AND CURRENT_DATE BETWEEN m.start_date AND m.end_date";
         
         $stmt = $pdo->prepare($userQuery);

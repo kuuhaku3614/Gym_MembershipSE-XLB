@@ -109,6 +109,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
+// Handle other form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    if ($_POST['action'] === 'add_member') {
+        try {
+            $member = new Members();
+            
+            // Prepare member data
+            $memberData = [
+                'username' => $_POST['username'],
+                'password' => $_POST['password'],
+                'first_name' => $_POST['first_name'],
+                'middle_name' => $_POST['middle_name'],
+                'last_name' => $_POST['last_name'],
+                'gender' => $_POST['sex'],
+                'birthdate' => $_POST['birthdate'],
+                'contact_number' => $_POST['phone'],
+                'membership_plan_id' => $_POST['membership_plan'],
+                'start_date' => $_POST['start_date']
+            ];
+            
+            // Add programs with schedules
+            if (isset($_POST['programs'])) {
+                $memberData['programs'] = json_decode($_POST['programs'], true);
+            }
+            
+            // Add rentals
+            if (isset($_POST['rentals'])) {
+                $memberData['rentals'] = json_decode($_POST['rentals'], true);
+            }
+            
+            // Handle photo upload
+            if (isset($_FILES['photo'])) {
+                $photo = $_FILES['photo'];
+                if ($photo['error'] === UPLOAD_ERR_OK) {
+                    $uploadDir = 'uploads/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    $fileName = uniqid() . '_' . basename($photo['name']);
+                    $targetPath = $uploadDir . $fileName;
+                    
+                    if (move_uploaded_file($photo['tmp_name'], $targetPath)) {
+                        $memberData['photo_path'] = $targetPath;
+                    }
+                }
+            }
+            
+            $result = $member->addMember($memberData);
+            
+            if ($result['status'] === 'success') {
+                echo json_encode(['success' => true, 'message' => 'Member registered successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => $result['message']]);
+            }
+            
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+    
+    // Handle other form submissions here
+    exit;
+}
+
 // Get membership duration and filtered items
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
@@ -400,7 +468,7 @@ function renderRentalServices($rentals) {
                     </li>
                 </ul>
 
-                <form id="memberForm" method="POST" enctype="multipart/form-data">
+                <form id="memberForm" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault();">
                     <!-- Hidden fields for credentials -->
                     <input type="hidden" name="username" id="usernameField">
                     <input type="hidden" name="password" id="passwordField">
@@ -1376,7 +1444,7 @@ function renderRentalServices($rentals) {
             summaryHtml += '<tr><th>Services</th><td class="text-end">₱' + servicesTotal.toFixed(2) + '</td></tr>';
             
             const totalAmount = registrationFee + parseFloat(membershipPlan.dataset.price) + programTotal + servicesTotal;
-            summaryHtml += '<tr class="table-primary"><th>Total Amount</th><td class="text-end">₱' + totalAmount.toFixed(2) + '</td></tr>';
+            summaryHtml += '<tr class="fw-bold"><th>Total Amount</th><td class="text-end">₱' + totalAmount.toFixed(2) + '</td></tr>';
             summaryHtml += '</table>';
             summaryHtml += '</div>';
             summaryHtml += '</div>';
@@ -1395,9 +1463,8 @@ function renderRentalServices($rentals) {
 
             // Update the summary container
             document.getElementById('phase4').innerHTML = summaryHtml + 
-                '<div class="mt-3">' +
-                '<button type="button" class="btn btn-secondary" onclick="prevPhase(4)">Previous</button> ' +
-                '<button type="submit" class="btn btn-primary">Submit Registration</button>' +
+                '<div class="mt-4 text-center">' +
+                '<button type="button" class="btn btn-primary" onclick="submitForm()">Submit Registration</button>' +
                 '</div>';
         }
 
@@ -1551,6 +1618,8 @@ function renderRentalServices($rentals) {
     }
 
     function submitForm() {
+        console.log("Starting form submission...");
+        
         // Get all form data
         const formData = new FormData();
         
@@ -1561,33 +1630,44 @@ function renderRentalServices($rentals) {
         const personalFields = ['first_name', 'middle_name', 'last_name', 'sex', 'birthdate', 'phone'];
         personalFields.forEach(field => {
             const input = document.querySelector(`input[name="${field}"]`);
-            if (input) formData.append(field, input.value);
+            if (input) {
+                formData.append(field, input.value);
+                console.log(`Adding ${field}: ${input.value}`);
+            }
         });
         
         // Add photo if selected
         const photoInput = document.querySelector('input[name="photo"]');
         if (photoInput && photoInput.files[0]) {
             formData.append('photo', photoInput.files[0]);
+            console.log('Photo added to form data');
         }
 
         // Phase 2 - Membership Plan
         const selectedPlan = document.querySelector('input[name="membership_plan"]:checked');
         if (selectedPlan) {
             formData.append('membership_plan', selectedPlan.value);
+            console.log(`Adding membership_plan: ${selectedPlan.value}`);
         }
 
         // Phase 3 - Programs and Rentals
-        // Get selected programs and their coaches
+        // Get selected programs, their coaches, and schedules
         const programs = [];
         document.querySelectorAll('.program-coach').forEach(coachSelect => {
             if (coachSelect.value) {
+                const programId = coachSelect.getAttribute('data-program-id');
+                const $scheduleContainer = $(`#coach-schedule-${programId}`);
+                const selectedSchedules = $scheduleContainer.data('selectedSchedules') || [];
+                
                 programs.push({
-                    program_id: coachSelect.getAttribute('data-program-id'),
-                    coach_id: coachSelect.value
+                    program_id: programId,
+                    coach_id: coachSelect.value,
+                    schedules: selectedSchedules
                 });
             }
         });
-        formData.append('program_coach', JSON.stringify(programs));
+        formData.append('programs', JSON.stringify(programs));
+        console.log('Programs and schedules added:', programs);
 
         // Get selected rentals
         const selectedRentals = [];
@@ -1595,24 +1675,22 @@ function renderRentalServices($rentals) {
             selectedRentals.push(rental.value);
         });
         formData.append('rentals', JSON.stringify(selectedRentals));
+        console.log('Rentals added:', selectedRentals);
 
         // Phase 4 - Credentials
         const username = document.getElementById('usernameField').value;
         const password = document.getElementById('passwordField').value;
         formData.append('username', username);
         formData.append('password', password);
+        console.log(`Adding credentials - Username: ${username}`);
 
         // Add start date
         const today = new Date();
         const startDate = today.toISOString().split('T')[0];
         formData.append('start_date', startDate);
+        console.log(`Adding start_date: ${startDate}`);
 
-        console.log("Submitting form data...");
-        
-        // Log the form data
-        for (let pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
-        }
+        console.log("All form data prepared, sending request...");
         
         // Submit the form
         fetch('../admin/pages/members/add_member.php', {
@@ -1620,36 +1698,29 @@ function renderRentalServices($rentals) {
             body: formData
         })
         .then(response => {
-            console.log("Got response:", response);
-            if (!response.ok) {
-                return response.text().then(text => {
-                    console.error("Error response:", text);
-                    throw new Error('Network response was not ok');
-                });
-            }
+            console.log("Server response status:", response.status);
             return response.text().then(text => {
-                console.log("Raw response:", text);
+                console.log("Raw server response:", text);
                 try {
                     return JSON.parse(text);
                 } catch (e) {
-                    console.error("Failed to parse JSON:", e);
-                    throw new Error('Invalid JSON response');
+                    console.error("Failed to parse server response as JSON:", e);
+                    throw new Error('Invalid JSON response from server: ' + text);
                 }
             });
         })
         .then(data => {
-            console.log("Got data:", data);
+            console.log("Parsed response data:", data);
             if (data.success) {
                 alert('Member registered successfully!');
-                // Use BASE_URL for redirection
                 window.location.href = `${BASE_URL}/admin/members_new`;
             } else {
                 alert('Error: ' + (data.message || 'Failed to register member'));
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Error registering member. Please try again.');
+            console.error('Error during form submission:', error);
+            alert('Error registering member: ' + error.message);
         });
     }
     </script>
