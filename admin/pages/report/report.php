@@ -27,9 +27,10 @@ $pdo = $database->connect();
               u.username, 
               pd.first_name, 
               pd.last_name,
-              COUNT(CASE WHEN a.status = 'checked_in' THEN 1 END) as total_check_ins,
-              COUNT(CASE WHEN a.status = 'missed' THEN 1 END) as total_missed
-            FROM attendance a
+              COUNT(CASE WHEN ah.status = 'checked_in' THEN 1 END) as total_check_ins,
+              COUNT(CASE WHEN ah.status = 'missed' THEN 1 END) as total_missed
+            FROM attendance_history ah
+            JOIN attendance a ON ah.attendance_id = a.id
             JOIN users u ON a.user_id = u.id
             JOIN personal_details pd ON u.id = pd.user_id
             GROUP BY u.id
