@@ -77,11 +77,11 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             data-id="<?php echo $row['id']; ?>"
                             data-bs-toggle="modal" 
                             data-bs-target="#editStaffModal">
-                        <i class="fa-solid fa-edit"></i>
+                        <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-sm btn-danger delete-btn" 
                             data-id="<?php echo $row['id']; ?>">
-                        <i class="fa-solid fa-trash"></i>
+                        <i class="bi bi-trash"></i>
                     </button>
                 </td>
             </tr>
@@ -168,6 +168,84 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<!-- Edit Staff Modal -->
+<div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editStaffModalLabel">Edit Staff</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStaffForm">
+                    <input type="hidden" name="id" id="edit_id">
+                    <div class="row">
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" name="first_name" id="edit_first_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Middle Name</label>
+                                <input type="text" class="form-control" name="middle_name" id="edit_middle_name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" name="last_name" id="edit_last_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sex</label>
+                                <select class="form-select" name="sex" id="edit_sex" required>
+                                    <option value="">Select Sex</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Birthdate</label>
+                                <input type="date" class="form-control" name="birthdate" id="edit_birthdate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Contact Number</label>
+                                <input type="tel" class="form-control" name="phone_number" id="edit_phone_number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" name="role" id="edit_role" required>
+                                    <option value="">Select Role</option>
+                                    <option value="staff">Staff</option>
+                                    <option value="coach">Coach</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Credentials Section -->
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" name="username" id="edit_username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">New Password (leave blank to keep current)</label>
+                                <input type="password" class="form-control" name="password" id="edit_password">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateStaffBtn">Update Staff</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 $(document).ready(function() {
     const table = $("#staffManagementTable").DataTable({
@@ -238,6 +316,82 @@ $(document).ready(function() {
     $('#addStaffModal').on('hidden.bs.modal', function () {
         $('#addStaffForm')[0].reset();
         // Removed reference to non-existent programTypeDiv
+    });
+
+    // Initialize Bootstrap modal for edit
+    const editStaffModal = new bootstrap.Modal(document.getElementById('editStaffModal'));
+
+    // Handle edit button click
+    $('.edit-btn').click(function() {
+        const staffId = $(this).data('id');
+        
+        // Fetch staff details
+        $.ajax({
+            url: '../admin/pages/staff management/functions/get_staff_details.php',
+            type: 'GET',
+            data: { id: staffId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    const staff = response.data;
+                    
+                    // Populate form fields
+                    $('#edit_id').val(staff.id);
+                    $('#edit_username').val(staff.username);
+                    $('#edit_first_name').val(staff.first_name);
+                    $('#edit_middle_name').val(staff.middle_name);
+                    $('#edit_last_name').val(staff.last_name);
+                    $('#edit_sex').val(staff.sex);
+                    $('#edit_birthdate').val(staff.birthdate);
+                    $('#edit_phone_number').val(staff.phone_number);
+                    $('#edit_role').val(staff.role);
+                    
+                    // Clear password field (it's optional for editing)
+                    $('#edit_password').val('');
+                    
+                    // Show modal
+                    editStaffModal.show();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('An error occurred while fetching staff details.');
+            }
+        });
+    });
+
+    // Handle update form submission
+    $('#updateStaffBtn').click(function() {
+        const formData = new FormData($('#editStaffForm')[0]);
+        
+        $.ajax({
+            url: '../admin/pages/staff management/functions/update_staff.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    editStaffModal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                console.log("Response Text:", xhr.responseText);
+                alert('An error occurred while updating the staff member. Check console for details.');
+            }
+        });
+    });
+
+    // Reset form when modal is closed
+    $('#editStaffModal').on('hidden.bs.modal', function () {
+        $('#editStaffForm')[0].reset();
     });
 });
 </script>

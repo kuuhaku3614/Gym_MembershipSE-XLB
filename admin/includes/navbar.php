@@ -101,7 +101,8 @@
                     </div>
                 </a>
 
-                <!-- Staff Management Section -->
+                <!-- Staff Management Section - Only visible to admins -->
+                <?php if ($_SESSION['role'] === 'admin'): ?>
                 <a href="staff_management" id="staff_management-link" class="nav-item has-subnav">
                     <div class="nav-item-content">
                         <i class="fas fa-user-cog"></i>
@@ -119,6 +120,7 @@
                         Coach Activity Log
                     </a>
                 </div>
+                <?php endif; ?>
             </nav>
         </div>
 
