@@ -246,6 +246,51 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<!-- Staff Activity Log Section -->
+<div class="container mt-5">
+    <h1 class="nav-title">Activity Logs</h1>
+    <div class="table-responsive">
+        <?php
+        // Fetch activity log data with staff details
+        $logQuery = "SELECT 
+            sal.id,
+            sal.activity,
+            sal.description,
+            sal.timestamp,
+            CONCAT(pd.first_name, ' ', pd.last_name) as staff_name
+            FROM staff_activity_log sal
+            LEFT JOIN users u ON sal.staff_id = u.id
+            LEFT JOIN personal_details pd ON u.id = pd.user_id
+            ORDER BY sal.timestamp DESC";
+            
+        $logStmt = $pdo->prepare($logQuery);
+        $logStmt->execute();
+        $logResult = $logStmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+        
+        <table id="activityLogTable" class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Activity</th>
+                    <th>Description</th>
+                    <th>Staff Member</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($logResult as $log): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($log['activity']); ?></td>
+                        <td><?php echo htmlspecialchars($log['description']); ?></td>
+                        <td><?php echo htmlspecialchars($log['staff_name'] ?? 'Unknown'); ?></td>
+                        <td><?php echo date('M d, Y h:i A', strtotime($log['timestamp'])); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <script>
 $(document).ready(function() {
     const table = $("#staffManagementTable").DataTable({
@@ -392,6 +437,14 @@ $(document).ready(function() {
     // Reset form when modal is closed
     $('#editStaffModal').on('hidden.bs.modal', function () {
         $('#editStaffForm')[0].reset();
+    });
+
+    $('#activityLogTable').DataTable({
+        pageLength: 10,
+        ordering: true,
+        order: [[3, 'desc']], // Sort by timestamp by default
+        responsive: true,
+        dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
     });
 });
 </script>

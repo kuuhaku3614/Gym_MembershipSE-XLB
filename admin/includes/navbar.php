@@ -108,18 +108,7 @@
                         <i class="fas fa-user-cog"></i>
                         Staff Management
                     </div>
-                    <i class="fas fa-chevron-down dropdown-icon"></i>
                 </a>
-                <div class="sub-nav">
-                    <a href="activity_log" id="activity_log-link" class="sub-nav-item">
-                        <i class="fas fa-user-clock"></i>
-                        Staff Activity Log
-                    </a>
-                    <a href="coach_log" id="coach_log-link" class="sub-nav-item">
-                        <i class="fas fa-user-tie"></i>
-                        Coach Activity Log
-                    </a>
-                </div>
                 <?php endif; ?>
             </nav>
         </div>
