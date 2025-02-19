@@ -120,6 +120,9 @@ $rentals_stmt = $pdo->prepare($rentals_sql);
 $rentals_stmt->execute();
 $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/Chart.min.css" rel="stylesheet">
     
     <style>
         .report-section {
@@ -381,17 +384,24 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     
     <script>
-    $(document).ready(function() {
         // Initialize DataTables
-        $('.table').DataTable({
-            pageLength: 25,
-            order: [[3, 'desc']]
+        $(document).ready(function() {
+            $('.table').DataTable({
+                pageLength: 25,
+                order: [[3, 'desc']]
+            });
         });
 
         // Export function
-        window.exportTableToCSV = function(tableId, filename) {
+        function exportTableToCSV(tableId, filename) {
             const table = document.getElementById(tableId);
             const rows = table.getElementsByTagName('tr');
             let csv = [];
@@ -412,25 +422,17 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
             downloadLink.style.display = 'none';
             document.body.appendChild(downloadLink);
             downloadLink.click();
-        };
+        }
 
         // Initialize Revenue Chart
-        const chartData = <?= json_encode($formatted_earnings) ?>;
-        const ctx = document.getElementById('revenueChart');
-        
-        // Check if chart instance exists and destroy it
-        if (window.revenueChart instanceof Chart) {
-            window.revenueChart.destroy();
-        }
-        
-        // Create new chart instance
-        window.revenueChart = new Chart(ctx, {
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
             type: 'line',
             data: {
-                labels: chartData.map(item => item.month),
+                labels: <?= json_encode(array_column($formatted_earnings, 'month')) ?>,
                 datasets: [{
                     label: 'Monthly Revenue',
-                    data: chartData.map(item => item.total_amount),
+                    data: <?= json_encode(array_column($formatted_earnings, 'total_amount')) ?>,
                     borderColor: 'rgb(75, 192, 192)',
                     tension: 0.1
                 }]
@@ -448,5 +450,4 @@ $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             }
         });
-    });
     </script>
