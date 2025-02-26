@@ -95,3 +95,31 @@ function isUsernameExists($username) {
         return true; // Assume exists in case of error
     }
 }
+function initializeNotificationSession($database, $user_id) {
+    // Initialize session array for read notifications
+    $_SESSION['read_notifications'] = [
+        'transactions' => [],
+        'memberships' => [],
+        'announcements' => []
+    ];
+    
+    // Fetch read notifications from database
+    $pdo = $database->connect();
+    $sql = "SELECT notification_type, notification_id 
+            FROM notification_reads 
+            WHERE user_id = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(1, $user_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $db_reads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Populate session with database reads
+    foreach ($db_reads as $read) {
+        $type = $read['notification_type'];
+        $id = (int)$read['notification_id'];
+        
+        if (isset($_SESSION['read_notifications'][$type])) {
+            $_SESSION['read_notifications'][$type][] = $id;
+        }
+    }
+}

@@ -120,6 +120,7 @@ html {
   background-color: transparent;
   border-radius: 20px;
   transition: 0.6s;
+  /* margin-top: 50px; */
 }
 
 nav.sticky {
@@ -1318,5 +1319,144 @@ nav.sticky {
   .S-Products .product-box {
     width: 100%;
     max-width: 350px;
+  }
+}
+.notification-badge {
+  background-color: red;
+  color: white; /* Ensures the text color contrasts with the background */
+  padding: 1px 6px;
+  border-radius: 50%; /* Makes the corners circular */
+  margin-left: 10px;
+}
+
+.notification-badge2 {
+  position: absolute;
+  bottom: -10px;
+  right: 1px;
+  background-color: red;
+  color: white;
+  padding: 1px 8px;
+  border-radius: 50%;
+  font-size: 14px; /* Adjust based on your preferred text size */
+}
+/* Membership Renewal Popup Styles */
+.membership-popup {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.membership-popup-content {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+  position: relative;
+  animation: slideIn 0.4s ease-out;
+  border-top: 5px solid #e74c3c; /* Default red border */
+}
+
+.membership-popup-content.expired {
+  border-top-color: #e74c3c; /* Red for expired */
+}
+
+.membership-popup-content.expiring {
+  border-top-color: #f39c12; /* Orange for expiring */
+}
+
+.close-popup {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.close-popup:hover {
+  color: #333;
+}
+
+.popup-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.membership-popup h3 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.membership-popup p {
+  color: #555;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.popup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.renew-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: none;
+}
+
+.renew-btn:hover {
+  background-color: #2980b9;
+  color: white;
+}
+
+.dismiss-btn {
+  background-color: transparent;
+  color: #777;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.dismiss-btn:hover {
+  background-color: #f5f5f5;
+  color: #555;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .membership-popup-content {
+      padding: 20px 15px;
   }
 }

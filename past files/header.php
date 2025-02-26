@@ -4,6 +4,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Include database config file
+require_once '../config.php';
+// Now you have access to the $database variable from config.php
+
 // Check if user is logged in and has valid session data
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['role']);
 $unreadNotificationsCount = 0;
@@ -23,6 +27,10 @@ if ($isLoggedIn) {
                 'announcements' => []
             ];
             
+            // Use the database instance from config.php
+            // $database is already available from the require_once above
+            
+            // Load read notifications from database
             $pdo = $database->connect();
             $sql = "SELECT notification_type, notification_id 
                     FROM notification_reads 
@@ -47,53 +55,7 @@ if ($isLoggedIn) {
         $unreadNotificationsCount = getUnreadNotificationsCount($database, $_SESSION['user_id']);
     }
 }
-// Check for expired or expiring memberships to show popup
-$showMembershipPopup = false;
-$membershipDetails = null;
-$membershipStatus = '';
 
-if ($isLoggedIn) {
-    // Get expired and expiring memberships for the current user if notification_queries.php is included
-    if (function_exists('getMembershipNotifications')) {
-        $membershipNotifications = getMembershipNotifications($database, $_SESSION['user_id']);
-        
-        // First check for expired memberships (higher priority)
-        foreach ($membershipNotifications as $membership) {
-            if ($membership['status'] === 'expired') {
-                // We have an expired membership, show the popup
-                $showMembershipPopup = true;
-                $membershipDetails = $membership;
-                $membershipStatus = 'expired';
-                break; // Just get the first expired membership
-            }
-        }
-        
-        // If no expired memberships found, check for expiring ones
-        if (!$showMembershipPopup) {
-            foreach ($membershipNotifications as $membership) {
-                if ($membership['status'] === 'expiring') {
-                    // We have an expiring membership, show the popup
-                    $showMembershipPopup = true;
-                    $membershipDetails = $membership;
-                    $membershipStatus = 'expiring';
-                    break; // Just get the first expiring membership
-                }
-            }
-        }
-        
-        // Check if user has dismissed this popup before
-        if (isset($_SESSION['dismissed_membership_popup'])) {
-            $showMembershipPopup = false;
-        }
-    }
-}
-
-// Handle Ajax request to dismiss the popup
-if (isset($_POST['dismiss_membership_popup'])) {
-    $_SESSION['dismissed_membership_popup'] = true;
-    echo json_encode(['success' => true]);
-    exit;
-}
 // Handle logout logic
 if (isset($_GET['logout'])) {
     // Clear all session data
@@ -283,75 +245,5 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         </div>
     </div>
 </div>
-<!-- Membership Renewal Popup -->
-<div id="membershipRenewalPopup" class="membership-popup" style="display: none;">
-    <div class="membership-popup-content">
-        <span class="close-popup"><i class="fas fa-times"></i></span>
-        <div class="popup-icon">
-            <i class="fas fa-exclamation-circle"></i>
-        </div>
-        <h3 id="popupTitle">Membership Notice</h3>
-        <p id="popupMessage"></p>
-        <p>Renew now to continue enjoying our services without interruption!</p>
-        <div class="popup-actions">
-            <a href="<?php echo $isCoachFolder ? '../services.php' : 'services.php'; ?>" class="renew-btn">Renew Membership</a>
-            <button id="dismissPopup" class="dismiss-btn">Don't Show Again</button>
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Show membership renewal popup if needed
-    <?php if ($showMembershipPopup && $membershipDetails): ?>
-    const popup = document.getElementById('membershipRenewalPopup');
-    const popupTitle = document.getElementById('popupTitle');
-    const popupMessage = document.getElementById('popupMessage');
-    const popupIcon = document.querySelector('.popup-icon i');
-    
-    // Set membership details based on status
-    const membershipStatus = '<?php echo $membershipStatus; ?>';
-    const planName = '<?php echo htmlspecialchars($membershipDetails['plan_name']); ?>';
-    const dateFormatted = '<?php echo date('F j, Y', strtotime($membershipDetails['end_date'])); ?>';
-    
-    if (membershipStatus === 'expired') {
-        popupTitle.textContent = 'Membership Expired';
-        popupMessage.innerHTML = `Your <strong>${planName}</strong> membership expired on <strong>${dateFormatted}</strong>.`;
-        popupIcon.style.color = '#e74c3c'; // Red for expired
-        document.querySelector('.membership-popup-content').classList.add('expired');
-    } else if (membershipStatus === 'expiring') {
-        popupTitle.textContent = 'Membership Expiring Soon';
-        popupMessage.innerHTML = `Your <strong>${planName}</strong> membership will expire on <strong>${dateFormatted}</strong>.`;
-        popupIcon.style.color = '#f39c12'; // Orange for expiring
-        popupIcon.className = 'fas fa-clock';
-        document.querySelector('.membership-popup-content').classList.add('expiring');
-    }
-    
-    // Show popup with a slight delay for better UX
-    setTimeout(() => {
-        popup.style.display = 'flex';
-    }, 1500);
-    
-    // Close button functionality
-    document.querySelector('.close-popup').addEventListener('click', function() {
-        popup.style.display = 'none';
-    });
-    
-    // Dismiss button functionality
-    document.getElementById('dismissPopup').addEventListener('click', function() {
-        // Send AJAX request to dismiss the popup
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', window.location.href, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                popup.style.display = 'none';
-            }
-        };
-        xhr.send('dismiss_membership_popup=1');
-    });
-    <?php endif; ?>
-});
-</script>
 <script src="<?php echo $isCoachFolder ? '../../website/js/edit_profile.js' : 'js/edit_profile.js'; ?>"></script>
 <script src="<?php echo $isCoachFolder ? '../../website/js/dropdown.js' : 'js/dropdown.js'; ?>"></script>

@@ -25,6 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['role'] = $result['role'];
             $_SESSION['role_id'] = $result['role_id'];
             
+            // Initialize notification session data from database
+            initializeNotificationSession($database, $result['user_id']);
+            
             // Redirect based on role
             redirectBasedOnRole($result['role']);
         } else {
