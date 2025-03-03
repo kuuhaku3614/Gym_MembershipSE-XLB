@@ -33,22 +33,19 @@ class Coach_class {
         $sql = "SELECT 
                     ps.id as subscription_id,
                     u.id as member_id,
-                    ps.program_id,
-                    ps.start_date,
-                    ps.end_date,
+                    ps.coach_program_type_id,
+                    cpt.program_id,
                     ps.status as subscription_status,
                     pd.first_name,
                     pd.last_name,
                     pd.phone_number as contact_no,
-                    p.program_name,
-                    p.duration,
-                    dt.type_name as duration_type
+                    p.program_name
                 FROM program_subscriptions ps
-                INNER JOIN programs p ON ps.program_id = p.id
-                INNER JOIN users u ON ps.transaction_id IN (SELECT id FROM transactions WHERE user_id = u.id)
+                INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                INNER JOIN programs p ON cpt.program_id = p.id
+                INNER JOIN users u ON ps.user_id = u.id
                 INNER JOIN personal_details pd ON u.id = pd.user_id
-                INNER JOIN duration_types dt ON p.duration_type_id = dt.id
-                WHERE ps.coach_id = ? AND ps.is_paid = 1
+                WHERE cpt.coach_id = ?
                 ORDER BY ps.created_at DESC";
         
         $stmt = $this->db->prepare($sql);
@@ -168,47 +165,6 @@ class Coach_class {
         
         return $events;
     }
-
-    public function getCoachAvailability($programTypeId) {
-        $query = "SELECT * FROM coach_availability WHERE coach_program_type_id = ? ORDER BY FIELD(day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), start_time";
-        $stmt = $this->db->prepare($query);
-        $stmt->bind_param("i", $programTypeId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $availabilities = [];
-        while ($row = $result->fetch_assoc()) {
-            $availabilities[] = $row;
-        }
-        
-        return $availabilities;
-    }
-    
-    public function getAvailabilityDetails($id) {
-        $query = "SELECT * FROM coach_availability WHERE id = ?";
-        $stmt = $this->db->prepare($query);
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        return $result->fetch_assoc();
-    }
-    
-    public function saveAvailability($data) {
-        if (isset($data['id']) && !empty($data['id'])) {
-            // Update existing availability
-            $query = "UPDATE coach_availability SET day = ?, start_time = ?, end_time = ? WHERE id = ? AND coach_program_type_id = ?";
-            $stmt = $this->db->prepare($query);
-            $stmt->bind_param("sssii", $data['day'], $data['start_time'], $data['end_time'], $data['id'], $data['coach_program_type_id']);
-        } else {
-            // Insert new availability
-            $query = "INSERT INTO coach_availability (coach_program_type_id, day, start_time, end_time) VALUES (?, ?, ?, ?)";
-            $stmt = $this->db->prepare($query);
-            $stmt->bind_param("isss", $data['coach_program_type_id'], $data['day'], $data['start_time'], $data['end_time']);
-        }
-        
-        return $stmt->execute();
-    }
     
     public function deleteAvailability($id) {
         $query = "DELETE FROM coach_availability WHERE id = ?";
@@ -216,6 +172,126 @@ class Coach_class {
         $stmt->bind_param("i", $id);
         
         return $stmt->execute();
+    }
+    
+    public function getGroupSchedule($programTypeId) {
+        $sql = "SELECT 
+                cgs.*,
+                (SELECT COUNT(*) FROM program_subscriptions ps 
+                 WHERE ps.coach_program_type_id = cgs.coach_program_type_id 
+                 AND ps.status = 'active') as current_members
+            FROM coach_group_schedule cgs
+            WHERE cgs.coach_program_type_id = ?";
+            
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $programTypeId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    public function getPersonalSchedule($programTypeId) {
+        $sql = "SELECT 
+                cps.*
+                FROM coach_personal_schedule cps
+                WHERE cps.coach_program_type_id = ?";
+            
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $programTypeId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    public function saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity) {
+        try {
+            if ($scheduleId) {
+                // Update existing schedule
+                $sql = "UPDATE coach_group_schedule 
+                        SET day = ?, start_time = ?, end_time = ?, capacity = ?
+                        WHERE id = ? AND coach_program_type_id = ?";
+                $stmt = $this->db->prepare($sql);
+                if (!$stmt) {
+                    throw new Exception("Prepare failed: " . $this->db->error);
+                }
+                
+                $stmt->bind_param("sssiis", $day, $startTime, $endTime, $capacity, $scheduleId, $programTypeId);
+            } else {
+                // Insert new schedule
+                $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity)
+                        VALUES (?, ?, ?, ?, ?)";
+                $stmt = $this->db->prepare($sql);
+                if (!$stmt) {
+                    throw new Exception("Prepare failed: " . $this->db->error);
+                }
+                
+                $stmt->bind_param("isssi", $programTypeId, $day, $startTime, $endTime, $capacity);
+            }
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Execute failed: " . $stmt->error);
+            }
+            
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function savePersonalSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $price, $duration) {
+        try {
+            if ($scheduleId) {
+                // Update existing schedule
+                $sql = "UPDATE coach_personal_schedule 
+                        SET day = ?, start_time = ?, end_time = ?, price = ?, duration_rate = ?
+                        WHERE id = ? AND coach_program_type_id = ?";
+                $stmt = $this->db->prepare($sql);
+                if (!$stmt) {
+                    throw new Exception("Prepare failed: " . $this->db->error);
+                }
+                
+                $stmt->bind_param("sssdiii", $day, $startTime, $endTime, $price, $duration, $scheduleId, $programTypeId);
+            } else {
+                // Insert new schedule
+                $sql = "INSERT INTO coach_personal_schedule (coach_program_type_id, day, start_time, end_time, price, duration_rate)
+                        VALUES (?, ?, ?, ?, ?, ?)";
+                $stmt = $this->db->prepare($sql);
+                if (!$stmt) {
+                    throw new Exception("Prepare failed: " . $this->db->error);
+                }
+                
+                $stmt->bind_param("isssdi", $programTypeId, $day, $startTime, $endTime, $price, $duration);
+            }
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Execute failed: " . $stmt->error);
+            }
+            
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function deleteSchedule($scheduleId, $type) {
+        try {
+            $table = $type === 'group' ? 'coach_group_schedule' : 'coach_personal_schedule';
+            $sql = "DELETE FROM " . $table . " WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $this->db->error);
+            }
+            
+            $stmt->bind_param("i", $scheduleId);
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Execute failed: " . $stmt->error);
+            }
+            
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 }
 ?>

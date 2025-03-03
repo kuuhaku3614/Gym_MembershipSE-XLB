@@ -74,13 +74,10 @@ class Services_class{
     public function displayPrograms() {
         $conn = $this->db->connect();
         $sql = "SELECT p.id as program_id, p.program_name,
-                CONCAT(p.duration, ' ', dt.type_name) as validity,
-                pt.type_name as program_type
+                CONCAT(p.duration, ' ', dt.type_name) as validity
                 FROM programs p
                 LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
-                LEFT JOIN program_types pt ON p.program_type_id = pt.id
-                WHERE p.status = 'active'
-                ORDER BY p.program_type_id";
+                WHERE p.status = 'active'";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
@@ -148,11 +145,9 @@ class Services_class{
 
     public function fetchProgram($program_id) {
         $conn = $this->db->connect();
-        $sql = "SELECT p.*, dt.type_name as duration_type, 
-                pt.type_name as program_type
+        $sql = "SELECT p.*, dt.type_name as duration_type
                 FROM programs p
                 LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
-                LEFT JOIN program_types pt ON p.program_type_id = pt.id
                 WHERE p.id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$program_id]);

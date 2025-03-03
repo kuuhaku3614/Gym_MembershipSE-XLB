@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Initialize variables
-$program_id = $program_name = $program_type = $duration = $duration_type = $description = '';
+$program_id = $program_name = $duration = $duration_type = $description = '';
 $start_date = $end_date = '';
 $coach_id = $coach_name = '';
 $price = '';
@@ -39,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         }
         
         $program_name = $record['program_name'];
-        $program_type = $record['program_type'];
         $duration = $record['duration'];
         $duration_type = $record['duration_type'];
         $description = $record['description'];
@@ -167,9 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="row flex-grow-1 overflow-auto">
         <div class="col-12 col-lg-8 mx-auto py-3 main-container">
             <div class="card main-content" style="width: 100%;">
-                <div class="card-header py-3">
-                    <h2 class="h4 fw-bold mb-0 text-center"><?= $program_type ?> Program</h2>
-                </div>
                 <div class="card-body p-3">
                     <h3 class="h5 fw-bold text-center mb-4"><?= $program_name ?></h3>
 

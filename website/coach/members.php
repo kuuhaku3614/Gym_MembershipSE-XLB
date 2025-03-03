@@ -27,11 +27,7 @@
                                     <tr>
                                         <th>Member Name</th>
                                         <th>Program</th>
-                                        <th>Duration</th>
                                         <th>Contact</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -40,16 +36,7 @@
                                             <tr>
                                                 <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?></td>
                                                 <td><?= htmlspecialchars($member['program_name']) ?></td>
-                                                <td><?= htmlspecialchars($member['duration'] . ' ' . $member['duration_type']) ?></td>
                                                 <td><?= htmlspecialchars($member['contact_no']) ?></td>
-                                                <td><?= date('M d, Y', strtotime($member['start_date'])) ?></td>
-                                                <td><?= date('M d, Y', strtotime($member['end_date'])) ?></td>
-                                                <td>
-                                                    <span class="badge bg-<?= $member['subscription_status'] === 'active' ? 'success' : 
-                                                        ($member['subscription_status'] === 'expiring' ? 'warning' : 'danger') ?>">
-                                                        <?= ucfirst($member['subscription_status']) ?>
-                                                    </span>
-                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
