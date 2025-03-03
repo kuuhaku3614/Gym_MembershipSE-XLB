@@ -108,15 +108,15 @@ foreach ($programs as $program) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programs Management</title>
     
-    <!-- jQuery -->
+    <!-- jQuery
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    Bootst-->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.ss" rel="stylesheet"> -->
     
     <!-- DataTables -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
-    <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <!-- <link rel="stylesheet" type="text/css" href="https://cdn.datats.net/1.11.5/css/jquery.dataTables.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script> --> -->
     
     <style>
         .coach-info {
@@ -218,6 +218,7 @@ foreach ($programs as $program) {
             <table id="programsTable" class="table table-striped table-bordered">
                 <thead>
                     <tr>
+                        <th>Image</th>
                         <th>No.</th>
                         <th>Program Name</th>
                         <th>Program Type</th>
@@ -243,6 +244,15 @@ foreach ($programs as $program) {
                     $coachDataJson = htmlspecialchars(json_encode($coaches), ENT_QUOTES, 'UTF-8');
 
                     echo "<tr>";
+                    echo "<td>";
+            // Check if the image exists using the correct absolute path
+            if (!empty($program['image']) && file_exists(__DIR__ . "/../../../cms_img/programs/" . $program['image'])) {
+                // Use a path relative to the web root for the src attribute
+                echo "<img src='__DIR__ . ../../../cms_img/programs/" . htmlspecialchars($program['image']) . "' alt='Programs Image' class='img-thumbnail' width='80'>";
+            } else {
+                echo "No Image";
+            }
+            echo "</td>";
                     echo "<td>" . $count++ . "</td>";
                     echo "<td>" . htmlspecialchars($program['program_name']) . "</td>";
                     echo "<td>" . htmlspecialchars($program['program_type']) . "</td>";
@@ -380,6 +390,12 @@ foreach ($programs as $program) {
                         <div class="row">
                             <!-- Left Column -->
                             <div class="col-md-6">
+
+                                <div class="mb-3">
+                                    <label for="programImage" class="form-label">Program Image</label>
+                                    <input type="file" class="form-control" id="programImage" name="programImage" accept="image/*">
+                                </div>
+                                
                                 <div class="mb-3">
                                     <label for="programName" class="form-label">Program Name</label>
                                     <input type="text" class="form-control" id="programName" name="programName" required>
@@ -462,6 +478,12 @@ foreach ($programs as $program) {
                         <div class="row">
                             <!-- Left Column -->
                             <div class="col-md-6">
+
+                                <div class="mb-3">
+                                    <label for="editProgramImage" class="form-label">Program Image</label>
+                                    <input type="file" class="form-control" id="editProgramImage" name="editProgramImage" accept="image/*">
+                                </div>
+                                
                                 <div class="mb-3">
                                     <label for="editProgramName" class="form-label">Program Name</label>
                                     <input type="text" class="form-control" id="editProgramName" name="programName" required>
@@ -520,124 +542,273 @@ foreach ($programs as $program) {
     </div>
 
 <!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
     <script>
         
-    $(document).ready(function() {
-        // Initialize DataTable
-    $('#programsTable').dataTable({
+        $(document).ready(function() {
+    // Initialize DataTable with similar configuration to gym rates
+    if ($.fn.DataTable.isDataTable('#programsTable')) {
+        $('#programsTable').DataTable().destroy(); // Destroy existing instance
+    }
+    
+    $('#programsTable').DataTable({
         responsive: true,
-        order: [[3, 'desc']], // Sort by check-in time by default
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        order: [[1, 'asc']], // Sort by second column ascending for consistency
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
         language: {
             search: "_INPUT_",
-            searchPlaceholder: "Search members..."
+            searchPlaceholder: "Search programs..."
         },
         columnDefs: [
-            { orderable: false, targets: [0] } // Disable sorting for photo column
+            { orderable: false, targets: [0] } // Disable sorting for image column
         ]
     });
 });
 
-        // Function to validate a field and show error message
-        function validateField(fieldId, errorMessage) {
-            const field = $('#' + fieldId);
-            const value = field.val().trim();
+// Function to validate a field and show error message
+function validateField(fieldId, errorMessage) {
+    const field = $(`#${fieldId}`);
+    const value = field.val().trim();
+    
+    // Reset previous error state
+    field.removeClass('is-invalid');
+    const nextFeedback = field.next('.invalid-feedback');
+    if (nextFeedback.length) {
+        nextFeedback.remove();
+    }
+    
+    if (!value || (field.attr('type') === 'number' && (isNaN(value) || parseInt(value) <= 0))) {
+        field.addClass('is-invalid');
+        field.after(`<div class="invalid-feedback">${errorMessage}</div>`);
+        return false;
+    }
+    return true;
+}
+
+// Save program handler
+$('#saveProgramBtn').click(function() {
+    // Clear previous error messages
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+
+    // Validate all required fields
+    const isValid = 
+        validateField('programName', 'Program name is required') &
+        validateField('programType', 'Program type must be selected') &
+        validateField('duration', 'Duration must be greater than 0') &
+        validateField('durationType', 'Duration type must be selected');
+
+    // If any validation fails, stop submission
+    if (!isValid) {
+        return false;
+    }
+
+    // Prepare FormData for submission (similar to gym rates)
+    var formData = new FormData($('#addProgramForm')[0]);
+
+    // Handle image file (if provided)
+    var imageFile = $('#programImage')[0].files[0];
+    if (imageFile) {
+        formData.append('programImage', imageFile);
+    }
+
+    // Send AJAX request
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/save_programs.php',
+        type: 'POST',
+        data: formData,
+        processData: false,  // Important for file upload
+        contentType: false,   // Important for file upload
+        success: function(response) {
+            console.log("Response:", response);
             
-            // Clear previous validation
-            field.removeClass('is-invalid');
-            field.next('.invalid-feedback').text('');
-            
-            if (!value || (field.attr('type') === 'number' && (isNaN(value) || parseInt(value) <= 0))) {
-                field.addClass('is-invalid');
-                field.next('.invalid-feedback').text(errorMessage);
-                return false;
-            }
-            return true;
-        }
-
-        // Save program handler
-        $('#saveProgramBtn').click(function() {
-            // Clear previous validation states
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').text('');
-
-            // Validate all required fields
-            const isValid = 
-                validateField('programName', 'Program name is required') &
-                validateField('programType', 'Program type must be selected') &
-                validateField('duration', 'Duration must be greater than 0') &
-                validateField('durationType', 'Duration type must be selected');
-
-            // If any validation fails, stop submission
-            if (!isValid) {
-                return false;
-            }
-
-            // Get form data
-            var formData = {
-                programName: $('#programName').val().trim(),
-                programType: $('#programType').val(),
-                duration: parseInt($('#duration').val()),
-                durationType: $('#durationType').val(),
-                description: $('#description').val().trim()
-            };
-
-            // Send AJAX request
-            $.ajax({
-            url: '../admin/pages/gym rates/functions/save_programs.php',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            success: function(response) {
+            // Check if response is already an object
+            if (typeof response === 'object') {
                 if (response.status === 'success') {
-                    $('#addProgramModal').modal('hide');
-                    // Show success modal instead of alert
-                    $('#successModal .modal-body p').text(response.message || 'Program created successfully!');
-                    new bootstrap.Modal(document.getElementById('successModal')).show();
-                    
-                    // Optional: Reload page after a short delay
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000); // 2 second delay to allow user to see success modal
-                } else {
-                    if (response.debug) {
-                        console.error('Error details:', response.debug);
+                    // Get modal instances using Bootstrap 5 method
+                    var addModal = bootstrap.Modal.getInstance(document.getElementById('addProgramModal'));
+                    if (addModal) {
+                        addModal.hide();
+                    } else {
+                        // Fallback if the modal instance isn't available
+                        $('#addProgramModal').removeClass('show');
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open').css('padding-right', '');
                     }
-                    // Show validation errors if they exist
-                    if (response.errors) {
-                        Object.keys(response.errors).forEach(function(field) {
-                            const fieldElement = $('#' + field);
-                            if (fieldElement.length) {
-                                fieldElement.addClass('is-invalid');
-                                fieldElement.next('.invalid-feedback').text(response.errors[field]);
-                            }
+                    
+                    // Show success modal using Bootstrap 5 method
+                    var successModalEl = document.getElementById('successModal');
+                    if (successModalEl) {
+                        var successModal = new bootstrap.Modal(successModalEl);
+                        successModal.show();
+                        
+                        successModalEl.addEventListener('hidden.bs.modal', function() {
+                            location.reload();
                         });
                     } else {
-                        // Fallback to alert if no specific error handling
-                        alert(response.message || "Error saving program");
+                        // Fallback if we can't show the success modal
+                        alert("Success: " + (response.message || "Program added successfully"));
+                        location.reload();
                     }
+                } else {
+                    alert("Error: " + (response.message || "Unknown error occurred"));
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error("AJAX Error:", status, error);
-                console.log("Response:", xhr.responseText);
+            } else {
+                // Try to parse as JSON if it's a string
                 try {
-                    var response = JSON.parse(xhr.responseText);
-                    alert(response.message || "Error saving program. Please try again.");
-                } catch(e) {
-                    alert("Error saving program. Please try again.");
+                    const data = JSON.parse(response);
+                    if (data.status === 'success') {
+                        // Same as above, using Bootstrap 5 methods
+                        var addModal = bootstrap.Modal.getInstance(document.getElementById('addProgramModal'));
+                        if (addModal) {
+                            addModal.hide();
+                        } else {
+                            $('#addProgramModal').removeClass('show');
+                            $('.modal-backdrop').remove();
+                            $('body').removeClass('modal-open').css('padding-right', '');
+                        }
+                        
+                        var successModalEl = document.getElementById('successModal');
+                        if (successModalEl) {
+                            var successModal = new bootstrap.Modal(successModalEl);
+                            successModal.show();
+                            
+                            successModalEl.addEventListener('hidden.bs.modal', function() {
+                                location.reload();
+                            });
+                        } else {
+                            alert("Success: " + (data.message || "Program added successfully"));
+                            location.reload();
+                        }
+                    } else {
+                        alert("Error: " + (data.message || "Unknown error occurred"));
+                    }
+                } catch (e) {
+                    // Plain string response
+                    alert("Success: Program added successfully");
+                    location.reload();
                 }
             }
-        });
-        });
+        },
+        error: function(xhr, status, error) {
+            alert("AJAX error: " + error);
+        }
+    });
+});
 
-        // Reset form when modal is closed
-        $('#addProgramModal').on('hidden.bs.modal', function () {
-            $('#addProgramForm')[0].reset();
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').text('');
-        });
+
+$(document).on('click', '.edit-btn', function() {
+    const programId = $(this).data('id');
+
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/edit_programs.php',
+        type: 'GET',
+        data: { id: programId },
+        dataType: 'json',
+        success: function(response) {
+            console.log("Response from edit:", response);
+            
+            // Changed from response.status === 'success' to response.success === true
+            if (response.success === true) {
+                const program = response.data;
+                console.log("Program data:", program);
+
+                // Populate the form
+                $('#editProgramId').val(program.id);
+                $('#editProgramName').val(program.program_name);
+                $('#editProgramType').val(program.program_type_id);
+                $('#editDuration').val(program.duration);
+                $('#editDurationType').val(program.duration_type_id);
+                $('#editDescription').val(program.description);
+
+                // Show the modal using Bootstrap 5 method
+                const editModal = new bootstrap.Modal(document.getElementById('editProgramModal'));
+                editModal.show();
+            } else {
+                alert('Error: ' + (response.message || 'Failed to load program details'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX Error:", error);
+            alert('Error occurred while fetching program details: ' + error);
+        }
+    });
+});
+
+// Update program button handler
+$('#updateProgramBtn').click(function() {
+    // Clear previous error messages
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+
+    // Validate all required fields
+    const isValid = 
+        validateField('editProgramName', 'Program name is required') &
+        validateField('editProgramType', 'Program type must be selected') &
+        validateField('editDuration', 'Duration must be greater than 0') &
+        validateField('editDurationType', 'Duration type must be selected');
+
+    // If any validation fails, stop submission
+    if (!isValid) {
+        return false;
+    }
+
+    // Prepare FormData for submission (similar to gym rates)
+    const formData = new FormData($('#editProgramForm')[0]);
+    formData.append('action', 'update');
+
+    // Send AJAX request
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/edit_programs.php',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            try {
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                
+                if (data.success || data.status === 'success') {
+                    // Update the modal body with the success message
+                    $('#updateSuccessModal .modal-body p').text(data.message || "Updated successfully!");
+                    
+                    // Show the success modal
+                    $('#updateSuccessModal').modal('show');
+                    
+                    // Hide the edit modal
+                    $('#editProgramModal').modal('hide');
+                    
+                    // Reload the page after the modal is hidden
+                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                        location.reload();
+                    });
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error occurred'));
+                }
+            } catch(e) {
+                if (response.trim() === "success") {
+                    $('#editProgramModal').modal('hide');
+                    $('#updateSuccessModal').modal('show');
+                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                        location.reload();
+                    });
+                } else {
+                    alert('Error: ' + response);
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Error occurred while updating program: ' + error);
+        }
+    });
+});
+
+// Reset edit form when modal is closed
+$('#editProgramModal').on('hidden.bs.modal', function () {
+    $('#editProgramForm')[0].reset();
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
+});
 
 
                 $(document).on('click', '.toggle-status-btn', function() {
@@ -647,17 +818,17 @@ foreach ($programs as $program) {
             
             // Set up the appropriate modal based on the new status
             if (newStatus === 'active') {
-                $('#activateModal').data('program-id', programId);
+                $('#activateModal').data('id', programId);
                 $('#activateModal').modal('show');
             } else {
-                $('#deactivateModal').data('program-id', programId);
+                $('#deactivateModal').data('id', programId);
                 $('#deactivateModal').modal('show');
             }
         });
 
         // Handler for activate confirmation
         $('#confirmActivate').on('click', function() {
-            const programId = $('#activateModal').data('program-id');
+            const programId = $('#activateModal').data('id');
             
             $.ajax({
                 url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
@@ -686,7 +857,7 @@ foreach ($programs as $program) {
 
         // Handler for deactivate confirmation
         $('#confirmDeactivate').on('click', function() {
-            const programId = $('#deactivateModal').data('program-id');
+            const programId = $('#deactivateModal').data('id');
             
             $.ajax({
                 url: '<?php echo $baseUrl; ?>/functions/save_programs.php',
@@ -764,124 +935,6 @@ foreach ($programs as $program) {
                 console.error('Error parsing coach data:', error);
                 alert('Error loading coach data. Please try again.');
             }
-        });
-        
-        // Edit button click handler
-        $(document).on('click', '.edit-btn', function() {
-            const programId = $(this).data('id');
-            
-            // Fetch program details
-            $.ajax({
-                url: '../admin/pages/gym rates/functions/edit_programs.php',
-                type: 'GET',
-                data: { id: programId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        const program = response.data;
-                        
-                        // Set values in the edit modal
-                        $('#editProgramId').val(program.id);
-                        $('#editProgramName').val(program.program_name);
-                        $('#editDuration').val(program.duration);
-                        
-                        // Set program type dropdown
-                        $('#editProgramType option').each(function() {
-                            if ($(this).text().trim() === program.program_type.trim()) {
-                                $(this).prop('selected', true);
-                            }
-                        });
-                        
-                        // Set duration type dropdown
-                        $('#editDurationType option').each(function() {
-                            if ($(this).text().trim() === program.duration_type.trim()) {
-                                $(this).prop('selected', true);
-                            }
-                        });
-                        
-                        // Show the modal
-                        $('#editProgramModal').modal('show');
-                    } else {
-                        alert(response.message || "Error fetching program details");
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("AJAX Error:", status, error);
-                    alert("Error fetching program details. Please try again.");
-                }
-            });
-        });
-
-        // Update program button handler
-        $('#updateProgramBtn').click(function() {
-            // Clear previous validation states
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').text('');
-
-            // Validate all required fields
-            const isValid = 
-                validateField('editProgramName', 'Program name is required') &
-                validateField('editProgramType', 'Program type must be selected') &
-                validateField('editDuration', 'Duration must be greater than 0') &
-                validateField('editDurationType', 'Duration type must be selected');
-
-            // If any validation fails, stop submission
-            if (!isValid) {
-                return false;
-            }
-
-            // Get form data
-            const formData = {
-                programId: $('#editProgramId').val(),
-                programName: $('#editProgramName').val().trim(),
-                programType: $('#editProgramType').val(),
-                duration: parseInt($('#editDuration').val()),
-                durationType: $('#editDurationType').val()
-            };
-
-            // Send AJAX request
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/edit_programs.php',
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    // Update the modal body with the success message
-                    $('#updateSuccessModal .modal-body p').text(response.message || "Updated successfully!");
-                    
-                    // Show the success modal
-                    $('#updateSuccessModal').modal('show');
-                    
-                    // Hide the edit modal
-                    $('#editProgramModal').modal('hide');
-                    
-                    // Reload the page after the modal is hidden
-                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
-                        location.reload();
-                    });
-                } else {
-                    // If not successful, show an error alert
-                    alert(response.message || "Error updating program");
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("AJAX Error:", status, error);
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    alert(response.message || "Error updating program. Please try again.");
-                } catch(e) {
-                    alert("Error updating program. Please try again.");
-                }
-            }
-        });
-    });
-
-        // Reset edit form when modal is closed
-        $('#editProgramModal').on('hidden.bs.modal', function () {
-            $('#editProgramForm')[0].reset();
-            $('.is-invalid').removeClass('is-invalid');
-            $('.invalid-feedback').text('');
         });
 
         $(document).on('click', '.remove-btn', function() {

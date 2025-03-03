@@ -51,10 +51,8 @@
 <section class="main-content">
 
 <div class="services-header text-center d-flex flex-column justify-content-center align-items-center mb-5">
-    <div class="divider mx-auto my-4" style="width: 60%; height: 3px; background-color: red;"></div>
-    <h1 class="display-2 fw-bold text-white" style="text-shadow: 4px 4px 8px rgba(255, 0, 0, 0.6);">Choose your programs</h1>
-    <p class="lead text-white fs-2" style="text-shadow: 2px 2px 6px rgba(255, 0, 0, 0.6);">Discover our comprehensive range of fitness solutions and memberships</p>
-    <div class="divider mx-auto my-4" style="width: 60%; height: 3px; background-color: red;"></div>
+    <h1 class="display-2 fw-bold text-white" style="text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.6);">Choose your programs</h1>
+    <p class="lead text-white fs-2" style="text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);">Discover our comprehensive range of fitness solutions and memberships</p>
 </div>
 
 <div class="services-page">

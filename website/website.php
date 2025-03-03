@@ -92,7 +92,7 @@ require_once('includes/header.php');
             <h1 class="companyName"><?php 
                 echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
             ?></span></h1>
-            <p class="description"><?php 
+            <p class="description subtext1"><?php 
                 echo htmlspecialchars($welcomeContent['description'] ?? 'Welcome description goes here.'); 
             ?></p>
             <a href="?services=1" style="text-decoration: none;">
@@ -116,7 +116,7 @@ require_once('includes/header.php');
 
     <div class="offers-text">
         <h1 class="title">Gym Offers</h1>
-        <p class="text-secondary"><?php 
+        <p class="text-secondary subtext"><?php 
             echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
         ?></p>
   
@@ -150,7 +150,7 @@ require_once('includes/header.php');
     </div>
     <div class="products-text">
         <h1 class="title">Products you may like</h1>
-        <p class="text-secondary">Check out our latest fitness products!</p>
+        <p class="text-secondary subtext">Check out our latest fitness products!</p>
     </div>
     <div class="product-container">
         <?php foreach ($products as $product): ?>
@@ -182,7 +182,7 @@ require_once('includes/header.php');
     <div class="aboutUs-text">
     
         <h1 class="title">About Us</h1>
-        <p class="text-secondary"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
+        <p class="text-secondary subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
 
         <div class="joinNow-container">
             <h1 class="tagline">Go Home or Go Hard</h1>

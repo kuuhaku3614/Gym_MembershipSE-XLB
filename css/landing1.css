@@ -81,6 +81,11 @@ html {
   background-color: #f5f5f5;
 }
 
+.subtext {
+  font-family: "Inter", sans-serif !important;
+  color: #212121 !important;
+}
+
 .logo-container {
   height: auto;
   min-height: 100px;
@@ -845,7 +850,6 @@ nav.sticky {
 }
 
 .S-Staffs .image-staff .name {
-  font-weight: bold;
   margin: 10px 0 5px;
   text-align: center;
 }
@@ -927,7 +931,6 @@ nav.sticky {
 }
 
 .product-title {
-  font-weight: bold;
   text-align: center;
   margin: 10px 0 5px;
 }
