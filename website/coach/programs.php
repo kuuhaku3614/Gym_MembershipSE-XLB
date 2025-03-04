@@ -442,11 +442,20 @@ function viewGroupSchedule(programTypeId) {
             data.forEach(schedule => {
                 const startTime = formatTime(schedule.start_time);
                 const endTime = formatTime(schedule.end_time);
+                const memberNames = schedule.member_names || 'No members enrolled';
                 const row = `
                     <tr>
                         <td>${schedule.day}</td>
                         <td>${startTime} - ${endTime}</td>
-                        <td>${schedule.current_members}/${schedule.capacity}</td>
+                        <td>
+                            ${schedule.current_members}/${schedule.capacity}
+                            <i class="fas fa-info-circle text-info ms-2" 
+                               style="cursor: pointer;" 
+                               data-bs-toggle="tooltip" 
+                               data-bs-placement="top" 
+                               title="${memberNames.replace(/"/g, '&quot;')}">
+                            </i>
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="editGroupSchedule(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.capacity})">Edit</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${schedule.id}, 'group')">Delete</button>
@@ -459,6 +468,12 @@ function viewGroupSchedule(programTypeId) {
         document.getElementById('groupProgramTypeId').value = programTypeId;
         const modal = new bootstrap.Modal(document.getElementById('groupScheduleModal'));
         modal.show();
+        
+        // Initialize tooltips
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltipEl => {
+            new bootstrap.Tooltip(tooltipEl);
+        });
     })
     .catch(error => {
         console.error('Error:', error);

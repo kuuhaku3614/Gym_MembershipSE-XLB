@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 03, 2025 at 11:14 AM
+-- Generation Time: Mar 04, 2025 at 08:28 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -96,6 +96,17 @@ CREATE TABLE `coach_group_schedule` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `coach_group_schedule`
+--
+
+INSERT INTO `coach_group_schedule` (`id`, `coach_program_type_id`, `capacity`, `day`, `start_time`, `end_time`, `price`, `created_at`, `updated_at`) VALUES
+(1, 16, 12, 'Monday', '08:00:00', '10:00:00', 55.00, '2025-03-03 10:35:55', '2025-03-03 10:35:55'),
+(3, 16, 12, 'Tuesday', '13:00:00', '15:00:00', 0.00, '2025-03-04 17:37:43', '2025-03-04 17:37:43'),
+(4, 16, 12, 'Wednesday', '08:00:00', '10:00:00', 0.00, '2025-03-04 17:38:17', '2025-03-04 17:38:17'),
+(5, 16, 12, 'Thursday', '13:00:00', '15:00:00', 0.00, '2025-03-04 17:38:43', '2025-03-04 17:38:43'),
+(6, 16, 12, 'Friday', '13:00:00', '15:00:00', 0.00, '2025-03-04 17:39:14', '2025-03-04 17:39:14');
+
 -- --------------------------------------------------------
 
 --
@@ -108,11 +119,18 @@ CREATE TABLE `coach_personal_schedule` (
   `day` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
-  `duration` int(11) NOT NULL,
+  `duration_rate` int(11) NOT NULL,
   `price` decimal(10,2) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `coach_personal_schedule`
+--
+
+INSERT INTO `coach_personal_schedule` (`id`, `coach_program_type_id`, `day`, `start_time`, `end_time`, `duration_rate`, `price`, `created_at`, `updated_at`) VALUES
+(1, 15, 'Monday', '10:30:00', '17:30:00', 30, 40.00, '2025-03-03 10:37:43', '2025-03-03 18:27:51');
 
 -- --------------------------------------------------------
 
@@ -131,6 +149,14 @@ CREATE TABLE `coach_program_types` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `coach_program_types`
+--
+
+INSERT INTO `coach_program_types` (`id`, `coach_id`, `program_id`, `type`, `price`, `description`, `status`, `created_at`, `updated_at`) VALUES
+(15, 35, 10, 'personal', 100.00, 'none', 'active', '2025-03-03 10:27:15', '2025-03-03 18:46:34'),
+(16, 35, 10, 'group', 50.00, 'none2', 'active', '2025-03-03 10:33:19', '2025-03-03 10:33:19');
 
 -- --------------------------------------------------------
 
@@ -351,6 +377,13 @@ CREATE TABLE `programs` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `programs`
+--
+
+INSERT INTO `programs` (`id`, `program_name`, `duration`, `duration_type_id`, `description`, `status`, `is_removed`, `created_at`, `updated_at`) VALUES
+(10, 'Coaching', 10, 1, 'none', 'active', 0, '2025-03-03 10:20:39', '2025-03-03 10:20:39');
+
 -- --------------------------------------------------------
 
 --
@@ -366,6 +399,14 @@ CREATE TABLE `program_subscriptions` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `program_subscriptions`
+--
+
+INSERT INTO `program_subscriptions` (`id`, `user_id`, `coach_program_type_id`, `status`, `created_at`, `updated_at`) VALUES
+(7, 33, 16, 'active', '2025-03-04 19:23:47', '2025-03-04 19:23:47'),
+(8, 40, 16, 'active', '2025-03-04 19:26:22', '2025-03-04 19:26:22');
+
 -- --------------------------------------------------------
 
 --
@@ -375,6 +416,8 @@ CREATE TABLE `program_subscriptions` (
 CREATE TABLE `program_subscription_schedule` (
   `id` int(11) NOT NULL,
   `program_subscription_id` int(11) NOT NULL,
+  `coach_group_schedule_id` int(11) DEFAULT NULL,
+  `coach_personal_schedule_id` int(11) DEFAULT NULL,
   `date` date NOT NULL,
   `day` enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday') NOT NULL,
   `start_time` time NOT NULL,
@@ -384,6 +427,14 @@ CREATE TABLE `program_subscription_schedule` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `program_subscription_schedule`
+--
+
+INSERT INTO `program_subscription_schedule` (`id`, `program_subscription_id`, `coach_group_schedule_id`, `coach_personal_schedule_id`, `date`, `day`, `start_time`, `end_time`, `amount`, `is_paid`, `created_at`, `updated_at`) VALUES
+(3, 7, 1, NULL, '2025-03-10', 'Monday', '08:00:00', '10:00:00', 55.00, 1, '2025-03-04 19:24:38', '2025-03-04 19:24:38'),
+(4, 8, 1, NULL, '2025-03-10', 'Monday', '08:00:00', '10:00:00', 55.00, 1, '2025-03-04 19:26:45', '2025-03-04 19:26:45');
 
 -- --------------------------------------------------------
 
@@ -802,6 +853,8 @@ ALTER TABLE `program_subscriptions`
 --
 ALTER TABLE `program_subscription_schedule`
   ADD PRIMARY KEY (`id`),
+  ADD KEY `coach_group_schedule_id` (`coach_group_schedule_id`),
+  ADD KEY `coach_personal_schedule_id` (`coach_personal_schedule_id`),
   ADD KEY `program_subscription_id` (`program_subscription_id`);
 
 --
@@ -932,19 +985,19 @@ ALTER TABLE `attendance_history`
 -- AUTO_INCREMENT for table `coach_group_schedule`
 --
 ALTER TABLE `coach_group_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `coach_personal_schedule`
 --
 ALTER TABLE `coach_personal_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `coach_program_types`
 --
 ALTER TABLE `coach_program_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `duration_types`
@@ -998,19 +1051,19 @@ ALTER TABLE `profile_photos`
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `program_subscriptions`
 --
 ALTER TABLE `program_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `program_subscription_schedule`
 --
 ALTER TABLE `program_subscription_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `program_types`
@@ -1173,7 +1226,9 @@ ALTER TABLE `program_subscriptions`
 -- Constraints for table `program_subscription_schedule`
 --
 ALTER TABLE `program_subscription_schedule`
-  ADD CONSTRAINT `program_subscription_schedule_ibfk_1` FOREIGN KEY (`program_subscription_id`) REFERENCES `program_subscriptions` (`id`);
+  ADD CONSTRAINT `program_subscription_schedule_ibfk_1` FOREIGN KEY (`coach_group_schedule_id`) REFERENCES `coach_group_schedule` (`id`),
+  ADD CONSTRAINT `program_subscription_schedule_ibfk_2` FOREIGN KEY (`coach_personal_schedule_id`) REFERENCES `coach_personal_schedule` (`id`),
+  ADD CONSTRAINT `program_subscription_schedule_ibfk_3` FOREIGN KEY (`program_subscription_id`) REFERENCES `program_subscriptions` (`id`);
 
 --
 -- Constraints for table `registration_records`
