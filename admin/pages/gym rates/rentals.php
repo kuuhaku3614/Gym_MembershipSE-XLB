@@ -11,6 +11,7 @@ $sql = "SELECT
         rs.available_slots,
         rs.duration,
         rs.description,
+        rs.image,
         dt.type_name AS duration_type,
         rs.status
     FROM rental_services rs
@@ -55,6 +56,7 @@ try {
     <table id="rentalsTable" class="table table-bordered table-hover">
         <thead>
             <tr>
+                <th>Image</th>
                 <th>No.</th>
                 <th>Service Name</th>
                 <th>Duration</th>
@@ -68,9 +70,7 @@ try {
         </thead>
         <tbody>
             <?php if (empty($rentals)): ?>
-            <tr>
-                <td colspan="9" class="text-center">No rental services found</td>
-            </tr>
+
             <?php else: ?>
                 <?php 
                 $count = 1;
@@ -80,6 +80,17 @@ try {
                     $toggleBtnClass = $rental['status'] === 'active' ? 'btn-warning' : 'btn-success';
                 ?>
                 <tr>
+                    <td><?php
+                    // Check if the image exists using the correct absolute path
+                    if (!empty($rental['image']) ) {
+                        // Use a path relative to the web root for the src attribute
+                        echo "<img src='__DIR__ . ../../../cms_img/rentals/" . htmlspecialchars($rental['image']) . "' alt='Rental Image' class='img-thumbnail' width='80'>";
+                    } else {
+                        echo "No Image";
+                    }
+                 
+                    ?>
+                    </td>
                     <td class="text-center"><?= $count++ ?></td>
                     <td><?= htmlspecialchars($rental['service_name']) ?></td>
                     <td class="text-center"><?= $rental['duration'] . ' ' . $rental['duration_type'] ?></td>
@@ -129,6 +140,13 @@ try {
                     <div class="row">
                         <!-- Left Column -->
                         <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label for="rentalImage" class="form-label">Rental Image</label>
+                                <input type="file" class="form-control" id="rentalImage" name="rentalImage" accept="image/*">
+                            </div>
+
+
                             <div class="mb-3">
                                 <label for="serviceName" class="form-label">Service Name</label>
                                 <input type="text" class="form-control" id="serviceName" name="serviceName" required>
@@ -205,6 +223,12 @@ try {
                     <div class="row">
                         <!-- Left Column -->
                         <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label for="editRentalImage" class="form-label">Edit Rental Image</label>
+                                <input type="file" class="form-control" id="editRentalImage" name="editRentalImage" accept="image/*">
+                            </div>
+
                             <div class="mb-3">
                                 <label for="editServiceName" class="form-label">Service Name</label>
                                 <input type="text" class="form-control" id="editServiceName" name="serviceName" required>
@@ -285,156 +309,209 @@ try {
     });
 $(document).ready(function () {
     
-    // Save button handler
     $('#saveServiceBtn').click(function () {
-        // Clear previous validation states
-        $('.is-invalid').removeClass('is-invalid');
-        $('.invalid-feedback').text('');
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').text('');
 
-        // Validate all required fields
-        const isValid = 
-            validateField('serviceName', 'Service name is required') &
-            validateField('price', 'Price must be greater than 0') &
-            validateField('totalSlots', 'Number of slots must be greater than 0') &
-            validateField('duration', 'Duration must be greater than 0') &
-            validateField('durationType', 'Duration type must be selected');
+    const isValid = 
+        validateField('serviceName', 'Service name is required') &
+        validateField('price', 'Price must be greater than 0') &
+        validateField('totalSlots', 'Number of slots must be greater than 0') &
+        validateField('duration', 'Duration must be greater than 0') &
+        validateField('durationType', 'Duration type must be selected');
 
-        // If any validation fails, stop submission
-        if (!isValid) {
-            return false;
-        }
+    if (!isValid) {
+        return false;
+    }
 
-        // Get form data
-        var formData = {
-            serviceName: $('#serviceName').val().trim(),
-            duration: $('#duration').val(),
-            durationType: $('#durationType').val(),
-            totalSlots: $('#totalSlots').val(),
-            price: $('#price').val(),
-            description: $('#description').val().trim()
-        };
+    // Create FormData object
+    let formData = new FormData();
+    formData.append('serviceName', $('#serviceName').val().trim());
+    formData.append('duration', $('#duration').val());
+    formData.append('durationType', $('#durationType').val());
+    formData.append('totalSlots', $('#totalSlots').val());
+    formData.append('price', $('#price').val());
+    formData.append('description', $('#description').val().trim());
 
-        // Send AJAX request
-        $.ajax({
+    // Append image file (if selected)
+    let imageFile = $('#rentalImage')[0].files[0];
+    if (imageFile) {
+        formData.append('rentalImage', imageFile);
+    }
+
+    // Send AJAX request
+    $.ajax({
         url: '../admin/pages/gym rates/functions/save_rentals.php',
         type: 'POST',
         data: formData,
+        dataType: 'json',
+        contentType: false,  // Important for file upload
+        processData: false,  // Prevent jQuery from processing data
         success: function(response) {
-            if (response.trim() === 'success') {
-                // Show the success modal
-                $('#successModal').modal('show');
+            if (response.status === 'success') {
                 $('#addServiceModal').modal('hide');
-                // Optionally reload the page after a delay
+                $('#successModal .modal-body p').text(response.message || 'Service created successfully!');
+                new bootstrap.Modal(document.getElementById('successModal')).show();
+
+                // Reload page after short delay
                 setTimeout(function() {
                     location.reload();
-                }, 2000); // Adjust the delay as needed
+                }, 2000);
             } else {
-                alert(response);
+                if (response.debug) {
+                    console.error('Error details:', response.debug);
+                }
+                if (response.errors) {
+                    Object.keys(response.errors).forEach(function(field) {
+                        const fieldElement = $('#' + field);
+                        if (fieldElement.length) {
+                            fieldElement.addClass('is-invalid');
+                            fieldElement.next('.invalid-feedback').text(response.errors[field]);
+                        }
+                    });
+                } else {
+                    alert(response.message || "Error saving service");
+                }
             }
         },
         error: function(xhr, status, error) {
-            alert('Error occurred while saving: ' + error);
+            console.error("AJAX Error:", status, error);
+            console.log("Response:", xhr.responseText);
+            try {
+                var response = JSON.parse(xhr.responseText);
+                alert(response.message || "Error saving service. Please try again.");
+            } catch (e) {
+                alert("Error saving service. Please try again.");
+            }
         }
     });
-    });
+});
 
-    // Edit button handler
-    $(document).on('click', '.edit-btn', function() {
-        const rentalId = $(this).data('id');
-        
-        // Fetch rental service details
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/edit_rental_services.php',
-            type: 'GET',
-            data: { id: rentalId },
-            success: function(response) {
-                const data = JSON.parse(response);
-                if (data.status === 'success') {
-                    // Populate form fields
-                    $('#editId').val(data.data.id);
-                    $('#editServiceName').val(data.data.service_name);
-                    $('#editDuration').val(data.data.duration);
-                    $('#editDurationType').val(data.data.duration_type_id);
-                    $('#editTotalSlots').val(data.data.total_slots);
-                    $('#editPrice').val(data.data.price);
-                    $('#editDescription').val(data.data.description);
-                    
-                    // Show modal
-                    $('#editServiceModal').modal('show');
+$(document).on('click', '.edit-btn', function () {
+    const rentalId = $(this).data('id');
+
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/edit_rental_services.php',
+        type: 'GET',
+        data: { id: rentalId },
+        success: function (response) {
+            console.log("Raw response:", response);
+            console.log("Type of response:", typeof response);
+
+            let data = response;
+
+            console.log("Parsed Data:", data);
+
+            if (data.status === 'success') {
+                $('#editId').val(data.data.id);
+                $('#editServiceName').val(data.data.service_name);
+                $('#editDuration').val(data.data.duration);
+                $('#editDurationType').val(data.data.duration_type_id);
+                $('#editTotalSlots').val(data.data.total_slots);
+                $('#editPrice').val(data.data.price);
+                $('#editDescription').val(data.data.description);
+
+                if (data.data.image) {
+                    $('#currentImage').attr('src', '../cms_img/rentals/' + data.data.image).show();
                 } else {
-                    alert('Error: ' + data.message);
+                    $('#currentImage').hide();
                 }
-            },
-            error: function(xhr, status, error) {
-                alert('Error occurred while fetching rental service details: ' + error);
+
+                $('#editServiceModal').modal('show');
+            } else {
+                alert('Error: ' + data.message);
             }
-        });
-    });
-
-    // Update button handler
-    $('#updateServiceBtn').click(function() {
-        // Clear previous validation states
-        $('.is-invalid').removeClass('is-invalid');
-        $('.invalid-feedback').text('');
-
-        // Validate all required fields
-        const isValid = 
-            validateField('editServiceName', 'Service name is required') &
-            validateField('editPrice', 'Price must be greater than 0') &
-            validateField('editTotalSlots', 'Number of slots must be greater than 0') &
-            validateField('editDuration', 'Duration must be greater than 0') &
-            validateField('editDurationType', 'Duration type must be selected');
-
-        // If any validation fails, stop submission
-        if (!isValid) {
-            return false;
+        },
+        error: function (xhr, status, error) {
+            console.error("AJAX Error:", error, xhr.responseText);
+            alert('Error occurred while fetching rental service details: ' + error);
         }
-
-        // Get form data
-        var formData = {
-            id: $('#editId').val(),
-            serviceName: $('#editServiceName').val().trim(),
-            duration: $('#editDuration').val(),
-            durationType: $('#editDurationType').val(),
-            totalSlots: $('#editTotalSlots').val(),
-            price: $('#editPrice').val(),
-            description: $('#editDescription').val().trim()
-        };
-
-        // Send AJAX request
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/edit_rental_services.php',
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                const data = JSON.parse(response);
-                if (data.status === 'success') {
-                    // Update the modal body with the success message
-                    $('#updateSuccessModal .modal-body p').text(response.message || "Updated successfully!");
-                    
-                    // Show the success modal
-                    $('#updateSuccessModal').modal('show');
-                    
-                    // Hide the edit modal
-                    $('#editServiceModal').modal('hide');
-                    
-                    // Reload the page after the modal is hidden
-                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
-                        location.reload();
-                    });
-                } else {
-                    // Show an error modal (you may want to create this modal)
-                    $('#errorModal').modal('show').find('.modal-body').text('Error: ' + data.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                // Show an error modal (you may want to create this modal)
-                $('#errorModal').modal('show').find('.modal-body').text('Error occurred while updating: ' + error);
-            }
-        });
     });
+});
 
-    // Toggle status button handler
+
+
+// Update button handler
+$('#updateServiceBtn').click(function () {
+    // Clear previous validation states
+    $('.is-invalid').removeClass('is-invalid');
+    $('.invalid-feedback').text('');
+
+    // Validate all required fields
+    const isValid =
+        validateField('editServiceName', 'Service name is required') &
+        validateField('editPrice', 'Price must be greater than 0') &
+        validateField('editTotalSlots', 'Number of slots must be greater than 0') &
+        validateField('editDuration', 'Duration must be greater than 0') &
+        validateField('editDurationType', 'Duration type must be selected');
+
+    // If any validation fails, stop submission
+    if (!isValid) {
+        return false;
+    }
+
+    // Prepare form data with an image file
+    var formData = new FormData();
+    formData.append('id', $('#editId').val());
+    formData.append('serviceName', $('#editServiceName').val().trim());
+    formData.append('duration', $('#editDuration').val());
+    formData.append('durationType', $('#editDurationType').val());
+    formData.append('totalSlots', $('#editTotalSlots').val());
+    formData.append('price', $('#editPrice').val());
+    formData.append('description', $('#editDescription').val().trim());
+
+    // Check if a new image is selected
+    var imageFile = $('#editRentalImage')[0].files[0];
+    if (imageFile) {
+        formData.append('editRentalImage', imageFile);
+    }
+
+    // Prepare FormData for submission (similar to gym rates)
+    formData.append('action', 'update');
+   // Send AJAX request with image handling
+$.ajax({
+    url: '../admin/pages/gym rates/functions/edit_rental_services.php',
+    type: 'POST',
+    data: formData,
+    processData: false,
+    contentType: false, // Required for FormData
+    success: function (response) {
+        try {
+            // Ensure response is an object, if not parse it
+            const data = (typeof response === "object") ? response : JSON.parse(response);
+
+            if (data.status === 'success') {
+                // Update the modal body with the success message
+                $('#updateSuccessModal .modal-body p').text(data.message || "Updated successfully!");
+
+                // Show the success modal
+                $('#updateSuccessModal').modal('show');
+
+                // Hide the edit modal
+                $('#editServiceModal').modal('hide');
+
+                // Reload the page after the modal is hidden
+                $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
+            } else {
+                // Show an error modal
+                $('#errorModal').modal('show').find('.modal-body').text('Error: ' + (data.message || "Unexpected error occurred."));
+            }
+        } catch (e) {
+            console.error("Invalid JSON response:", response);
+            $('#errorModal').modal('show').find('.modal-body').text('Error: Invalid JSON response from server.');
+        }
+    },
+    error: function (xhr, status, error) {
+        console.error("AJAX Error:", error);
+        $('#errorModal').modal('show').find('.modal-body').text('Error occurred while updating: ' + error);
+    }
+});
+
+});
+
+// Toggle status button handler
 $(document).on('click', '.toggle-status', function() {
     const rentalId = $(this).data('id');
     const currentStatus = $(this).data('status');

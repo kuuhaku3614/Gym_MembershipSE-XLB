@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $_POST['id'];
         $status = $_POST['status'];
 
-        // Validate status value
         if (!in_array($status, ['active', 'inactive'])) {
             echo "Error: Invalid status value";
             exit;
@@ -38,6 +37,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+            // Define the correct uploads folder relative to project root
+        $targetDir = __DIR__ . '/../../../../cms_img/gym_rates/';
+
+
+        // Handle image upload
+        $imageName = NULL;
+        if (isset($_FILES['promoImage']) && $_FILES['promoImage']['error'] == 0) {
+            $fileName = basename($_FILES['promoImage']['name']);
+            $imageName = uniqid() . "_" . $fileName; // Prevent duplicate names
+            $targetFilePath = $targetDir . $imageName; // Full path
+
+            if (move_uploaded_file($_FILES['promoImage']['tmp_name'], $targetFilePath)) {
+                // Store only the filename in the database (not full path)
+            } else {
+                echo "Error uploading image.";
+                exit;
+            }
+        }
+
+
+
     // Validate required fields
     $requiredFields = ['promoName', 'promoType', 'duration', 'durationType', 'activationDate', 'deactivationDate', 'price'];
     $missingFields = [];
@@ -59,10 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $durationType = $_POST['durationType'];
     $activationDate = $_POST['activationDate'];
     $deactivationDate = $_POST['deactivationDate'];
-    $price = $_POST['price']; 
+    $price = $_POST['price'];
     $description = isset($_POST['description']) ? $_POST['description'] : null;
-    
-    // Get duration_type_id from duration_types table with error handling
+
+    // Get duration_type_id from duration_types table
     $durationTypeQuery = "SELECT id FROM duration_types WHERE type_name = :type_name";
     $stmt = $pdo->prepare($durationTypeQuery);
     $stmt->execute([':type_name' => $durationType]);
@@ -72,10 +92,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "Error: Invalid duration type. Duration type not found in database.";
         exit;
     }
-    
+
     // Set default status as active
     $status = 'active';
 
+    // Insert into database with image
     $sql = "INSERT INTO membership_plans (
                 plan_name, 
                 plan_type, 
@@ -85,7 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 end_date, 
                 price, 
                 description,
-                status
+                status,
+                image
             ) VALUES (
                 :plan_name,
                 :plan_type,
@@ -95,7 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 :end_date,
                 :price,
                 :description,
-                :status
+                :status,
+                :image
             )";
 
     try {
@@ -109,7 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bindParam(':price', $price);
         $stmt->bindParam(':description', $description);
         $stmt->bindParam(':status', $status);
-        
+        $stmt->bindParam(':image', $imageName);
+
         if ($stmt->execute()) {
             echo "success";
         } else {
@@ -121,3 +145,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } else {
     echo "Error: Invalid request method.";
 }
+?>

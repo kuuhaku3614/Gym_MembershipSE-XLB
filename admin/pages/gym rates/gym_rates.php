@@ -11,6 +11,7 @@ $sql = "SELECT mp.*, dt.type_name as duration_type, mp.description
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <!-- Update Registration Modal -->
@@ -55,6 +56,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <table id="gymRatesTable" class="table table-striped table-bordered">
     <thead>
         <tr>
+            <th>Image</th>
             <th>No.</th>
             <th>Promo Name</th>
             <th>Promo Type</th>
@@ -68,42 +70,50 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </tr>
     </thead>
     <tbody>
-        <?php
-        $count = 1;
-        if (!empty($result)) {
-            foreach ($result as $row) {
-                echo "<tr>";
-                echo "<td>" . $count . "</td>";
-                echo "<td>" . htmlspecialchars($row['plan_name']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['plan_type']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['duration']) . " " . htmlspecialchars($row['duration_type']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['start_date']) . "</td>";
-                echo "<td>" . htmlspecialchars($row['end_date']) . "</td>";
-                echo "<td>₱" . number_format($row['price'], 2) . "</td>";
-                echo "<td>";
-                $description = $row['description'] ?: 'N/A';
-                echo strlen($description) > 50 ? 
-                    htmlspecialchars(substr($description, 0, 50) . '...') : 
-                    htmlspecialchars($description);
-                echo "</td>";
-                echo "<td>" . htmlspecialchars($row['status']) . "</td>";
-                echo "<td class='d-flex flex-column align-items-center'>";
-                if ($row['status'] === 'active') {
-                    echo "<button class='btn btn-sm btn-warning toggle-status-btn mb-1' data-id='" . $row['id'] . "' style='width: 100%;'>Deactivate</button>";
-                } else {
-                    echo "<button class='btn btn-sm btn-success toggle-status-btn mb-1' data-id='" . $row['id'] . "' style='width: 100%;'>Activate</button>";
-                }
-                echo "<button class='btn btn-sm btn-primary edit-gym-rate mb-1' data-id='" . $row['id'] . "' style='width: 100%;'>Edit</button>";
-                echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "' style='width: 100%;'>Remove</button>";
-                echo "</td>";
-                echo "</tr>";
-                $count++;
+    <?php
+    $count = 1;
+    if (!empty($result)) {
+        foreach ($result as $row) {
+            echo "<tr>";
+            
+            // Ensure row has all 11 columns
+            echo "<td>";
+            // Check if the image exists using the correct absolute path
+            if (!empty($row['image']) && file_exists(__DIR__ . "/../../../cms_img/gym_rates/" . $row['image'])) {
+                // Use a path relative to the web root for the src attribute
+                echo "<img src='__DIR__ . ../../../cms_img/gym_rates/" . htmlspecialchars($row['image']) . "' alt='Promo Image' class='img-thumbnail' width='80'>";
+            } else {
+                echo "No Image";
             }
-        } else {
-            echo "<tr><td colspan='10'>No data available</td></tr>";
+            echo "</td>";
+    
+            echo "<td>" . $count . "</td>";
+            echo "<td>" . htmlspecialchars($row['plan_name']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['plan_type']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['duration']) . " " . htmlspecialchars($row['duration_type']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['start_date']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['end_date']) . "</td>";
+            echo "<td>₱" . number_format($row['price'], 2) . "</td>";
+            echo "<td>" . (!empty($row['description']) ? htmlspecialchars($row['description']) : 'N/A') . "</td>";
+            echo "<td>" . htmlspecialchars($row['status']) . "</td>";
+    
+            echo "<td class='d-flex flex-column align-items-center'>";
+            if ($row['status'] === 'active') {
+                echo "<button class='btn btn-sm btn-warning toggle-status-btn mb-1' data-id='" . $row['id'] . "'>Deactivate</button>";
+            } else {
+                echo "<button class='btn btn-sm btn-success toggle-status-btn mb-1' data-id='" . $row['id'] . "'>Activate</button>";
+            }
+            echo "<button class='btn btn-sm btn-primary edit-gym-rate mb-1' data-id='" . $row['id'] . "'>Edit</button>";
+            echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>";
+            echo "</td>";
+    
+            echo "</tr>";
+            $count++;
         }
-        ?>
-    </tbody>
+    }
+    ?>
+</tbody>
+
 </table>
 </div>
 </div>
@@ -121,6 +131,12 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="row">
                         <!-- Left Column -->
                         <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label for="promoImage" class="form-label">Promo Image</label>
+                                <input type="file" class="form-control" id="promoImage" name="promoImage" accept="image/*">
+                            </div>
+
                             <div class="mb-3">
                                 <label for="promoName" class="form-label">Promo Name</label>
                                 <input type="text" class="form-control" id="promoName" name="promoName" required>
@@ -210,6 +226,12 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="row">
                         <!-- Left Column -->
                         <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label for="editPromoImage" class="form-label">Promo Image</label>
+                                <input type="file" class="form-control" id="editPromoImage" name="editPromoImage" accept="image/*">
+                            </div>
+
                             <div class="mb-3">
                                 <label for="editPromoName" class="form-label">Promo Name</label>
                                 <input type="text" class="form-control" id="editPromoName" name="promoName" required>
@@ -283,21 +305,22 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <script>
 $(document).ready(function() {
     if ($.fn.DataTable.isDataTable('#gymRatesTable')) {
-        $('#gymRatesTable').DataTable().destroy();  // Destroy existing instance
+        $('#gymRatesTable').DataTable().destroy(); // Destroy existing instance
     }
-    $('#gymRatesTable').DataTable({ 
+    
+    $('#gymRatesTable').DataTable({
         responsive: true,
-        order: [[3, 'desc']], // Sort by check-in time by default
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+        order: [[1, 'asc']], // Sort by No. column ascending instead of column 3
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
         language: {
             search: "_INPUT_",
-            searchPlaceholder: "Search members..."
+            searchPlaceholder: "Search promos..."
         },
         columnDefs: [
-            { orderable: false, targets: [0] } // Disable sorting for photo column
+            { orderable: false, targets: [0, 10] } // Disable sorting for image and action columns
         ]
     });
-    });
+});
     
     http://localhost/gym_membershipse-xlb/admin/member_status
 // Validate form before submission
@@ -306,7 +329,6 @@ $('#saveGymRateBtn').click(function() {
     $('.is-invalid').removeClass('is-invalid');
     $('.invalid-feedback').remove();
 
-    // Create validation function
     function validateField(fieldId, errorMessage) {
         const field = $(`#${fieldId}`);
         const value = field.val().trim();
@@ -318,7 +340,7 @@ $('#saveGymRateBtn').click(function() {
         return true;
     }
 
-    // Validate all required fields
+    // Validate required fields
     const isValid = 
         validateField('promoName', 'Promo Name is required') &
         validateField('promoType', 'Promo Type must be selected') &
@@ -328,59 +350,55 @@ $('#saveGymRateBtn').click(function() {
         validateField('deactivationDate', 'Deactivation Date is required') &
         validateField('price', 'Price is required');
 
-    // Check activation and deactivation dates
+    // Validate date range
     const activationDate = new Date($('#activationDate').val());
     const deactivationDate = new Date($('#deactivationDate').val());
-    
+
     if (activationDate >= deactivationDate) {
         $('#deactivationDate').addClass('is-invalid');
         $('#deactivationDate').after('<div class="invalid-feedback">Deactivation date must be after activation date</div>');
         return false;
     }
 
-    // If any validation fails, stop submission
     if (!isValid) {
         return false;
     }
 
-    // Proceed with form submission
+    // Prepare FormData for submission
+    var formData = new FormData($('#addGymRateForm')[0]);
     var price = parseFloat($('#price').val()) || 0;
     var membershipFee = parseFloat($('#membershipFee').val()) || 0;
     var totalPrice = price + membershipFee;
-    
-    var formData = $('#addGymRateForm').serializeArray();
-    var updatedFormData = formData.map(function(item) {
-        if (item.name === 'price') {
-            return { name: 'price', value: totalPrice };
-        }
-        return item;
-    });
-    
-    $.ajax({
-    url: '../admin/pages/gym rates/functions/save_gym_rates.php',
-    type: 'POST',
-    data: $.param(updatedFormData),
-    success: function(response) {
-        if (response.trim() === "success") {
-            // Hide the add gym rate modal
-            $('#addGymRateModal').modal('hide');
-            
-            // Show success modal
-            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            successModal.show();
-            
-            // Add event listener for when success modal is hidden
-            $('#successModal').on('hidden.bs.modal', function () {
-                location.reload();
-            });
-        } else {
-            alert("Error: " + response);
-        }
-    },
-    error: function(xhr, status, error) {
-        alert("AJAX error: " + error);
+    formData.set('price', totalPrice); // Update price with total
+
+    // Handle image file (if provided)
+    var imageFile = $('#promoImage')[0].files[0];
+    if (imageFile) {
+        formData.append('promoImage', imageFile);
     }
-});
+
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/save_gym_rates.php',
+        type: 'POST',
+        data: formData,
+        processData: false,  // Important for file upload
+        contentType: false,   // Important for file upload
+        success: function(response) {
+            if (response.trim() === "success") {
+                $('#addGymRateModal').modal('hide');
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+                $('#successModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
+            } else {
+                alert("Error: " + response);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert("AJAX error: " + error);
+        }
+    });
 });
 
 // Reset form when modal is closed
@@ -389,24 +407,21 @@ $('#addGymRateModal').on('hidden.bs.modal', function () {
     $('#totalPriceDisplay').hide();
 });
 
-
-
-
-
-// Add click handler for edit buttons
 $(document).on('click', '.edit-gym-rate', function() {
     const gymRateId = $(this).data('id');
-    
-    // Fetch gym rate details
+
     $.ajax({
         url: '../admin/pages/gym rates/functions/edit_gym_rates.php',
         type: 'GET',
         data: { id: gymRateId },
+        dataType: 'json',  // Ensure response is treated as JSON
         success: function(response) {
-            const data = JSON.parse(response);
-            if (data.status === 'success') {
-                const gymRate = data.data;
-                
+            console.log("🔹 Response from server:", response);
+
+            // Since response is already an object, no need for JSON.parse
+            if (response.status === 'success') {
+                const gymRate = response.data;
+
                 // Populate the form
                 $('#editGymRateId').val(gymRate.id);
                 $('#editPromoName').val(gymRate.plan_name);
@@ -417,18 +432,20 @@ $(document).on('click', '.edit-gym-rate', function() {
                 $('#editDeactivationDate').val(gymRate.end_date);
                 $('#editPrice').val(gymRate.price);
                 $('#editDescription').val(gymRate.description);
-                
+
                 // Show the modal
                 $('#editGymRateModal').modal('show');
             } else {
-                alert('Error: ' + data.message);
+                alert('Error: ' + response.message);
             }
         },
         error: function(xhr, status, error) {
+            console.error("❌ AJAX Error:", error);
             alert('Error occurred while fetching gym rate details: ' + error);
         }
     });
 });
+
 
 // Handle form submission for editing
 $('#updateGymRateBtn').click(function() {
