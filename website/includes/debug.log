@@ -277,3 +277,17 @@
     [action] => update_photo
 )
 
+2025-02-26 15:44:30 - Request received
+2025-02-26 15:44:30 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd1234
+)
+
+2025-02-26 15:44:32 - Request received
+2025-02-26 15:44:32 - POST data: Array
+(
+    [action] => update_username
+    [username] => Jerd1234
+)
+
