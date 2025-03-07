@@ -151,7 +151,7 @@ try {
 <div class="container-fluid px-4 py-5">
     <div class="card shadow">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h2 class="card-title mb-0">Check-in System</h2>
+            <h2 class="card-title mb-0">Attendance System</h2>
             <div class="d-flex align-items-center">
                 <?php if ($resetButtonVisible): ?>
                 <button id="resetButton" class="btn btn-warning">
@@ -182,7 +182,7 @@ try {
                                     <input type="password" class="form-control" id="password" name="password" required>
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-box-arrow-in-right"></i> Check In
+                                    <i class="bi bi-box-arrow-in-right"></i> Time In
                                 </button>
                             </form>
                         </div>
@@ -199,8 +199,8 @@ try {
                             <th>Name</th>
                             <th>Username</th>
                             <th>Date</th>
-                            <th>Check-in Time</th>
-                            <th>Check-out Time</th>
+                            <th>Time in</th>
+                            <th>Time out</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -254,7 +254,7 @@ try {
                                     <button class="btn btn-warning btn-sm checkout-btn" 
                                             data-user-id="<?= $row['user_id'] ?>"
                                             <?= ($row['status'] !== 'checked_in') ? 'disabled' : '' ?>>
-                                        Check Out
+                                        Time Out
                                     </button>
                                 </td>
                             </tr>

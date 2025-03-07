@@ -390,7 +390,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             ?>
             <div class="card stats-card">
                 <div>
-                    <div class="stats-title">Members Checked In</div>
+                    <div class="stats-title">Members Attendance</div>
                     <div class="stats-subtitle">Date: <?= $current_date ?></div>
                 </div>
                 <div class="stats-value <?= $member_checkin['member_checkin'] == 0 ? 'empty' : '' ?>">
@@ -408,7 +408,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
             $expiring_memberships_stmt->execute();
             $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-
+                        
             $expired_memberships_sql = "
             SELECT COALESCE(COUNT(*), 0) AS expired_memberships 
             FROM memberships 
