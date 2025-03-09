@@ -25,9 +25,11 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
+                                        <th>Status</th>
                                         <th>Member Name</th>
                                         <th>Program</th>
                                         <th>Contact</th>
+                                        <th>Schedule</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -35,6 +37,7 @@
                                     <?php if (!empty($members)): ?>
                                         <?php foreach ($members as $member): ?>
                                             <tr>
+                                                <td></td>
                                                 <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?></td>
                                                 <td><?= htmlspecialchars($member['program_name']) . ' (' . htmlspecialchars($member['type']) . ')' ?></td>
                                                 <td><?= htmlspecialchars($member['contact_no']) ?></td>
