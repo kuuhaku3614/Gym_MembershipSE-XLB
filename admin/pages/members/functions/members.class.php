@@ -18,80 +18,90 @@ class Members {
 
     public function getAllMembers() {
         try {
-            $connection = $this->pdo;
-            if (!$connection) return array();
-
             $query = "SELECT 
                 u.id as user_id,
                 pd.first_name,
                 pd.middle_name,
                 pd.last_name,
-                latest_membership.membership_id,
-                latest_membership.membership_status,
-                latest_membership.is_paid,
-                latest_membership.transaction_status,
-                pp.photo_path
+                pp.photo_path,
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM transactions t 
+                        JOIN memberships m ON t.id = m.transaction_id
+                        WHERE t.user_id = u.id 
+                        AND t.status = 'confirmed'
+                        AND m.status IN ('active', 'expiring')
+                    ) THEN 'active'
+                    ELSE 'inactive'
+                END as status,
+                -- Count unpaid active/expiring memberships
+                (
+                    SELECT COUNT(*)
+                    FROM transactions t2
+                    JOIN memberships m2 ON t2.id = m2.transaction_id
+                    WHERE t2.user_id = u.id
+                    AND t2.status = 'confirmed'
+                    AND m2.status IN ('active', 'expiring')
+                    AND m2.is_paid = 0
+                ) as unpaid_memberships,
+                -- Count all unpaid rentals regardless of status
+                (
+                    SELECT COUNT(*)
+                    FROM transactions t3
+                    JOIN rental_subscriptions rs ON t3.id = rs.transaction_id
+                    WHERE t3.user_id = u.id
+                    AND t3.status = 'confirmed'
+                    AND rs.is_paid = 0
+                    AND rs.end_date >= CURRENT_DATE -- Only count non-expired rentals
+                ) as unpaid_rentals,
+                -- For debugging: Get details of unpaid rentals
+                GROUP_CONCAT(
+                    DISTINCT
+                    CASE 
+                        WHEN rs.id IS NOT NULL AND rs.is_paid = 0 AND rs.end_date >= CURRENT_DATE THEN
+                            CONCAT(rs.id, ':', rs.status, ':', rs.end_date)
+                    END
+                ) as unpaid_rental_details
             FROM users u
             LEFT JOIN personal_details pd ON u.id = pd.user_id
-            LEFT JOIN (
-                SELECT 
-                    t.user_id,
-                    m.id as membership_id,
-                    m.status as membership_status,
-                    m.is_paid,
-                    t.status as transaction_status
-                FROM transactions t
-                INNER JOIN memberships m ON t.id = m.transaction_id
-                WHERE t.id = (
-                    SELECT t2.id
-                    FROM transactions t2
-                    INNER JOIN memberships m2 ON t2.id = m2.transaction_id
-                    WHERE t2.user_id = t.user_id
-                    ORDER BY t2.created_at DESC, t2.id DESC
-                    LIMIT 1
-                )
-            ) latest_membership ON u.id = latest_membership.user_id
             LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
+            LEFT JOIN transactions t3 ON u.id = t3.user_id AND t3.status = 'confirmed'
+            LEFT JOIN rental_subscriptions rs ON t3.id = rs.transaction_id
             WHERE u.role_id = 3
+            GROUP BY u.id, pd.first_name, pd.middle_name, pd.last_name, pp.photo_path
             ORDER BY pd.last_name, pd.first_name";
             
-            $stmt = $connection->prepare($query);
+            $stmt = $this->pdo->prepare($query);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            $finalResults = array();
+            $members = array();
             foreach ($results as $row) {
-                $status = 'inactive';
-                if ($row['membership_id'] !== null) {
-                    if ($row['membership_status'] === 'active' && $row['transaction_status'] === 'confirmed' && $row['is_paid']) {
-                        $status = 'active';
-                    } else {
-                        $status = 'pending';
-                    }
+                // Debug rental details
+                if (!empty($row['unpaid_rental_details'])) {
+                    error_log("Member {$row['user_id']} unpaid rental details: " . $row['unpaid_rental_details']);
                 }
-
-                $paymentStatus = ' ';
-                if ($row['membership_id'] !== null) {
-                    $paymentStatus = $row['is_paid'] ? 'paid' : 'unpaid';
-                }
-
-                $finalResults[] = array(
+                
+                $members[] = array(
                     'user_id' => $row['user_id'],
                     'full_name' => trim($row['last_name'] . ', ' . $row['first_name'] . ' ' . $row['middle_name']),
-                    'status' => $status,
-                    'payment_status' => $paymentStatus,
-                    'photo_path' => $row['photo_path']
+                    'status' => $row['status'],
+                    'unpaid_memberships' => (int)$row['unpaid_memberships'],
+                    'unpaid_rentals' => (int)$row['unpaid_rentals'],
+                    'photo_path' => $row['photo_path'] ?? 'uploads/default.jpg'
                 );
             }
             
-            return $finalResults;
+            return $members;
         } catch (PDOException $e) {
+            error_log("Error in getAllMembers: " . $e->getMessage());
             return array();
         }
     }
 
     public function getMemberDetails($userId) {
         try {
+            // First query to get member details and memberships
             $query = "SELECT 
                 u.id as user_id,
                 u.username,
@@ -102,97 +112,98 @@ class Members {
                 pd.birthdate,
                 pd.phone_number,
                 pp.photo_path,
-                m.id as membership_id,
-                m.start_date as membership_start,
-                m.end_date as membership_end,
-                m.is_paid,
-                m.status as membership_status,
-                CASE 
-                    WHEN m.is_paid = 1 THEN 'Paid'
-                    ELSE 'Unpaid'
-                END as payment_status,
-                mp.plan_name as membership_plan_name,
-                mp.price as membership_amount,
-                COALESCE(rr.amount, 0) as registration_fee,
-                CASE WHEN rr.amount IS NOT NULL THEN 'Yes' ELSE 'No' END as has_registration_fee,
-                COALESCE(m.amount + COALESCE(rr.amount, 0), 0) as total_price,
-                
-                -- Program subscriptions with IDs
-                GROUP_CONCAT(
-                    DISTINCT
-                    CASE 
-                        WHEN ps.id IS NOT NULL THEN
-                            CONCAT(
-                                p.program_name, ' | ',
-                                'Coach: ', coach_details.first_name, ' ', coach_details.last_name, ' | ',
-                                'Duration: ', DATE_FORMAT(ps.start_date, '%M %d, %Y'), ' to ', DATE_FORMAT(ps.end_date, '%M %d, %Y'), ' | ',
-                                'Price: ₱', ps.amount, ' | ',
-                                'Status: ', CASE 
-                                    WHEN ps.is_paid = 1 THEN 'Paid'
-                                    ELSE 'Pending'
-                                END, ' | ',
-                                'program_id:', ps.id
-                            )
-                    END
-                    SEPARATOR '\n'
-                ) as program_details,
-                
-                -- Rental services with IDs
-                GROUP_CONCAT(
-                    DISTINCT
-                    CASE 
-                        WHEN rs.id IS NOT NULL THEN
-                            CONCAT(
-                                srv.service_name, ' | ',
-                                'Duration: ', DATE_FORMAT(rs.start_date, '%M %d, %Y'), ' to ', DATE_FORMAT(rs.end_date, '%M %d, %Y'), ' | ',
-                                'Price: ₱', rs.amount, ' | ',
-                                'Status: ', CASE 
-                                    WHEN rs.is_paid = 1 THEN 'Paid'
-                                    ELSE 'Pending'
-                                END, ' | ',
-                                'rental_id:', rs.id
-                            )
-                    END
-                    SEPARATOR '\n'
-                ) as rental_details,
-                
-                m.id as membership_id,
-                m.amount as membership_amount
-
+                -- Get all non-expired memberships
+                COALESCE(
+                    GROUP_CONCAT(
+                        DISTINCT
+                        CASE 
+                            WHEN m.id IS NOT NULL AND m.status != 'expired' THEN
+                                CONCAT_WS('|',
+                                    'membership',
+                                    mp.plan_name,
+                                    m.start_date,
+                                    m.end_date,
+                                    m.status,
+                                    m.is_paid,
+                                    m.amount
+                                )
+                        END
+                    ), ''
+                ) as memberships
             FROM users u 
             JOIN roles roles ON u.role_id = roles.id AND roles.id = 3 
-            LEFT JOIN transactions t ON u.id = t.user_id
-            LEFT JOIN memberships m ON t.id = m.transaction_id
-            LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
             LEFT JOIN personal_details pd ON u.id = pd.user_id 
-            LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1 
-            LEFT JOIN registration_records rr ON t.id = rr.transaction_id
-            LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id AND ps.status = 'active'
-            LEFT JOIN programs p ON ps.program_id = p.id
-            LEFT JOIN users coach ON ps.coach_id = coach.id
-            LEFT JOIN personal_details coach_details ON coach.id = coach_details.user_id
-            LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
-            LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
+            LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
+            -- Get memberships
+            LEFT JOIN transactions tm ON u.id = tm.user_id AND tm.status = 'confirmed'
+            LEFT JOIN memberships m ON tm.id = m.transaction_id
+            LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
             WHERE u.id = :userId
             GROUP BY u.id, u.username, pd.first_name, pd.middle_name, pd.last_name, 
-                     pd.sex, pd.birthdate, pd.phone_number, pp.photo_path,
-                     m.id, m.start_date, m.end_date, mp.plan_name";
+                     pd.sex, pd.birthdate, pd.phone_number, pp.photo_path";
 
-        $stmt = $this->pdo->prepare($query);
-        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$result) {
-            throw new PDOException("Member not found");
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$result) {
+                throw new PDOException("Member not found");
+            }
+
+            // Parse memberships
+            if ($result['memberships']) {
+                $memberships = explode(',', $result['memberships']);
+                $result['memberships'] = array_map(function($item) {
+                    list($type, $name, $start, $end, $status, $isPaid, $amount) = explode('|', $item);
+                    return [
+                        'plan_name' => $name,
+                        'start_date' => $start,
+                        'end_date' => $end,
+                        'status' => $status,
+                        'is_paid' => $isPaid == '1',
+                        'amount' => $amount
+                    ];
+                }, array_filter($memberships)); // Remove null values
+            } else {
+                $result['memberships'] = [];
+            }
+
+            // Second query to get rental services
+            $rentalQuery = "SELECT 
+                rs.id,
+                srv.service_name,
+                rs.start_date,
+                rs.end_date,
+                rs.status,
+                rs.is_paid,
+                rs.amount
+            FROM transactions tr
+            JOIN rental_subscriptions rs ON tr.id = rs.transaction_id
+            JOIN rental_services srv ON rs.rental_service_id = srv.id
+            WHERE tr.user_id = :userId 
+            AND tr.status = 'confirmed'
+            AND rs.status != 'expired'
+            ORDER BY rs.start_date DESC, rs.id DESC";
+
+            $stmt = $this->pdo->prepare($rentalQuery);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $result['rental_services'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Convert is_paid to boolean
+            foreach ($result['rental_services'] as &$service) {
+                $service['is_paid'] = $service['is_paid'] == '1';
+            }
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Error in getMemberDetails: " . $e->getMessage());
+            throw $e;
         }
-
-        return $result;
-    } catch (PDOException $e) {
-        throw $e;
     }
-}
 
     public function getMembershipPlans() {
         try {

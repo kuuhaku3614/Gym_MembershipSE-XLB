@@ -123,7 +123,6 @@ $rentals_stmt->execute();
 $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 date_default_timezone_set('Asia/Manila');
-
 ?>
     
     <style>
@@ -221,7 +220,7 @@ date_default_timezone_set('Asia/Manila');
 }
     </style>
 <body class="bg-light">
-    <button class="btn btn-primary export-btn" onclick="window.print()">
+    <button class="btn btn-primary export-btn">
         <i class="fas fa-download me-2"></i>Export Report
     </button>
 
@@ -440,12 +439,114 @@ date_default_timezone_set('Asia/Manila');
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
-                        </table>
+                        </table>    
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Add this modal right before the closing body tag in your report.php file -->
+<div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportReportModalLabel">Export Analytics Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="" id="reportForm">
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="<?= date('Y-m-d', strtotime('-30 days')) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6>Select Report Sections</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="select_all" checked>
+                                <label class="form-check-label" for="select_all">Select All</label>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input section-checkbox" type="checkbox" id="attendance_section" name="report_sections[]" value="attendance" checked>
+                                        <label class="form-check-label" for="attendance_section">Member Attendance Analysis</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-checkbox" type="checkbox" id="earnings_section" name="report_sections[]" value="earnings" checked>
+                                        <label class="form-check-label" for="earnings_section">Monthly Earnings</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input section-checkbox" type="checkbox" id="utilization_section" name="report_sections[]" value="utilization" checked>
+                                        <label class="form-check-label" for="utilization_section">Member Service Utilization</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-checkbox" type="checkbox" id="programs_section" name="report_sections[]" value="programs" checked>
+                                        <label class="form-check-label" for="programs_section">Program Subscriptions</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input section-checkbox" type="checkbox" id="rentals_section" name="report_sections[]" value="rentals" checked>
+                                        <label class="form-check-label" for="rentals_section">Rental Subscriptions</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> Click "Preview Report" to see how your report will look before exporting to PDF.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" name="generate_report" id="preview_report">Preview Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Report Preview Modal -->
+<div class="modal fade" id="previewReportModal" tabindex="-1" aria-labelledby="previewReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="previewReportModalLabel">Report Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="report-preview-container p-3" style="max-height: 70vh; overflow-y: auto;">
+                    <div id="reportPreviewContent">
+                        <!-- Preview content will be loaded here via AJAX -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Generating preview...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="export_pdf_btn">
+                    <i class="fas fa-file-pdf me-2"></i>Export as PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
     <script>
     $(document).ready(function() {
         // Initialize DataTables
@@ -513,4 +614,140 @@ date_default_timezone_set('Asia/Manila');
             }
         });
     });
+
+     $('.export-btn').off('click').on('click', function(e) {
+        e.preventDefault();
+        $('#exportReportModal').modal('show');
+    });
+    
+    // Handle Select All checkbox
+    $('#select_all').on('change', function() {
+        $('.section-checkbox').prop('checked', $(this).prop('checked'));
+    });
+    
+    // Update Select All when individual checkboxes change
+    $('.section-checkbox').on('change', function() {
+        if ($('.section-checkbox:checked').length === $('.section-checkbox').length) {
+            $('#select_all').prop('checked', true);
+        } else {
+            $('#select_all').prop('checked', false);
+        }
+    });
+    
+    // Form submission for preview
+    $('#reportForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Close the export options modal
+        $('#exportReportModal').modal('hide');
+        
+        // Show the preview modal
+        $('#previewReportModal').modal('show');
+        
+        // Get form data
+        const formData = new FormData(this);
+        formData.append('preview_report', 'true');
+        
+        // AJAX request to get report preview
+        $.ajax({
+            url: './pages/report/report_preview.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $('#reportPreviewContent').html(response);
+            },
+            error: function() {
+                $('#reportPreviewContent').html('<div class="alert alert-danger">Error generating report preview. Please try again.</div>');
+            }
+        });
+    });
+    
+    // Export as PDF button handler
+    $('#export_pdf_btn').on('click', function() {
+    // Get form data from the original report form
+    const reportForm = document.getElementById('reportForm');
+    
+    // Create a temporary form element for PDF export
+    const pdfForm = document.createElement('form');
+    pdfForm.method = 'POST';
+    pdfForm.action = './pages/report/report_preview.php'; // Point to the report_preview.php file
+    pdfForm.style.display = 'none';
+    
+    // Add export_pdf flag
+    const exportFlag = document.createElement('input');
+    exportFlag.type = 'hidden';
+    exportFlag.name = 'export_pdf';
+    exportFlag.value = 'true';
+    pdfForm.appendChild(exportFlag);
+    
+    // Copy all form fields from the original form
+    const formData = new FormData(reportForm);
+    for (const [key, value] of formData.entries()) {
+        // Handle array values (like report_sections[])
+        if (key.includes('report_sections')) {
+            // For checkboxes that might have multiple values
+            const checkboxes = reportForm.querySelectorAll(`input[name="${key}"]:checked`);
+            checkboxes.forEach(checkbox => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = checkbox.value;
+                pdfForm.appendChild(input);
+            });
+        } else {
+            // Regular form fields
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            pdfForm.appendChild(input);
+        }
+    }
+    
+    // Close the preview modal if it's open
+    if ($('#previewReportModal').length) {
+        $('#previewReportModal').modal('hide');
+    }
+    
+    // Append the form to the body, submit it, then remove it
+    document.body.appendChild(pdfForm);
+    pdfForm.submit();
+    document.body.removeChild(pdfForm);
+});
+    
+    // Validate date range
+    $('#end_date').on('change', function() {
+        const startDate = new Date($('#start_date').val());
+        const endDate = new Date($(this).val());
+        const currentDate = new Date();
+        
+        if (endDate > currentDate) {
+            alert('End date cannot be in the future.');
+            $(this).val(formatDate(currentDate));
+        }
+        if (endDate < startDate) {
+            alert('End date cannot be before start date.');
+            $(this).val($('#start_date').val());
+        }
+    });
+    
+    $('#start_date').on('change', function() {
+        const startDate = new Date($(this).val());
+        const endDate = new Date($('#end_date').val());
+        
+        if (startDate > endDate) {
+            alert('Start date cannot be after end date.');
+            $(this).val($('#end_date').val());
+        }
+    });
+    
+    // Helper function to format date as YYYY-MM-DD
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
     </script>

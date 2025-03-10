@@ -202,7 +202,8 @@ class Coach_class {
         $sql = "SELECT 
             cgs.*,
             COUNT(DISTINCT ps.user_id) AS current_members,
-            GROUP_CONCAT(DISTINCT CONCAT(pd.first_name, ' ', pd.last_name) ORDER BY pd.first_name, pd.last_name) AS member_names
+            GROUP_CONCAT(DISTINCT CONCAT(pd.first_name, ' ', pd.last_name) ORDER BY pd.first_name, pd.last_name) AS member_names,
+            cgs.price
         FROM coach_group_schedule cgs
         LEFT JOIN program_subscription_schedule pss 
             ON pss.coach_group_schedule_id = cgs.id
@@ -231,29 +232,29 @@ class Coach_class {
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity) {
+    public function saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity, $price) {
         try {
             if ($scheduleId) {
                 // Update existing schedule
                 $sql = "UPDATE coach_group_schedule 
-                        SET day = ?, start_time = ?, end_time = ?, capacity = ?
+                        SET day = ?, start_time = ?, end_time = ?, capacity = ?, price = ?
                         WHERE id = ? AND coach_program_type_id = ?";
                 $stmt = $this->db->prepare($sql);
                 if (!$stmt) {
                     throw new Exception("Prepare failed: " . $this->db->error);
                 }
                 
-                $stmt->bind_param("sssiis", $day, $startTime, $endTime, $capacity, $scheduleId, $programTypeId);
+                $stmt->bind_param("sssiidi", $day, $startTime, $endTime, $capacity, $price, $scheduleId, $programTypeId);
             } else {
                 // Insert new schedule
-                $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity)
-                        VALUES (?, ?, ?, ?, ?)";
+                $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity, price)
+                        VALUES (?, ?, ?, ?, ?, ?)";
                 $stmt = $this->db->prepare($sql);
                 if (!$stmt) {
                     throw new Exception("Prepare failed: " . $this->db->error);
                 }
                 
-                $stmt->bind_param("isssi", $programTypeId, $day, $startTime, $endTime, $capacity);
+                $stmt->bind_param("isssid", $programTypeId, $day, $startTime, $endTime, $capacity, $price);
             }
             
             if (!$stmt->execute()) {

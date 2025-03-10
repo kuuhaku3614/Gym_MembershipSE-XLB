@@ -204,7 +204,38 @@ $(document).ready(function () {
       dataType: "html",
       success: function (response) {
         $(".main-content").html(response);
+        
+        // Clean up existing DataTable if present
+        if ($.fn.DataTable.isDataTable('#membersTable')) {
+          $('#membersTable').DataTable().destroy();
+        }
+        
+        // Initialize DataTable with Bootstrap 5 styling and state saving
+        $('#membersTable').DataTable({
+          autoWidth: false,
+          stateSave: true,
+          stateDuration: -1, // Save state forever
+          columnDefs: [
+            { orderable: false, targets: [0, 4] }, // Disable sorting on photo and action columns
+            { className: "align-middle", targets: "_all" }, // Vertically center all columns
+            { width: "80px", targets: 0 }, // Photo column width
+            { width: "100px", targets: 4 } // Action column width
+          ],
+          language: {
+            search: "Search members:",
+            lengthMenu: "Show _MENU_ members per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ members",
+            emptyTable: "No members found"
+          },
+          pageLength: 10,
+          lengthMenu: [10, 25, 50, 100],
+          order: [[1, 'asc']] // Sort by name by default
+        });
       },
+      error: function(xhr, status, error) {
+        console.error("Error loading members:", error);
+        $(".main-content").html('<div class="alert alert-danger">Error loading members. Please try again.</div>');
+      }
     });
   }
 
