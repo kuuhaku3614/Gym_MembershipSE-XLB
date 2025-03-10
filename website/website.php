@@ -86,12 +86,12 @@ require_once('includes/header.php');
     }
   </style>
   <body>
-  <main class="home-main">
-  <header class="home-header">
+<main class="home-main">
+    <header class="home-header">
         <div class="header-content">
             <h1 class="companyName"><?php 
                 echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
-            ?></span></h1>
+            ?></h1>
             <p class="description subtext1"><?php 
                 echo htmlspecialchars($welcomeContent['description'] ?? 'Welcome description goes here.'); 
             ?></p>
@@ -101,10 +101,38 @@ require_once('includes/header.php');
                 </button>
             </a>
         </div>
-  </header>
-   
+    </header>
 
-       <!-- Offers Section -->
+    <style>
+        @media (max-width: 768px) {
+            .home-header {
+                height: 70vh;
+            }
+            .companyName {
+                font-size: 2em;
+            }
+
+            .description {
+                font-size: 1em;
+            }
+
+            .joinButton {
+                font-size: 0.9em;
+                padding: 8px 16px;
+            }
+
+            .joinButton img {
+                width: 16px;
+                height: 16px;
+            }
+            .design-container {
+                height: 40px;
+                width: 80px;
+                left: 30px;
+                top: 30px;
+            }
+        }
+    </style>
 <!-- Offers Section -->
 <section class="S-Offers" id="S-Offers">
 
@@ -141,6 +169,42 @@ require_once('includes/header.php');
     </div>
 </section>
 
+<style>
+    @media (max-width: 768px) {
+        .title {
+            font-size: 3em!important;
+            text-align: right;
+        }
+        .offers-text{
+            width: 100%;
+        }
+
+        .S-Offers .offers-text .subtext, .subtext {
+            font-size: 0.9em;
+            justify-content: center;
+
+        }
+
+        .S-Offers .nav-button {
+            display: none;
+        }
+
+        .S-Offers .offers-wrapper {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .S-Offers .offer-slide {
+            flex: 0 0 auto;
+            width: 40%;
+            max-height: 200px;
+            
+        }
+    }
+</style>
+
 <!-- Products Section -->
 <section class="S-Products">
 <div class="design-container">
@@ -162,14 +226,46 @@ require_once('includes/header.php');
                 />
                 <div class="image-card-content">
                     <p class="product-title"><?php echo htmlspecialchars($product['name']); ?></p>
-                    <p class="product-text"><?php echo htmlspecialchars($product['description']); ?></p>
+
                 </div>
             </div>
         <?php endforeach; ?>
     </div>
 </section>
 
-        <!-- About Us/gallery Section -->
+<style>
+    @media (max-width: 768px) {
+        .S-Products .products-text {
+            text-align: center;
+        }
+        .S-Products .product-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-auto-rows: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            gap: 5px;
+            align-self: center;
+        }
+
+        .S-Products .product-box {
+            width: 100%;
+            height: 80%;
+            max-width: none;
+        }
+
+        .S-Products .product-image {
+            width: 100%;
+            height: 80%;
+        }
+        .image-card-content {
+            font-size: 0.9em;
+        }
+        .S-Products .title {
+            text-align: left;
+        }
+    }
+</style>
 <section class="S-AboutUs" id="S-AboutUs">
 
     
@@ -208,6 +304,67 @@ require_once('includes/header.php');
         <?php endforeach; ?>
     </div>
 </section>
+
+<style>
+    @media (max-width: 768px) {
+        .S-AboutUs .title {
+          margin-top: 60px;
+        }
+        .aboutUs-text {
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .aboutUs-text .title {
+            font-size: 2em;
+        }
+
+        .aboutUs-text .subtext {
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .joinNow-container {
+            margin-top: 20px;
+            width: 150px;
+        }
+
+        .joinButton-1 {
+            font-size: 0.9em;
+            padding: 8px 16px;
+        }
+        .joinNow-container p {
+            font-size: 0.9em;
+        }
+        .joinNow-container .tagline {
+            font-size: 1.2em;
+        }
+        .S-AboutUs a {
+            display: flex;
+            justify-content: center;
+        }
+
+        .joinButton-1 img {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* .image-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-auto-rows: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            gap: 5px;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+        }  */
+    }
+</style>
 
         <!-- <section class="S-Tagline">
           
@@ -248,6 +405,44 @@ require_once('includes/header.php');
     </div>
 </section>
 
+<style>
+    @media (max-width: 768px) {
+        .S-Staffs .title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .staff-container {
+            justify-content: space-around!important;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: 220px;
+            width: 100%;
+        }
+
+        .S-Staffs .image-staff { 
+            height: 200px;
+            width: 160px;
+        }
+
+        .S-Staffs .image-staff img {
+            width: 100%;
+            height: 70%;
+        }
+
+        .S-Staffs .image-card-content {
+            font-size: 0.6em;
+        }
+
+        .S-Staffs .title {
+            text-align: left;
+        }
+    }
+</style>
+
 <?php
 // Fetch contact details with latitude and longitude
 $contactContent = executeQuery("SELECT * FROM website_content WHERE section = 'contact'")[0] ?? [];
@@ -260,37 +455,83 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
 <section class="S-ContactUs" id="S-ContactUs">
 
     <div class="design-container">
-    <div class="rhombus rhombus-1"></div>
-    <div class="rhombus rhombus-2"></div>
-    <div class="rhombus rhombus-3"></div>
+        <div class="rhombus rhombus-1"></div>
+        <div class="rhombus rhombus-2"></div>
+        <div class="rhombus rhombus-3"></div>
     </div>
     <div class="contactUs-text">
-        <h1>You can find us here, sign up, local supplements and equipments</h1>
+        <h1 class="title">You can find us here, sign up, local supplements and equipments</h1>
 
         <div class="joinNow-container">
-                <a href="?services=1" style="text-decoration: none;">
-                    <button class="joinButton-2">
-                        Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
-                    </button>
-                </a>
-            </div>
+            <a href="?services=1" style="text-decoration: none;">
+                <button class="joinButton-2">
+                    Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
+                </button>
+            </a>
+        </div>
     </div>
-  <div class="image-location">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    
-    <div id="map"></div>
-    
-    <script>
-      var map = L.map('map').setView([<?php echo $latitude; ?>, <?php echo $longitude; ?>], 16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-      L.marker([<?php echo $latitude; ?>, <?php echo $longitude; ?>])
-        .addTo(map)
-        .bindPopup('Gym Location')
-        .openPopup();
-    </script>
-  </div>
+    <div class="image-location">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+        <div id="map"></div>
+
+        <script>
+            var map = L.map('map').setView([<?php echo $latitude; ?>, <?php echo $longitude; ?>], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.marker([<?php echo $latitude; ?>, <?php echo $longitude; ?>])
+                .addTo(map)
+                .bindPopup('Gym Location')
+                .openPopup();
+        </script>
+    </div>
 </section>
+
+<style>
+    @media (max-width: 768px) {
+        .S-ContactUs {
+            flex-direction: column;
+        }
+
+        .S-ContactUs .title {
+            margin-top: 40px;
+            font-size: 2em!important;
+        }
+
+        .contactUs-text {
+            width: 100%;
+            text-align: center;
+        }
+
+        .S-ContactUs .joinNow-container {
+            margin-top: 0px;
+        }
+
+        .S-ContactUs .joinButton-2 {
+            font-size: 0.9em;
+            padding: 8px 16px;
+        }
+
+        .S-ContactUs .joinButton-2 img {
+            width: 16px;
+            height: 16px;
+        }
+
+        .S-ContactUs .image-location {
+            width: 100%;
+            height: 200px;
+        }
+        .S-ContactUs .image-location #map {
+            width: 100%;
+            height: 100%;
+        }
+        .footer-container {
+            display: flex;
+            flex-direction: row;
+            font-size: 0.7em;
+        }
+    }
+</style>
 
 
 <footer class="footer">
