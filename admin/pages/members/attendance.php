@@ -10,7 +10,7 @@ require_once 'functions/attendance_class.php';
         <h2>Today's Member Attendance</h2>
         <div class="mt-2">
             <a href="/gym_membershipse-xlb/website/checkin_page.php" class="me-2">
-                <button class="btn btn-primary">Checkin Page</button>
+                <button class="btn btn-primary">Attendance Page</button>
             </a>
             <button onclick="openHistoryModal()" class="btn btn-info">
                 <i class="bi bi-clock-history"></i> Overall History
@@ -26,7 +26,7 @@ require_once 'functions/attendance_class.php';
             
             if (empty($members)): ?>
                 <div class="alert alert-info">
-                    No members have checked in today.
+                    No members have marked attendance today.
                 </div>
             <?php else: ?>
                 <table id="attendanceTable" class="table table-striped table-bordered">
@@ -35,7 +35,7 @@ require_once 'functions/attendance_class.php';
                             <th>Photo</th>
                             <th>Name</th>
                             <th>Username</th>
-                            <th>Check-in Time</th>
+                            <th>Time in</th>
                             <th>Status</th>
                         </tr>
                     </thead>

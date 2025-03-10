@@ -1,6 +1,7 @@
 {
     "require": {
         "twilio/sdk": "^8.3",
-        "tecnickcom/tcpdf": "^6.8"
+        "tecnickcom/tcpdf": "^6.8",
+        "dompdf/dompdf": "^3.1"
     }
 }
