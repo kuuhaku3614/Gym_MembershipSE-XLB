@@ -52,8 +52,9 @@
                             $startTime = $_POST['start_time'];
                             $endTime = $_POST['end_time'];
                             $capacity = intval($_POST['capacity']);
+                            $price = floatval($_POST['price']);
                             
-                            $result = $coach->saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity);
+                            $result = $coach->saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity, $price);
                             echo json_encode($result);
                             exit;
                             
@@ -224,6 +225,7 @@
                             <tr>
                                 <th>Day</th>
                                 <th>Schedule Time</th>
+                                <th>Price</th>
                                 <th>Member Capacity</th>
                                 <th>Actions</th>
                             </tr>
@@ -313,6 +315,12 @@
                         <label for="groupCapacity" class="form-label">Capacity</label>
                         <input type="number" class="form-control" id="groupCapacity" name="capacity" min="1">
                         <div class="error-message" id="groupCapacity-error">Please enter a valid capacity (minimum 1)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="groupPrice" class="form-label">Price (₱)</label>
+                        <input type="number" class="form-control" id="groupPrice" name="price" min="0" step="0.01">
+                        <div class="error-message" id="groupPrice-error">Please enter a valid price (minimum 0)</div>
                     </div>
                     
                     <div class="modal-footer">
@@ -447,6 +455,7 @@ function viewGroupSchedule(programTypeId) {
                     <tr>
                         <td>${schedule.day}</td>
                         <td>${startTime} - ${endTime}</td>
+                        <td>₱${schedule.price}</td>
                         <td>
                             ${schedule.current_members}/${schedule.capacity}
                             <i class="fas fa-info-circle text-info ms-2" 
@@ -457,7 +466,7 @@ function viewGroupSchedule(programTypeId) {
                             </i>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-primary" onclick="editGroupSchedule(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.capacity})">Edit</button>
+                            <button class="btn btn-sm btn-primary" onclick="editGroupSchedule(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.capacity}, ${schedule.price})">Edit</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteSchedule(${schedule.id}, 'group')">Delete</button>
                         </td>
                     </tr>
@@ -566,7 +575,7 @@ function showAddPersonalSchedule() {
     editModal.show();
 }
 
-function editGroupSchedule(id, day, startTime, endTime, capacity) {
+function editGroupSchedule(id, day, startTime, endTime, capacity, price) {
     const programTypeId = document.getElementById('groupProgramTypeId').value;
     document.getElementById('groupScheduleId').value = id;
     document.getElementById('groupProgramTypeId').value = programTypeId;
@@ -574,6 +583,7 @@ function editGroupSchedule(id, day, startTime, endTime, capacity) {
     document.getElementById('groupStartTime').value = startTime;
     document.getElementById('groupEndTime').value = endTime;
     document.getElementById('groupCapacity').value = capacity;
+    document.getElementById('groupPrice').value = price;
     document.getElementById('editGroupScheduleTitle').textContent = 'Edit Group Schedule';
     
     // Hide the parent modal first
@@ -747,7 +757,7 @@ function validateAndSaveGroupSchedule(event) {
     let isValid = true;
     
     // Reset all errors first
-    ['groupDay', 'groupStartTime', 'groupEndTime', 'groupCapacity'].forEach(id => hideError(id));
+    ['groupDay', 'groupStartTime', 'groupEndTime', 'groupCapacity', 'groupPrice'].forEach(id => hideError(id));
     
     // Validate Day
     const day = document.getElementById('groupDay').value;
@@ -779,6 +789,13 @@ function validateAndSaveGroupSchedule(event) {
     const capacity = document.getElementById('groupCapacity').value;
     if (!capacity || capacity < 1) {
         showError('groupCapacity', 'Please enter a valid capacity (minimum 1)');
+        isValid = false;
+    }
+    
+    // Validate Price
+    const price = document.getElementById('groupPrice').value;
+    if (!price || price < 0) {
+        showError('groupPrice', 'Please enter a valid price (minimum 0)');
         isValid = false;
     }
     

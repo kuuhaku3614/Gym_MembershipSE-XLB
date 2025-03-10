@@ -174,6 +174,13 @@
     <!-- Navigation Links Container -->
     <div class="nav-links-container">
         <nav>
+            <a href="dashboard.php" id="dashboard-link" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : '' ?>">
+                <div class="nav-item-content">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </div>
+            </a>
+
             <a href="programs.php" id="programs-link" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'programs.php' ? 'active' : '' ?>">
                 <div class="nav-item-content">
                     <i class="fas fa-dumbbell"></i>
@@ -192,6 +199,13 @@
                 <div class="nav-item-content">
                     <i class="fas fa-calendar"></i>
                     Calendar
+                </div>
+            </a>
+
+            <a href="transactions.php" id="transactions-link" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'transactions.php' ? 'active' : '' ?>">
+                <div class="nav-item-content">
+                    <i class="fas fa-money-bill"></i>
+                    Transactions
                 </div>
             </a>
         </nav>
