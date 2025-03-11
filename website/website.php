@@ -122,6 +122,7 @@ require_once('includes/header.php');
             }
 
             .joinButton img {
+                padding: 5px;
                 width: 16px;
                 height: 16px;
             }
@@ -171,16 +172,23 @@ require_once('includes/header.php');
 
 <style>
     @media (max-width: 768px) {
+        .S-Offers{
+            animation: none;
+            position: relative;
+        }
         .title {
-            font-size: 3em!important;
+            font-size: 2em!important;
             text-align: right;
+        }
+        .S-Offers .title{
+            margin-top: 15px;
         }
         .offers-text{
             width: 100%;
         }
 
         .S-Offers .offers-text .subtext, .subtext {
-            font-size: 0.9em;
+            font-size: 0.7em;
             justify-content: center;
 
         }
@@ -278,16 +286,17 @@ require_once('includes/header.php');
     <div class="aboutUs-text">
     
         <h1 class="title">About Us</h1>
+        <div class="aboutUs-content">
         <p class="text-secondary subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
-
         <div class="joinNow-container">
-            <h1 class="tagline">Go Home or Go Hard</h1>
+            <!-- <h1 class="tagline">Go Home or Go Hard</h1> -->
             <p>Come be one of us now</p>
             <a href="?services=1" style="text-decoration: none;">
                 <button class="joinButton-1">
                     Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
                 </button>
             </a>
+        </div>
         </div>
     </div>
 
@@ -307,35 +316,55 @@ require_once('includes/header.php');
 
 <style>
     @media (max-width: 768px) {
+        .S-AboutUs{
+            flex-direction: column;
+            height: auto;
+            gap: 5px;
+        }
         .S-AboutUs .title {
           margin-top: 60px;
+          text-align: left;
         }
         .aboutUs-text {
             text-align: center;
             padding: 0 10px;
+            width: 100%;
         }
 
         .aboutUs-text .title {
             font-size: 2em;
         }
+        .aboutUs-content{
+            width: 100%;
+            display: flex;
+            gap:10px;
+        }
 
         .aboutUs-text .subtext {
-            font-size: 0.9em;
+            font-size: 0.6em;
             max-height: 400px;
             overflow-y: auto;
+            width: 70%;
         }
 
         .joinNow-container {
             margin-top: 20px;
-            width: 150px;
+            width: 100px;
+            height: 60px;
+            padding: 10px;
+            align-self: flex-end;
         }
 
         .joinButton-1 {
-            font-size: 0.9em;
-            padding: 8px 16px;
+            font-size: 0.5em;
+            width: 120%;
+            height: 50%;
+            padding: 2px 4px;
         }
         .joinNow-container p {
-            font-size: 0.9em;
+            font-size: 0.6em;
+            margin-bottom: 2px;
+
         }
         .joinNow-container .tagline {
             font-size: 1.2em;
@@ -346,24 +375,30 @@ require_once('includes/header.php');
         }
 
         .joinButton-1 img {
-            width: 16px;
-            height: 16px;
+            width: 15px;
+            height: 15px;
+            padding: 4px;
         }
 
-        /* .image-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-auto-rows: auto;
+        .image-container {
+            min-width: 100%;
+            height: 310px;
+            display: flex;
+            flex-wrap: wrap;
             overflow-x: auto;
+            justify-content: center;
             -webkit-overflow-scrolling: touch;
             gap: 5px;
         }
 
         .image-container img {
-            width: 100%;
-            height: auto;
-        }  */
-    }
+            flex: 0 0 auto;
+            width: 100px;
+            max-height: 50%; /* Increased height */
+            object-fit: cover; /* Ensure the image covers the area */
+        }
+    
+}
 </style>
 
         <!-- <section class="S-Tagline">
@@ -410,6 +445,7 @@ require_once('includes/header.php');
         .S-Staffs .title {
             text-align: center;
             margin-bottom: 10px;
+            text-align: left;
         }
 
         .staff-container {
@@ -496,6 +532,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         .S-ContactUs .title {
             margin-top: 40px;
             font-size: 2em!important;
+            text-align: left;
         }
 
         .contactUs-text {
@@ -508,8 +545,8 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         }
 
         .S-ContactUs .joinButton-2 {
-            font-size: 0.9em;
-            padding: 8px 16px;
+            font-size: 0.6em;
+            padding: 4px 10px;
         }
 
         .S-ContactUs .joinButton-2 img {
@@ -528,7 +565,19 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         .footer-container {
             display: flex;
             flex-direction: row;
+            justify-content: space-between;
+        }
+        .footer{
+            padding: 20px;
+        }
+        .contact-info, .operational-info, .menu-list a, .footer-container h3 {
             font-size: 0.7em;
+        }
+        .copyright {
+            margin-top: 0px;
+        }
+        .menu-list li{
+            margin-bottom: 5px;
         }
     }
 </style>
