@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 09, 2025 at 04:14 PM
+-- Generation Time: Mar 11, 2025 at 01:20 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -96,6 +96,13 @@ CREATE TABLE `coach_group_schedule` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `coach_group_schedule`
+--
+
+INSERT INTO `coach_group_schedule` (`id`, `coach_program_type_id`, `capacity`, `day`, `start_time`, `end_time`, `price`, `created_at`, `updated_at`) VALUES
+(7, 18, 12, 'Monday', '20:00:00', '22:00:00', 20.00, '2025-03-09 15:24:12', '2025-03-09 15:34:56');
+
 -- --------------------------------------------------------
 
 --
@@ -114,6 +121,13 @@ CREATE TABLE `coach_personal_schedule` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `coach_personal_schedule`
+--
+
+INSERT INTO `coach_personal_schedule` (`id`, `coach_program_type_id`, `day`, `start_time`, `end_time`, `duration_rate`, `price`, `created_at`, `updated_at`) VALUES
+(9, 17, 'Monday', '10:30:00', '12:00:00', 60, 100.00, '2025-03-09 15:25:41', '2025-03-09 15:25:41');
+
 -- --------------------------------------------------------
 
 --
@@ -131,6 +145,14 @@ CREATE TABLE `coach_program_types` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `coach_program_types`
+--
+
+INSERT INTO `coach_program_types` (`id`, `coach_id`, `program_id`, `type`, `price`, `description`, `status`, `created_at`, `updated_at`) VALUES
+(17, 35, 10, 'personal', 0.00, 'ferson', 'active', '2025-03-09 15:18:18', '2025-03-09 15:23:05'),
+(18, 35, 10, 'group', 0.00, 'hakdog', 'active', '2025-03-09 15:22:42', '2025-03-09 15:23:13');
 
 -- --------------------------------------------------------
 
@@ -218,6 +240,15 @@ CREATE TABLE `memberships` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `memberships`
+--
+
+INSERT INTO `memberships` (`id`, `transaction_id`, `membership_plan_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
+(178, 183, 20, '2025-03-10', '2025-03-15', 10.00, 'expiring', 0, '2025-03-10 03:50:06', '2025-03-09 19:50:46', '2025-03-09 22:16:55'),
+(180, 185, 21, '2025-03-10', '2025-03-17', 25.00, 'expiring', 0, '2025-03-10 04:44:26', '2025-03-09 20:52:03', '2025-03-11 12:02:41'),
+(182, 186, 20, '2025-03-09', '2025-03-18', 500.00, 'expiring', 0, NULL, '2025-03-09 22:27:52', '2025-03-11 12:03:26');
+
 -- --------------------------------------------------------
 
 --
@@ -263,6 +294,13 @@ CREATE TABLE `notification_reads` (
   `read_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `notification_reads`
+--
+
+INSERT INTO `notification_reads` (`id`, `user_id`, `notification_type`, `notification_id`, `read_at`) VALUES
+(41, 35, 'announcements', 0, '2025-03-09 15:17:21');
+
 -- --------------------------------------------------------
 
 --
@@ -281,6 +319,21 @@ CREATE TABLE `personal_details` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `personal_details`
+--
+
+INSERT INTO `personal_details` (`id`, `user_id`, `first_name`, `middle_name`, `last_name`, `sex`, `birthdate`, `phone_number`, `created_at`, `updated_at`) VALUES
+(29, 33, 'Reign', 'Carreon', 'Magno', 'Male', '2004-08-02', '12312312312', '2024-12-03 06:29:47', '2024-12-03 06:29:47'),
+(30, 34, 'admin', '', 'admin', 'Male', '2024-12-03', '12312312312', '2024-12-03 06:30:35', '2024-12-03 06:30:35'),
+(31, 35, 'coach', '', 'coach', 'Female', '2024-12-03', '12312312312', '2024-12-03 06:31:06', '2024-12-03 06:31:06'),
+(32, 36, 'coach2', '', 'coach2', 'Male', '2024-12-03', '12312312312', '2024-12-03 06:31:30', '2024-12-03 06:31:30'),
+(35, 39, 'sofia', 'the', 'first', 'Female', '2000-08-11', '09876543211', '2025-01-19 05:46:55', '2025-01-19 05:46:55'),
+(36, 40, 'kiel', 'the', 'great', 'Male', '2025-01-19', '09123456789', '2025-01-19 05:58:19', '2025-01-19 05:58:19'),
+(47, 53, 'last', 'last', 'last', 'Male', '2025-01-02', '09752441070', '2025-01-29 09:28:33', '2025-01-29 09:28:33'),
+(148, 161, 'singles', 'inferno', 's4', 'Male', '2002-03-03', '09752441070', '2025-02-04 07:47:35', '2025-02-04 07:47:35'),
+(163, 179, 'hello', 'Carreon', 'hi', 'Male', '2025-03-09', '09998065631', '2025-03-09 22:27:52', '2025-03-09 22:27:52');
 
 -- --------------------------------------------------------
 
@@ -429,8 +482,17 @@ CREATE TABLE `registration_records` (
   `transaction_id` int(11) NOT NULL,
   `registration_id` int(11) NOT NULL DEFAULT 1,
   `amount` decimal(10,2) NOT NULL,
+  `is_paid` tinyint(1) NOT NULL,
+  `payment_date` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `registration_records`
+--
+
+INSERT INTO `registration_records` (`id`, `transaction_id`, `registration_id`, `amount`, `is_paid`, `payment_date`, `created_at`) VALUES
+(86, 186, 1, 200.00, 0, '2025-03-11 20:07:03', '2025-03-09 22:27:52');
 
 -- --------------------------------------------------------
 
@@ -479,6 +541,14 @@ CREATE TABLE `rental_subscriptions` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `rental_subscriptions`
+--
+
+INSERT INTO `rental_subscriptions` (`id`, `transaction_id`, `rental_service_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
+(86, 183, 5, '2025-03-10', '2025-03-15', 10.00, 'active', 0, '2025-03-10 03:50:06', '2025-03-09 20:16:51', '2025-03-09 22:16:23'),
+(87, 185, 5, '2025-03-10', '2025-03-15', 10.00, 'expiring', 0, '2025-03-10 03:50:06', '2025-03-09 20:24:34', '2025-03-09 22:22:20');
 
 -- --------------------------------------------------------
 
@@ -572,6 +642,15 @@ CREATE TABLE `transactions` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `transactions`
+--
+
+INSERT INTO `transactions` (`id`, `staff_id`, `user_id`, `status`, `created_at`) VALUES
+(183, 34, 33, 'confirmed', '2025-03-09 19:49:49'),
+(185, 34, 33, 'confirmed', '2025-03-09 21:00:26'),
+(186, NULL, 179, 'confirmed', '2025-03-09 22:27:52');
+
 -- --------------------------------------------------------
 
 --
@@ -602,7 +681,8 @@ INSERT INTO `users` (`id`, `username`, `password`, `role_id`, `is_active`, `crea
 (39, 'sofia', '$2y$10$aT9HT0aRE/DCbCaNU/T.z.6UFxe2NROVPK3IZi9jY9hGqJerRxQgC', 3, 1, '2025-01-19 05:46:55', '2025-01-19 05:46:55', 0, '2025-03-09 15:14:10'),
 (40, 'kiel', '$2y$10$rnEhRal7OocaGpeHOJeP8OXzFAn91gf5ukjJtZpvqlrlFzT6ZCBi2', 3, 1, '2025-01-19 05:58:19', '2025-01-19 05:59:58', 0, '2025-03-09 15:14:10'),
 (53, 'last', '$2y$10$36wnqKJZoLYGQ1IMGF349e.tOsXAYhsR8kXzF74nJjPqU/lSiYgCu', 3, 1, '2025-01-29 09:28:33', '2025-01-29 09:28:33', 0, '2025-03-09 15:14:10'),
-(161, 'singles9359', '$2y$10$YrIZq4xXm1IyWC7g2nvG0.w0HQjVEVjWlMJ/toS5TyQ/liC/bN62q', 3, 1, '2025-02-04 07:47:35', '2025-02-04 07:47:35', 0, '2025-03-09 15:14:10');
+(161, 'singles9359', '$2y$10$YrIZq4xXm1IyWC7g2nvG0.w0HQjVEVjWlMJ/toS5TyQ/liC/bN62q', 3, 1, '2025-02-04 07:47:35', '2025-02-04 07:47:35', 0, '2025-03-09 15:14:10'),
+(179, 'hello4919', '$2y$10$Ko1Vls8e1j45jdeEuHRbMeTa/FahDXYIzVh/0BzbrNV6RbMlV.pRO', 3, 1, '2025-03-09 22:27:52', '2025-03-09 22:27:52', 0, '2025-03-09 22:27:52');
 
 -- --------------------------------------------------------
 
@@ -939,19 +1019,19 @@ ALTER TABLE `attendance_history`
 -- AUTO_INCREMENT for table `coach_group_schedule`
 --
 ALTER TABLE `coach_group_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `coach_personal_schedule`
 --
 ALTER TABLE `coach_personal_schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `coach_program_types`
 --
 ALTER TABLE `coach_program_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `duration_types`
@@ -975,7 +1055,7 @@ ALTER TABLE `gym_offers`
 -- AUTO_INCREMENT for table `memberships`
 --
 ALTER TABLE `memberships`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=178;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=183;
 
 --
 -- AUTO_INCREMENT for table `membership_plans`
@@ -987,13 +1067,13 @@ ALTER TABLE `membership_plans`
 -- AUTO_INCREMENT for table `notification_reads`
 --
 ALTER TABLE `notification_reads`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `personal_details`
 --
 ALTER TABLE `personal_details`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=163;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=164;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -1041,7 +1121,7 @@ ALTER TABLE `registration`
 -- AUTO_INCREMENT for table `registration_records`
 --
 ALTER TABLE `registration_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
 
 --
 -- AUTO_INCREMENT for table `rental_services`
@@ -1053,7 +1133,7 @@ ALTER TABLE `rental_services`
 -- AUTO_INCREMENT for table `rental_subscriptions`
 --
 ALTER TABLE `rental_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -1077,13 +1157,13 @@ ALTER TABLE `staff_activity_log`
 -- AUTO_INCREMENT for table `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=182;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=187;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=179;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=180;
 
 --
 -- AUTO_INCREMENT for table `verification_codes`
@@ -1101,7 +1181,7 @@ ALTER TABLE `walk_in`
 -- AUTO_INCREMENT for table `walk_in_records`
 --
 ALTER TABLE `walk_in_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `website_content`
