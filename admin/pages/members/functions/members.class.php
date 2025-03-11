@@ -113,22 +113,21 @@ class Members {
                 pd.phone_number,
                 pp.photo_path,
                 -- Get all non-expired memberships
-                COALESCE(
-                    GROUP_CONCAT(
-                        DISTINCT
-                        CASE 
-                            WHEN m.id IS NOT NULL AND m.status != 'expired' THEN
-                                CONCAT_WS('|',
-                                    'membership',
-                                    mp.plan_name,
-                                    m.start_date,
-                                    m.end_date,
-                                    m.status,
-                                    m.is_paid,
-                                    m.amount
-                                )
-                        END
-                    ), ''
+                GROUP_CONCAT(
+                    DISTINCT
+                    CASE 
+                        WHEN m.id IS NOT NULL AND m.status != 'expired' THEN
+                            JSON_OBJECT(
+                                'id', m.id,
+                                'plan_name', mp.plan_name,
+                                'start_date', m.start_date,
+                                'end_date', m.end_date,
+                                'status', m.status,
+                                'is_paid', m.is_paid,
+                                'amount', m.amount
+                            )
+                    END
+                    SEPARATOR ';;;'
                 ) as memberships
             FROM users u 
             JOIN roles roles ON u.role_id = roles.id AND roles.id = 3 
@@ -154,18 +153,16 @@ class Members {
 
             // Parse memberships
             if ($result['memberships']) {
-                $memberships = explode(',', $result['memberships']);
+                $memberships = explode(';;;', $result['memberships']);
                 $result['memberships'] = array_map(function($item) {
-                    list($type, $name, $start, $end, $status, $isPaid, $amount) = explode('|', $item);
-                    return [
-                        'plan_name' => $name,
-                        'start_date' => $start,
-                        'end_date' => $end,
-                        'status' => $status,
-                        'is_paid' => $isPaid == '1',
-                        'amount' => $amount
-                    ];
-                }, array_filter($memberships)); // Remove null values
+                    $data = json_decode($item, true);
+                    if ($data) {
+                        $data['is_paid'] = (bool)$data['is_paid'];
+                        return $data;
+                    }
+                    return null;
+                }, array_filter($memberships));
+                $result['memberships'] = array_filter($result['memberships']); // Remove null values
             } else {
                 $result['memberships'] = [];
             }
@@ -196,6 +193,30 @@ class Members {
             // Convert is_paid to boolean
             foreach ($result['rental_services'] as &$service) {
                 $service['is_paid'] = $service['is_paid'] == '1';
+            }
+
+            // Get program subscriptions (registrations)
+            $registrationQuery = "SELECT 
+                rr.id,
+                rr.amount,
+                rr.is_paid,
+                rr.payment_date,
+                rr.created_at as registration_date,
+                'Registration Fee' as payment_type
+            FROM registration_records rr
+            JOIN transactions t ON rr.transaction_id = t.id
+            WHERE t.user_id = :userId
+            ORDER BY rr.created_at DESC";
+
+            $stmt = $this->pdo->prepare($registrationQuery);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $result['registration_records'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Convert is_paid to boolean for registration records
+            foreach ($result['registration_records'] as &$record) {
+                $record['is_paid'] = $record['is_paid'] == '1';
             }
 
             return $result;
@@ -975,6 +996,132 @@ class Members {
         }
     }
 
+    public function processMembershipPayment($membershipId) {
+        try {
+            error_log("Processing membership payment for ID: " . $membershipId);
+            
+            // First verify the membership exists and is unpaid
+            $checkQuery = "SELECT id, is_paid FROM memberships WHERE id = :membershipId";
+            $stmt = $this->pdo->prepare($checkQuery);
+            $stmt->bindParam(':membershipId', $membershipId, PDO::PARAM_INT);
+            $stmt->execute();
+            $membership = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$membership) {
+                error_log("Membership not found with ID: " . $membershipId);
+                throw new Exception("Membership not found");
+            }
+            
+            if ($membership['is_paid']) {
+                error_log("Membership already paid with ID: " . $membershipId);
+                throw new Exception("Membership is already paid");
+            }
+            
+            $query = "UPDATE memberships 
+                     SET is_paid = 1 
+                     WHERE id = :membershipId";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':membershipId', $membershipId, PDO::PARAM_INT);
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                error_log("Failed to update membership payment status for ID: " . $membershipId);
+                throw new Exception("Failed to process membership payment");
+            }
+            
+            error_log("Successfully processed membership payment for ID: " . $membershipId);
+            return true;
+        } catch (PDOException $e) {
+            error_log("Database error in processMembershipPayment: " . $e->getMessage());
+            throw new Exception("Database error while processing membership payment");
+        }
+    }
+
+    public function processRegistrationPayment($registrationId) {
+        try {
+            error_log("Processing registration payment for ID: " . $registrationId);
+            
+            // First verify the registration exists and is unpaid
+            $checkQuery = "SELECT id, is_paid FROM registration_records WHERE id = :registrationId";
+            $stmt = $this->pdo->prepare($checkQuery);
+            $stmt->bindParam(':registrationId', $registrationId, PDO::PARAM_INT);
+            $stmt->execute();
+            $registration = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$registration) {
+                error_log("Registration not found with ID: " . $registrationId);
+                throw new Exception("Registration not found");
+            }
+            
+            if ($registration['is_paid']) {
+                error_log("Registration already paid with ID: " . $registrationId);
+                throw new Exception("Registration is already paid");
+            }
+            
+            $query = "UPDATE registration_records 
+                     SET is_paid = 1, payment_date = NOW() 
+                     WHERE id = :registrationId";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':registrationId', $registrationId, PDO::PARAM_INT);
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                error_log("Failed to update registration payment status for ID: " . $registrationId);
+                throw new Exception("Failed to process registration payment");
+            }
+            
+            error_log("Successfully processed registration payment for ID: " . $registrationId);
+            return true;
+        } catch (PDOException $e) {
+            error_log("Database error in processRegistrationPayment: " . $e->getMessage());
+            throw new Exception("Database error while processing registration payment");
+        }
+    }
+
+    public function processRentalPayment($rentalId) {
+        try {
+            error_log("Processing rental payment for ID: " . $rentalId);
+            
+            // First verify the rental exists and is unpaid
+            $checkQuery = "SELECT id, is_paid FROM rental_subscriptions WHERE id = :rentalId";
+            $stmt = $this->pdo->prepare($checkQuery);
+            $stmt->bindParam(':rentalId', $rentalId, PDO::PARAM_INT);
+            $stmt->execute();
+            $rental = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$rental) {
+                error_log("Rental not found with ID: " . $rentalId);
+                throw new Exception("Rental not found");
+            }
+            
+            if ($rental['is_paid']) {
+                error_log("Rental already paid with ID: " . $rentalId);
+                throw new Exception("Rental is already paid");
+            }
+            
+            $query = "UPDATE rental_subscriptions 
+                     SET is_paid = 1 
+                     WHERE id = :rentalId";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':rentalId', $rentalId, PDO::PARAM_INT);
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                error_log("Failed to update rental payment status for ID: " . $rentalId);
+                throw new Exception("Failed to process rental payment");
+            }
+            
+            error_log("Successfully processed rental payment for ID: " . $rentalId);
+            return true;
+        } catch (PDOException $e) {
+            error_log("Database error in processRentalPayment: " . $e->getMessage());
+            throw new Exception("Database error while processing rental payment");
+        }
+    }
+
     public function handleRequest($data) {
         try {
             if (!isset($data['action'])) {
@@ -1159,3 +1306,4 @@ class Members {
         }
     }
 }
+?>
