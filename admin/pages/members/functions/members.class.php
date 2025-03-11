@@ -1,5 +1,5 @@
 <?php 
-require_once '../../../config.php';
+require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/config.php");
 
 class Members {
     private $pdo;
@@ -9,10 +9,13 @@ class Members {
         try {
             $database = new Database();
             $this->pdo = $database->connect();
+            if (!$this->pdo) {
+                throw new Exception("Failed to get PDO connection");
+            }
             error_log("Database connection established in Members class");
         } catch (Exception $e) {
             error_log("Failed to connect to database in Members class: " . $e->getMessage());
-            throw $e;
+            throw new Exception("Database connection failed: " . $e->getMessage());
         }
     }
 
@@ -1001,7 +1004,8 @@ class Members {
             error_log("Processing membership payment for ID: " . $membershipId);
             
             // First verify the membership exists and is unpaid
-            $checkQuery = "SELECT id, is_paid FROM memberships WHERE id = :membershipId";
+            $checkQuery = "SELECT m.id, m.is_paid FROM memberships m 
+                         WHERE m.id = :membershipId";
             $stmt = $this->pdo->prepare($checkQuery);
             $stmt->bindParam(':membershipId', $membershipId, PDO::PARAM_INT);
             $stmt->execute();
@@ -1043,7 +1047,8 @@ class Members {
             error_log("Processing registration payment for ID: " . $registrationId);
             
             // First verify the registration exists and is unpaid
-            $checkQuery = "SELECT id, is_paid FROM registration_records WHERE id = :registrationId";
+            $checkQuery = "SELECT rr.id, rr.is_paid FROM registration_records rr 
+                         WHERE rr.id = :registrationId";
             $stmt = $this->pdo->prepare($checkQuery);
             $stmt->bindParam(':registrationId', $registrationId, PDO::PARAM_INT);
             $stmt->execute();
@@ -1085,7 +1090,8 @@ class Members {
             error_log("Processing rental payment for ID: " . $rentalId);
             
             // First verify the rental exists and is unpaid
-            $checkQuery = "SELECT id, is_paid FROM rental_subscriptions WHERE id = :rentalId";
+            $checkQuery = "SELECT rs.id, rs.is_paid FROM rental_subscriptions rs 
+                         WHERE rs.id = :rentalId";
             $stmt = $this->pdo->prepare($checkQuery);
             $stmt->bindParam(':rentalId', $rentalId, PDO::PARAM_INT);
             $stmt->execute();
@@ -1122,23 +1128,75 @@ class Members {
         }
     }
 
-    public function handleRequest($data) {
+    public function cancelMembership($membershipId) {
         try {
-            if (!isset($data['action'])) {
-                throw new Exception('No action specified');
+            if (!$this->pdo) {
+                throw new Exception("No database connection");
             }
 
-            switch ($data['action']) {
-                case 'validate_phase1':
-                    return $this->validatePhase1($data);
-                case 'add_member':
-                    return $this->addMember($data);
-                default:
-                    throw new Exception('Invalid action');
+            $this->pdo->beginTransaction();
+            
+            // First check if the membership exists and is unpaid
+            $checkQuery = "SELECT m.id FROM memberships m 
+                         WHERE m.id = :membershipId AND m.is_paid = 0";
+            $stmt = $this->pdo->prepare($checkQuery);
+            $stmt->execute(['membershipId' => $membershipId]);
+            
+            if (!$stmt->fetch()) {
+                throw new Exception("Membership not found or already paid");
             }
+
+            // Delete the membership
+            $query = "DELETE FROM memberships WHERE id = :membershipId AND is_paid = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['membershipId' => $membershipId]);
+
+            if ($stmt->rowCount() === 0) {
+                throw new Exception("Failed to cancel membership");
+            }
+
+            $this->pdo->commit();
+            return true;
         } catch (Exception $e) {
-            error_log('Error in handleRequest: ' . $e->getMessage());
-            return ['success' => false, 'message' => $e->getMessage()];
+            $this->pdo->rollBack();
+            error_log("Error canceling membership: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function cancelRental($rentalId) {
+        try {
+            if (!$this->pdo) {
+                throw new Exception("No database connection");
+            }
+
+            $this->pdo->beginTransaction();
+            
+            // First check if the rental exists and is unpaid
+            $checkQuery = "SELECT rs.id FROM rental_subscriptions rs 
+                         WHERE rs.id = :rentalId AND rs.is_paid = 0";
+            $stmt = $this->pdo->prepare($checkQuery);
+            $stmt->execute(['rentalId' => $rentalId]);
+            
+            if (!$stmt->fetch()) {
+                throw new Exception("Rental not found or already paid");
+            }
+
+            // Delete the rental
+            $query = "DELETE FROM rental_subscriptions WHERE id = :rentalId AND is_paid = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['rentalId' => $rentalId]);
+
+            if ($stmt->rowCount() === 0) {
+                throw new Exception("Failed to cancel rental");
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log("Error canceling rental: " . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -1147,11 +1205,12 @@ class Members {
             error_log("Getting schedule for program type ID: " . $programTypeId);
             
             // First get the coach's full availability
-            $query = "SELECT day, start_time, end_time 
-                     FROM coach_availability 
-                     WHERE coach_program_type_id = :program_type_id
+            $query = "SELECT ca.day, ca.start_time, ca.end_time 
+                     FROM coach_availability ca
+                     JOIN coach_program_types cpt ON ca.coach_id = cpt.coach_id
+                     WHERE cpt.id = :program_type_id
                      ORDER BY 
-                        CASE day
+                        CASE ca.day
                             WHEN 'Monday' THEN 1
                             WHEN 'Tuesday' THEN 2
                             WHEN 'Wednesday' THEN 3
@@ -1303,6 +1362,90 @@ class Members {
                 'success' => false,
                 'message' => 'Error fetching schedule: ' . $e->getMessage()
             );
+        }
+    }
+
+    public function getUnpaidItemCounts($userId) {
+        try {
+            $counts = [
+                'memberships' => 0,
+                'rentals' => 0,
+                'registrations' => 0
+            ];
+
+            // Count unpaid memberships
+            $query = "SELECT COUNT(*) as count FROM memberships m 
+                     JOIN transactions t ON m.transaction_id = t.id 
+                     WHERE t.user_id = :userId AND m.is_paid = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['userId' => $userId]);
+            $counts['memberships'] = (int)$stmt->fetchColumn();
+
+            // Count unpaid rentals
+            $query = "SELECT COUNT(*) as count FROM rental_subscriptions rs 
+                     JOIN transactions t ON rs.transaction_id = t.id 
+                     WHERE t.user_id = :userId AND rs.is_paid = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['userId' => $userId]);
+            $counts['rentals'] = (int)$stmt->fetchColumn();
+
+            // Count unpaid registrations
+            $query = "SELECT COUNT(*) as count FROM registration_records rr 
+                     JOIN transactions t ON rr.transaction_id = t.id 
+                     WHERE t.user_id = :userId AND rr.is_paid = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['userId' => $userId]);
+            $counts['registrations'] = (int)$stmt->fetchColumn();
+
+            return $counts;
+        } catch (Exception $e) {
+            error_log("Error getting unpaid item counts: " . $e->getMessage());
+            throw new Exception("Failed to get unpaid item counts");
+        }
+    }
+
+    public function deleteRegistrationAndUpdateRole($userId) {
+        try {
+            $this->pdo->beginTransaction();
+
+            // Delete unpaid registration records
+            $query = "DELETE rr FROM registration_records rr 
+                     JOIN transactions t ON rr.transaction_id = t.id 
+                     WHERE t.user_id = :userId AND rr.is_paid = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['userId' => $userId]);
+
+            // Update user role to 5
+            $query = "UPDATE users SET role_id = 5 WHERE id = :userId";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute(['userId' => $userId]);
+
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log("Error deleting registration and updating role: " . $e->getMessage());
+            throw new Exception("Failed to delete registration and update role");
+        }
+    }
+
+    public function handleRequest($data) {
+        try {
+            if (!isset($data['action'])) {
+                throw new Exception('No action specified');
+            }
+
+            switch ($data['action']) {
+                case 'validate_phase1':
+                    return $this->validatePhase1($data);
+                case 'add_member':
+                    return $this->addMember($data);
+                default:
+                    throw new Exception('Invalid action');
+            }
+        } catch (Exception $e) {
+            error_log('Error in handleRequest: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 }

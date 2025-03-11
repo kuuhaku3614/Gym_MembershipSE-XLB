@@ -178,9 +178,7 @@ function processPayment(userId, type, itemId) {
     }
     
     // Get base URL from current page URL
-    const currentPath = window.location.pathname;
-    const adminIndex = currentPath.indexOf('/admin/');
-    const baseUrl = currentPath.substring(0, adminIndex);
+    const baseUrl = '<?php echo BASE_URL; ?>';
     
     $.ajax({
         url: `${baseUrl}/admin/pages/members/process_payment.php`,
@@ -357,13 +355,13 @@ function viewPaymentDetails(userId) {
     // Show loading state
     const loadingHtml = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading payment details...</p></div>';
     const modal = new bootstrap.Modal(document.getElementById('paymentDetailsModal'));
+    // Store the user ID in the modal's data attribute
+    $('#paymentDetailsModal').data('userId', userId);
     document.querySelector('#paymentDetailsModal .modal-body').innerHTML = loadingHtml;
     modal.show();
 
     // Get base URL from current page URL
-    const currentPath = window.location.pathname;
-    const adminIndex = currentPath.indexOf('/admin/');
-    const baseUrl = currentPath.substring(0, adminIndex);
+    const baseUrl = '<?php echo BASE_URL; ?>';
 
     fetch(`${baseUrl}/admin/pages/members/members_new.php?ajax_view_member=1&user_id=${userId}`)
         .then(response => {
@@ -423,8 +421,8 @@ function viewPaymentDetails(userId) {
                                 <h6 class="mb-3">Unpaid Memberships</h6>
                                 <div class="list-group">
                                     ${unpaidMemberships.map(m => `
-                                        <div class="list-group-item">
-                                            <div class="d-flex align-items-center">
+                                        <div class="list-group-item" id="membership-item-${m.id}">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div class="form-check">
                                                     <input class="form-check-input payment-checkbox" type="checkbox" 
                                                         value="${m.id}" 
@@ -437,6 +435,11 @@ function viewPaymentDetails(userId) {
                                                         <p class="mb-1">Amount: ₱${parseFloat(m.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                                                     </label>
                                                 </div>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="cancelItem('membership', ${m.id})"
+                                                    title="Cancel Membership">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </div>
                                         </div>
                                     `).join('')}
@@ -450,8 +453,8 @@ function viewPaymentDetails(userId) {
                                 <h6 class="mb-3">Unpaid Rentals</h6>
                                 <div class="list-group">
                                     ${unpaidRentals.map(r => `
-                                        <div class="list-group-item">
-                                            <div class="d-flex align-items-center">
+                                        <div class="list-group-item" id="rental-item-${r.id}">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div class="form-check">
                                                     <input class="form-check-input payment-checkbox" type="checkbox" 
                                                         value="${r.id}" 
@@ -464,6 +467,11 @@ function viewPaymentDetails(userId) {
                                                         <p class="mb-1">Amount: ₱${parseFloat(r.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                                                     </label>
                                                 </div>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="cancelItem('rental', ${r.id})"
+                                                    title="Cancel Rental">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </div>
                                         </div>
                                     `).join('')}
@@ -547,15 +555,69 @@ function viewPaymentDetails(userId) {
         });
 }
 
+function cancelItem(type, itemId) {
+    // Get the current user ID from the URL in the modal's AJAX call
+    const userId = $('#paymentDetailsModal').data('userId');
+    
+    if (!confirm(`Are you sure you want to cancel this ${type}?`)) {
+        return;
+    }
+
+    // Get base URL from PHP
+    const baseUrl = '<?php echo BASE_URL; ?>';
+
+    // Show loading state for the specific item
+    const itemElement = $(`#${type}-item-${itemId}`);
+    const originalContent = itemElement.html();
+    itemElement.html('<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Canceling...</div>');
+
+    $.ajax({
+        url: `${baseUrl}/admin/pages/members/cancel_item.php`,
+        type: 'POST',
+        data: {
+            type: type,
+            item_id: itemId,
+            user_id: userId
+        },
+        success: function(response) {
+            try {
+                const result = typeof response === 'string' ? JSON.parse(response) : response;
+                if (result.success) {
+                    alert(result.message);
+                    
+                    // Only store userId for modal reopen if it wasn't the last item
+                    if (!result.onlyRegistrationLeft) {
+                        sessionStorage.setItem('reopen_payment_modal', userId);
+                    }
+                    
+                    // Refresh the page to update all data
+                    location.reload();
+                } else {
+                    // Restore original content and show error
+                    itemElement.html(originalContent);
+                    alert('Error: ' + (result.message || `Failed to cancel ${type}`));
+                }
+            } catch (e) {
+                console.error('Error parsing response:', e);
+                itemElement.html(originalContent);
+                alert(`Error canceling ${type}. Please try again.`);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', xhr.responseText);
+            itemElement.html(originalContent);
+            alert(`Error canceling ${type}. Please try again.`);
+        }
+    });
+}
+
 function processMultiplePayments(userId, payments) {
     if (!confirm('Are you sure you want to mark these as paid?')) {
         return;
     }
     
     // Get base URL from current page URL
-    const currentPath = window.location.pathname;
-    const adminIndex = currentPath.indexOf('/admin/');
-    const baseUrl = currentPath.substring(0, adminIndex);
+    const baseUrl = '<?php echo BASE_URL; ?>';
     
     $.ajax({
         url: `${baseUrl}/admin/pages/members/process_payment.php`,
@@ -592,51 +654,58 @@ function processMultiplePayments(userId, payments) {
 }
 
 $(document).ready(function() {
-    // Add member button click handler
-    $('#add_member-link').on('click', function(e) {
-        e.preventDefault();
-        
-        // First adjust the opacity with transition
-        $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
-            'opacity': '0',
-            'transform': 'translateX(-20px)'
-        });
-        
-        // Adjust main content with transition
-        $('.main-content').css('margin-left', '0');
-        
-        // After the transition, hide the elements completely
-        setTimeout(function() {
-            $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
-                'display': 'none',
-                'transform': 'translateX(0)'
-            });
-        }, 300);
-        
-        $.ajax({
-            type: "GET",
-            url: "pages/members/add_member.php",
-            dataType: "html",
-            success: function(response) {
-                $(".main-content").html(response);
-            },
-            error: function() {
-                alert("Error loading the add member form.");
-                // Show navigation elements back with transition
-                $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
-                    'display': '',
-                    'opacity': '0',
-                    'transform': 'translateX(-20px)'
-                });
-                setTimeout(function() {
-                    $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
-                        'opacity': '1',
-                        'transform': 'translateX(0)'
-                    });
-                    $('.main-content').css('margin-left', '');
-                }, 50);
-            }
-        });
+  // Check for modal reopen after refresh
+  const storedUserId = sessionStorage.getItem('reopen_payment_modal');
+  if (storedUserId) {
+    sessionStorage.removeItem('reopen_payment_modal');
+    setTimeout(() => viewPaymentDetails(storedUserId), 100);
+  }
+
+  // Add member button click handler
+  $('#add_member-link').on('click', function(e) {
+    e.preventDefault();
+    
+    // First adjust the opacity with transition
+    $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+      'opacity': '0',
+      'transform': 'translateX(-20px)'
     });
+    
+    // Adjust main content with transition
+    $('.main-content').css('margin-left', '0');
+    
+    // After the transition, hide the elements completely
+    setTimeout(function() {
+      $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+        'display': 'none',
+        'transform': 'translateX(0)'
+      });
+    }, 300);
+    
+    $.ajax({
+      type: "GET",
+      url: "pages/members/add_member.php",
+      dataType: "html",
+      success: function(response) {
+        $(".main-content").html(response);
+      },
+      error: function() {
+        alert("Error loading the add member form.");
+        // Show navigation elements back with transition
+        $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+          'display': '',
+          'opacity': '0',
+          'transform': 'translateX(-20px)'
+        });
+        setTimeout(function() {
+          $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+            'opacity': '1',
+            'transform': 'translateX(0)'
+          });
+          $('.main-content').css('margin-left', '');
+        }, 50);
+      }
+    });
+  });
 });
 </script>

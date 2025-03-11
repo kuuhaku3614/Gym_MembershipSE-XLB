@@ -1,4 +1,7 @@
 <?php
+// Define base URL for pretty URLs
+define('BASE_URL', 'http://localhost/Gym_MembershipSE-XLB');
+
 class Database {
    
     private $host = 'localhost';      
