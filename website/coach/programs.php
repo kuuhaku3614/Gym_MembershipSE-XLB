@@ -1,96 +1,101 @@
 <?php
     session_start();
     error_reporting(E_ALL);
-    ini_set('display_errors', 0);
+    ini_set('display_errors', 1);
     
-    require_once '../coach.class.php';
+    require_once '../../website/coach.class.php';
     
     if (!isset($_SESSION['user_id'])) {
         header("Location: ../login.php");
         exit;
     }
     
-    $coach = new Coach_class();
-    
-    // Handle AJAX requests
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        header('Content-Type: application/json');
+    try {
+        $coach = new Coach_class();
         
-        try {
-            if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-                if ($_GET['action'] === 'get_schedule') {
-                    $programTypeId = intval($_GET['program_type_id']);
-                    $type = $_GET['type'];
-                    
-                    if ($type === 'group') {
-                        $schedules = $coach->getGroupSchedule($programTypeId);
-                    } else {
-                        $schedules = $coach->getPersonalSchedule($programTypeId);
-                    }
-                    
-                    echo json_encode($schedules);
-                    exit;
-                }
-            }
+        // Handle AJAX requests
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
             
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $postData = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+            try {
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+                    if ($_GET['action'] === 'get_schedule') {
+                        $programTypeId = intval($_GET['program_type_id']);
+                        $type = $_GET['type'];
+                        
+                        if ($type === 'group') {
+                            $schedules = $coach->getGroupSchedule($programTypeId);
+                        } else {
+                            $schedules = $coach->getPersonalSchedule($programTypeId);
+                        }
+                        
+                        echo json_encode($schedules);
+                        exit;
+                    }
+                }
                 
-                if (isset($postData['action'])) {
-                    switch ($postData['action']) {
-                        case 'toggle_status':
-                            $coachProgramTypeId = intval($postData['coach_program_type_id']);
-                            $currentStatus = $postData['current_status'];
-                            $result = $coach->toggleProgramStatus($coachProgramTypeId, $_SESSION['user_id'], $currentStatus);
-                            echo json_encode(['success' => $result]);
-                            exit;
-                            
-                        case 'save_group_schedule':
-                            $scheduleId = !empty($_POST['schedule_id']) ? intval($_POST['schedule_id']) : null;
-                            $programTypeId = intval($_POST['program_type_id']);
-                            $day = $_POST['day'];
-                            $startTime = $_POST['start_time'];
-                            $endTime = $_POST['end_time'];
-                            $capacity = intval($_POST['capacity']);
-                            $price = floatval($_POST['price']);
-                            
-                            $result = $coach->saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity, $price);
-                            echo json_encode($result);
-                            exit;
-                            
-                        case 'save_personal_schedule':
-                            $scheduleId = !empty($_POST['schedule_id']) ? intval($_POST['schedule_id']) : null;
-                            $programTypeId = intval($_POST['program_type_id']);
-                            $day = $_POST['day'];
-                            $startTime = $_POST['start_time'];
-                            $endTime = $_POST['end_time'];
-                            $price = floatval($_POST['price']);
-                            $duration = intval($_POST['duration_rate']);
-                            
-                            $result = $coach->savePersonalSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $price, $duration);
-                            echo json_encode($result);
-                            exit;
-                            
-                        case 'delete_schedule':
-                            $scheduleId = intval($_POST['schedule_id']);
-                            $type = $_POST['type'];
-                            
-                            $result = $coach->deleteSchedule($scheduleId, $type);
-                            echo json_encode($result);
-                            exit;
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $postData = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+                    
+                    if (isset($postData['action'])) {
+                        switch ($postData['action']) {
+                            case 'toggle_status':
+                                $coachProgramTypeId = intval($postData['coach_program_type_id']);
+                                $currentStatus = $postData['current_status'];
+                                $result = $coach->toggleProgramStatus($coachProgramTypeId, $_SESSION['user_id'], $currentStatus);
+                                echo json_encode(['success' => $result]);
+                                exit;
+                                
+                            case 'save_group_schedule':
+                                $scheduleId = !empty($_POST['schedule_id']) ? intval($_POST['schedule_id']) : null;
+                                $programTypeId = intval($_POST['program_type_id']);
+                                $day = $_POST['day'];
+                                $startTime = $_POST['start_time'];
+                                $endTime = $_POST['end_time'];
+                                $capacity = intval($_POST['capacity']);
+                                $price = floatval($_POST['price']);
+                                
+                                $result = $coach->saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity, $price);
+                                echo json_encode($result);
+                                exit;
+                                
+                            case 'save_personal_schedule':
+                                $scheduleId = !empty($_POST['schedule_id']) ? intval($_POST['schedule_id']) : null;
+                                $programTypeId = intval($_POST['program_type_id']);
+                                $day = $_POST['day'];
+                                $startTime = $_POST['start_time'];
+                                $endTime = $_POST['end_time'];
+                                $price = floatval($_POST['price']);
+                                $duration = intval($_POST['duration_rate']);
+                                
+                                $result = $coach->savePersonalSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $price, $duration);
+                                echo json_encode($result);
+                                exit;
+                                
+                            case 'delete_schedule':
+                                $scheduleId = intval($_POST['schedule_id']);
+                                $type = $_POST['type'];
+                                
+                                $result = $coach->deleteSchedule($scheduleId, $type);
+                                echo json_encode($result);
+                                exit;
+                        }
                     }
                 }
+                
+                throw new Exception('Invalid action');
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                exit;
             }
-            
-            throw new Exception('Invalid action');
-        } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-            exit;
         }
+        
+        $coachPrograms = $coach->getCoachPrograms($_SESSION['user_id']);
+        include('../coach.nav.php');
+    } catch (Exception $e) {
+        echo 'An error occurred: ' . $e->getMessage();
+        exit;
     }
-    
-    $coachPrograms = $coach->getCoachPrograms($_SESSION['user_id']);
-    include('../coach.nav.php');
 ?>
 
 <style>
@@ -148,7 +153,6 @@
                                         <th>Program Name</th>
                                         <th>Type</th>
                                         <th>Description</th>
-                                        <th>Duration</th>
                                         <th>Price</th>
                                         <th>Status</th>
                                         <th>Actions</th>
@@ -161,8 +165,7 @@
                                                 <td><?= htmlspecialchars($program['program_name']) ?></td>
                                                 <td><?= htmlspecialchars($program['coach_program_type']) ?></td>
                                                 <td><?= htmlspecialchars($program['coach_program_description']) ?></td>
-                                                <td><?= htmlspecialchars($program['duration'] . ' ' . $program['duration_type']) ?></td>
-                                                <td>₱<?= number_format($program['coach_program_price'], 2) ?></td>
+                                                <td><?= '₱' . number_format($program['coach_program_price'], 2) ?></td>
                                                 <td>
                                                     <?php if ($program['coach_program_status'] === 'active'): ?>
                                                         <span class="badge bg-success">Active</span>
@@ -194,7 +197,7 @@
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="7" class="text-center">No programs found</td>
+                                            <td colspan="6" class="text-center">No programs found</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
@@ -457,7 +460,7 @@ function viewGroupSchedule(programTypeId) {
                         <td>${startTime} - ${endTime}</td>
                         <td>₱${schedule.price}</td>
                         <td>
-                            ${schedule.current_members}/${schedule.capacity}
+                            ${schedule.current_members || 0}/${schedule.capacity}
                             <i class="fas fa-info-circle text-info ms-2" 
                                style="cursor: pointer;" 
                                data-bs-toggle="tooltip" 

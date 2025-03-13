@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 11, 2025 at 01:20 PM
+-- Generation Time: Mar 11, 2025 at 09:20 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -139,7 +139,6 @@ CREATE TABLE `coach_program_types` (
   `coach_id` int(11) NOT NULL,
   `program_id` int(11) NOT NULL,
   `type` enum('personal','group','','') NOT NULL,
-  `price` decimal(10,2) NOT NULL,
   `description` text DEFAULT NULL,
   `status` enum('active','inactive','pending','') NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -150,9 +149,9 @@ CREATE TABLE `coach_program_types` (
 -- Dumping data for table `coach_program_types`
 --
 
-INSERT INTO `coach_program_types` (`id`, `coach_id`, `program_id`, `type`, `price`, `description`, `status`, `created_at`, `updated_at`) VALUES
-(17, 35, 10, 'personal', 0.00, 'ferson', 'active', '2025-03-09 15:18:18', '2025-03-09 15:23:05'),
-(18, 35, 10, 'group', 0.00, 'hakdog', 'active', '2025-03-09 15:22:42', '2025-03-09 15:23:13');
+INSERT INTO `coach_program_types` (`id`, `coach_id`, `program_id`, `type`, `description`, `status`, `created_at`, `updated_at`) VALUES
+(17, 35, 10, 'personal', 'ferson', 'active', '2025-03-09 15:18:18', '2025-03-09 15:23:05'),
+(18, 35, 10, 'group', 'hakdog', 'active', '2025-03-09 15:22:42', '2025-03-09 15:23:13');
 
 -- --------------------------------------------------------
 
@@ -239,15 +238,6 @@ CREATE TABLE `memberships` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `memberships`
---
-
-INSERT INTO `memberships` (`id`, `transaction_id`, `membership_plan_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
-(178, 183, 20, '2025-03-10', '2025-03-15', 10.00, 'expiring', 0, '2025-03-10 03:50:06', '2025-03-09 19:50:46', '2025-03-09 22:16:55'),
-(180, 185, 21, '2025-03-10', '2025-03-17', 25.00, 'expiring', 0, '2025-03-10 04:44:26', '2025-03-09 20:52:03', '2025-03-11 12:02:41'),
-(182, 186, 20, '2025-03-09', '2025-03-18', 500.00, 'expiring', 0, NULL, '2025-03-09 22:27:52', '2025-03-11 12:03:26');
 
 -- --------------------------------------------------------
 
@@ -381,8 +371,6 @@ CREATE TABLE `profile_photos` (
 CREATE TABLE `programs` (
   `id` int(11) NOT NULL,
   `program_name` varchar(100) NOT NULL,
-  `duration` int(11) NOT NULL,
-  `duration_type_id` int(11) NOT NULL,
   `description` text DEFAULT NULL,
   `status` enum('active','inactive') NOT NULL,
   `is_removed` tinyint(1) NOT NULL DEFAULT 0,
@@ -394,8 +382,8 @@ CREATE TABLE `programs` (
 -- Dumping data for table `programs`
 --
 
-INSERT INTO `programs` (`id`, `program_name`, `duration`, `duration_type_id`, `description`, `status`, `is_removed`, `created_at`, `updated_at`) VALUES
-(10, 'Coaching', 10, 1, 'none', 'active', 0, '2025-03-03 10:20:39', '2025-03-03 10:20:39');
+INSERT INTO `programs` (`id`, `program_name`, `description`, `status`, `is_removed`, `created_at`, `updated_at`) VALUES
+(10, 'Coaching', 'none', 'active', 0, '2025-03-03 10:20:39', '2025-03-03 10:20:39');
 
 -- --------------------------------------------------------
 
@@ -487,13 +475,6 @@ CREATE TABLE `registration_records` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `registration_records`
---
-
-INSERT INTO `registration_records` (`id`, `transaction_id`, `registration_id`, `amount`, `is_paid`, `payment_date`, `created_at`) VALUES
-(86, 186, 1, 200.00, 0, '2025-03-11 20:07:03', '2025-03-09 22:27:52');
-
 -- --------------------------------------------------------
 
 --
@@ -541,14 +522,6 @@ CREATE TABLE `rental_subscriptions` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `rental_subscriptions`
---
-
-INSERT INTO `rental_subscriptions` (`id`, `transaction_id`, `rental_service_id`, `start_date`, `end_date`, `amount`, `status`, `is_paid`, `payment_date`, `created_at`, `updated_at`) VALUES
-(86, 183, 5, '2025-03-10', '2025-03-15', 10.00, 'active', 0, '2025-03-10 03:50:06', '2025-03-09 20:16:51', '2025-03-09 22:16:23'),
-(87, 185, 5, '2025-03-10', '2025-03-15', 10.00, 'expiring', 0, '2025-03-10 03:50:06', '2025-03-09 20:24:34', '2025-03-09 22:22:20');
 
 -- --------------------------------------------------------
 
@@ -647,7 +620,7 @@ CREATE TABLE `transactions` (
 --
 
 INSERT INTO `transactions` (`id`, `staff_id`, `user_id`, `status`, `created_at`) VALUES
-(183, 34, 33, 'confirmed', '2025-03-09 19:49:49'),
+(183, 34, 53, 'confirmed', '2025-03-09 19:49:49'),
 (185, 34, 33, 'confirmed', '2025-03-09 21:00:26'),
 (186, NULL, 179, 'confirmed', '2025-03-09 22:27:52');
 
@@ -682,7 +655,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `role_id`, `is_active`, `crea
 (40, 'kiel', '$2y$10$rnEhRal7OocaGpeHOJeP8OXzFAn91gf5ukjJtZpvqlrlFzT6ZCBi2', 3, 1, '2025-01-19 05:58:19', '2025-01-19 05:59:58', 0, '2025-03-09 15:14:10'),
 (53, 'last', '$2y$10$36wnqKJZoLYGQ1IMGF349e.tOsXAYhsR8kXzF74nJjPqU/lSiYgCu', 3, 1, '2025-01-29 09:28:33', '2025-01-29 09:28:33', 0, '2025-03-09 15:14:10'),
 (161, 'singles9359', '$2y$10$YrIZq4xXm1IyWC7g2nvG0.w0HQjVEVjWlMJ/toS5TyQ/liC/bN62q', 3, 1, '2025-02-04 07:47:35', '2025-02-04 07:47:35', 0, '2025-03-09 15:14:10'),
-(179, 'hello4919', '$2y$10$Ko1Vls8e1j45jdeEuHRbMeTa/FahDXYIzVh/0BzbrNV6RbMlV.pRO', 3, 1, '2025-03-09 22:27:52', '2025-03-09 22:27:52', 0, '2025-03-09 22:27:52');
+(179, 'hello4919', '$2y$10$Ko1Vls8e1j45jdeEuHRbMeTa/FahDXYIzVh/0BzbrNV6RbMlV.pRO', 5, 1, '2025-03-09 22:27:52', '2025-03-11 18:17:49', 0, '2025-03-09 22:27:52');
 
 -- --------------------------------------------------------
 
@@ -871,8 +844,7 @@ ALTER TABLE `profile_photos`
 -- Indexes for table `programs`
 --
 ALTER TABLE `programs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `duration_type_id` (`duration_type_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `program_subscriptions`
@@ -1031,7 +1003,7 @@ ALTER TABLE `coach_personal_schedule`
 -- AUTO_INCREMENT for table `coach_program_types`
 --
 ALTER TABLE `coach_program_types`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `duration_types`
@@ -1055,7 +1027,7 @@ ALTER TABLE `gym_offers`
 -- AUTO_INCREMENT for table `memberships`
 --
 ALTER TABLE `memberships`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=183;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=190;
 
 --
 -- AUTO_INCREMENT for table `membership_plans`
@@ -1133,7 +1105,7 @@ ALTER TABLE `rental_services`
 -- AUTO_INCREMENT for table `rental_subscriptions`
 --
 ALTER TABLE `rental_subscriptions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -1248,12 +1220,6 @@ ALTER TABLE `personal_details`
 --
 ALTER TABLE `profile_photos`
   ADD CONSTRAINT `profile_photos_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `programs`
---
-ALTER TABLE `programs`
-  ADD CONSTRAINT `programs_ibfk_2` FOREIGN KEY (`duration_type_id`) REFERENCES `duration_types` (`id`);
 
 --
 -- Constraints for table `program_subscriptions`

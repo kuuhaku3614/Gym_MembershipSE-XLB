@@ -5,28 +5,32 @@ class Coach_class {
     protected $db;
 
     public function __construct() {
-        $this->db = new mysqli('localhost', 'root', '', 'gym_managementdb');
-        if ($this->db->connect_error) {
-            die("Connection failed: " . $this->db->connect_error);
+        try {
+            $database = new Database();
+            $this->db = $database->connect();
+        } catch (Exception $e) {
+            die("Connection failed: " . $e->getMessage());
         }
     }
 
     public function getCoachPrograms($coachId) {
-        $sql = "SELECT p.*, cpt.id as coach_program_type_id, cpt.price, cpt.status as coach_program_status, 
-                dt.type_name as duration_type,
-                cpt.price as coach_program_price,
+        $sql = "SELECT 
+                p.*,
+                cpt.id as coach_program_type_id,
                 cpt.status as coach_program_status,
                 cpt.description as coach_program_description,
-                cpt.type as coach_program_type
-                FROM programs p 
-                INNER JOIN coach_program_types cpt ON p.id = cpt.program_id 
-                JOIN duration_types dt ON p.duration_type_id = dt.id
-                WHERE cpt.coach_id = ? AND p.is_removed = 0";
+                cpt.type as coach_program_type,
+                COALESCE(cgs.price, cps.price) as coach_program_price
+            FROM programs p 
+            INNER JOIN coach_program_types cpt ON p.id = cpt.program_id 
+            LEFT JOIN coach_group_schedule cgs ON cgs.coach_program_type_id = cpt.id
+            LEFT JOIN coach_personal_schedule cps ON cps.coach_program_type_id = cpt.id
+            WHERE cpt.coach_id = ? AND p.is_removed = 0
+            GROUP BY cpt.id";
+            
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param("i", $coachId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->execute([$coachId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getProgramMembers($coachId) {
@@ -40,20 +44,21 @@ class Coach_class {
                     pd.last_name,
                     pd.phone_number as contact_no,
                     p.program_name,
-                    cpt.type as type
+                    cpt.type as type,
+                    COALESCE(cgs.price, cps.price) as program_price
                 FROM program_subscriptions ps
                 INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
                 INNER JOIN programs p ON cpt.program_id = p.id
                 INNER JOIN users u ON ps.user_id = u.id
                 INNER JOIN personal_details pd ON u.id = pd.user_id
+                LEFT JOIN coach_group_schedule cgs ON cgs.coach_program_type_id = cpt.id
+                LEFT JOIN coach_personal_schedule cps ON cps.coach_program_type_id = cpt.id
                 WHERE cpt.coach_id = ?
                 ORDER BY ps.created_at DESC";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param("i", $coachId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->execute([$coachId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function toggleProgramStatus($coachProgramTypeId, $coachId, $currentStatus) {
@@ -61,8 +66,8 @@ class Coach_class {
             $newStatus = $currentStatus === 'active' ? 'inactive' : 'active';
             $sql = "UPDATE coach_program_types SET status = ? WHERE id = ? AND coach_id = ?";
             $stmt = $this->db->prepare($sql);
-            $stmt->bind_param("sii", $newStatus, $coachProgramTypeId, $coachId);
-            return $stmt->execute() && $stmt->affected_rows > 0;
+            $stmt->execute([$newStatus, $coachProgramTypeId, $coachId]);
+            return $stmt->rowCount() > 0;
         } catch (Exception $e) {
             return false;
         }
@@ -75,9 +80,10 @@ class Coach_class {
             cps.day,
             cps.start_time,
             cps.end_time,
-            cpt.price,
+            cps.price,
             p.program_name,
-            'personal' as schedule_type
+            'personal' as schedule_type,
+            cps.duration_rate
         FROM coach_personal_schedule cps
         JOIN coach_program_types cpt ON cps.coach_program_type_id = cpt.id
         JOIN programs p ON cpt.program_id = p.id
@@ -90,6 +96,7 @@ class Coach_class {
             cgs.start_time,
             cgs.end_time,
             cgs.capacity,
+            cgs.price,
             p.program_name,
             COUNT(DISTINCT ps.user_id) as current_members,
             'group' as schedule_type
@@ -105,11 +112,10 @@ class Coach_class {
 
         // Get personal schedule events
         $stmt = $this->db->prepare($personalSql);
-        $stmt->bind_param("i", $coachId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->execute([$coachId]);
+        $personalSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        while ($row = $result->fetch_assoc()) {
+        foreach ($personalSchedules as $row) {
             // Get the next 4 weeks of events for this schedule
             $currentDate = new DateTime();
             $endDate = (new DateTime())->modify('+4 weeks');
@@ -133,7 +139,7 @@ class Coach_class {
                     
                     $events[] = array(
                         'id' => 'personal_' . $row['id'],
-                        'title' => $row['program_name'] . ' (Personal) - ₱' . number_format($row['price'], 2),
+                        'title' => $row['program_name'] . ' (Personal) - ₱' . number_format($row['price'], 2) . ' - ' . $row['duration_rate'] . ' mins',
                         'start' => $eventStart->format('Y-m-d H:i:s'),
                         'end' => $eventEnd->format('Y-m-d H:i:s'),
                         'backgroundColor' => '#28a745',
@@ -147,11 +153,10 @@ class Coach_class {
 
         // Get group schedule events
         $stmt = $this->db->prepare($groupSql);
-        $stmt->bind_param("i", $coachId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->execute([$coachId]);
+        $groupSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        while ($row = $result->fetch_assoc()) {
+        foreach ($groupSchedules as $row) {
             // Get the next 4 weeks of events for this schedule
             $currentDate = new DateTime();
             $endDate = (new DateTime())->modify('+4 weeks');
@@ -175,7 +180,7 @@ class Coach_class {
                     
                     $events[] = array(
                         'id' => 'group_' . $row['id'],
-                        'title' => $row['program_name'] . ' (Group) - ' . $row['current_members'] . '/' . $row['capacity'],
+                        'title' => $row['program_name'] . ' (Group) - ' . $row['current_members'] . '/' . $row['capacity'] . ' - ₱' . number_format($row['price'], 2),
                         'start' => $eventStart->format('Y-m-d H:i:s'),
                         'end' => $eventEnd->format('Y-m-d H:i:s'),
                         'backgroundColor' => '#007bff',
@@ -193,43 +198,43 @@ class Coach_class {
     public function deleteAvailability($id) {
         $query = "DELETE FROM coach_availability WHERE id = ?";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->execute([$id]);
         
-        return $stmt->execute();
+        return $stmt->rowCount() > 0;
     }
     
     public function getGroupSchedule($programTypeId) {
         $sql = "SELECT 
-            cgs.*,
-            COUNT(DISTINCT ps.user_id) AS current_members,
-            GROUP_CONCAT(DISTINCT CONCAT(pd.first_name, ' ', pd.last_name) ORDER BY pd.first_name, pd.last_name) AS member_names,
-            cgs.price
-        FROM coach_group_schedule cgs
-        LEFT JOIN program_subscription_schedule pss 
-            ON pss.coach_group_schedule_id = cgs.id
-        LEFT JOIN program_subscriptions ps 
-            ON ps.id = pss.program_subscription_id AND ps.status = 'active'
-        LEFT JOIN users u 
-            ON ps.user_id = u.id
-        LEFT JOIN personal_details pd 
-            ON u.id = pd.user_id
-        WHERE cgs.coach_program_type_id = ?
-        GROUP BY cgs.id;";
+                cgs.*,
+                COUNT(DISTINCT pss.program_subscription_id) as current_members
+            FROM coach_group_schedule cgs
+            LEFT JOIN program_subscription_schedule pss ON pss.coach_group_schedule_id = cgs.id
+            LEFT JOIN program_subscriptions ps ON ps.id = pss.program_subscription_id AND ps.status = 'active'
+            WHERE cgs.coach_program_type_id = ?
+            GROUP BY cgs.id";
             
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param("i", $programTypeId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->execute([$programTypeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getPersonalSchedule($programTypeId) {
-        $sql = "SELECT * FROM coach_personal_schedule WHERE coach_program_type_id = ?";
+        $sql = "SELECT 
+            cps.id,
+            cps.day,
+            cps.start_time,
+            cps.end_time,
+            cps.price,
+            cps.duration_rate,
+            p.program_name
+        FROM coach_personal_schedule cps
+        JOIN coach_program_types cpt ON cps.coach_program_type_id = cpt.id
+        JOIN programs p ON cpt.program_id = p.id
+        WHERE cps.coach_program_type_id = ?";
+            
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param("i", $programTypeId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->execute([$programTypeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function saveGroupSchedule($scheduleId, $programTypeId, $day, $startTime, $endTime, $capacity, $price) {
@@ -237,28 +242,24 @@ class Coach_class {
             if ($scheduleId) {
                 // Update existing schedule
                 $sql = "UPDATE coach_group_schedule 
-                        SET day = ?, start_time = ?, end_time = ?, capacity = ?, price = ?
-                        WHERE id = ? AND coach_program_type_id = ?";
+                       SET day = ?, start_time = ?, end_time = ?, capacity = ?, price = ?
+                       WHERE id = ? AND coach_program_type_id = ?";
+                
                 $stmt = $this->db->prepare($sql);
                 if (!$stmt) {
                     throw new Exception("Prepare failed: " . $this->db->error);
                 }
                 
-                $stmt->bind_param("sssiidi", $day, $startTime, $endTime, $capacity, $price, $scheduleId, $programTypeId);
+                $stmt->execute([$day, $startTime, $endTime, $capacity, $price, $scheduleId, $programTypeId]);
             } else {
                 // Insert new schedule
                 $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity, price)
-                        VALUES (?, ?, ?, ?, ?, ?)";
-                $stmt = $this->db->prepare($sql);
-                if (!$stmt) {
+                       VALUES (?, ?, ?, ?, ?, ?)";
+                if (!$stmt = $this->db->prepare($sql)) {
                     throw new Exception("Prepare failed: " . $this->db->error);
                 }
                 
-                $stmt->bind_param("isssid", $programTypeId, $day, $startTime, $endTime, $capacity, $price);
-            }
-            
-            if (!$stmt->execute()) {
-                throw new Exception("Execute failed: " . $stmt->error);
+                $stmt->execute([$programTypeId, $day, $startTime, $endTime, $capacity, $price]);
             }
             
             return ['success' => true];
@@ -272,28 +273,24 @@ class Coach_class {
             if ($scheduleId) {
                 // Update existing schedule
                 $sql = "UPDATE coach_personal_schedule 
-                        SET day = ?, start_time = ?, end_time = ?, price = ?, duration_rate = ?
-                        WHERE id = ? AND coach_program_type_id = ?";
+                       SET day = ?, start_time = ?, end_time = ?, price = ?, duration_rate = ?
+                       WHERE id = ? AND coach_program_type_id = ?";
+                
                 $stmt = $this->db->prepare($sql);
                 if (!$stmt) {
                     throw new Exception("Prepare failed: " . $this->db->error);
                 }
                 
-                $stmt->bind_param("sssdiii", $day, $startTime, $endTime, $price, $duration, $scheduleId, $programTypeId);
+                $stmt->execute([$day, $startTime, $endTime, $price, $duration, $scheduleId, $programTypeId]);
             } else {
                 // Insert new schedule
                 $sql = "INSERT INTO coach_personal_schedule (coach_program_type_id, day, start_time, end_time, price, duration_rate)
-                        VALUES (?, ?, ?, ?, ?, ?)";
-                $stmt = $this->db->prepare($sql);
-                if (!$stmt) {
+                       VALUES (?, ?, ?, ?, ?, ?)";
+                if (!$stmt = $this->db->prepare($sql)) {
                     throw new Exception("Prepare failed: " . $this->db->error);
                 }
                 
-                $stmt->bind_param("isssdi", $programTypeId, $day, $startTime, $endTime, $price, $duration);
-            }
-            
-            if (!$stmt->execute()) {
-                throw new Exception("Execute failed: " . $stmt->error);
+                $stmt->execute([$programTypeId, $day, $startTime, $endTime, $price, $duration]);
             }
             
             return ['success' => true];
@@ -304,18 +301,16 @@ class Coach_class {
 
     public function deleteSchedule($scheduleId, $type) {
         try {
-            $table = $type === 'group' ? 'coach_group_schedule' : 'coach_personal_schedule';
-            $sql = "DELETE FROM " . $table . " WHERE id = ?";
+            $sql = $type === 'group' 
+                ? "DELETE FROM coach_group_schedule WHERE id = ?"
+                : "DELETE FROM coach_personal_schedule WHERE id = ?";
+            
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
                 throw new Exception("Prepare failed: " . $this->db->error);
             }
             
-            $stmt->bind_param("i", $scheduleId);
-            
-            if (!$stmt->execute()) {
-                throw new Exception("Execute failed: " . $stmt->error);
-            }
+            $stmt->execute([$scheduleId]);
             
             return ['success' => true];
         } catch (Exception $e) {
@@ -323,22 +318,22 @@ class Coach_class {
         }
     }
 
-    public function getGroupScheduleMembers($scheduleId) {
+    public function getScheduleMembers($scheduleId) {
         $sql = "SELECT 
                 pd.first_name,
-                pd.last_name
-                FROM program_subscriptions ps 
-                JOIN program_subscription_schedule pss ON ps.program_subscription_schedule_id = pss.id
-                JOIN users u ON ps.user_id = u.id
-                JOIN personal_details pd ON u.id = pd.user_id
-                WHERE pss.coach_group_schedule_id = ?
+                pd.last_name,
+                pd.phone_number as contact_no,
+                ps.status
+            FROM program_subscription_schedule pss
+            JOIN program_subscriptions ps ON ps.id = pss.program_subscription_id
+            JOIN users u ON ps.user_id = u.id
+            JOIN personal_details pd ON u.id = pd.user_id
+            WHERE pss.coach_group_schedule_id = ?
                 AND ps.status = 'active'";
             
         $stmt = $this->db->prepare($sql);
-        $stmt->bind_param("i", $scheduleId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_all(MYSQLI_ASSOC);
+        $stmt->execute([$scheduleId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>
