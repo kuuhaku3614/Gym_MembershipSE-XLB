@@ -1,5 +1,10 @@
 <?php
 require_once '../../../config.php';
+require_once(__DIR__ . '/expiry-notifications.class.php');
+
+// Initialize the ExpiryNotifications class
+$expiryNotifications = new ExpiryNotifications();
+$notifications = $expiryNotifications->getExpiryNotifications();
 
 // Fetch administrative announcements
 $admin_sql = "
@@ -125,6 +130,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
         }
 
         .notification-badge {
@@ -207,6 +213,68 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #6c757d;
             font-size: 1.5rem;
         }
+        
+        /* Notifications dropdown styles */
+        .notification-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+        
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+        }
+        
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--primary-color);
+        }
+        
+        .notification-message {
+            font-size: 0.875rem;
+            color: #495057;
+        }
+        
+        .notification-time {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        
+        .notification-show {
+            display: block;
+        }
+        
+        .notification-item.pending {
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .notification-item.expiring {
+            border-left: 3px solid #ffc107;
+        }
+        
+        .notification-item.expired {
+            border-left: 3px solid #dc3545;
+        }
     </style>
 <div class="dashboard-container">
     <!-- Stats Section -->
@@ -276,19 +344,57 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <?php
-        // Pending Notifications
-        $notifications_sql = "
-        SELECT COALESCE(COUNT(*), 0) AS total_notifications 
+        // Pending Transactions
+        $pending_transactions_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS pending_transactions 
         FROM transactions
         WHERE status = 'pending'
         ";
-        $notifications_stmt = $pdo->prepare($notifications_sql);
-        $notifications_stmt->execute();
-        $notifications = $notifications_stmt->fetch(PDO::FETCH_ASSOC);
+        $pending_transactions_stmt = $pdo->prepare($pending_transactions_sql);
+        $pending_transactions_stmt->execute();
+        $pending_transactions = $pending_transactions_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Total notification count: pending transactions + expiry notifications
+        $total_notifications = $pending_transactions['pending_transactions'] + count($notifications);
         ?>
-        <div class="card notification-card stats-card">
-            <div class="notification-badge"><?= $notifications['total_notifications'] ?: '0' ?></div>
+        <div class="card notification-card stats-card" id="notificationCard">
+            <div class="notification-badge"><?= $total_notifications ?: '0' ?></div>
             <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
+            
+            <!-- Notifications dropdown -->
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="table-header">Notifications</div>
+                
+                <?php if ($total_notifications == 0): ?>
+                    <div class="empty-state">No notifications available</div>
+                <?php else: ?>
+                    <?php if ($pending_transactions['pending_transactions'] > 0): ?>
+                        <div class="notification-item pending">
+                            <div class="notification-title">Pending Transactions</div>
+                            <div class="notification-message">You have <?= $pending_transactions['pending_transactions'] ?> pending transaction(s) that need approval</div>
+                            <div class="notification-time">View in Transactions section</div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php foreach ($notifications as $notification): ?>
+                        <?php 
+                        $notificationClass = '';
+                        if (strpos($notification['type'], 'expiring') !== false) {
+                            $notificationClass = 'expiring';
+                        } elseif (strpos($notification['type'], 'expired') !== false) {
+                            $notificationClass = 'expired';
+                        }
+                        ?>
+                        <div class="notification-item <?= $notificationClass ?>" 
+                             data-id="<?= $notification['id'] ?>"
+                             data-type="<?= $notification['type'] ?>">
+                            <div class="notification-title"><?= htmlspecialchars($notification['title']) ?></div>
+                            <div class="notification-message"><?= htmlspecialchars($notification['message']) ?></div>
+                            <div class="notification-time">Now</div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </div>
 
         <?php
@@ -399,16 +505,18 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
 
             <?php
-            // Expiring and Expired Memberships
+            // Count expiring memberships (within 7 days)
             $expiring_memberships_sql = "
             SELECT COALESCE(COUNT(*), 0) AS expiring_memberships 
             FROM memberships 
-            WHERE status = 'expiring'
+            WHERE status = 'active' 
+            AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
             ";
             $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
             $expiring_memberships_stmt->execute();
             $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
                         
+            // Count expired memberships
             $expired_memberships_sql = "
             SELECT COALESCE(COUNT(*), 0) AS expired_memberships 
             FROM memberships 
@@ -492,3 +600,60 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </div>
+
+<!-- JavaScript for notification dropdown functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationCard = document.getElementById('notificationCard');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    
+    // Toggle notification dropdown
+    notificationCard.addEventListener('click', function(e) {
+        e.stopPropagation();
+        notificationDropdown.classList.toggle('notification-show');
+    });
+    
+    // Close dropdown when clicking elsewhere on the page
+    document.addEventListener('click', function(e) {
+        if (!notificationCard.contains(e.target)) {
+            notificationDropdown.classList.remove('notification-show');
+        }
+    });
+    
+    // Handle notification item clicks
+    const notificationItems = document.querySelectorAll('.notification-item');
+    notificationItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const notificationType = this.getAttribute('data-type');
+            const notificationId = this.getAttribute('data-id');
+            
+            // Mark notification as read
+            if (notificationType && notificationId) {
+                markNotificationAsRead(notificationId, notificationType);
+            }
+            
+            // Redirect based on notification type
+            if (notificationType === 'pending_transaction') {
+                window.location.href = 'transactions.php';
+            } else if (notificationType.includes('membership')) {
+                window.location.href = 'members/memberships.php';
+            } else if (notificationType.includes('rental')) {
+                window.location.href = 'rentals/subscriptions.php';
+            }
+        });
+    });
+    
+    // AJAX function to mark notification as read
+    function markNotificationAsRead(id, type) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'ajax/mark_notification_read.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.onload = function() {
+            if (this.status === 200) {
+                console.log('Notification marked as read');
+            }
+        };
+        xhr.send(`notification_id=${id}&notification_type=${type}&user_id=<?= $_SESSION['user_id'] ?? 0 ?>`);
+    }
+});
+</script>

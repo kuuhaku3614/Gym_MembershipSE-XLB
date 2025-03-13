@@ -270,4 +270,29 @@ if (!function_exists('getAnnouncementNotifications')) {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
+if (!function_exists('getActiveMemberships')) {
+    /**
+     * Get active memberships for a user
+     * 
+     * @param Database $database Database connection class
+     * @param int $user_id User ID
+     * @return array Active membership records
+     */
+    function getActiveMemberships($database, $user_id) {
+        $pdo = $database->connect();
+        
+        // Fetch active memberships for the current user
+        $sql = "SELECT m.id, m.start_date, m.end_date, m.status, mp.plan_name as plan_name, m.amount
+                FROM memberships m
+                JOIN transactions t ON m.transaction_id = t.id
+                JOIN membership_plans mp ON m.membership_plan_id = mp.id
+                WHERE t.user_id = ? AND m.status = 'active'
+                ORDER BY m.end_date DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(1, $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
 ?>
