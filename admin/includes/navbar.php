@@ -77,6 +77,113 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
     $_SESSION['personal_details'] = $userDetails;
 }
+
+// Get notification counts
+function getNotificationCounts() {
+    $counts = [
+        'pending_transactions' => 0,
+        'expiring_memberships' => 0,
+        'expired_memberships' => 0,
+        'expiring_rentals' => 0,
+        'expired_rentals' => 0,
+        'total' => 0
+    ];
+    
+    $conn = new mysqli('localhost', 'root', '', 'gym_managementdb');
+    if ($conn->connect_error) {
+        return $counts;
+    }
+    
+    // Pending Transactions Query
+    $pending_transactions_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS pending_transactions 
+        FROM transactions 
+        WHERE status = 'pending'
+    ";
+    
+    // Expiring Memberships Query
+    $expiring_memberships_sql = "
+        SELECT COUNT(*) AS expiring_count
+        FROM memberships m 
+        JOIN transactions t ON m.transaction_id = t.id 
+        JOIN users u ON t.user_id = u.id 
+        JOIN personal_details p ON u.id = p.user_id 
+        JOIN membership_plans mp ON m.membership_plan_id = mp.id 
+        WHERE m.status = 'expiring'
+    ";
+    
+    // Expired Memberships Query
+    $expired_memberships_sql = "
+        SELECT COUNT(*) AS expired_count
+        FROM memberships m 
+        JOIN transactions t ON m.transaction_id = t.id 
+        JOIN users u ON t.user_id = u.id 
+        JOIN personal_details p ON u.id = p.user_id 
+        JOIN membership_plans mp ON m.membership_plan_id = mp.id 
+        WHERE m.status = 'expired'
+    ";
+    
+    // Expiring Rentals Query
+    $expiring_rentals_sql = "
+        SELECT COUNT(*) AS expiring_count
+        FROM rental_subscriptions rs 
+        JOIN transactions t ON rs.transaction_id = t.id 
+        JOIN users u ON t.user_id = u.id 
+        JOIN personal_details p ON u.id = p.user_id 
+        JOIN rental_services s ON rs.rental_service_id = s.id 
+        WHERE rs.status = 'expiring'
+    ";
+    
+    // Expired Rentals Query
+    $expired_rentals_sql = "
+        SELECT COUNT(*) AS expired_count
+        FROM rental_subscriptions rs 
+        JOIN transactions t ON rs.transaction_id = t.id 
+        JOIN users u ON t.user_id = u.id 
+        JOIN personal_details p ON u.id = p.user_id 
+        JOIN rental_services s ON rs.rental_service_id = s.id 
+        WHERE rs.status = 'expired'
+    ";
+    
+    // Execute all queries and get counts
+    $result = $conn->query($pending_transactions_sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $counts['pending_transactions'] = (int)$row['pending_transactions'];
+    }
+    
+    $result = $conn->query($expiring_memberships_sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $counts['expiring_memberships'] = (int)$row['expiring_count'];
+    }
+    
+    $result = $conn->query($expired_memberships_sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $counts['expired_memberships'] = (int)$row['expired_count'];
+    }
+    
+    $result = $conn->query($expiring_rentals_sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $counts['expiring_rentals'] = (int)$row['expiring_count'];
+    }
+    
+    $result = $conn->query($expired_rentals_sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $counts['expired_rentals'] = (int)$row['expired_count'];
+    }
+    
+    // Calculate total notifications
+    $counts['total'] = $counts['pending_transactions'] + 
+                       $counts['expiring_memberships'] + 
+                       $counts['expired_memberships'] + 
+                       $counts['expiring_rentals'] + 
+                       $counts['expired_rentals'];
+    
+    $conn->close();
+    return $counts;
+}
+
+// Get notification counts
+$notificationCounts = getNotificationCounts();
 ?>
 
 <?php
@@ -127,6 +234,37 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 }
 .modal-backdrop {
     z-index: 1040 !important;
+}
+
+/* Notification Badge Styles */
+.dropdown-icon-container {
+    position: relative;
+    margin-left: 5px;
+}
+
+.badge-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.notification-section {
+    position: relative;
+}
+
+.sub-nav-badge {
+    margin-left: 5px;
+    font-size: 10px;
+    padding: 2px 6px;
 }
 </style>
 
@@ -198,13 +336,18 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                 </div>
             </a>
 
-            <!-- Notifications Section -->
+            <!-- Notifications Section with Badge on dropdown icon -->
             <a href="notification" id="notification-link" class="nav-item has-subnav">
                 <div class="nav-item-content">
                     <i class="fas fa-bell"></i>
                     Notifications
                 </div>
-                <i class="fas fa-chevron-down dropdown-icon"></i>
+                <div class="dropdown-icon-container">
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                    <?php if ($notificationCounts['total'] > 0): ?>
+                    <span class="badge-count"><?php echo $notificationCounts['total']; ?></span>
+                    <?php endif; ?>
+                </div>
             </a>
             <div class="sub-nav">
                 <a href="announcement" id="announcement-link" class="sub-nav-item">
@@ -282,7 +425,6 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the modal
     const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
@@ -291,6 +433,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logoutLink').addEventListener('click', function(e) {
         e.preventDefault();
         logoutModal.show();
+    });
+    
+    // Toggle notification sub-menu when clicking on notification link
+    const notificationLink = document.getElementById('notification-link');
+    notificationLink.addEventListener('click', function(e) {
+        // The dropdown functionality is already handled by the existing code,
+        // but we can add additional notification-specific behavior here if needed
     });
 });
 </script>

@@ -31,6 +31,103 @@ if (
     header('Location: dashboard?error=unauthorized');
     exit;
 }
+
+// Membership and rental status management functions
+class StatusManager {
+    private $pdo;
+    
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
+    }
+    
+    /**
+     * Update membership statuses based on expiration dates
+     * @return array Number of memberships updated [expired, expiring]
+     */
+    public function updateMembershipStatuses() {
+        // Update expired memberships
+        $expiredQuery = "UPDATE 
+                    memberships m
+                SET 
+                    m.status = 'expired'
+                WHERE 
+                    m.status = 'active'
+                    AND m.end_date < CURDATE()";
+        
+        $expiredStmt = $this->pdo->query($expiredQuery);
+        $expiredCount = $expiredStmt ? $expiredStmt->rowCount() : 0;
+        
+        // Flag expiring memberships (within 7 days)
+        $expiringQuery = "UPDATE 
+                    memberships m
+                SET 
+                    m.status = 'expiring'
+                WHERE 
+                    m.status = 'active' 
+                    AND m.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+        
+        $expiringStmt = $this->pdo->query($expiringQuery);
+        $expiringCount = $expiringStmt ? $expiringStmt->rowCount() : 0;
+        
+        return ['expired' => $expiredCount, 'expiring' => $expiringCount];
+    }
+    
+    /**
+     * Update rental subscription statuses based on expiration dates
+     * @return array Number of rentals updated [expired, expiring]
+     */
+    public function updateRentalStatuses() {
+        // Update expired rental subscriptions
+        $expiredQuery = "UPDATE 
+                    rental_subscriptions rs
+                SET 
+                    rs.status = 'expired'
+                WHERE 
+                    rs.status = 'active'
+                    AND rs.end_date < CURDATE()";
+        
+        $expiredStmt = $this->pdo->query($expiredQuery);
+        $expiredCount = $expiredStmt ? $expiredStmt->rowCount() : 0;
+        
+        // Flag expiring rental subscriptions (within 7 days)
+        $expiringQuery = "UPDATE 
+                    rental_subscriptions rs
+                SET 
+                    rs.status = 'expiring'
+                WHERE 
+                    rs.status = 'active' 
+                    AND rs.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+        
+        $expiringStmt = $this->pdo->query($expiringQuery);
+        $expiringCount = $expiringStmt ? $expiringStmt->rowCount() : 0;
+        
+        return ['expired' => $expiredCount, 'expiring' => $expiringCount];
+    }
+    
+    /**
+     * Run all status updates and return results
+     * @return array Update counts for memberships and rentals
+     */
+    public function runAllStatusUpdates() {
+        $membershipResults = $this->updateMembershipStatuses();
+        $rentalResults = $this->updateRentalStatuses();
+        
+        return [
+            'memberships' => $membershipResults,
+            'rentals' => $rentalResults
+        ];
+    }
+}
+
+// Run status updates if user is admin or staff
+if (in_array($userRole, ['admin', 'staff']) && isset($database)) {
+    $pdo = $database->connect();
+    $statusManager = new StatusManager($pdo);
+    $statusUpdates = $statusManager->runAllStatusUpdates();
+    
+    // Optionally log or display the results
+    $_SESSION['status_updates'] = $statusUpdates;
+}
 ?>
 
 

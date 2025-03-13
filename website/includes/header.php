@@ -47,6 +47,74 @@ if ($isLoggedIn) {
         $unreadNotificationsCount = getUnreadNotificationsCount($database, $_SESSION['user_id']);
     }
 }
+
+// Function to update membership statuses
+function updateMembershipStatuses($pdo) {
+    // Update expired memberships
+    $expiredQuery = "UPDATE 
+                memberships m
+            SET 
+                m.status = 'expired'
+            WHERE 
+                m.status = 'active'
+                AND m.end_date < CURDATE()";
+    
+    $expiredStmt = $pdo->query($expiredQuery);
+    $expiredCount = $expiredStmt ? $expiredStmt->rowCount() : 0;
+    
+    // Flag expiring memberships (within 7 days)
+    $expiringQuery = "UPDATE 
+                memberships m
+            SET 
+                m.status = 'expiring'
+            WHERE 
+                m.status = 'active' 
+                AND m.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+    
+    $expiringStmt = $pdo->query($expiringQuery);
+    $expiringCount = $expiringStmt ? $expiringStmt->rowCount() : 0;
+    
+    return ['expired' => $expiredCount, 'expiring' => $expiringCount];
+}
+
+// Function to update rental subscription statuses
+function updateRentalStatuses($pdo) {
+    // Update expired rental subscriptions
+    $expiredQuery = "UPDATE 
+                rental_subscriptions rs
+            SET 
+                rs.status = 'expired'
+            WHERE 
+                rs.status = 'active'
+                AND rs.end_date < CURDATE()";
+    
+    $expiredStmt = $pdo->query($expiredQuery);
+    $expiredCount = $expiredStmt ? $expiredStmt->rowCount() : 0;
+    
+    // Flag expiring rental subscriptions (within 7 days)
+    $expiringQuery = "UPDATE 
+                rental_subscriptions rs
+            SET 
+                rs.status = 'expiring'
+            WHERE 
+                rs.status = 'active' 
+                AND rs.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+    
+    $expiringStmt = $pdo->query($expiringQuery);
+    $expiringCount = $expiringStmt ? $expiringStmt->rowCount() : 0;
+    
+    return ['expired' => $expiredCount, 'expiring' => $expiringCount];
+}
+
+// Run status updates if user is logged in and has admin or staff role
+if ($isLoggedIn && isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'staff'])) {
+    if (isset($database)) {
+        $pdo = $database->connect();
+        updateMembershipStatuses($pdo);
+        updateRentalStatuses($pdo);
+    }
+}
+
 // Check for expired or expiring memberships to show popup
 $showMembershipPopup = false;
 $membershipDetails = null;
@@ -57,26 +125,38 @@ if ($isLoggedIn) {
     if (function_exists('getMembershipNotifications')) {
         $membershipNotifications = getMembershipNotifications($database, $_SESSION['user_id']);
         
-        // First check for expired memberships (higher priority)
-        foreach ($membershipNotifications as $membership) {
-            if ($membership['status'] === 'expired') {
-                // We have an expired membership, show the popup
-                $showMembershipPopup = true;
-                $membershipDetails = $membership;
-                $membershipStatus = 'expired';
-                break; // Just get the first expired membership
-            }
+        // First check if user has any active membership
+        $hasActiveMembership = false;
+        
+        // We need to add this function call to check for active memberships
+        if (function_exists('getActiveMemberships')) {
+            $activeMemberships = getActiveMemberships($database, $_SESSION['user_id']);
+            $hasActiveMembership = count($activeMemberships) > 0;
         }
         
-        // If no expired memberships found, check for expiring ones
-        if (!$showMembershipPopup) {
+        // Only show popup if user doesn't have any active memberships
+        if (!$hasActiveMembership) {
+            // First check for expired memberships (higher priority)
             foreach ($membershipNotifications as $membership) {
-                if ($membership['status'] === 'expiring') {
-                    // We have an expiring membership, show the popup
+                if ($membership['status'] === 'expired') {
+                    // We have an expired membership, show the popup
                     $showMembershipPopup = true;
                     $membershipDetails = $membership;
-                    $membershipStatus = 'expiring';
-                    break; // Just get the first expiring membership
+                    $membershipStatus = 'expired';
+                    break; // Just get the first expired membership
+                }
+            }
+            
+            // If no expired memberships found, check for expiring ones
+            if (!$showMembershipPopup) {
+                foreach ($membershipNotifications as $membership) {
+                    if ($membership['status'] === 'expiring') {
+                        // We have an expiring membership, show the popup
+                        $showMembershipPopup = true;
+                        $membershipDetails = $membership;
+                        $membershipStatus = 'expiring';
+                        break; // Just get the first expiring membership
+                    }
                 }
             }
         }

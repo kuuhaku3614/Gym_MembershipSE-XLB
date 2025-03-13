@@ -132,7 +132,13 @@
                     <div class="col-sm-6 col-md-6 col-lg-3">
                         <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
                             <div class="card">
-                                <div class="card-header text-white text-center">
+                            <?php
+                    // Construct the absolute filesystem path to check if the image exists
+                    $imagePath = __DIR__ . "/../../../cms_img/gym_rates/" . $arr['image'];
+                    // Construct the URL for the background-image property
+                    $imageUrl = "/Gym_MembershipSE-XLB/cms_img/gym_rates/" . htmlspecialchars($arr['image']);
+                    ?>
+                    <div class="card-header text-white text-center" style="background-image: url('<?= file_exists($imagePath) ? $imageUrl : '' ?>'); background-size: cover; background-position: center;">
                                     <h2 class="fw-bold mb-0"><?= $arr['plan_name'] ?></h2>
                                 </div>
                                 <div class="card-body">
