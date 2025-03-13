@@ -165,6 +165,46 @@ class MemberRegistration {
         }
     }
 
+    private function executeQuery($sql, $params = []) {
+        try {
+            error_log("Executing query: " . $sql);
+            error_log("Parameters: " . print_r($params, true));
+            
+            if (!$this->pdo) {
+                error_log("PDO connection is null");
+                throw new Exception("Database connection not available");
+            }
+            
+            $stmt = $this->pdo->prepare($sql);
+            if (!$stmt) {
+                error_log("Failed to prepare statement");
+                throw new Exception("Failed to prepare statement");
+            }
+            
+            $success = $stmt->execute($params);
+            if (!$success) {
+                error_log("Failed to execute statement: " . print_r($stmt->errorInfo(), true));
+                throw new Exception("Failed to execute statement");
+            }
+            
+            return $stmt;
+        } catch (Exception $e) {
+            error_log("Error executing query: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function getCoachProgramType($coachProgramTypeId) {
+        try {
+            $sql = "SELECT type FROM coach_program_types WHERE id = :id";
+            $stmt = $this->executeQuery($sql, [':id' => $coachProgramTypeId]);
+            return $stmt->fetchColumn();
+        } catch (Exception $e) {
+            error_log("Error in getCoachProgramType: " . $e->getMessage());
+            return null;
+        }
+    }
+
     public function getCoachGroupSchedule($coachProgramTypeId) {
         try {
             $sql = "SELECT 
@@ -173,19 +213,14 @@ class MemberRegistration {
                     TIME_FORMAT(cgs.start_time, '%h:%i %p') as start_time,
                     TIME_FORMAT(cgs.end_time, '%h:%i %p') as end_time,
                     cgs.capacity,
-                    cgs.price,
-                    CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
+                    cgs.price
                 FROM coach_group_schedule cgs
-                JOIN coach_program_types cpt ON cgs.coach_program_type_id = cpt.id
-                JOIN users u ON cpt.coach_id = u.id
-                JOIN personal_details pd ON u.id = pd.user_id
                 WHERE cgs.coach_program_type_id = :coach_program_type_id
                 ORDER BY FIELD(cgs.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
             
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':coach_program_type_id' => $coachProgramTypeId]);
-            
+            $stmt = $this->executeQuery($sql, [':coach_program_type_id' => $coachProgramTypeId]);
             $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
             if (empty($schedules)) {
                 return ['message' => 'No schedules found for this coach'];
             }
@@ -193,6 +228,33 @@ class MemberRegistration {
             
         } catch (Exception $e) {
             error_log("Error in getCoachGroupSchedule: " . $e->getMessage());
+            return ['error' => 'Failed to fetch schedule'];
+        }
+    }
+
+    public function getCoachPersonalSchedule($coachProgramTypeId) {
+        try {
+            $sql = "SELECT 
+                    cps.id,
+                    cps.day,
+                    TIME_FORMAT(cps.start_time, '%h:%i %p') as start_time,
+                    TIME_FORMAT(cps.end_time, '%h:%i %p') as end_time,
+                    cps.duration_rate,
+                    cps.price
+                FROM coach_personal_schedule cps
+                WHERE cps.coach_program_type_id = :coach_program_type_id
+                ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
+            
+            $stmt = $this->executeQuery($sql, [':coach_program_type_id' => $coachProgramTypeId]);
+            $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (empty($schedules)) {
+                return ['message' => 'No schedules found for this coach'];
+            }
+            return $schedules;
+            
+        } catch (Exception $e) {
+            error_log("Error in getCoachPersonalSchedule: " . $e->getMessage());
             return ['error' => 'Failed to fetch schedule'];
         }
     }
