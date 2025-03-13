@@ -195,6 +195,11 @@ nav.sticky {
   background-size: cover;
 }
 /* Modal edit profile */
+@media (max-width: 480px) {
+  #profileEditModal .modal-content {
+    width: 80%;
+  }
+}
 /* Modal Base Styles */
 .modal {
   position: fixed;

@@ -8,17 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="register.css">
-    <style>
-        .error-message {
-            color: red;
-            font-size: 0.85em;
-            margin-top: 5px;
-            display: none;
-        }
-        .form-control.invalid {
-            border-color: red;
-        }
-    </style>
 </head>
 <body>
     <div class="page-container">

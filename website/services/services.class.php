@@ -46,7 +46,7 @@ class Services_class{
 
     public function displayStandardPlans(){
         $conn = $this->db->connect();
-        $sql = "SELECT mp.id as plan_id, mp.plan_name, mp.price,
+        $sql = "SELECT mp.id as plan_id, mp.plan_name, mp.price, mp.image,
                 CONCAT(mp.duration, ' ', dt.type_name) as validity
                 FROM membership_plans mp
                 LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
@@ -60,7 +60,7 @@ class Services_class{
 
     public function displaySpecialPlans(){
         $conn = $this->db->connect();
-        $sql = "SELECT mp.id as plan_id, mp.plan_name, mp.price,
+        $sql = "SELECT mp.id as plan_id, mp.plan_name, mp.price, mp.image,
                 CONCAT(mp.duration, ' ', dt.type_name) as validity
                 FROM membership_plans mp
                 LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
