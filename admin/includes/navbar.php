@@ -109,8 +109,7 @@ function getNotificationCounts() {
         JOIN users u ON t.user_id = u.id 
         JOIN personal_details p ON u.id = p.user_id 
         JOIN membership_plans mp ON m.membership_plan_id = mp.id 
-        WHERE m.status = 'active' 
-        AND m.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+        WHERE m.status = 'expiring'
     ";
     
     // Expired Memberships Query
@@ -132,8 +131,7 @@ function getNotificationCounts() {
         JOIN users u ON t.user_id = u.id 
         JOIN personal_details p ON u.id = p.user_id 
         JOIN rental_services s ON rs.rental_service_id = s.id 
-        WHERE rs.status = 'active' 
-        AND rs.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+        WHERE rs.status = 'expiring'
     ";
     
     // Expired Rentals Query
@@ -356,27 +354,6 @@ $notificationCounts = getNotificationCounts();
                     <i class="fas fa-bullhorn"></i>
                     Announcements
                 </a>
-                <?php if ($notificationCounts['pending_transactions'] > 0): ?>
-                <a href="notification?section=pending_transactions" class="sub-nav-item">
-                    <i class="fas fa-money-check-alt"></i>
-                    Pending Transactions
-                    <span class="badge bg-danger sub-nav-badge"><?php echo $notificationCounts['pending_transactions']; ?></span>
-                </a>
-                <?php endif; ?>
-                <?php if ($notificationCounts['expiring_memberships'] > 0): ?>
-                <a href="notification?section=expiring_memberships" class="sub-nav-item">
-                    <i class="fas fa-user-clock"></i>
-                    Expiring Memberships
-                    <span class="badge bg-warning sub-nav-badge"><?php echo $notificationCounts['expiring_memberships']; ?></span>
-                </a>
-                <?php endif; ?>
-                <?php if ($notificationCounts['expiring_rentals'] > 0): ?>
-                <a href="notification?section=expiring_rentals" class="sub-nav-item">
-                    <i class="fas fa-key"></i>
-                    Expiring Rentals
-                    <span class="badge bg-warning sub-nav-badge"><?php echo $notificationCounts['expiring_rentals']; ?></span>
-                </a>
-                <?php endif; ?>
             </div>
             <a href="accounts" id="accounts-link" class="nav-item">
                 <div class="nav-item-content">

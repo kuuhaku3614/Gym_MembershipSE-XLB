@@ -91,8 +91,7 @@ class ExpiryNotifications {
                 JOIN
                     membership_plans mp ON m.membership_plan_id = mp.id
                 WHERE 
-                    m.status = 'active' 
-                    AND m.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+                    m.status = 'expiring'";
         
         $stmt = $this->pdo->query($query);
         $notifications = [];
@@ -102,9 +101,9 @@ class ExpiryNotifications {
                 $daysRemaining = (strtotime($row['end_date']) - time()) / (60 * 60 * 24);
                 $daysRemaining = ceil($daysRemaining);
                 
-                // Use a timestamp based on when the membership will expire minus the days remaining
-                $notificationDate = date('Y-m-d', strtotime($row['end_date'] . ' -' . $daysRemaining . ' days'));
-                $timestamp = $notificationDate . ' ' . date('H:i:s');
+                // Set the timestamp to when the membership became "expiring" status
+                // For 7-day expiring memberships, this would typically be 7 days before end_date
+                $timestamp = date('F d, Y, h:i a', strtotime($row['end_date'] . ' -7 days'));
                 
                 $notifications[] = [
                     'id' => $row['membership_id'],
@@ -169,8 +168,8 @@ class ExpiryNotifications {
                 $daysSince = (time() - strtotime($row['end_date'])) / (60 * 60 * 24);
                 $daysSince = floor($daysSince);
                 
-                // Use the actual expiration date as the timestamp
-                $timestamp = $row['end_date'] . ' 00:00:00';
+                // Use the actual expiration date and time as the timestamp
+                $timestamp = date('F d, Y, h:i a', strtotime($row['end_date']));
                 
                 $notifications[] = [
                     'id' => $row['membership_id'],
@@ -225,8 +224,7 @@ class ExpiryNotifications {
                 JOIN
                     rental_services s ON rs.rental_service_id = s.id
                 WHERE 
-                    rs.status = 'active' 
-                    AND rs.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+                    rs.status = 'expiring'";
         
         $stmt = $this->pdo->query($query);
         $notifications = [];
@@ -236,9 +234,9 @@ class ExpiryNotifications {
                 $daysRemaining = (strtotime($row['end_date']) - time()) / (60 * 60 * 24);
                 $daysRemaining = ceil($daysRemaining);
                 
-                // Use a timestamp based on when the rental will expire minus the days remaining
-                $notificationDate = date('Y-m-d', strtotime($row['end_date'] . ' -' . $daysRemaining . ' days'));
-                $timestamp = $notificationDate . ' ' . date('H:i:s');
+                // Set the timestamp to when the rental became "expiring" status
+                // For 7-day expiring rentals, this would typically be 7 days before end_date
+                $timestamp = date('F d, Y, h:i a', strtotime($row['end_date'] . ' -7 days'));
                 
                 $notifications[] = [
                     'id' => $row['rental_subscription_id'],
@@ -303,8 +301,8 @@ class ExpiryNotifications {
                 $daysSince = (time() - strtotime($row['end_date'])) / (60 * 60 * 24);
                 $daysSince = floor($daysSince);
                 
-                // Use the actual expiration date as the timestamp
-                $timestamp = $row['end_date'] . ' 00:00:00';
+                // Use the actual expiration date and time as the timestamp
+                $timestamp = date('F d, Y, h:i a', strtotime($row['end_date']));
                 
                 $notifications[] = [
                     'id' => $row['rental_subscription_id'],

@@ -457,11 +457,6 @@
         // Update total amount display
         document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
     
-        // Mark transaction notification as read when viewing if a user ID is present
-        if (details.user_id && details.transaction_id) {
-            markAsRead(details.user_id, 'transactions', details.transaction_id);
-        }
-        
         // Show the modal
         const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
         modal.show();
@@ -548,9 +543,7 @@
         }
         
         // Mark as read when viewing
-        if (userId && notification.type && notification.id) {
-            markAsRead(userId, notification.type, notification.id);
-        }
+        markAsRead(userId, notification.type, notification.id);
         
         // Show the modal
         const modal = new bootstrap.Modal(document.getElementById('expiryModal'));
@@ -579,7 +572,7 @@
             data.userId = userId;
         }
 
-        fetch(window.location.pathname, {
+        fetch('../admin/pages/notification/notification.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -618,7 +611,7 @@
             return;
         }
 
-        fetch(window.location.pathname, {
+        fetch('../admin/pages/notification/notification.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -649,56 +642,41 @@
     }
     
     function markAsRead(userId, type, notificationId) {
-    // Skip if any required field is missing
-    if (!userId || !type || !notificationId) {
-        console.error('Missing required information to mark notification as read');
-        return;
-    }
-    
-    // Mark notification as read via AJAX
-    fetch(window.location.pathname, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            action: 'markAsRead',
-            userId: userId,
-            type: type,
-            notificationId: notificationId
+        // Mark notification as read via AJAX
+        fetch('../admin/pages/notification/notification.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'markAsRead',
+                userId: userId,
+                type: type,
+                notificationId: notificationId
+            })
         })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Find and update the specific notification card in the UI
-            const notificationCards = document.querySelectorAll('.notification-card.unread');
-            notificationCards.forEach(card => {
-                // Use a data attribute or event data to identify which card to update
-                if (card.dataset.id === notificationId && card.dataset.type === type) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI to show notification as read
+                const notificationCards = document.querySelectorAll(`.notification-card[data-notification-id="${notificationId}"][data-notification-type="${type}"]`);
+                notificationCards.forEach(card => {
                     card.classList.remove('unread');
                     card.classList.add('read');
-                    // Remove the 'New' badge if present
+                    
+                    // Remove the "New" badge if present
                     const badge = card.querySelector('.new-badge');
                     if (badge) {
                         badge.remove();
                     }
-                }
-            });
-            
-            // Update notification count in the tab if needed
-            updateNotificationCount();
-        }
-    })
-    .catch(error => {
-        console.error('Error marking notification as read:', error);
-    });
-}
+                    
+                    // Update notification counter
+                    updateNotificationCounter();
+                });
+            }
+        })
+        .catch(error => console.error('Error marking notification as read:', error));
+    }
 
 function updateNotificationCount() {
     // Count unread expiry notifications
@@ -751,189 +729,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// Additional functions for expiry notification handling
-function renewMembership() {
-    const membershipId = document.getElementById('recordId').value;
-    const today = new Date();
-    const nextYear = new Date();
-    nextYear.setFullYear(today.getFullYear() + 1);
-    
-    // Format date as YYYY-MM-DD
-    const newEndDate = nextYear.toISOString().split('T')[0];
-    
-    if (!membershipId) {
-        alert('Membership details not found.');
-        return;
-    }
-    
-    if (!confirm('Renew this membership for one year?')) {
-        return;
-    }
-    
-    fetch(window.location.pathname, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            action: 'renewMembership',
-            membershipId: membershipId,
-            newEndDate: newEndDate
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('Membership renewed successfully!');
-            location.reload();
-        } else {
-            throw new Error(data.message || 'Failed to renew membership');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'An error occurred while renewing the membership');
-    });
-}
-
-function renewRental() {
-    const rentalId = document.getElementById('recordId').value;
-    const today = new Date();
-    const nextMonth = new Date();
-    nextMonth.setMonth(today.getMonth() + 1);
-    
-    // Format date as YYYY-MM-DD
-    const newEndDate = nextMonth.toISOString().split('T')[0];
-    
-    if (!rentalId) {
-        alert('Rental details not found.');
-        return;
-    }
-    
-    if (!confirm('Renew this rental for one month?')) {
-        return;
-    }
-    
-    fetch(window.location.pathname, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            action: 'renewRental',
-            rentalId: rentalId,
-            newEndDate: newEndDate
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('Rental renewed successfully!');
-            location.reload();
-        } else {
-            throw new Error(data.message || 'Failed to renew rental');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'An error occurred while renewing the rental');
-    });
-}
-
-function updateMembershipExpired() {
-    const membershipId = document.getElementById('recordId').value;
-    
-    if (!membershipId) {
-        alert('Membership details not found.');
-        return;
-    }
-    
-    if (!confirm('Mark this membership as expired?')) {
-        return;
-    }
-    
-    fetch(window.location.pathname, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            action: 'updateMembershipExpired',
-            membershipId: membershipId
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('Membership marked as expired!');
-            location.reload();
-        } else {
-            throw new Error(data.message || 'Failed to update membership status');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'An error occurred while updating the membership');
-    });
-}
-
-function updateRentalExpired() {
-    const rentalId = document.getElementById('recordId').value;
-    
-    if (!rentalId) {
-        alert('Rental details not found.');
-        return;
-    }
-    
-    if (!confirm('Mark this rental as expired?')) {
-        return;
-    }
-    
-    fetch(window.location.pathname, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            action: 'updateRentalExpired',
-            rentalId: rentalId
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert('Rental marked as expired!');
-            location.reload();
-        } else {
-            throw new Error(data.message || 'Failed to update rental status');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'An error occurred while updating the rental');
-    });
-}
 </script>
 
 <style>
