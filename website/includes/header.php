@@ -264,10 +264,27 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 <body>
 
 <nav class="home-navbar">
+    <!-- This logo shows on desktop only -->
     <div class="home-logo">
         <img src="<?php echo $basePath; ?>cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
     </div>
+    
+    <!-- Hamburger menu button -->
+    <div class="hamburger-menu d-lg-none">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    
+    <!-- Overlay for mobile menu -->
+    <div class="overlay d-lg-none"></div>
+    
     <ul class="nav-links">
+        <!-- Logo at the top of sidebar on mobile -->
+        <div class="sidebar-logo">
+            <img src="<?php echo $basePath; ?>cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
+        </div>
+        
         <li><a href="<?php echo $isCoachFolder ? '../website.php' : 'website.php'; ?>">Home</a></li>
         <li><a href="<?php echo $isCoachFolder ? '../services.php' : 'services.php'; ?>">Services</a></li>
         <li><a href="<?php echo $isCoachFolder ? '../website.php#S-AboutUs' : 'website.php#S-AboutUs'; ?>">About</a></li>
@@ -381,6 +398,37 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.querySelector('.hamburger-menu');
+  const navLinks = document.querySelector('.nav-links');
+  const overlay = document.querySelector('.overlay');
+  
+  hamburger.addEventListener('click', function() {
+    hamburger.classList.toggle('active');
+    navLinks.classList.toggle('active');
+    overlay.classList.toggle('active');
+    document.body.classList.toggle('no-scroll');
+  });
+  
+  // Close menu when clicking on overlay
+  overlay.addEventListener('click', function() {
+    hamburger.classList.remove('active');
+    navLinks.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.classList.remove('no-scroll');
+  });
+  
+  // Close menu when clicking on a link
+  const links = document.querySelectorAll('.nav-links a');
+  links.forEach(link => {
+    link.addEventListener('click', function() {
+      hamburger.classList.remove('active');
+      navLinks.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.classList.remove('no-scroll');
+    });
+  });
+});
 document.addEventListener('DOMContentLoaded', function() {
     // Show membership renewal popup if needed
     <?php if ($showMembershipPopup && $membershipDetails): ?>

@@ -133,11 +133,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
+    
 </style>
 
 <div class="avail-membership-page">
     <div class="container-fluid p-0">
-    <div class="bg-custom-red text-white p-3 d-flex align-items-center">
+    <div class="bg-custom-red text-white p-3 d-flex align-items-center services-header">
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>

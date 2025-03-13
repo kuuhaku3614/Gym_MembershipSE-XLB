@@ -157,6 +157,20 @@ if (isset($_GET['logout'])) {
         justify-content: space-between;
         align-items: center;
     }
+    @media screen and (max-width: 480px) {
+        .list-group{
+            height: 60vh;
+        }
+        h2{
+            font-size: 2em!important;
+            text-align: center;
+        }
+        #markAllRead{
+            font-size: 0.7em;
+            padding: 6px 10px;
+        }
+    }
+        
 </style>
  
 <!DOCTYPE html>

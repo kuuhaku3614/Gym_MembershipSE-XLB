@@ -291,3 +291,31 @@
     [username] => Jerd1234
 )
 
+2025-03-13 18:20:01 - Request received
+2025-03-13 18:20:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd123
+)
+
+2025-03-13 18:20:04 - Request received
+2025-03-13 18:20:04 - POST data: Array
+(
+    [action] => update_username
+    [username] => Jerd123
+)
+
+2025-03-13 19:36:58 - Request received
+2025-03-13 19:36:58 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd1234
+)
+
+2025-03-13 19:37:00 - Request received
+2025-03-13 19:37:00 - POST data: Array
+(
+    [action] => update_username
+    [username] => Jerd1234
+)
+
