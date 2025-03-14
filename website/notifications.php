@@ -1,4 +1,7 @@
 <?php
+// Set default timezone to Asia/Manila
+date_default_timezone_set('Asia/Manila');
+
 // Ensure session is started only once
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

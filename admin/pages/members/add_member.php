@@ -1,13 +1,20 @@
 <?php
+// For AJAX requests, prevent any output before JSON response
+if (isset($_GET['action'])) {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+}
+
 session_start();
 date_default_timezone_set('Asia/Manila');
-require_once "../../../config.php";
-require_once 'functions/member_registration.class.php';
+
+// Use absolute path for includes
+require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/config.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/admin/pages/members/functions/member_registration.class.php");
 
 // For debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
+error_log("Initializing MemberRegistration class");
 $memberRegistration = new MemberRegistration();
 
 // Handle form submission
@@ -47,7 +54,21 @@ if (isset($_GET['action'])) {
                 exit;
             }
             
-            $schedules = $memberRegistration->getCoachGroupSchedule($coachProgramTypeId);
+            // Get the program type using the class method
+            $programType = $memberRegistration->getCoachProgramType($coachProgramTypeId);
+            if ($programType === null) {
+                error_log("Failed to determine program type"); // Debug log
+                echo json_encode(['success' => false, 'error' => 'Failed to determine program type']);
+                exit;
+            }
+            
+            $schedules = [];
+            if ($programType === 'personal') {
+                $schedules = $memberRegistration->getCoachPersonalSchedule($coachProgramTypeId);
+            } else {
+                $schedules = $memberRegistration->getCoachGroupSchedule($coachProgramTypeId);
+            }
+            
             error_log("Retrieved schedules: " . print_r($schedules, true)); // Debug log
             
             if (isset($schedules['error'])) {
@@ -55,7 +76,7 @@ if (isset($_GET['action'])) {
             } else if (isset($schedules['message'])) {
                 echo json_encode(['success' => true, 'data' => [], 'message' => $schedules['message']]);
             } else {
-                echo json_encode(['success' => true, 'data' => $schedules]);
+                echo json_encode(['success' => true, 'data' => $schedules, 'program_type' => $programType]);
             }
             exit;
         } catch (Exception $e) {
@@ -70,7 +91,6 @@ if (isset($_GET['action'])) {
 // Get initial data for the form
 $programs = $memberRegistration->getPrograms();
 $rentalServices = $memberRegistration->getRentalServices();
-$membershipPlans = $memberRegistration->getMembershipPlans();
 $registrationFee = $memberRegistration->getRegistrationFee();
 
 // Helper function to generate coach options
@@ -96,7 +116,7 @@ function generateProgramCard($program) {
     $programType = strtolower($program['program_type']);
 
     return sprintf(
-        '<div class="card program-card mb-3" data-program-type="%s">
+        '<div class="card program-card mb-3" data-program-type="%s" data-program-id="%d">
             <div class="card-body">
                 <h5 class="card-title">%s</h5>
                 <p class="card-text">%s</p>
@@ -110,6 +130,7 @@ function generateProgramCard($program) {
             </div>
         </div>',
         $programType,
+        $program['program_id'],
         htmlspecialchars($program['program_name']),
         htmlspecialchars($program['program_description']),
         $program['program_id'],
@@ -123,54 +144,136 @@ function generateProgramCard($program) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Member</title>
-    <?php include '../../includes/header.php'; ?>
+    <?php include $_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/admin/includes/header.php"; ?>
+    <script>
+        const BASE_URL = '<?= BASE_URL ?>';
+    </script>
     <style>
-        .nav-pills .nav-link {
-            cursor: pointer;
+        .summary-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fff;
+        }
+        .membership-summary {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .membership-summary h5 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .membership-summary p {
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+        .membership-summary .btn {
+            margin-top: 5px;
+        }
+        body {
+            padding-bottom: 215px;
+        }
+        .summary-row {
+            border: 1px solid #ddd;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #fff;
             position: relative;
-            padding-right: 2rem;
         }
-        
-        .nav-pills .nav-link.completed::after {
-            content: '✓';
+        .summary-row .remove-program {
             position: absolute;
-            right: 0.75rem;
-            color: #198754;
-        }
-        
-        .nav-pills .nav-link.active {
-            background-color: #0d6efd;
-            color: white;
-        }
-        
-        .nav-pills .nav-link.completed {
-            background-color: #e9ecef;
-            color: #198754;
-        }
-        
-        .form-phase {
-            display: none;
-        }
-        
-        #phase1 {
-            display: block;
-        }
-        
-        .membership-option {
+            right: 5px;
+            top: 5px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            color: #dc3545;
+        }
+        .membership-summary h5 {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .membership-summary .details {
+            font-size: 13px;
         }
         
-        .membership-option:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        /* Review Phase Styles */
+        .review-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        
-        .membership-option.selected {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 2px #0d6efd;
+        .review-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .review-section {
+            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .review-section h5 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .review-info {
+            display: grid;
+            gap: 10px;
+        }
+        .info-row {
+            display: flex;
+            align-items: baseline;
+            padding: 5px 0;
+        }
+        .info-label {
+            flex: 0 0 100px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .info-value {
+            flex: 1;
+        }
+        .review-programs {
+            display: grid;
+            gap: 10px;
+        }
+        .program-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .program-item .program-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        .program-item .program-details {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .review-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .review-actions .btn {
+            min-width: 150px;
+            padding: 10px 20px;
         }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -180,18 +283,15 @@ function generateProgramCard($program) {
                 <h3 class="mb-4">Add New Member</h3>
                 
                 <!-- Phase Navigation -->
-                <ul class="nav nav-pills nav-justified mb-4">
+                <ul class="nav nav-pills nav-fill mb-4">
                     <li class="nav-item">
-                        <a class="nav-link active" data-phase="1">Personal Information</a>
+                        <a class="nav-link active" data-phase="1" href="#">Personal Information</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-phase="2">Membership Plan</a>
+                        <a class="nav-link" data-phase="2" href="#">Membership Plan</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-phase="3">Select Programs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-phase="4">Review & Submit</a>
+                        <a class="nav-link" data-phase="3" href="#">Select Programs</a>
                     </li>
                 </ul>
 
@@ -236,7 +336,7 @@ function generateProgramCard($program) {
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Contact Number</label>
-                                        <input type="tel" class="form-control" name="phone">
+                                        <input type="tel" class="form-control" id="contact" name="phone">
                                     </div>
                                 </div>
                             </div>
@@ -251,55 +351,51 @@ function generateProgramCard($program) {
 
                     <!-- Phase 2: Membership Plan -->
                     <div id="phase2" class="form-phase" style="display: none;">
-                        <h4 class="mb-4">Membership Plan</h4>
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Select Membership Plan</h5>
-                                <div class="row">
-                                    <?php 
-                                    foreach ($membershipPlans as $plan): ?>
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card membership-option">
-                                            <div class="card-body">
-                                                <h6 class="card-title"><?php echo htmlspecialchars($plan['plan_name']); ?></h6>
-                                                <p class="card-text"><?php echo htmlspecialchars($plan['description']); ?></p>
-                                                <p class="card-text">
-                                                    Type: <?php echo htmlspecialchars($plan['plan_type']); ?><br>
-                                                    Price: ₱<?php echo number_format($plan['price'], 2); ?><br>
-                                                    Duration: <?php echo $plan['duration'] . ' ' . $plan['duration_type']; ?>
-                                                </p>
-                                                <div class="form-check">
-                                                    <input class="form-check-input membership-plan-radio" type="radio" 
-                                                           name="membership_plan" 
-                                                           value="<?php echo $plan['id']; ?>"
-                                                           data-price="<?php echo $plan['price']; ?>"
-                                                           data-duration="<?php echo $plan['duration']; ?>"
-                                                           data-duration-type="<?php echo $plan['duration_type']; ?>"
-                                                           data-name="<?php echo htmlspecialchars($plan['plan_name']); ?>">
-                                                    <label class="form-check-label">Select Plan</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
+                        <h4 class="mb-4">Select Your Membership Plan</h4>
+                        <div class="row">
+                            <?php
+                            // Fetch membership plans from database with duration type
+                            $sql = "SELECT mp.*, dt.type_name as duration_type 
+                                   FROM membership_plans mp 
+                                   LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                                   WHERE mp.status = 'active'";
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute();
+                            $membershipPlans = $stmt->fetchAll();
 
-                                <div class="row mt-4">
-                                    <div class="col-md-6">
-                                        <label for="start_date" class="form-label">Start Date</label>
-                                        <input type="date" class="form-control" id="start_date" name="start_date" 
-                                               value="<?php echo date('Y-m-d'); ?>" 
-                                               min="<?php echo date('Y-m-d'); ?>" 
-                                               required>
+                            foreach ($membershipPlans as $plan): ?>
+                            <div class="col-md-4 mb-4">
+                                <div class="card membership-option h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title"><?= htmlspecialchars($plan['plan_name']) ?></h5>
+                                        <span class="duration-badge">
+                                            <?= htmlspecialchars($plan['duration']) ?> <?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>
+                                        </span>
+                                        <div class="h4">₱<?= number_format($plan['price'], 2) ?></div>
+                                        <p class="description"><?= htmlspecialchars($plan['description']) ?></p>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="membership_plan" 
+                                                   value="<?= $plan['id'] ?>" 
+                                                   data-price="<?= $plan['price'] ?>"
+                                                   data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                                                   data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                                                   data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="membership_start_date">When would you like to start your membership?</label>
+                            <input type="date" class="form-control" id="membership_start_date" name="membership_start_date" 
+                                   min="<?= date('Y-m-d') ?>" required>
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" class="btn btn-secondary nav-button" id="prevBtn2">Previous</button>
                             <button type="button" class="btn btn-primary nav-button" id="nextBtn2">Next</button>
-                            <button type="submit" class="btn btn-success nav-button" id="submitBtn2" style="display: none;">Submit Registration</button>
                         </div>
                     </div>
 
@@ -308,7 +404,7 @@ function generateProgramCard($program) {
                         <h4 class="mb-4">Select Programs</h4>
                         
                         <!-- Programs Section -->
-                        <div class="mb-4">
+                        <div class="mb-4 program-cards">
                             <h5>Available Programs</h5>
                             <div class="row row-cols-1 row-cols-md-3 g-4 programs-container">
                                 <?php 
@@ -357,267 +453,263 @@ function generateProgramCard($program) {
 
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" class="btn btn-secondary nav-button" id="prevBtn3">Previous</button>
-                            <button type="button" class="btn btn-primary nav-button" id="nextBtn3">Next</button>
-                            <button type="submit" class="btn btn-success nav-button" id="submitBtn3" style="display: none;">Submit Registration</button>
+                            <button type="button" class="btn btn-primary" id="reviewBtn">Review & Register</button>
                         </div>
                     </div>
 
-                    <!-- Phase 4: Payment Details -->
+                    <!-- Phase 4: Review & Register -->
                     <div id="phase4" class="form-phase" style="display: none;">
-                        <h4 class="mb-4">Review & Submit</h4>
-                        
-                        <!-- Payment Summary -->
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5 class="card-title">Payment Summary</h5>
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <tbody>
-                                            <tr>
-                                                <td>Registration Fee:</td>
-                                                <td class="text-end" id="registration_fee">₱<?php echo number_format($registrationFee, 2); ?></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Membership Plan:</td>
-                                                <td class="text-end" id="membership_plan_price">₱0.00</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Rental Services:</td>
-                                                <td class="text-end" id="rentals_subtotal">₱0.00</td>
-                                            </tr>
-                                            <tr class="fw-bold">
-                                                <td>Total Amount:</td>
-                                                <td class="text-end" id="total_amount">₱0.00</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                        <div class="review-container">
+                            <h4 class="review-title">Review Information</h4>
+                            
+                            <div class="review-section">
+                                <h5>Personal Information</h5>
+                                <div class="review-info">
+                                    <div class="info-row">
+                                        <span class="info-label">Name:</span>
+                                        <span id="review-name" class="info-value"></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Phone:</span>
+                                        <span id="review-phone" class="info-value"></span>
+                                    </div>
                                 </div>
                             </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-secondary nav-button" id="prevBtn4">Previous</button>
-                            <button type="submit" class="btn btn-success nav-button" id="submitBtn4">Submit Registration</button>
-                            <button type="button" class="btn btn-primary nav-button" id="nextBtn4" style="display: none;">Next</button>
+                            
+                            <div class="review-section">
+                                <h5>Membership Details</h5>
+                                <div class="review-info">
+                                    <div class="info-row">
+                                        <span class="info-label">Plan:</span>
+                                        <span id="review-plan" class="info-value"></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Duration:</span>
+                                        <span id="review-duration" class="info-value"></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Price:</span>
+                                        <span id="review-price" class="info-value"></span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Start Date:</span>
+                                        <span id="review-start-date" class="info-value"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="review-section">
+                                <h5>Selected Programs</h5>
+                                <div id="review-programs" class="review-programs"></div>
+                            </div>
+                            
+                            <div class="review-actions">
+                                <button type="button" class="btn btn-outline-secondary" id="prevBtn4">Back to Programs</button>
+                                <button type="submit" class="btn btn-primary">Complete Registration</button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Hidden inputs for selected items -->
                     <input type="hidden" name="action" value="add_member">
+                    <input type="hidden" name="selected_schedule_id" value="">
+                    <input type="hidden" id="selected_programs" name="selected_programs" value="">
                 </form>
+
             </div>
         </div>
     </div>
 
+    <!-- Membership Summary Section -->
+    <div class="membership-summary">
+        <div class="container">
+            <!-- Selected Plan -->
+            <div class="summary-row">
+                <h5>Selected Plan: <span id="summary-plan-bottom">Not selected</span></h5>
+                <div class="details">
+                    Duration: <span id="summary-duration-bottom">-</span> | 
+                    Start: <span id="summary-start-date-bottom">-</span> | 
+                    Price: <span id="summary-price-bottom">₱0.00</span>
+                </div>
+            </div>
+
+            <!-- Selected Programs -->
+            <div id="selected-programs-bottom">
+                <!-- Program cards will be dynamically added here -->
+            </div>
+
+            <div class="text-center">
+                <button type="button" id="reviewBtn" class="btn btn-primary btn-sm">Review & Register</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add padding to body to account for fixed summary -->
+    <style>
+        body {
+            padding-bottom: 215px; /* Adjust based on summary height */
+        }
+    </style>
+
     <!-- Schedule Modal -->
-    <div class="modal fade" id="scheduleModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="scheduleModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Coach Schedule</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">Select Schedule</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
                 </div>
                 <div class="modal-body">
-                    <div id="scheduleAlert" class="alert" style="display: none;"></div>
                     <div class="table-responsive">
-                        <table class="table table-striped">
+                        <table class="table table-hover" id="scheduleTable">
                             <thead>
                                 <tr>
                                     <th>Day</th>
                                     <th>Start Time</th>
                                     <th>End Time</th>
+                                    <th>Duration/ Capacity</th>
                                     <th>Price</th>
                                 </tr>
                             </thead>
-                            <tbody id="scheduleTableBody"></tbody>
+                            <tbody id="scheduleTableBody">
+                                <!-- Schedules will be dynamically added here -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Make navigation pills clickable
-            $('.nav-pills .nav-link').click(function() {
-                const targetPhase = parseInt($(this).data('phase'));
-                const currentPhase = parseInt($('.form-phase:visible').attr('id').replace('phase', ''));
-                
-                // Going forward requires validation
-                if (targetPhase > currentPhase) {
-                    for (let i = currentPhase; i < targetPhase; i++) {
-                        const validationFunction = window[`validatePhase${i}`];
-                        if (validationFunction && !validationFunction()) {
-                            return false;
-                        }
-                    }
-                }
-                
-                showPhase(targetPhase);
-            });
-            
-            // Make membership plan cards clickable
-            $('.membership-option').click(function() {
-                const radio = $(this).find('input[type="radio"]');
-                radio.prop('checked', true).trigger('change');
-                
-                // Update visual feedback
-                $('.membership-option').removeClass('selected');
-                $(this).addClass('selected');
-            });
-            
-            // Phase validation functions
-            function validatePhase1() {
-                const firstName = $('#first_name').val().trim();
-                const lastName = $('#last_name').val().trim();
-                const birthdate = $('#birthdate').val();
-                const gender = $('input[name="sex"]:checked').val();
-                const phone = $('#phone').val().trim();
-                
-                if (!firstName || !lastName || !birthdate || !gender || !phone) {
-                    alert('Please fill in all required fields');
-                    return false;
-                }
-                
-                return true;
-            }
-            
-            function validatePhase2() {
-                const membershipPlan = $('input[name="membership_plan"]:checked').val();
-                if (!membershipPlan) {
-                    alert('Please select a membership plan');
-                    return false;
-                }
-                return true;
-            }
-            
-            function validatePhase3() {
-                // At least one program should have a coach selected
-                let hasCoach = false;
-                $('.program-coach').each(function() {
-                    if ($(this).val()) {
-                        hasCoach = true;
-                        return false; // Break the loop
-                    }
-                });
-                
-                if (!hasCoach) {
-                    alert('Please select at least one coach for a program');
-                    return false;
-                }
-                return true;
-            }
-            
-            // Phase Navigation Functions
+            // Store selected programs
+            let selectedPrograms = [];
+
+            // Phase navigation function
             function showPhase(phaseNumber) {
-                // Hide all phases and buttons first
                 $('.form-phase').hide();
-                $('.nav-button').hide();
-                
-                // Show the target phase
                 $(`#phase${phaseNumber}`).show();
                 
                 // Update navigation pills
-                $('.nav-link').removeClass('active completed');
-                $(`.nav-link[data-phase="${phaseNumber}"]`).addClass('active');
-                for (let i = 1; i < phaseNumber; i++) {
-                    $(`.nav-link[data-phase="${i}"]`).addClass('completed');
+                $('.nav-link').removeClass('active');
+                if (phaseNumber < 4) {
+                    $(`.nav-link[data-phase="${phaseNumber}"]`).addClass('active');
                 }
                 
-                // Show/hide navigation buttons based on phase
+                // Update progress
+                $('.nav-link').each(function() {
+                    const phase = parseInt($(this).data('phase'));
+                    if (phase < phaseNumber) {
+                        $(this).addClass('bg-success text-white');
+                    } else if (phase > phaseNumber) {
+                        $(this).removeClass('bg-success text-white');
+                    }
+                });
+                
+                // Show/hide navigation buttons
+                $('.nav-button').hide();
                 if (phaseNumber > 1) {
                     $(`#prevBtn${phaseNumber}`).show();
                 }
-                
-                if (phaseNumber < 4) {
+                if (phaseNumber < 3) {
                     $(`#nextBtn${phaseNumber}`).show();
-                    $(`#submitBtn${phaseNumber}`).hide();
-                } else {
-                    $(`#nextBtn${phaseNumber}`).hide();
-                    $(`#submitBtn${phaseNumber}`).show();
                 }
-                
-                return true;
+
+                // Handle review phase
+                if (phaseNumber === 4) {
+                    updateReviewInfo();
+                    $('.membership-summary').hide();
+                } else {
+                    $('.membership-summary').show();
+                }
             }
 
-            // Navigation event handlers
-            $('[id^="nextBtn"]').click(function() {
-                const currentPhase = parseInt(this.id.replace('nextBtn', ''));
-                const validationFunction = window[`validatePhase${currentPhase}`];
+            // Update review information
+            function updateReviewInfo() {
+                // Copy basic information
+                $('#review-name').text($('#first_name').val() + ' ' + $('#last_name').val());
+                $('#review-phone').text($('#contact').val());
                 
-                if (!validationFunction || validationFunction()) {
+                // Copy membership details
+                $('#review-plan').text($('#summary-plan-bottom').text());
+                $('#review-duration').text($('#summary-duration-bottom').text());
+                $('#review-price').text($('#summary-price-bottom').text());
+                $('#review-start-date').text($('#membership_start_date').val() || 'Not selected');
+                
+                // Copy programs
+                let programsHtml = '';
+                if (selectedPrograms.length > 0) {
+                    selectedPrograms.forEach(program => {
+                        programsHtml += `
+                            <div class="program-item">
+                                <div class="program-title">${program.coach} - ${program.type}</div>
+                                <div class="program-details">
+                                    Schedule: ${program.schedule}<br>
+                                    Price: ₱${program.price}
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    programsHtml = '<div class="text-muted">No programs selected</div>';
+                }
+                $('#review-programs').html(programsHtml);
+            }
+
+            // Handle review button
+            $('#reviewBtn').click(function() {
+                updateReviewInfo();
+                showPhase(4);
+            });
+
+            // Navigation button click handlers
+            $('.nav-button').click(function() {
+                const action = $(this).attr('id').startsWith('prev') ? 'prev' : 'next';
+                const currentPhase = parseInt($('.form-phase:visible').attr('id').replace('phase', ''));
+                
+                if (action === 'prev') {
+                    if (currentPhase === 4) { // From review back to programs
+                        showPhase(3);
+                    } else if (currentPhase > 1) {
+                        showPhase(currentPhase - 1);
+                    }
+                } else if (action === 'next' && currentPhase < 3) {
                     showPhase(currentPhase + 1);
                 }
             });
 
-            $('[id^="prevBtn"]').click(function() {
-                const currentPhase = parseInt(this.id.replace('prevBtn', ''));
-                showPhase(currentPhase - 1);
+            // Handle membership plan selection
+            $('.membership-option').click(function() {
+                const radio = $(this).find('input[type="radio"]');
+                radio.prop('checked', true);
+                
+                $('.membership-option').removeClass('selected');
+                $(this).addClass('selected');
+
+                // Update summary
+                const planName = $(this).find('.card-title').text();
+                const duration = $(this).find('.duration').text();
+                const price = $(this).find('.price').text();
+                
+                $('#summary-plan-bottom').text(planName);
+                $('#summary-duration-bottom').text(duration);
+                $('#summary-price-bottom').text(price);
             });
 
-            // Simple function to update total amount
-            function updateTotalAmount() {
-                var total = parseFloat($('#registration_fee').text().replace('₱', '').replace(',', '')) || 0;
-                
-                // Add membership plan price
-                var planPrice = parseFloat($('input[name="membership_plan"]:checked').data('price')) || 0;
-                $('#membership_plan_price').text('₱' + planPrice.toFixed(2));
-                total += planPrice;
-                
-                // Add rental prices
-                var rentalTotal = 0;
-                $('.rental-checkbox:checked').each(function() {
-                    rentalTotal += parseFloat($(this).data('price')) || 0;
-                });
-                $('#rentals_subtotal').text('₱' + rentalTotal.toFixed(2));
-                total += rentalTotal;
-                
-                // Update total display
-                $('#total_amount').text('₱' + total.toFixed(2));
-            }
-            
-            // Handle membership plan selection
-            $('input[name="membership_plan"]').change(updateTotalAmount);
-            
-            // Handle rental checkbox changes
-            $('.rental-checkbox').change(updateTotalAmount);
-            
-            // Initialize total and show first phase
-            updateTotalAmount();
-            showPhase(1);
-            
-            // Form submission
-            $('#memberForm').submit(function(e) {
-                e.preventDefault();
-                
-                // Validate all phases before submitting
-                for (let i = 1; i <= 3; i++) {
-                    const validationFunction = window[`validatePhase${i}`];
-                    if (validationFunction && !validationFunction()) {
-                        showPhase(i);
-                        return;
-                    }
-                }
-                
-                $.ajax({
-                    url: $(this).attr('action'),
-                    method: 'POST',
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            alert('Member added successfully!');
-                            window.location.href = 'members.php';
-                        } else {
-                            alert(response.message || 'Failed to add member');
-                        }
-                    },
-                    error: function() {
-                        alert('Failed to add member. Please try again.');
-                    }
-                });
+            // Handle start date change
+            $('#membership_start_date').change(function() {
+                const startDate = $(this).val();
+                $('#summary-start-date-bottom').text(startDate || '-');
             });
 
             // Add change event handler to coach selects
@@ -625,14 +717,11 @@ function generateProgramCard($program) {
                 const coachProgramTypeId = $(this).val();
                 if (!coachProgramTypeId) return;
 
-                // Show loading state
                 $('#scheduleTableBody').html('<tr><td colspan="4" class="text-center">Loading...</td></tr>');
-                $('#scheduleAlert').hide();
                 $('#scheduleModal').modal('show');
 
-                // Fetch schedule data using absolute path
                 $.ajax({
-                    url: '/Gym_MembershipSE-XLB/admin/pages/members/add_member.php',
+                    url: BASE_URL + '/admin/pages/members/add_member.php',
                     method: 'GET',
                     data: {
                         action: 'get_schedule',
@@ -640,51 +729,143 @@ function generateProgramCard($program) {
                     },
                     dataType: 'json',
                     success: function(response) {
-                        if (response.success) {
-                            if (response.data && response.data.length > 0) {
-                                let html = '';
-                                response.data.forEach(schedule => {
-                                    html += `
-                                        <tr>
-                                            <td>${schedule.day}</td>
-                                            <td>${schedule.start_time}</td>
-                                            <td>${schedule.end_time}</td>
-                                            <td>₱${schedule.price}</td>
-                                        </tr>
-                                    `;
-                                });
-                                $('#scheduleTableBody').html(html);
-                            } else {
-                                // Show message if no schedules
-                                $('#scheduleAlert')
-                                    .removeClass('alert-danger')
-                                    .addClass('alert-info')
-                                    .html(response.message || 'No schedules found for this coach')
-                                    .show();
-                                $('#scheduleTableBody').html('');
-                            }
+                        if (response.success && response.data && response.data.length > 0) {
+                            // Update table headers based on program type
+                            let headers = `
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>${response.program_type === 'personal' ? 'Duration (mins)' : 'Capacity'}</th>
+                                    <th>Price</th>
+                                </tr>
+                            `;
+                            $('#scheduleTable thead').html(headers);
+
+                            let html = '';
+                            response.data.forEach(schedule => {
+                                html += `
+                                    <tr data-id="${schedule.id}" 
+                                        data-coach="${schedule.coach_name}"
+                                        data-type="${response.program_type}"
+                                        data-price="${schedule.price}">
+                                        <td>${schedule.day}</td>
+                                        <td>${schedule.start_time}</td>
+                                        <td>${schedule.end_time}</td>
+                                        <td>${response.program_type === 'personal' ? schedule.duration_rate : schedule.capacity}</td>
+                                        <td>₱${schedule.price}</td>
+                                    </tr>
+                                `;
+                            });
+                            $('#scheduleTableBody').html(html);
                         } else {
-                            // Show error message
-                            $('#scheduleAlert')
-                                .removeClass('alert-info')
-                                .addClass('alert-danger')
-                                .html(response.error || 'Failed to fetch schedule')
-                                .show();
-                            $('#scheduleTableBody').html('');
+                            $('#scheduleTableBody').html('<tr><td colspan="5" class="text-center">No schedules found</td></tr>');
                         }
                     },
-                    error: function(xhr, status, error) {
-                        // Show error message
-                        $('#scheduleAlert')
-                            .removeClass('alert-info')
-                            .addClass('alert-danger')
-                            .html('Failed to fetch schedule. Please try again.')
-                            .show();
-                        $('#scheduleTableBody').html('');
-                        console.error('Error fetching schedule:', error);
+                    error: function() {
+                        $('#scheduleTableBody').html('<tr><td colspan="5" class="text-center">Failed to load schedules</td></tr>');
+                    }
+                });
+
+                // Update coach in summary
+                const selectedCoach = $(this).find('option:selected').text();
+                $('#summary-coach').text(selectedCoach || 'Not selected');
+            });
+
+            // Handle schedule selection
+            $('#scheduleTableBody').on('click', 'tr', function() {
+                const $row = $(this);
+                if (!$row.data('id')) return; // Skip if clicking on message row
+                
+                $('#scheduleTableBody tr').removeClass('selected');
+                $row.addClass('selected');
+
+                const programData = {
+                    id: $row.data('id'),
+                    coach: $row.data('coach'),
+                    type: $row.data('type'),
+                    schedule: $row.find('td:eq(0)').text() + ' ' + $row.find('td:eq(1)').text() + '-' + $row.find('td:eq(2)').text(),
+                    price: $row.data('price')
+                };
+
+                // Add program to array
+                selectedPrograms.push(programData);
+                updateProgramsSummary();
+                $('#scheduleModal').modal('hide');
+            });
+
+            // Update programs summary
+            function updateProgramsSummary() {
+                let programsHtml = '';
+                selectedPrograms.forEach((program, index) => {
+                    programsHtml += `
+                        <div class="summary-row" data-index="${index}">
+                            <span class="remove-program" onclick="removeProgram(${index})">×</span>
+                            <div class="details">
+                                <strong>${program.coach}</strong> (${program.type})
+                                <div class="mt-1">
+                                    <small>${program.schedule}</small>
+                                    <span class="float-right">₱${program.price}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                $('#selected-programs-bottom').html(programsHtml || '<div class="text-muted">No programs selected</div>');
+                // Store programs in hidden input
+                $('#selected_programs').val(JSON.stringify(selectedPrograms));
+            }
+
+            // Remove program
+            window.removeProgram = function(index) {
+                selectedPrograms.splice(index, 1);
+                updateProgramsSummary();
+            };
+
+            // Handle form submission
+            $('#memberForm').submit(function(e) {
+                e.preventDefault();
+                
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true).html(`
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Processing...
+                `);
+                
+                const formData = new FormData(this);
+                formData.append('selected_programs', JSON.stringify(selectedPrograms));
+                
+                $.ajax({
+                    url: 'functions/member_registration.class.php',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        try {
+                            const result = JSON.parse(response);
+                            if (result.status === 'success') {
+                                alert('Registration successful! Redirecting to members list...');
+                                window.location.href = 'index.php';
+                            } else {
+                                alert(result.message || 'Registration failed. Please try again.');
+                                submitBtn.prop('disabled', false).text('Complete Registration');
+                            }
+                        } catch (e) {
+                            alert('An error occurred while processing your request. Please try again.');
+                            submitBtn.prop('disabled', false).text('Complete Registration');
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to submit registration. Please check your connection and try again.');
+                        submitBtn.prop('disabled', false).text('Complete Registration');
                     }
                 });
             });
+
+            // Initialize with first phase
+            showPhase(1);
         });
     </script>
 </body>
