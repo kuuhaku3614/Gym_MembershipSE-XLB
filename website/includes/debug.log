@@ -319,3 +319,66 @@
     [username] => Jerd1234
 )
 
+2025-03-13 20:23:46 - Request received
+2025-03-13 20:23:46 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd1234\
+)
+
+2025-03-13 20:23:47 - Request received
+2025-03-13 20:23:47 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd1234
+)
+
+2025-03-13 20:23:47 - Request received
+2025-03-13 20:23:47 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd123
+)
+
+2025-03-13 20:23:48 - Request received
+2025-03-13 20:23:48 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd12
+)
+
+2025-03-13 20:23:49 - Request received
+2025-03-13 20:23:49 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd123
+)
+
+2025-03-13 20:23:50 - Request received
+2025-03-13 20:23:50 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd12
+)
+
+2025-03-13 20:23:51 - Request received
+2025-03-13 20:23:51 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd1
+)
+
+2025-03-13 20:23:51 - Request received
+2025-03-13 20:23:51 - POST data: Array
+(
+    [action] => check_username
+    [username] => Jerd
+)
+
+2025-03-13 20:23:53 - Request received
+2025-03-13 20:23:53 - POST data: Array
+(
+    [action] => update_username
+    [username] => Jerd
+)
+

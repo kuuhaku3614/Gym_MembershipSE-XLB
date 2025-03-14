@@ -60,8 +60,7 @@ class Cart_Class {
             ];
 
             // Get user role directly from database
-            $db = new Database();
-            $conn = $db->connect();
+            $conn = $this->db->connect();
             $sql = "SELECT role_id FROM users WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([clean_input($_SESSION['user_id'])]);

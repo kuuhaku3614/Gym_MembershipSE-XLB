@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 ?>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <link rel="stylesheet" href="service.css">
@@ -150,12 +150,87 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
+
+    @media screen and (max-width: 480px) {
+    /* 1. Hide the services-header */
+    .services-header {
+        display: none !important;
+    }
+    
+    /* 2. Make the content fill the entire screen and scale properly */
+    body, html {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+    
+    .avail-membership-page {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .container-fluid {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        background-color: #f5f5f5;
+    }
+    
+    .main-container {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .col-12 {
+        padding: 10px;
+        margin-top: 0px!important;
+        margin-bottom: 0px!important;
+    }
+    
+
+    .card-body{
+        height: 100%;
+    }
+    
+    .scrollable-section {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+    }
+    
+    /* .btn-lg {
+        padding: 5px;
+        font-size: 0.875rem;
+    } */
+    
+    .row {
+        margin: 0;
+        height: 100%;
+    }
+/*     
+    .form-control-lg {
+        font-size: 0.875rem;
+    } */
+    .d-grid{
+        display: flex!important;
+        flex-direction: row!important;
+        flex-wrap: nowrap;
+    }
+    .h5{
+        font-size: 1.5rem!important;
+        margin-bottom: 5px!important;
+    }
+}
 </style>
 
 <div class="avail-program-page">
     <div class="container-fluid p-0">
         <!-- Header -->
-        <div class="bg-custom-red text-white p-3 d-flex align-items-center">
+        <div class="bg-custom-red text-white p-3 d-flex align-items-center services-header">
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
@@ -166,26 +241,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="row flex-grow-1 overflow-auto">
         <div class="col-12 col-lg-8 mx-auto py-3 main-container">
             <div class="card main-content" style="width: 100%;">
+            <div class="card-header py-3">
+                    <h2 class="h4 fw-bold mb-0 text-center">Program</h2>
+                </div>
                 <div class="card-body p-3">
                     <h3 class="h5 fw-bold text-center mb-4"><?= $program_name ?></h3>
 
                     <section class="scrollable-section">
                         <div class="row g-3">
-                            <div class="col-12">
-                                <div class="border rounded p-3">
-                                    <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
-                                </div>
-                            </div>
 
                             <form method="POST" onsubmit="return validateForm()" class="col-12">
                                 <input type="hidden" name="program_id" value="<?= htmlspecialchars($program_id) ?>">
                                 <input type="hidden" name="program_name" value="<?= htmlspecialchars($program_name) ?>">
-
-                                <div class="col-12 mb-3">
+                            <div class="col-12">
+                            <div class="border rounded p-3">
+                                <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                            </div>
+                            </div>
+                            <div class="col-12 mb-3">
                                     <div class="border rounded p-3">
                                         <div class="form-group">
                                             <label for="coach" class="form-label">Select Coach:</label>
-                                            <select class="form-select form-select-lg" id="coach" name="coach_id" required>
+                                            <select class="form-select form-select-lg" id="coach" name="coach_id">
                                                 <option value="">Choose a coach</option>
                                                 <?php foreach ($coaches as $coach) { ?>
                                                     <option value="<?= $coach['coach_id'] ?>" 
@@ -195,9 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                                     </option>
                                                 <?php } ?>
                                             </select>
-                                            <?php if(!empty($coach_idErr)): ?>
-                                                <div class="text-danger mt-1"><?= $coach_idErr ?></div>
-                                            <?php endif; ?>
+                                            <div id="coach_id_error" class="text-danger mt-1"></div> <!-- Error message -->
                                         </div>
                                     </div>
                                 </div>
@@ -218,15 +293,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                                 name="start_date" 
                                                 min="<?= date('Y-m-d', strtotime('today')) ?>" 
                                                 value="<?= $start_date ?>"
-                                                required
                                                 onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
-                                            <?php if(!empty($start_dateErr)): ?>
-                                                <div class="text-danger mt-1"><?= $start_dateErr ?></div>
-                                            <?php endif; ?>
+                                            <div id="start_date_error" class="text-danger mt-1"></div> <!-- Error message -->
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="col-12 mb-3">
                                     <div class="border rounded p-3">
                                         <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
@@ -251,47 +322,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <script>
-document.getElementById('coach').addEventListener('change', function() {
+document.getElementById('coach').addEventListener('change', function () {
     const selectedOption = this.options[this.selectedIndex];
     const coachName = selectedOption.dataset.coachName;
     const price = selectedOption.dataset.price;
-    
+
     document.getElementById('selected_coach_name').value = coachName;
     document.getElementById('selected_price').value = price;
-    document.getElementById('price_display').textContent = 
+    document.getElementById('price_display').textContent =
         new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2 }).format(price || 0);
+
+    // Remove error message when coach is selected
+    document.getElementById('coach_id_error').textContent = '';
 });
 
 function validateForm() {
+    let isValid = true;
+
+    // Clear previous errors
+    document.getElementById('start_date_error').textContent = '';
+    document.getElementById('coach_id_error').textContent = '';
+
     const startDate = document.getElementById('start_date').value;
     const coachId = document.getElementById('coach').value;
-    
+
     if (!startDate) {
-        alert('Please select a start date.');
-        return false;
+        document.getElementById('start_date_error').textContent = 'Please select a start date.';
+        isValid = false;
     }
-    
+
     if (!coachId) {
-        alert('Please select a coach.');
-        return false;
+        document.getElementById('coach_id_error').textContent = 'Please select a coach.';
+        isValid = false;
     }
-    
-    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $duration_type ?>');
-    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
-    
-    return true;
+
+    if (isValid) {
+        const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $duration_type ?>');
+        document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
+    }
+
+    return isValid;
 }
 
 function updateEndDate(startDate, duration, durationType) {
     const endDate = calculateEndDate(startDate, duration, durationType);
     document.getElementById('end_date').textContent = formatDate(endDate);
     document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
+
+    // Remove error message when valid date is selected
+    document.getElementById('start_date_error').textContent = '';
 }
 
 function calculateEndDate(startDate, duration, durationType) {
     const start = new Date(startDate);
     let end = new Date(start);
-    
+
     if (durationType === 'days') {
         end.setDate(end.getDate() + parseInt(duration));
     } else if (durationType === 'months') {
@@ -299,7 +384,7 @@ function calculateEndDate(startDate, duration, durationType) {
     } else if (durationType === 'year') {
         end.setFullYear(end.getFullYear() + parseInt(duration));
     }
-    
+
     return end;
 }
 
@@ -309,4 +394,5 @@ function formatDate(date) {
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
 }
+
 </script>
