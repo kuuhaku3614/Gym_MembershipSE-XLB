@@ -15,6 +15,23 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
 <style>
+
+        /* .services-header h1 {
+            font-size: 2rem;
+        }
+        .services-header p {
+            font-size: 1rem;
+        }
+        .card .card-header h2 {
+            font-size: 1.2rem;
+        }
+        .card .card-body p {
+            font-size: 0.9rem;
+        }
+        .button-shortcuts .btn {
+            padding: 10px;
+            font-size: 0.9rem;
+        } */
         html{
             background-color: transparent;
         }
@@ -46,6 +63,89 @@
             transform: translateY(-5px);
             transition: transform 0.3s ease;
 }
+
+
+/* General styling for the button-shortcuts section */
+.button-shortcuts .scroll-btn {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ff0000; /* Assuming you want red buttons to match your theme */
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.button-shortcuts .scroll-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* Mobile responsive styles */
+@media screen and (max-width: 480px) {
+    .main-content {
+        padding-top: 70px;
+    }
+    .services-header {
+        margin-bottom: 0!important;
+    }
+    .button-shortcuts{
+        margin-bottom: 0!important;
+
+    }
+    .button-shortcuts .row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        margin: 0 -10px; /* Negative margin to counteract padding */
+        padding-bottom: 10px; /* Space for the scrollbar */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    }
+    
+    .button-shortcuts .col-md-4 {
+        flex: 0 0 auto;
+        width: 33.33%; /* Equal width for all three buttons */
+        padding: 0 5px; /* Reduce padding for mobile */
+        margin-bottom: 0; /* Remove bottom margin */
+    }
+    
+    .button-shortcuts .scroll-btn {
+        padding: 12px 8px !important; /* Reduce padding on mobile */
+        white-space: nowrap; /* Prevent text from wrapping */
+        font-size: 0.9rem; /* Slightly smaller font for mobile */
+    }
+    
+    .button-shortcuts .scroll-btn i {
+        font-size: 1.2rem !important; /* Slightly smaller icon for mobile */
+    }
+    
+    /* If text needs to be truncated for very small screens */
+    .button-shortcuts .scroll-btn span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .button-shortcuts .row::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .button-shortcuts .row {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+}
+
+/* For very small screens */
+@media screen and (max-width: 360px) {
+    .button-shortcuts .col-md-4 {
+        width: 120px; /* Fixed width for very small screens */
+    }
+}
+
 </style>
 
 <section class="main-content">

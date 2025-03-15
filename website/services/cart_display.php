@@ -147,10 +147,10 @@ if (!empty($_SESSION['cart'])): ?>
         </div>
         <?php if ($_SESSION['cart']['total'] > 0): ?>
             <div class="d-grid gap-2">
-                <button class="btn btn-danger" onclick="availServices()">
+                <button class="btn btn-primary" onclick="availServices()">
                     Avail Services
                 </button>
-                <button class="btn btn-outline-danger" onclick="clearCart()">
+                <button class="btn btn-outline-secondary" onclick="clearCart()">
                     Clear Cart
                 </button>
             </div>

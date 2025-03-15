@@ -42,7 +42,7 @@ function updateCartDisplay(cart) {
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="mb-1">Walk-in Service</h6>
-                                <p class="price mb-1 fw-bold">₱${parseFloat(
+                                <p class="price mb-1 fw">₱${parseFloat(
                                   walkin.price
                                 ).toFixed(2)}</p>
                                 <p class="text-muted small mb-0">Date: ${formatDate(
@@ -185,19 +185,17 @@ function updateCartDisplay(cart) {
   html += `
         <div class="cart-summary mt-3">
             <div class="d-flex justify-content-between align-items-center">
-                <span class="fw-bold">Total:</span>
-                <span class="fw-bold">₱${parseFloat(cart.total).toFixed(
-                  2
-                )}</span>
+                <span class="fw">Total:</span>
+                <span class="fw">₱${parseFloat(cart.total).toFixed(2)}</span>
             </div>
             ${
               cart.total > 0
                 ? `
                 <div class="d-grid gap-2 mt-3">
-                    <button class="btn btn-danger" onclick="availServices()">
+                    <button class="btn btn-primary" onclick="availServices()">
                         Avail Services
                     </button>
-                    <button class="btn btn-outline-danger" onclick="clearCart()">
+                    <button class="btn btn-outline-secondary" onclick="clearCart()">
                         Clear Cart
                     </button>
                 </div>
@@ -320,48 +318,78 @@ function loadCart() {
 }
 
 function clearCart() {
-  if (!confirm("Are you sure you want to clear your cart?")) {
-    return;
-  }
+  // Create the confirmation modal HTML
+  const confirmModalHTML = `
+    <div class="modal fade" id="clearCartModal" tabindex="-1" aria-labelledby="clearCartModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-0">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="clearCartModalLabel">Confirm Clear Cart</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to clear your cart?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="clearCartModalYesBtn">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 
-  console.log("Clearing cart...");
-  const formData = new URLSearchParams();
-  formData.append("action", "clear");
+  // Add the confirmation modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", confirmModalHTML);
 
-  fetch("services/cart_handler.php", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Cache-Control": "no-cache",
-    },
-    body: formData.toString(),
-    credentials: "same-origin",
-  })
-    .then((response) => {
-      if (!response.ok) {
-        console.error("Server responded with status:", response.status);
-        throw new Error(`Server error: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((data) => {
-      console.log("Clear cart response:", data);
-      if (data.success) {
-        updateCartDisplay(data.data.cart);
-        alert("Cart cleared successfully");
-      } else {
-        const message =
-          data.data && data.data.message
-            ? data.data.message
-            : "Failed to clear cart";
-        console.error("Clear cart failed:", message);
-        alert(message);
-        // Removed the redirect check
-      }
-    })
-    .catch((error) => {
-      console.error("Error clearing cart:", error);
-      alert("Failed to clear cart. Please try again or refresh the page.");
+  // Show the confirmation modal
+  const confirmModal = new bootstrap.Modal(
+    document.getElementById("clearCartModal")
+  );
+  confirmModal.show();
+
+  // Add event listener to the Yes button
+  document
+    .getElementById("clearCartModalYesBtn")
+    .addEventListener("click", function () {
+      confirmModal.hide();
+      console.log("Clearing cart...");
+      const formData = new URLSearchParams();
+      formData.append("action", "clear");
+
+      fetch("services/cart_handler.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Cache-Control": "no-cache",
+        },
+        body: formData.toString(),
+        credentials: "same-origin",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            console.error("Server responded with status:", response.status);
+            throw new Error(`Server error: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Clear cart response:", data);
+          if (data.success) {
+            updateCartDisplay(data.data.cart);
+          } else {
+            const message =
+              data.data && data.data.message
+                ? data.data.message
+                : "Failed to clear cart";
+            console.error("Clear cart failed:", message);
+            alert(message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error clearing cart:", error);
+          alert("Failed to clear cart. Please try again or refresh the page.");
+        });
     });
 }
 
@@ -389,28 +417,142 @@ function availServices() {
     });
 }
 
-function proceedWithAvailing() {
-  if (confirm("Are you sure you want to avail these services?")) {
-    fetch("services/checkout_handler.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          window.location.href = "../website/profile.php";
-        } else {
-          alert(data.data.message || "An error occurred during checkout.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("An error occurred while processing your request.");
-      });
-  }
+// Add this HTML for the modal to your page
+function addSuccessModal() {
+  const modalHTML = `
+  <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-0 ">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="successModalLabel">Success!</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+          <h4 class="mt-3">Transaction Successful</h4>
+          <p>Your services have been successfully availed.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" id="successModalContinueBtn">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  // Add the modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
 }
+
+// Make sure to call this function when the page loads
+document.addEventListener("DOMContentLoaded", function () {
+  addSuccessModal();
+});
+
+// Updated proceedWithAvailing function
+function proceedWithAvailing() {
+  // Create the confirmation modal HTML
+  const confirmModalHTML = `
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-0">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="confirmModalLabel">Confirm Avail Services</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to avail these services?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmModalYesBtn">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add the confirmation modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", confirmModalHTML);
+
+  // Show the confirmation modal
+  const confirmModal = new bootstrap.Modal(
+    document.getElementById("confirmModal")
+  );
+  confirmModal.show();
+
+  // Add event listener to the Yes button
+  document
+    .getElementById("confirmModalYesBtn")
+    .addEventListener("click", function () {
+      confirmModal.hide();
+      fetch("services/checkout_handler.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Show the success modal instead of redirecting immediately
+            const successModal = new bootstrap.Modal(
+              document.getElementById("successModal")
+            );
+            successModal.show();
+
+            // Add event listener to the continue button
+            document
+              .getElementById("successModalContinueBtn")
+              .addEventListener("click", function () {
+                successModal.hide();
+                window.location.href = "../website/profile.php";
+              });
+
+            // Also redirect after a short delay if user doesn't click the button
+            setTimeout(function () {
+              if (
+                document
+                  .getElementById("successModal")
+                  .classList.contains("show")
+              ) {
+                successModal.hide();
+                window.location.href = "../website/profile.php";
+              }
+            }, 5000); // 5 seconds delay
+          } else {
+            alert(data.data.message || "An error occurred during checkout.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("An error occurred while processing your request.");
+        });
+    });
+}
+
+// function proceedWithAvailing() {
+//   if (confirm("Are you sure you want to avail these services?")) {
+//     fetch("services/checkout_handler.php", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/x-www-form-urlencoded",
+//       },
+//     })
+//       .then((response) => response.json())
+//       .then((data) => {
+//         if (data.success) {
+//           window.location.href = "../website/profile.php";
+//         } else {
+//           alert(data.data.message || "An error occurred during checkout.");
+//         }
+//       })
+//       .catch((error) => {
+//         console.error("Error:", error);
+//         alert("An error occurred while processing your request.");
+//       });
+//   }
+// }
 
 function formatDate(dateString) {
   if (!dateString) return "N/A";
