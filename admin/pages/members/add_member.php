@@ -57,28 +57,37 @@ if (isset($_GET['action'])) {
             // Get the program type using the class method
             $programType = $memberRegistration->getCoachProgramType($coachProgramTypeId);
             if ($programType === null) {
-                error_log("Failed to determine program type"); // Debug log
-                echo json_encode(['success' => false, 'error' => 'Failed to determine program type']);
+                error_log("Failed to get program type for ID: " . $coachProgramTypeId);
+                echo json_encode(['success' => false, 'error' => 'Program type not found']);
                 exit;
             }
-            
-            $schedules = [];
+
+            // Get schedules based on program type
             if ($programType === 'personal') {
                 $schedules = $memberRegistration->getCoachPersonalSchedule($coachProgramTypeId);
             } else {
                 $schedules = $memberRegistration->getCoachGroupSchedule($coachProgramTypeId);
             }
-            
-            error_log("Retrieved schedules: " . print_r($schedules, true)); // Debug log
-            
+
+            // Return the response with program type and coach program type ID
             if (isset($schedules['error'])) {
                 echo json_encode(['success' => false, 'error' => $schedules['error']]);
             } else if (isset($schedules['message'])) {
-                echo json_encode(['success' => true, 'data' => [], 'message' => $schedules['message']]);
+                echo json_encode([
+                    'success' => true, 
+                    'program_type' => $programType,
+                    'coach_program_type_id' => $coachProgramTypeId,
+                    'data' => [],
+                    'message' => $schedules['message']
+                ]);
             } else {
-                echo json_encode(['success' => true, 'data' => $schedules, 'program_type' => $programType]);
+                echo json_encode([
+                    'success' => true,
+                    'program_type' => $programType,
+                    'coach_program_type_id' => $coachProgramTypeId,
+                    'data' => $schedules
+                ]);
             }
-            exit;
         } catch (Exception $e) {
             error_log("Error in get_schedule: " . $e->getMessage()); // Debug log
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
@@ -271,6 +280,81 @@ function generateProgramCard($program) {
             min-width: 150px;
             padding: 10px 20px;
         }
+        
+        .review-section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .review-section h5 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .review-info p {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .review-info p strong {
+            color: #34495e;
+            min-width: 150px;
+        }
+
+        .program-item, .rental-item {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .program-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .program-details {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        #review-total-amount {
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+
+        .review-title {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Hide empty sections */
+        #review-programs:empty,
+        #review-rentals:empty {
+            display: none;
+        }
+
+        /* Total amount section */
+        .review-section:last-child {
+            background-color: #f8f9fa;
+            border: 2px solid #3498db;
+        }
+
+        .review-section:last-child h4 {
+            color: #2c3e50;
+            text-align: right;
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -410,10 +494,12 @@ function generateProgramCard($program) {
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <table id="scheduleTable" class="table">
-                                            <thead></thead>
-                                            <tbody id="scheduleTableBody"></tbody>
-                                        </table>
+                                        <div id="scheduleTableContainer">
+                                            <table id="scheduleTable" class="table table-striped">
+                                                <thead id="scheduleTableHead"></thead>
+                                                <tbody id="scheduleTableBody"></tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -457,79 +543,51 @@ function generateProgramCard($program) {
                             <h4 class="review-title">Review Information</h4>
 
                             <div class="review-section">
-                                <h5>Account Credentials</h5>
-                                <div class="account-info">
-                                    <div class="info-row">
-                                        <span class="info-label">Username: <input type="text"></span>
-                                        <span class="info-label">Password: <input type="password"></span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="review-section">
                                 <h5>Personal Information</h5>
                                 <div class="review-info">
-                                    <div class="info-row">
-                                        <span class="info-label">Name:</span>
-                                        <span id="review-name" class="info-value"></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Sex:</span>
-                                        <span id="review-sex" class="info-value"></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Birthdate:</span>
-                                        <span id="review-birthdate" class="info-value"></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Phone:</span>
-                                        <span id="review-phone" class="info-value"></span>
-                                    </div>
+                                    <p><strong>Name:</strong> <span id="review-name"></span></p>
+                                    <p><strong>Sex:</strong> <span id="review-sex"></span></p>
+                                    <p><strong>Birthdate:</strong> <span id="review-birthdate"></span></p>
+                                    <p><strong>Contact Number:</strong> <span id="review-contact"></span></p>
                                 </div>
                             </div>
                             
                             <div class="review-section">
-                                <h5>Membership Details</h5>
-                                <div class="review-info">
-                                    <div class="info-row">
-                                        <span class="info-label">Plan:</span>
-                                        <span id="review-plan" class="info-value"></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Duration:</span>
-                                        <span id="review-duration" class="info-value"></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Price:</span> 
-                                        <span id="review-price" class="info-value"></span>
-                                    </div>
-                                    <div class="info-row">
-                                        <span class="info-label">Start Date:</span>
-                                        <span id="review-start-date" class="info-value"></span>
-                                    </div>
+                                <h5>Membership Plan</h5>
+                                <div id="review-membership" class="review-info">
+                                    <p><strong>Plan:</strong> <span id="review-plan"></span></p>
+                                    <p><strong>Duration:</strong> <span id="review-duration"></span></p>
+                                    <p><strong>Start Date:</strong> <span id="review-start-date"></span></p>
+                                    <p><strong>End Date:</strong> <span id="review-end-date"></span></p>
+                                    <p><strong>Plan Amount:</strong> ₱<span id="review-price">0.00</span></p>
+                                    <p><strong>Registration Fee:</strong> ₱<span id="review-registration-fee">0.00</span></p>
                                 </div>
                             </div>
                             
                             <div class="review-section">
                                 <h5>Selected Programs</h5>
-                                <div id="review-programs" class="review-programs"></div>
+                                <div id="review-programs" class="review-programs">
+                                    <div id="review-programs-list"></div>
+                                    <p class="mt-2"><strong>Total Programs Fee:</strong> ₱<span id="review-programs-fee">0.00</span></p>
+                                </div>
                             </div>
                             
                             <div class="review-section">
                                 <h5>Rental Services</h5>
-                                <div id="rentals-review" class="review-rentals"></div>
+                                <div id="review-rentals" class="review-rentals">
+                                    <div id="review-rentals-list"></div>
+                                    <p class="mt-2"><strong>Total Rentals Fee:</strong> ₱<span id="review-rentals-fee">0.00</span></p>
+                                </div>
                             </div>
 
                             <div class="review-section">
+                                <h5>Total Amount</h5>
                                 <div class="review-info">
-                                    <div class="info-row">
-                                            <span class="info-label">Registration Fee:</span>
-                                            <span class="info-value" id="review-registration-fee">₱<?= number_format($memberRegistration->getRegistrationFee(), 2) ?></span>
-                                        </div>
-                                        <div class="info-row">
-                                            <span class="info-label">Total:</span>
-                                            <span class="info-value" id="review-total">₱0.00</span>
-                                    </div>
+                                    <p><strong>Registration Fee:</strong> ₱<span id="review-registration-fee">0.00</span></p>
+                                    <p><strong>Plan Amount:</strong> ₱<span id="review-price">0.00</span></p>
+                                    <p><strong>Programs Fee:</strong> ₱<span id="review-programs-fee">0.00</span></p>
+                                    <p><strong>Rentals Fee:</strong> ₱<span id="review-rentals-fee">0.00</span></p>
+                                    <h4 class="mt-3"><strong>Total:</strong> ₱<span id="review-total-amount">0.00</span></h4>
                                 </div>
                             </div>
                             
@@ -566,19 +624,33 @@ function generateProgramCard($program) {
     <div class="membership-summary">
         <div class="container">
             <!-- Selected Plan -->
-            <div class="summary-row">
-                <h5>Membership Summary</h5>
-                <div id="selectedPlan" class="details"></div>
-                <div id="selectedPrograms" class="details"></div>
-                <div id="selectedRentals" class="details"></div>
-            </div>
-            <div class="row">
-                <div class="col-md-8">
+            <div class="summary-row" data-type="membership" style="display: none;">
+                <i class="fas fa-times remove-program"></i>
+                <h5>Membership Plan</h5>
+                <div class="details">
+                    <p><strong>Plan:</strong> <span class="membership-plan-name"></span></p>
+                    <p><strong>Duration:</strong> <span class="membership-duration"></span></p>
+                    <p><strong>Start Date:</strong> <span class="membership-start-date"></span></p>
+                    <p><strong>End Date:</strong> <span class="membership-end-date"></span></p>
+                    <p><strong>Amount:</strong> ₱<span class="membership-amount">0.00</span></p>
                 </div>
-                <div class="col-md-4 text-end">
-                    <h5>Total Amount</h5>
-                    <div class="h4" id="totalAmount">₱0.00</div>
-                    <small class="text-muted">Registration Fee: ₱<?= number_format($registrationFee, 2) ?></small>
+            </div>
+
+            <!-- Selected Programs -->
+            <div id="selectedPrograms">
+                <!-- Programs will be dynamically added here -->
+            </div>
+            
+            <!-- Selected Rental Services -->
+            <div class="rental-services-summary">
+                <!-- Rental services will be dynamically added here -->
+            </div>
+
+            <!-- Total Amount -->
+            <div class="summary-row mt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Total Amount:</h5>
+                    <h5 class="mb-0">₱<span class="total-amount">0.00</span></h5>
                 </div>
             </div>
         </div>
@@ -627,7 +699,7 @@ function generateProgramCard($program) {
 
                 // Update review section total if visible
                 if ($('#phase4').is(':visible')) {
-                    $('#review-total').text('₱' + total.toFixed(2));
+                    $('#review-total-amount').text('₱' + total.toFixed(2));
                 }
 
                 totalAmount = total;
@@ -758,16 +830,7 @@ function generateProgramCard($program) {
                             `);
 
                             const rows = response.data.map(schedule => `
-                                <tr data-schedule='${JSON.stringify({
-                                    id: schedule.id,
-                                    coach: schedule.coach_name || '',
-                                    type: response.program_type,
-                                    program: programName,
-                                    price: schedule.price,
-                                    day: schedule.day,
-                                    startTime: schedule.start_time,
-                                    endTime: schedule.end_time
-                                })}'>
+                                <tr data-id='${schedule.id}' data-type='${response.program_type}' data-coach-program-type-id='${response.coach_program_type_id}' data-program='${programName}' data-coach='${schedule.coach_name || ''}' data-day='${schedule.day}' data-start-time='${schedule.start_time}' data-end-time='${schedule.end_time}' data-price='${schedule.price}'>
                                     <td>${schedule.day}</td>
                                     <td>${schedule.start_time}</td>
                                     <td>${schedule.end_time}</td>
@@ -793,205 +856,148 @@ function generateProgramCard($program) {
             });
 
             // Handle rental service selection
-            $('.rental-service-checkbox').change(function() {
-                // Update rental summary
-                let rentalHtml = '';
-                $('.rental-service-checkbox:checked').each(function() {
-                    const checkbox = $(this);
-                    const name = checkbox.data('name');
-                    const price = parseFloat(checkbox.data('price'));
-                    const duration = checkbox.data('duration');
-                    const durationType = checkbox.data('duration-type');
-                    
-                    rentalHtml += `
-                        <div class="summary-row">
-                            <p><strong>${name}</strong></p>
-                            <p>Duration: ${duration} ${durationType}</p>
-                            <p>Price: ₱${price.toFixed(2)}</p>
-                        </div>
-                    `;
-                });
-                $('#selectedRentals').html(rentalHtml);
-
-                // Update totals
+            $(document).on('change', 'input[name="rental_services[]"]', function() {
+                updateRentalServicesSummary();
                 updateTotalAmount();
-
-                // Update review section if visible
-                if ($('#phase4').is(':visible')) {
-                    updateReviewInformation();
-                }
             });
 
-            // Update programs summary
-            function updateProgramsSummary() {
-                let programsHtml = '';
-                if (selectedPrograms.length > 0) {
-                    selectedPrograms.forEach(program => {
-                        programsHtml += `
-                            <div class="summary-row">
-                                <p><strong>${program.program}</strong> (${program.type})</p>
-                                <p>Coach: ${program.coach}</p>
-                                <p>Schedule: ${program.schedule}</p>
-                                <p>Price: ₱${parseFloat(program.price).toFixed(2)}</p>
-                            </div>
-                        `;
-                    });
-                }
-                $('#selectedPrograms').html(programsHtml);
-            }
-
-            // Update review information
-            function updateReviewInformation() {
-                // Get personal information values
-                const firstName = $('#first_name').val();
-                const middleName = $('#middle_name').val();
-                const lastName = $('#last_name').val();
-                const sex = $('input[name="sex"]:checked').val();
-                const birthdate = $('#birthdate').val();
-                const contact = $('#contact').val();
-
-                // Build full name
-                const nameParts = [firstName];
-                if (middleName && middleName.trim() !== '') {
-                    nameParts.push(middleName);
-                }
-                nameParts.push(lastName);
-                const fullName = nameParts.join(' ');
-
-                // Update personal information display
-                $('#review-name').text(fullName || 'Not provided');
-                $('#review-sex').text(sex || 'Not provided');
-                $('#review-birthdate').text(birthdate || 'Not provided');
-                $('#review-phone').text(contact || 'Not provided');
-                
-                // Update membership details
-                const selectedPlan = $('#selectedPlan');
-                const planName = selectedPlan.find('p:first').text().replace('Plan: ', '');
-                const duration = selectedPlan.find('p:eq(1)').text().replace('Duration: ', '');
-                const planPrice = parseFloat(selectedPlan.find('p:eq(2)').text().replace('Price: ₱', '')) || 0;
-                const startDate = $('#membership_start_date').val();
-
-                // Update plan details
-                $('#review-plan').text(planName || 'Not selected');
-                $('#review-duration').text(duration || 'Not selected');
-                $('#review-price').text('₱' + planPrice.toFixed(2));
-                $('#review-start-date').text(startDate || 'Not selected');
-                $('#review-registration-fee').text('₱' + registrationFee.toFixed(2));
-
-                // Update programs display
-                let programsHtml = '';
-                if (selectedPrograms.length > 0) {
-                    selectedPrograms.forEach(program => {
-                        programsHtml += `
-                            <div class="program-item">
-                                <div class="program-title">${program.program} (${program.type.charAt(0).toUpperCase() + program.type.slice(1)})</div>
-                                <div class="program-details">
-                                    Coach: ${program.coach}<br>
-                                    Schedule: ${program.schedule}<br>
-                                    Price: ₱${parseFloat(program.price).toFixed(2)}
-                                </div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    programsHtml = '<div class="text-muted">No programs selected</div>';
-                }
-                $('#review-programs').html(programsHtml);
-
-                // Update rental services review
-                let rentalReviewHtml = '';
-                $('.rental-service-checkbox:checked').each(function() {
-                    const checkbox = $(this);
-                    const name = checkbox.data('name');
-                    const price = parseFloat(checkbox.data('price'));
-                    const duration = checkbox.data('duration');
-                    const durationType = checkbox.data('duration-type');
-                    
-                    rentalReviewHtml += `
-                        <div class="program-item">
-                            <div class="program-title">${name}</div>
-                            <div class="program-details">
-                                Duration: ${duration} ${durationType}<br>
-                                Price: ₱${price.toFixed(2)}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                $('#rentals-review').html(rentalReviewHtml || '<p>No rental services selected</p>');
-
-                // Update total amount
+            // Handle rental service removal
+            $(document).on('click', '.remove-rental', function() {
+                const rentalId = $(this).closest('.summary-row').data('rental-id');
+                $(`input[name="rental_services[]"][value="${rentalId}"]`).prop('checked', false);
+                $(this).closest('.summary-row').remove();
                 updateTotalAmount();
-            }
-
-            // Phase navigation function
-            function showPhase(phaseNumber) {
-                // Hide all phases
-                $('.phase').hide();
-                
-                // Show the selected phase
-                $(`#phase${phaseNumber}`).show();
-                
-                // Update progress indicators
-                $('.step').removeClass('active completed');
-                $(`.step:lt(${phaseNumber})`).addClass('completed');
-                $(`.step:eq(${phaseNumber - 1})`).addClass('active');
-                
-                // Show/hide navigation buttons
-                $('#prevBtn, #nextBtn, #reviewBtn, #submitBtn').hide();
-                
-                if (phaseNumber > 1) {
-                    $('#prevBtn').show();
-                }
-                
-                if (phaseNumber < 3) {
-                    $('#nextBtn').show();
-                } else if (phaseNumber === 3) {
-                    $('#nextBtn').hide();
-                    $('#reviewBtn').show();
-                } else if (phaseNumber === 4) {
-                    $('#submitBtn').show();
-                }
-                
-                // Update membership summary visibility
-                if (phaseNumber === 4) {
-                    $('.membership-summary').hide();
-                } else {
-                    $('.membership-summary').show();
-                }
-            }
-
-            // Initialize form
-            $(document).ready(function() {
-                // Show first phase initially
-                showPhase(1);
-                
-                // Handle next button
-                $('#nextBtn').click(function() {
-                    const currentPhase = parseInt($('.phase:visible').attr('id').replace('phase', ''));
-                    showPhase(currentPhase + 1);
-                });
-                
-                // Handle previous button
-                $('#prevBtn').click(function() {
-                    const currentPhase = parseInt($('.phase:visible').attr('id').replace('phase', ''));
-                    showPhase(currentPhase - 1);
-                });
-                
-                // Handle review button
-                $('#reviewBtn').click(function() {
-                    updateReviewInformation();
-                    showPhase(4);
-                });
             });
+
+            // Handle program removal using event delegation
+            $(document).on('click', '.remove-program', function() {
+                if ($(this).closest('.summary-row').data('type') === 'membership') {
+                    // If removing membership plan
+                    $('input[name="membership_plan"]:checked').prop('checked', false);
+                    $('.summary-row[data-type="membership"]').hide();
+                    $('#review-membership').hide();
+                } else {
+                    // If removing program
+                    const index = $(this).data('index');
+                    if (index >= 0 && index < selectedPrograms.length) {
+                        selectedPrograms.splice(index, 1);
+                        updateProgramsSummary();
+                    }
+                }
+                updateTotalAmount();
+            });
+
+            function fetchSchedules(programType) {
+                const selectedCoachProgramTypeId = $('#coach_program_type_id').val();
+                const programName = $('#program_name').val();
+                
+                if (!selectedCoachProgramTypeId || !programName) {
+                    console.error('Missing required data:', { selectedCoachProgramTypeId, programName });
+                    return;
+                }
+
+                $.ajax({
+                    url: 'functions/fetch_schedules.php',
+                    method: 'POST',
+                    data: {
+                        coach_program_type_id: selectedCoachProgramTypeId,
+                        program_type: programType
+                    },
+                    success: function(response) {
+                        try {
+                            response = JSON.parse(response);
+                            console.log('Fetched schedules:', response); // Debug log
+
+                            // Clear existing table content
+                            $('#scheduleTableContainer').html(`
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Day</th>
+                                            <th>Start Time</th>
+                                            <th>End Time</th>
+                                            <th>Coach</th>
+                                            <th>Price</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            `);
+
+                            // Add table rows
+                            response.data.forEach(schedule => {
+                                const scheduleId = programType === 'personal' ? schedule.coach_personal_schedule_id : schedule.coach_group_schedule_id;
+                                console.log('Schedule row data:', { 
+                                    id: scheduleId,
+                                    type: programType,
+                                    program: programName,
+                                    schedule: schedule 
+                                }); // Debug log
+
+                                $('#scheduleTableContainer tbody').append(`
+                                    <tr
+                                        data-id="${scheduleId}"
+                                        data-type="${programType}"
+                                        data-coach-program-type-id="${selectedCoachProgramTypeId}"
+                                        data-program="${programName}"
+                                        data-coach="${schedule.coach_name || ''}"
+                                        data-day="${schedule.day}"
+                                        data-start-time="${schedule.start_time}"
+                                        data-end-time="${schedule.end_time}"
+                                        data-price="${schedule.price}"
+                                    >
+                                        <td>${schedule.day}</td>
+                                        <td>${schedule.start_time}</td>
+                                        <td>${schedule.end_time}</td>
+                                        <td>${schedule.coach_name || ''}</td>
+                                        <td>₱${parseFloat(schedule.price).toFixed(2)}</td>
+                                        <td>
+                                            <button class="btn btn-primary btn-sm select-schedule">Select</button>
+                                        </td>
+                                    </tr>
+                                `);
+                            });
+
+                            scheduleModal.show();
+                        } catch (error) {
+                            console.error('Error parsing schedule data:', error);
+                            console.error('Response:', response);
+                            alert('Failed to load schedules. Please try again.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching schedules:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                        alert('Failed to fetch schedules. Please try again.');
+                    }
+                });
+            }
 
             // Handle schedule selection using event delegation
             $(document).on('click', '.select-schedule', function(e) {
                 e.preventDefault();
                 const $row = $(this).closest('tr');
-                const scheduleData = $row.data('schedule');
+                const scheduleData = {
+                    id: $row.data('id'),
+                    type: $row.data('type'),
+                    coach_program_type_id: $row.data('coach-program-type-id'),
+                    program: $row.data('program'),
+                    coach: $row.data('coach'),
+                    day: $row.data('day'),
+                    startTime: $row.data('start-time'),
+                    endTime: $row.data('end-time'),
+                    price: $row.data('price')
+                };
 
-                if (!scheduleData) return;
+                console.log('Schedule data before selection:', scheduleData);
+
+                if (!scheduleData.id) {
+                    console.error('No schedule ID found:', $row.data());
+                    return;
+                }
 
                 if (selectedPrograms.some(p => p.id === scheduleData.id)) {
                     alert('This schedule has already been selected.');
@@ -999,18 +1005,8 @@ function generateProgramCard($program) {
                 }
 
                 // Store complete schedule information
-                selectedPrograms.push({
-                    id: scheduleData.id,
-                    type: scheduleData.type,
-                    coach_program_type_id: scheduleData.coach_program_type_id,
-                    program: scheduleData.program,
-                    coach: scheduleData.coach,
-                    day: scheduleData.day,
-                    startTime: scheduleData.startTime,
-                    endTime: scheduleData.endTime,
-                    price: scheduleData.price,
-                    date: new Date().toISOString().split('T')[0]
-                });
+                selectedPrograms.push(scheduleData);
+                console.log('Updated selected programs:', selectedPrograms);
 
                 // Update programs summary
                 updateProgramsSummary();
@@ -1023,27 +1019,169 @@ function generateProgramCard($program) {
                     updateReviewInformation();
                 }
 
-                scheduleModal?.hide();
-            });
-
-            // Handle program removal using event delegation
-            $(document).on('click', '.remove-program', function() {
-                const index = $(this).data('index');
-                if (index >= 0 && index < selectedPrograms.length) {
-                    selectedPrograms.splice(index, 1);
-                    
-                    // Update programs summary
-                    updateProgramsSummary();
-
-                    // Update totals
-                    updateTotalAmount();
-
-                    // Update review section if visible
-                    if ($('#phase4').is(':visible')) {
-                        updateReviewInformation();
-                    }
+                if (scheduleModal) {
+                    scheduleModal.hide();
                 }
             });
+
+            // Function to update programs summary
+            function updateProgramsSummary() {
+                $('#selectedPrograms').empty();
+                
+                selectedPrograms.forEach((program, index) => {
+                    console.log('Updating program summary:', program); // Debug log
+                    const programHtml = `
+                        <div class="summary-row" data-type="program">
+                            <i class="fas fa-times remove-program" data-index="${index}"></i>
+                            <h5>${program.program}</h5>
+                            <div class="details">
+                                <p><strong>Type:</strong> ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program</p>
+                                <p><strong>Coach:</strong> ${program.coach}</p>
+                                <p><strong>Schedule:</strong> ${program.day}, ${program.startTime} - ${program.endTime}</p>
+                                <p><strong>Amount:</strong> ₱${parseFloat(program.price).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    $('#selectedPrograms').append(programHtml);
+                });
+
+                // Update the review section if visible
+                if ($('#phase4').is(':visible')) {
+                    $('#review-programs-list').empty();
+                    selectedPrograms.forEach(program => {
+                        const reviewHtml = `
+                            <div class="program-item">
+                                <div class="program-title">${program.program}</div>
+                                <div class="program-details">
+                                    Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
+                                    Coach: ${program.coach}<br>
+                                    Schedule: ${program.day}, ${program.startTime} - ${program.endTime}<br>
+                                    Amount: ₱${parseFloat(program.price).toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                        $('#review-programs-list').append(reviewHtml);
+                    });
+                }
+                
+                updateTotalAmount();
+            }
+
+            // Update review information
+            function updateReviewInformation() {
+                // Personal Information
+                const fullName = [
+                    $('#first_name').val(),
+                    $('#middle_name').val(),
+                    $('#last_name').val()
+                ].filter(Boolean).join(' ');
+                
+                $('#review-name').text(fullName);
+                $('#review-sex').text($('input[name="sex"]:checked').val() || 'Not selected');
+                $('#review-birthdate').text($('#birthdate').val() || 'Not selected');
+                $('#review-contact').text($('#contact').val() || 'Not selected');
+
+                // Membership Plan Review
+                const selectedPlan = $('input[name="membership_plan"]:checked');
+                if (selectedPlan.length) {
+                    const planName = selectedPlan.data('name');
+                    const duration = selectedPlan.data('duration');
+                    const durationType = selectedPlan.data('duration-type');
+                    const price = parseFloat(selectedPlan.data('price'));
+                    const startDate = $('#membership_start_date').val() || new Date().toISOString().split('T')[0];
+                    const endDate = calculateEndDate(startDate, duration, durationType);
+
+                    $('#review-membership').show();
+                    $('#review-plan').text(planName);
+                    $('#review-duration').text(duration + ' ' + durationType);
+                    $('#review-start-date').text(startDate);
+                    $('#review-end-date').text(endDate);
+                    $('#review-price').text('₱' + price.toFixed(2));
+                    $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
+                } else {
+                    $('#review-membership').hide();
+                }
+
+                // Programs Review
+                $('#review-programs-list').empty();
+                let totalProgramsFee = 0;
+                selectedPrograms.forEach(program => {
+                    const programHtml = `
+                        <div class="program-item">
+                            <div class="program-title">${program.program}</div>
+                            <div class="program-details">
+                                Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
+                                Coach: ${program.coach}<br>
+                                Schedule: ${program.day}, ${program.startTime} - ${program.endTime}<br>
+                                Amount: ₱${parseFloat(program.price).toFixed(2)}
+                            </div>
+                        </div>`;
+                    $('#review-programs-list').append(programHtml);
+                    totalProgramsFee += parseFloat(program.price) || 0;
+                });
+                $('#review-programs-fee').text(totalProgramsFee.toFixed(2));
+                $('#review-programs').toggle(selectedPrograms.length > 0);
+
+                // Rental Services Review
+                $('#review-rentals-list').empty();
+                let totalRentalsFee = 0;
+                $('input[name="rental_services[]"]:checked').each(function() {
+                    const rental = {
+                        name: $(this).data('name'),
+                        duration: $(this).data('duration'),
+                        durationType: $(this).data('duration-type'),
+                        price: parseFloat($(this).data('price'))
+                    };
+                    const startDate = new Date().toISOString().split('T')[0];
+                    const endDate = calculateEndDate(startDate, rental.duration, rental.durationType);
+                    
+                    const rentalHtml = `
+                        <div class="rental-item">
+                            <div class="program-title">${rental.name}</div>
+                            <div class="program-details">
+                                Duration: ${rental.duration} ${rental.durationType}<br>
+                                Start Date: ${startDate}<br>
+                                End Date: ${endDate}<br>
+                                Amount: ₱${rental.price.toFixed(2)}
+                            </div>
+                        </div>`;
+                    $('#review-rentals-list').append(rentalHtml);
+                    totalRentalsFee += rental.price;
+                });
+                $('#review-rentals-fee').text(totalRentalsFee.toFixed(2));
+                $('#review-rentals').toggle($('input[name="rental_services[]"]:checked').length > 0);
+
+                // Update registration fee and total
+                $('#review-registration-fee').text(registrationFee.toFixed(2));
+                updateTotalAmount();
+            }
+
+            // Function to update rental services summary
+            function updateRentalServicesSummary() {
+                $('.rental-services-summary').empty();
+                
+                $('input[name="rental_services[]"]:checked').each(function() {
+                    const rentalId = $(this).val();
+                    const rentalName = $(this).data('name');
+                    const rentalPrice = parseFloat($(this).data('price'));
+                    const rentalDuration = $(this).data('duration');
+                    const rentalDurationType = $(this).data('duration-type');
+                    
+                    const rentalHtml = `
+                        <div class="summary-row" data-type="rental" data-rental-id="${rentalId}">
+                            <i class="fas fa-times remove-rental"></i>
+                            <h5>${rentalName}</h5>
+                            <div class="details">
+                                <p><strong>Duration:</strong> ${rentalDuration} ${rentalDurationType}</p>
+                                <p><strong>Amount:</strong> ₱${rentalPrice.toFixed(2)}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    $('.rental-services-summary').append(rentalHtml);
+                });
+            }
 
             // Handle form submission
             $('#memberForm').submit(function(e) {
@@ -1082,7 +1220,7 @@ function generateProgramCard($program) {
                     debugData['memberships'] = {
                         'membership_plan_id': selectedPlan.val(),
                         'start_date': startDate,
-                        'end_date': 'auto-calculated based on plan duration',
+                        'end_date': calculateEndDate(startDate, selectedPlan.data('duration'), selectedPlan.data('duration-type')),
                         'amount': parseFloat(selectedPlan.data('price')),
                         'status': 'pending',
                         'is_paid': 0
@@ -1099,7 +1237,7 @@ function generateProgramCard($program) {
                     debugData['program_subscription_schedule'] = selectedPrograms.map(program => ({
                         'coach_group_schedule_id': program.type === 'group' ? program.id : 'NULL',
                         'coach_personal_schedule_id': program.type === 'personal' ? program.id : 'NULL',
-                        'date': program.date,
+                        'date': new Date().toISOString().split('T')[0],
                         'day': program.day,
                         'start_time': program.startTime,
                         'end_time': program.endTime,
@@ -1115,7 +1253,7 @@ function generateProgramCard($program) {
                     selectedRentals.push({
                         'rental_service_id': $(this).val(),
                         'start_date': startDate,
-                        'end_date': 'auto-calculated based on rental duration',
+                        'end_date': calculateEndDate(startDate, $(this).data('duration'), $(this).data('duration-type')),
                         'amount': parseFloat($(this).data('price')),
                         'status': 'pending',
                         'is_paid': 0
@@ -1185,61 +1323,219 @@ function generateProgramCard($program) {
                 });
             });
 
-            // Handle next button click for phase 1
-            $('#nextBtn1').click(function() {
-                // Validate required fields
-                const firstName = $('#first_name').val().trim();
-                const lastName = $('#last_name').val().trim();
-                const sex = $('input[name="sex"]:checked').val();
-                const birthdate = $('#birthdate').val().trim();
-                const contact = $('#contact').val().trim();
-
-                // Remove any existing validation styles
-                $('.is-invalid').removeClass('is-invalid');
+            // Function to calculate end date based on start date and duration
+            function calculateEndDate(startDate, duration, durationType) {
+                if (!startDate) return '';
                 
-                let isValid = true;
-                let missingFields = [];
+                try {
+                    const start = new Date(startDate);
+                    if (isNaN(start.getTime())) {
+                        console.error('Invalid start date:', startDate);
+                        return '';
+                    }
 
-                if (!firstName) {
-                    $('#first_name').addClass('is-invalid');
-                    missingFields.push('First Name');
-                    isValid = false;
+                    const durationNum = parseInt(duration);
+                    if (isNaN(durationNum)) {
+                        console.error('Invalid duration:', duration);
+                        return '';
+                    }
+
+                    const end = new Date(start);
+                    switch(durationType.toLowerCase()) {
+                        case 'day':
+                        case 'days':
+                            end.setDate(end.getDate() + durationNum);
+                            break;
+                        case 'month':
+                        case 'months':
+                            end.setMonth(end.getMonth() + durationNum);
+                            break;
+                        case 'year':
+                        case 'years':
+                            end.setFullYear(end.getFullYear() + durationNum);
+                            break;
+                        default:
+                            console.error('Invalid duration type:', durationType);
+                            return '';
+                    }
+
+                    // Format date as YYYY-MM-DD
+                    return end.toISOString().split('T')[0];
+                } catch (error) {
+                    console.error('Error calculating end date:', error);
+                    return '';
+                }
+            }
+
+            // Update membership plan selection with end date
+            $('input[name="membership_plan"]').change(function() {
+                if ($(this).is(':checked')) {
+                    const planName = $(this).data('name');
+                    const duration = $(this).data('duration');
+                    const durationType = $(this).data('duration-type');
+                    const price = parseFloat($(this).data('price'));
+                    const startDate = $('#membership_start_date').val() || new Date().toISOString().split('T')[0];
+                    const endDate = calculateEndDate(startDate, duration, durationType);
+
+                    // Update summary section
+                    $('.summary-row[data-type="membership"]').show();
+                    $('.membership-plan-name').text(planName);
+                    $('.membership-duration').text(duration + ' ' + durationType);
+                    $('.membership-start-date').text(startDate);
+                    $('.membership-end-date').text(endDate);
+                    $('.membership-amount').text(price.toFixed(2));
+
+                    // Update review section
+                    $('#review-membership').show();
+                    $('#review-plan').text(planName);
+                    $('#review-duration').text(duration + ' ' + durationType);
+                    $('#review-start-date').text(startDate);
+                    $('#review-end-date').text(endDate);
+                    $('#review-price').text('₱' + price.toFixed(2));
+                    $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
+                } else {
+                    $('.summary-row[data-type="membership"]').hide();
+                    $('#review-membership').hide();
                 }
 
-                if (!lastName) {
-                    $('#last_name').addClass('is-invalid');
-                    missingFields.push('Last Name');
-                    isValid = false;
-                }
-
-                if (!sex) {
-                    $('input[name="sex"]').addClass('is-invalid');
-                    missingFields.push('Sex');
-                    isValid = false;
-                }
-
-                if (!birthdate) {
-                    $('#birthdate').addClass('is-invalid');
-                    missingFields.push('Birth Date');
-                    isValid = false;
-                }
-
-                if (!contact) {
-                    $('#contact').addClass('is-invalid');
-                    missingFields.push('Contact Number');
-                    isValid = false;
-                }
-
-                if (!isValid) {
-                    alert('Please fill in the following required fields:\n' + missingFields.join('\n'));
-                    return;
-                }
-
-                showPhase(2);
+                updateTotalAmount();
             });
 
-            // Initialize with first phase
-            showPhase(1);
+            // Update membership dates when start date changes
+            $('#membership_start_date').change(function() {
+                const selectedPlan = $('input[name="membership_plan"]:checked');
+                if (selectedPlan.length) {
+                    const startDate = $(this).val();
+                    const duration = selectedPlan.data('duration');
+                    const durationType = selectedPlan.data('duration-type');
+                    const endDate = calculateEndDate(startDate, duration, durationType);
+                    
+                    if (endDate) {
+                        $('.membership-start-date').text(startDate);
+                        $('.membership-end-date').text(endDate);
+                        $('#review-start-date').text(startDate);
+                        $('#review-end-date').text(endDate);
+                    }
+                }
+            });
+
+            // Phase navigation function
+            function showPhase(phaseNumber) {
+                // Hide all phases
+                $('.phase').hide();
+                
+                // Show the selected phase
+                $(`#phase${phaseNumber}`).show();
+                
+                // Update progress indicators
+                $('.step').removeClass('active completed');
+                $(`.step:lt(${phaseNumber})`).addClass('completed');
+                $(`.step:eq(${phaseNumber - 1})`).addClass('active');
+                
+                // Show/hide navigation buttons
+                $('#prevBtn, #nextBtn, #reviewBtn, #submitBtn').hide();
+                
+                if (phaseNumber > 1) {
+                    $('#prevBtn').show();
+                }
+                
+                if (phaseNumber < 3) {
+                    $('#nextBtn').show();
+                } else if (phaseNumber === 3) {
+                    $('#nextBtn').hide();
+                    $('#reviewBtn').show();
+                } else if (phaseNumber === 4) {
+                    $('#submitBtn').show();
+                }
+                
+                // Update membership summary visibility
+                if (phaseNumber === 4) {
+                    $('.membership-summary').hide();
+                } else {
+                    $('.membership-summary').show();
+                }
+
+                // Update review information if showing phase 4
+                if (phaseNumber === 4) {
+                    updateReviewInformation();
+                }
+            }
+
+            // Initialize form
+            $(document).ready(function() {
+                // Show first phase initially
+                showPhase(1);
+                
+                // Handle next button click for phase 1
+                $('#nextBtn').click(function() {
+                    const currentPhase = parseInt($('.phase:visible').attr('id').replace('phase', ''));
+                    
+                    // Phase 1 validation
+                    if (currentPhase === 1) {
+                        // Validate required fields
+                        const firstName = $('#first_name').val().trim();
+                        const lastName = $('#last_name').val().trim();
+                        const sex = $('input[name="sex"]:checked').val();
+                        const birthdate = $('#birthdate').val().trim();
+                        const contact = $('#contact').val().trim();
+
+                        // Remove any existing validation styles
+                        $('.is-invalid').removeClass('is-invalid');
+                        
+                        let isValid = true;
+                        let missingFields = [];
+
+                        if (!firstName) {
+                            $('#first_name').addClass('is-invalid');
+                            missingFields.push('First Name');
+                            isValid = false;
+                        }
+
+                        if (!lastName) {
+                            $('#last_name').addClass('is-invalid');
+                            missingFields.push('Last Name');
+                            isValid = false;
+                        }
+
+                        if (!sex) {
+                            $('input[name="sex"]').addClass('is-invalid');
+                            missingFields.push('Sex');
+                            isValid = false;
+                        }
+
+                        if (!birthdate) {
+                            $('#birthdate').addClass('is-invalid');
+                            missingFields.push('Birth Date');
+                            isValid = false;
+                        }
+
+                        if (!contact) {
+                            $('#contact').addClass('is-invalid');
+                            missingFields.push('Contact Number');
+                            isValid = false;
+                        }
+
+                        if (!isValid) {
+                            alert('Please fill in the following required fields:\n' + missingFields.join('\n'));
+                            return;
+                        }
+                    }
+                    
+                    showPhase(currentPhase + 1);
+                });
+                
+                // Handle previous button
+                $('#prevBtn').click(function() {
+                    const currentPhase = parseInt($('.phase:visible').attr('id').replace('phase', ''));
+                    showPhase(currentPhase - 1);
+                });
+                
+                // Handle review button
+                $('#reviewBtn').click(function() {
+                    updateReviewInformation();
+                    showPhase(4);
+                });
+            });
         });
     </script>
 </body>
