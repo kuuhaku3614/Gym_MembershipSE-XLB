@@ -221,7 +221,7 @@ class MemberRegistration {
             error_log("Creating main transaction record");
             try {
                 $sql = "INSERT INTO transactions (user_id, status, created_at) 
-                        VALUES (:user_id, 'pending', NOW())";
+                        VALUES (:user_id, 'confirmed', NOW())";
                 $stmt = $this->pdo->prepare($sql);
                 $result = $stmt->execute([
                     ':user_id' => $userId

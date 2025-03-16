@@ -356,6 +356,9 @@ function generateProgramCard($program) {
                     <li class="nav-item">
                         <a class="nav-link" data-phase="3" href="#">Select Programs</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-phase="4" href="#">Account Setup</a>
+                    </li>
                 </ul>
 
                 <form id="memberForm" method="POST" enctype="multipart/form-data">
@@ -364,22 +367,6 @@ function generateProgramCard($program) {
                         <h4 class="mb-4">Personal Information</h4>
                         <div class="card">
                             <div class="card-body">
-                                <!-- Account Information -->
-                                <div class="row mb-4">
-                                    <div class="col-12">
-                                        <h5 class="mb-3">Account Information</h5>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="username" class="form-label">Username</label>
-                                        <input type="text" class="form-control" id="username" name="username" required>
-                                        <div class="invalid-feedback">Please enter a username</div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="password" class="form-label">Password</label>
-                                        <input type="password" class="form-control" id="password" name="password" required>
-                                        <div class="invalid-feedback">Please enter a password</div>
-                                    </div>
-                                </div>
                                 <!-- Personal Information -->
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
@@ -539,14 +526,23 @@ function generateProgramCard($program) {
                         <div class="review-container">
                             <h4 class="review-title">Review Information</h4>
 
+                            <!-- Account Credentials -->
                             <div class="review-section">
-                                <h5>Account Information</h5>
-                                <div class="review-info">
-                                    <p><strong>Username:</strong> <span id="review-username"></span></p>
-                                    <p><strong>Password:</strong> <span id="review-password">********</span></p>
+                                <h5>Account Credentials</h5>
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                        <div class="invalid-feedback">Please enter a username</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <input type="text" class="form-control" id="password" name="password" required>
+                                        <div class="invalid-feedback">Please enter a password</div>
+                                    </div>
                                 </div>
                             </div>
-                            
+
                             <div class="review-section">
                                 <h5>Personal Information</h5>
                                 <div class="review-info">
@@ -610,7 +606,6 @@ function generateProgramCard($program) {
                                 <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
                                 <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
                                 <button type="button" class="btn btn-success" id="reviewBtn" style="display: none;">Review & Register</button>
-                                <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">Complete Registration</button>
                             </div>
                         </div>
                     </div>
@@ -1199,8 +1194,15 @@ function generateProgramCard($program) {
             $('#memberForm').on('submit', function(e) {
                 e.preventDefault();
                 
-                // Debug data before submission
-                console.log('=== FORM SUBMISSION DEBUG ===');
+                // Validate username and password before submission
+                const username = $('#username').val();
+                const password = $('#password').val();
+                
+                if (!username || !password) {
+                    alert('Please enter both username and password to complete registration');
+                    return;
+                }
+
                 const formData = new FormData(this);
                 formData.append('action', 'add_member');
 
@@ -1208,7 +1210,7 @@ function generateProgramCard($program) {
                 formData.append('selected_programs', JSON.stringify(selectedPrograms || []));
                 
                 // Log form data for debugging
-                console.log('Form Data:');
+                console.log('=== FORM SUBMISSION DEBUG ===');
                 for (let pair of formData.entries()) {
                     console.log(pair[0] + ':', pair[0] === 'password' ? '[HIDDEN]' : pair[1]);
                 }
@@ -1249,6 +1251,36 @@ function generateProgramCard($program) {
                     }
                 });
             });
+
+            // Function to generate random numbers of specified length
+            function generateRandomNumbers(length) {
+                let result = '';
+                for (let i = 0; i < length; i++) {
+                    result += Math.floor(Math.random() * 10);
+                }
+                return result;
+            }
+
+            // Function to generate default credentials
+            function generateDefaultCredentials() {
+                const firstName = $('#first_name').val().toLowerCase();
+                if (firstName) {
+                    // Generate username: firstname + 4 random numbers
+                    const randomNum = generateRandomNumbers(4);
+                    const username = firstName + randomNum;
+                    
+                    // Generate password: 6 random numbers
+                    const password = generateRandomNumbers(6);
+                    
+                    // Set the values
+                    $('#username').val(username);
+                    $('#password').val(password);
+
+                    // Update the review section
+                    $('#review-username').text(username);
+                    $('#review-password').text('******');
+                }
+            }
 
             // Function to calculate end date based on start date and duration
             function calculateEndDate(startDate, duration, durationType) {
@@ -1346,7 +1378,7 @@ function generateProgramCard($program) {
                 }
             });
 
-            // Phase navigation function
+            // Handle phase navigation
             function showPhase(phaseNumber) {
                 // Hide all phases
                 $('.phase').hide();
@@ -1354,14 +1386,33 @@ function generateProgramCard($program) {
                 // Show the selected phase
                 $(`#phase${phaseNumber}`).show();
                 
+                // Update navigation pills
+                $('.nav-link').removeClass('active');
+                $(`.nav-link[data-phase="${phaseNumber}"]`).addClass('active');
+                
                 // Update progress indicators
                 $('.step').removeClass('active completed');
                 $(`.step:lt(${phaseNumber})`).addClass('completed');
                 $(`.step:eq(${phaseNumber - 1})`).addClass('active');
                 
-                // Show/hide navigation buttons
+                // Generate default credentials when reaching phase 4
+                if (phaseNumber === 4) {
+                    generateDefaultCredentials();
+                }
+                
+                // Update buttons
+                updateButtons(phaseNumber);
+                
+                // Update current phase
+                currentPhase = phaseNumber;
+            }
+
+            // Update button visibility based on phase
+            function updateButtons(phaseNumber) {
+                // Hide all buttons first
                 $('#prevBtn, #nextBtn, #reviewBtn, #submitBtn').hide();
                 
+                // Show/hide buttons based on phase
                 if (phaseNumber > 1) {
                     $('#prevBtn').show();
                 }
@@ -1372,24 +1423,20 @@ function generateProgramCard($program) {
                     $('#nextBtn').hide();
                     $('#reviewBtn').show();
                 } else if (phaseNumber === 4) {
+                    $('#prevBtn').show();
                     $('#submitBtn').show();
-                }
-                
-                // Update membership summary visibility
-                if (phaseNumber === 4) {
-                    $('.membership-summary').hide();
-                } else {
-                    $('.membership-summary').show();
-                }
-
-                // Update review information if showing phase 4
-                if (phaseNumber === 4) {
-                    updateReviewInformation();
                 }
             }
 
             // Initialize form
             $(document).ready(function() {
+                // Listen for changes to first name and regenerate credentials if in phase 4
+                $('#first_name').on('change', function() {
+                    if (currentPhase === 4) {
+                        generateDefaultCredentials();
+                    }
+                });
+
                 // Show first phase initially
                 showPhase(1);
                 
@@ -1405,8 +1452,6 @@ function generateProgramCard($program) {
                         const sex = $('input[name="sex"]:checked').val();
                         const birthdate = $('#birthdate').val();
                         const contact = $('#contact').val();
-                        const username = $('#username').val();
-                        const password = $('#password').val();
 
                         // Remove any existing validation styles
                         $('.is-invalid').removeClass('is-invalid');
@@ -1441,18 +1486,6 @@ function generateProgramCard($program) {
                         if (!contact) {
                             $('#contact').addClass('is-invalid');
                             missingFields.push('Contact Number');
-                            isValid = false;
-                        }
-
-                        if (!username) {
-                            $('#username').addClass('is-invalid');
-                            missingFields.push('Username');
-                            isValid = false;
-                        }
-
-                        if (!password) {
-                            $('#password').addClass('is-invalid');
-                            missingFields.push('Password');
                             isValid = false;
                         }
 
