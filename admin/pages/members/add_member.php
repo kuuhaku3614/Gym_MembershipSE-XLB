@@ -384,6 +384,23 @@ function generateProgramCard($program) {
                         <h4 class="mb-4">Personal Information</h4>
                         <div class="card">
                             <div class="card-body">
+                                <!-- Account Information -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="mb-3">Account Information</h5>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                        <div class="invalid-feedback">Please enter a username</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password" required>
+                                        <div class="invalid-feedback">Please enter a password</div>
+                                    </div>
+                                </div>
+                                <!-- Personal Information -->
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="first_name" class="form-label">First Name</label>
@@ -542,6 +559,14 @@ function generateProgramCard($program) {
                         <div class="review-container">
                             <h4 class="review-title">Review Information</h4>
 
+                            <div class="review-section">
+                                <h5>Account Information</h5>
+                                <div class="review-info">
+                                    <p><strong>Username:</strong> <span id="review-username"></span></p>
+                                    <p><strong>Password:</strong> <span id="review-password">********</span></p>
+                                </div>
+                            </div>
+                            
                             <div class="review-section">
                                 <h5>Personal Information</h5>
                                 <div class="review-info">
@@ -1070,6 +1095,9 @@ function generateProgramCard($program) {
 
             // Update review information
             function updateReviewInformation() {
+                // Account Information
+                $('#review-username').text($('#username').val());
+                
                 // Personal Information
                 const fullName = [
                     $('#first_name').val(),
@@ -1116,7 +1144,9 @@ function generateProgramCard($program) {
                                 Schedule: ${program.day}, ${program.startTime} - ${program.endTime}<br>
                                 Amount: ₱${parseFloat(program.price).toFixed(2)}
                             </div>
-                        </div>`;
+                        </div>
+                    `;
+                    
                     $('#review-programs-list').append(programHtml);
                     totalProgramsFee += parseFloat(program.price) || 0;
                 });
@@ -1196,6 +1226,8 @@ function generateProgramCard($program) {
                 // Debug data collection
                 const debugData = {
                     'personal_details': {
+                        'username': $('#username').val(),
+                        'password': '[HIDDEN]',
                         'first_name': $('#first_name').val(),
                         'middle_name': $('#middle_name').val() || 'NULL',
                         'last_name': $('#last_name').val(),
@@ -1264,6 +1296,25 @@ function generateProgramCard($program) {
                     debugData['rental_subscriptions'] = selectedRentals;
                 }
 
+                // Prepare form data for submission
+                const formData = {
+                    action: 'add_member',
+                    username: $('#username').val().trim(),
+                    password: $('#password').val().trim(),
+                    first_name: $('#first_name').val().trim(),
+                    middle_name: $('#middle_name').val().trim(),
+                    last_name: $('#last_name').val().trim(),
+                    sex: $('input[name="sex"]:checked').val(),
+                    birthdate: $('#birthdate').val(),
+                    contact: $('#contact').val(),
+                    membership_plan: $('input[name="membership_plan"]:checked').val(),
+                    membership_start_date: $('#membership_start_date').val(),
+                    selected_programs: JSON.stringify(selectedPrograms),
+                    rental_services: $('input[name="rental_services[]"]:checked').map(function() {
+                        return $(this).val();
+                    }).get()
+                };
+
                 // Log the debug data in a formatted way
                 console.log('=== FORM SUBMISSION DEBUG DATA ===');
                 let counter = 1;
@@ -1285,40 +1336,23 @@ function generateProgramCard($program) {
                 });
                 console.log('\n=== END DEBUG DATA ===');
 
-                // Collect form data for submission
-                const formData = new FormData(this);
-                formData.append('selected_programs', JSON.stringify(selectedPrograms));
-                
                 // Proceed with form submission
                 $.ajax({
                     url: 'functions/member_registration.class.php',
                     type: 'POST',
                     data: formData,
-                    processData: false,
-                    contentType: false,
+                    dataType: 'json',
                     success: function(response) {
-                        try {
-                            const result = JSON.parse(response);
-                            if (result.status === 'success') {
-                                alert('Registration successful! Redirecting to members list...');
-                                window.location.href = 'index.php';
-                            } else {
-                                alert(result.message || 'Registration failed. Please try again.');
-                                submitBtn.prop('disabled', false).text('Complete Registration');
-                            }
-                        } catch (e) {
-                            console.error('Parse error:', e);
-                            console.error('Response:', response);
-                            alert('An error occurred while processing your request. Please try again.');
-                            submitBtn.prop('disabled', false).text('Complete Registration');
+                        if (response.success) {
+                            alert('Member registration successful!');
+                            window.location.href = '#';
+                        } else {
+                            alert('Error: ' + (response.message || 'Failed to register member'));
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('AJAX error:', error);
-                        console.error('Status:', status);
-                        console.error('Response:', xhr.responseText);
-                        alert('Failed to submit registration. Please check your connection and try again.');
-                        submitBtn.prop('disabled', false).text('Complete Registration');
+                        console.error('AJAX Error:', error);
+                        alert('An error occurred while processing your request. Please try again.');
                     }
                 });
             });
@@ -1473,11 +1507,13 @@ function generateProgramCard($program) {
                     // Phase 1 validation
                     if (currentPhase === 1) {
                         // Validate required fields
-                        const firstName = $('#first_name').val().trim();
-                        const lastName = $('#last_name').val().trim();
+                        const firstName = $('#first_name').val();
+                        const lastName = $('#last_name').val();
                         const sex = $('input[name="sex"]:checked').val();
-                        const birthdate = $('#birthdate').val().trim();
-                        const contact = $('#contact').val().trim();
+                        const birthdate = $('#birthdate').val();
+                        const contact = $('#contact').val();
+                        const username = $('#username').val();
+                        const password = $('#password').val();
 
                         // Remove any existing validation styles
                         $('.is-invalid').removeClass('is-invalid');
@@ -1515,6 +1551,18 @@ function generateProgramCard($program) {
                             isValid = false;
                         }
 
+                        if (!username) {
+                            $('#username').addClass('is-invalid');
+                            missingFields.push('Username');
+                            isValid = false;
+                        }
+
+                        if (!password) {
+                            $('#password').addClass('is-invalid');
+                            missingFields.push('Password');
+                            isValid = false;
+                        }
+
                         if (!isValid) {
                             alert('Please fill in the following required fields:\n' + missingFields.join('\n'));
                             return;
@@ -1535,6 +1583,74 @@ function generateProgramCard($program) {
                     updateReviewInformation();
                     showPhase(4);
                 });
+            });
+        });
+    </script>
+    <script>
+        const BASE_URL = '<?= BASE_URL ?>';
+        
+        // Username validation on input
+        $('#username').on('input', function() {
+            const username = $(this).val();
+            if (!username) {
+                $(this).addClass('is-invalid');
+                $(this).next('.invalid-feedback').text('Username is required');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        // Password validation on input
+        $('#password').on('input', function() {
+            const password = $(this).val();
+            if (!password) {
+                $(this).addClass('is-invalid');
+                $(this).next('.invalid-feedback').text('Password is required');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        // Form submission handling
+        $('#memberForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Basic validation
+            const username = $('#username').val();
+            const password = $('#password').val();
+            
+            if (!username || !password) {
+                alert('Username and password are required');
+                return;
+            }
+
+            const formData = new FormData(this);
+            formData.append('action', 'add_member');
+
+            $.ajax({
+                url: window.location.href,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        alert('Member added successfully!');
+                        window.location.href = BASE_URL + '/admin/pages/members/members.php';
+                    } else {
+                        alert(response.message || 'Failed to add member');
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = 'An error occurred';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                    } catch(e) {
+                        console.error('Error parsing response:', e);
+                    }
+                    alert(errorMessage);
+                }
             });
         });
     </script>
