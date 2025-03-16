@@ -217,142 +217,169 @@ class MemberRegistration {
                 throw new Exception("Database error while saving personal details");
             }
 
-            // 3. Insert registration record
-            error_log("Step 3: Creating registration record");
+            // Create a single transaction for all records
+            error_log("Creating main transaction record");
             try {
-                $registrationFee = $this->getRegistrationFee();
-                $sql = "INSERT INTO registration_records (user_id, amount, is_paid) VALUES (:user_id, :amount, 0)";
+                $sql = "INSERT INTO transactions (user_id, status, created_at) 
+                        VALUES (:user_id, 'pending', NOW())";
                 $stmt = $this->pdo->prepare($sql);
                 $result = $stmt->execute([
-                    ':user_id' => $userId,
-                    ':amount' => $registrationFee
+                    ':user_id' => $userId
                 ]);
                 if (!$result) {
-                    error_log("ERROR: Failed to create registration record. PDO Error: " . print_r($stmt->errorInfo(), true));
-                    throw new Exception("Failed to create registration record");
+                    error_log("ERROR: Failed to create transaction. PDO Error: " . print_r($stmt->errorInfo(), true));
+                    throw new Exception("Failed to create transaction record");
                 }
-                error_log("Registration record created successfully");
-            } catch (PDOException $e) {
-                error_log("PDO ERROR in registration record: " . $e->getMessage());
-                throw new Exception("Database error while creating registration record");
-            }
+                $transactionId = $this->pdo->lastInsertId();
+                error_log("Main transaction created with ID: " . $transactionId);
 
-            // 4. Handle membership plan if selected
-            if (!empty($data['membership_plan'])) {
-                error_log("Step 4: Processing membership plan");
+                // 3. Insert registration record
+                error_log("Step 3: Creating registration record");
                 try {
-                    $sql = "INSERT INTO memberships (user_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
-                            VALUES (:user_id, :plan_id, :start_date, :end_date, :amount, 'pending', 0)";
+                    $registrationFee = $this->getRegistrationFee();
+                    $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount, is_paid) 
+                            VALUES (:transaction_id, 1, :amount, 0)";
                     $stmt = $this->pdo->prepare($sql);
-                    
-                    // Get membership plan details
-                    $planDetails = $this->getMembershipPlanDetails($data['membership_plan']);
-                    error_log("Membership plan details: " . print_r($planDetails, true));
-                    
-                    $startDate = $data['membership_start_date'] ?: date('Y-m-d');
-                    $endDate = $this->calculateEndDate($startDate, $planDetails['duration'], $planDetails['duration_type']);
-                    
                     $result = $stmt->execute([
-                        ':user_id' => $userId,
-                        ':plan_id' => $data['membership_plan'],
-                        ':start_date' => $startDate,
-                        ':end_date' => $endDate,
-                        ':amount' => $planDetails['price']
+                        ':transaction_id' => $transactionId,
+                        ':amount' => $registrationFee
                     ]);
                     if (!$result) {
-                        error_log("ERROR: Failed to create membership. PDO Error: " . print_r($stmt->errorInfo(), true));
-                        throw new Exception("Failed to process membership plan");
+                        error_log("ERROR: Failed to create registration record. PDO Error: " . print_r($stmt->errorInfo(), true));
+                        throw new Exception("Failed to create registration record");
                     }
-                    error_log("Membership plan processed successfully");
+                    error_log("Registration record created successfully");
                 } catch (PDOException $e) {
-                    error_log("PDO ERROR in membership plan: " . $e->getMessage());
-                    throw new Exception("Database error while processing membership");
+                    error_log("PDO ERROR in registration record: " . $e->getMessage());
+                    throw new Exception("Database error while creating registration record");
                 }
-            }
 
-            // 5. Handle program subscriptions
-            if (!empty($data['selected_programs'])) {
-                error_log("Step 5: Processing program subscriptions");
-                try {
-                    $selectedPrograms = json_decode($data['selected_programs'], true);
-                    error_log("Selected programs: " . print_r($selectedPrograms, true));
-                    
-                    foreach ($selectedPrograms as $program) {
-                        // Insert program subscription
-                        $sql = "INSERT INTO program_subscriptions (user_id, coach_program_type_id, status) 
-                                VALUES (:user_id, :program_id, 'pending')";
-                        $stmt = $this->pdo->prepare($sql);
-                        $result = $stmt->execute([
-                            ':user_id' => $userId,
-                            ':program_id' => $program['coach_program_type_id']
-                        ]);
-                        if (!$result) {
-                            error_log("ERROR: Failed to create program subscription. PDO Error: " . print_r($stmt->errorInfo(), true));
-                            throw new Exception("Failed to process program subscription");
+                // 4. Handle membership plan if selected
+                if (!empty($data['membership_plan'])) {
+                    error_log("Step 4: Processing membership plan");
+                    try {
+                        // Get membership plan details
+                        $planDetails = $this->getMembershipPlanDetails($data['membership_plan']);
+                        if (!$planDetails) {
+                            throw new Exception("Invalid membership plan selected");
                         }
+                        error_log("Membership plan details: " . print_r($planDetails, true));
                         
-                        $subscriptionId = $this->pdo->lastInsertId();
-                        error_log("Program subscription created with ID: " . $subscriptionId);
+                        $startDate = $data['membership_start_date'] ?? date('Y-m-d');
+                        $endDate = $this->calculateEndDate($startDate, $planDetails['duration'], $planDetails['duration_type']);
                         
-                        // Insert schedule
-                        $sql = "INSERT INTO program_subscription_schedule 
-                                (program_subscription_id, coach_group_schedule_id, coach_personal_schedule_id, date, day, start_time, end_time, amount, is_paid) 
-                                VALUES (:sub_id, :group_id, :personal_id, :date, :day, :start_time, :end_time, :amount, 0)";
+                        $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
+                                VALUES (:transaction_id, :plan_id, :start_date, :end_date, :amount, 'active', 0)";
                         $stmt = $this->pdo->prepare($sql);
                         $result = $stmt->execute([
-                            ':sub_id' => $subscriptionId,
-                            ':group_id' => $program['type'] === 'group' ? $program['id'] : null,
-                            ':personal_id' => $program['type'] === 'personal' ? $program['id'] : null,
-                            ':date' => date('Y-m-d'),
-                            ':day' => $program['day'],
-                            ':start_time' => $program['startTime'],
-                            ':end_time' => $program['endTime'],
-                            ':amount' => $program['price']
-                        ]);
-                        if (!$result) {
-                            error_log("ERROR: Failed to create program schedule. PDO Error: " . print_r($stmt->errorInfo(), true));
-                            throw new Exception("Failed to process program schedule");
-                        }
-                        error_log("Program schedule created successfully");
-                    }
-                } catch (PDOException $e) {
-                    error_log("PDO ERROR in program subscriptions: " . $e->getMessage());
-                    throw new Exception("Database error while processing programs");
-                }
-            }
-
-            // 6. Handle rental services
-            if (!empty($data['rental_services'])) {
-                error_log("Step 6: Processing rental services");
-                try {
-                    foreach ($data['rental_services'] as $rentalId) {
-                        $rentalDetails = $this->getRentalServiceDetails($rentalId);
-                        error_log("Processing rental service: " . print_r($rentalDetails, true));
-                        
-                        $startDate = date('Y-m-d');
-                        $endDate = $this->calculateEndDate($startDate, $rentalDetails['duration'], $rentalDetails['duration_type']);
-                        
-                        $sql = "INSERT INTO rental_subscriptions 
-                                (user_id, rental_service_id, start_date, end_date, amount, status, is_paid) 
-                                VALUES (:user_id, :rental_id, :start_date, :end_date, :amount, 'pending', 0)";
-                        $stmt = $this->pdo->prepare($sql);
-                        $result = $stmt->execute([
-                            ':user_id' => $userId,
-                            ':rental_id' => $rentalId,
+                            ':transaction_id' => $transactionId,
+                            ':plan_id' => $data['membership_plan'],
                             ':start_date' => $startDate,
                             ':end_date' => $endDate,
-                            ':amount' => $rentalDetails['price']
+                            ':amount' => $planDetails['price']
                         ]);
                         if (!$result) {
-                            error_log("ERROR: Failed to create rental subscription. PDO Error: " . print_r($stmt->errorInfo(), true));
-                            throw new Exception("Failed to process rental service");
+                            error_log("ERROR: Failed to create membership. PDO Error: " . print_r($stmt->errorInfo(), true));
+                            throw new Exception("Failed to process membership plan");
                         }
-                        error_log("Rental service processed successfully");
+                        error_log("Membership plan processed successfully");
+                    } catch (PDOException $e) {
+                        error_log("PDO ERROR in membership plan: " . $e->getMessage());
+                        throw new Exception("Database error while processing membership");
                     }
-                } catch (PDOException $e) {
-                    error_log("PDO ERROR in rental services: " . $e->getMessage());
-                    throw new Exception("Database error while processing rentals");
                 }
+
+                // 6. Handle rental services
+                if (!empty($data['rental_services'])) {
+                    error_log("Step 6: Processing rental services");
+                    try {
+                        foreach ($data['rental_services'] as $rentalId) {
+                            $rentalDetails = $this->getRentalServiceDetails($rentalId);
+                            if (!$rentalDetails) {
+                                throw new Exception("Invalid rental service selected");
+                            }
+                            error_log("Processing rental service: " . print_r($rentalDetails, true));
+                            
+                            $startDate = date('Y-m-d');
+                            $endDate = $this->calculateEndDate($startDate, $rentalDetails['duration'], $rentalDetails['duration_type']);
+                            
+                            $sql = "INSERT INTO rental_subscriptions 
+                                    (transaction_id, rental_service_id, start_date, end_date, amount, status, is_paid) 
+                                    VALUES (:transaction_id, :rental_id, :start_date, :end_date, :amount, 'active', 0)";
+                            $stmt = $this->pdo->prepare($sql);
+                            $result = $stmt->execute([
+                                ':transaction_id' => $transactionId,
+                                ':rental_id' => $rentalId,
+                                ':start_date' => $startDate,
+                                ':end_date' => $endDate,
+                                ':amount' => $rentalDetails['price']
+                            ]);
+                            if (!$result) {
+                                error_log("ERROR: Failed to create rental subscription. PDO Error: " . print_r($stmt->errorInfo(), true));
+                                throw new Exception("Failed to process rental service");
+                            }
+                            error_log("Rental service processed successfully");
+                        }
+                    } catch (PDOException $e) {
+                        error_log("PDO ERROR in rental services: " . $e->getMessage());
+                        throw new Exception("Database error while processing rentals");
+                    }
+                }
+
+                // 5. Handle program subscriptions
+                if (!empty($data['selected_programs'])) {
+                    error_log("Step 5: Processing program subscriptions");
+                    try {
+                        $selectedPrograms = json_decode($data['selected_programs'], true);
+                        error_log("Selected programs: " . print_r($selectedPrograms, true));
+                        
+                        foreach ($selectedPrograms as $program) {
+                            // Insert program subscription
+                            $sql = "INSERT INTO program_subscriptions (user_id, coach_program_type_id, status) 
+                                    VALUES (:user_id, :program_id, 'pending')";
+                            $stmt = $this->pdo->prepare($sql);
+                            $result = $stmt->execute([
+                                ':user_id' => $userId,
+                                ':program_id' => $program['coach_program_type_id']
+                            ]);
+                            if (!$result) {
+                                error_log("ERROR: Failed to create program subscription. PDO Error: " . print_r($stmt->errorInfo(), true));
+                                throw new Exception("Failed to process program subscription");
+                            }
+                            
+                            $subscriptionId = $this->pdo->lastInsertId();
+                            error_log("Program subscription created with ID: " . $subscriptionId);
+                            
+                            // Insert schedule
+                            $sql = "INSERT INTO program_subscription_schedule 
+                                    (program_subscription_id, coach_group_schedule_id, coach_personal_schedule_id, date, day, start_time, end_time, amount, is_paid) 
+                                    VALUES (:sub_id, :group_id, :personal_id, :date, :day, :start_time, :end_time, :amount, 0)";
+                            $stmt = $this->pdo->prepare($sql);
+                            $result = $stmt->execute([
+                                ':sub_id' => $subscriptionId,
+                                ':group_id' => $program['type'] === 'group' ? $program['id'] : null,
+                                ':personal_id' => $program['type'] === 'personal' ? $program['id'] : null,
+                                ':date' => date('Y-m-d'),
+                                ':day' => $program['day'],
+                                ':start_time' => $program['startTime'],
+                                ':end_time' => $program['endTime'],
+                                ':amount' => $program['price']
+                            ]);
+                            if (!$result) {
+                                error_log("ERROR: Failed to create program schedule. PDO Error: " . print_r($stmt->errorInfo(), true));
+                                throw new Exception("Failed to process program schedule");
+                            }
+                            error_log("Program schedule created successfully");
+                        }
+                    } catch (PDOException $e) {
+                        error_log("PDO ERROR in program subscriptions: " . $e->getMessage());
+                        throw new Exception("Database error while processing programs");
+                    }
+                }
+
+            } catch (PDOException $e) {
+                error_log("PDO ERROR in main transaction: " . $e->getMessage());
+                throw new Exception("Database error while processing main transaction");
             }
 
             $this->pdo->commit();
@@ -370,15 +397,30 @@ class MemberRegistration {
         }
     }
 
+    private function getMembershipPlanDetails($planId) {
+        try {
+            $sql = "SELECT mp.*, dt.type_name as duration_type 
+                    FROM membership_plans mp
+                    JOIN duration_types dt ON mp.duration_type_id = dt.id
+                    WHERE mp.id = :plan_id AND mp.status = 'active'";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':plan_id' => $planId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error in getMembershipPlanDetails: " . $e->getMessage());
+            throw new Exception("Failed to get membership plan details");
+        }
+    }
+
     private function calculateEndDate($startDate, $duration, $durationType) {
         $start = new DateTime($startDate);
         switch ($durationType) {
-            case 1: // days
+            case 'days':
                 return $start->modify("+{$duration} days")->format('Y-m-d');
-            case 2: // months
+            case 'months':
                 return $start->modify("+{$duration} months")->format('Y-m-d');
-            case 3: // years
-                return $start->modify("+{$duration} years")->format('Y-m-d');
+            case 'year':
+                return $start->modify("+{$duration} year")->format('Y-m-d');
             default:
                 throw new Exception("Invalid duration type");
         }
@@ -386,12 +428,16 @@ class MemberRegistration {
 
     private function getRentalServiceDetails($rentalId) {
         try {
-            $sql = "SELECT * FROM rental_services WHERE id = :id AND status = 'active'";
+            $sql = "SELECT rs.*, dt.type_name as duration_type 
+                    FROM rental_services rs
+                    JOIN duration_types dt ON rs.duration_type_id = dt.id
+                    WHERE rs.id = :rental_id AND rs.status = 'active'";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':id' => $rentalId]);
+            $stmt->execute([':rental_id' => $rentalId]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            return null;
+            error_log("Error in getRentalServiceDetails: " . $e->getMessage());
+            throw new Exception("Failed to get rental service details");
         }
     }
 

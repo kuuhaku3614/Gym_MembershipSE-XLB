@@ -1,100 +1,80 @@
 <?php
-// For AJAX requests, prevent any output before JSON response
-if (isset($_GET['action'])) {
-    error_reporting(0);
-    ini_set('display_errors', 0);
-    ini_set('display_startup_errors', 0);
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "/login.php");
+    exit;
 }
 
-session_start();
-date_default_timezone_set('Asia/Manila');
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Use absolute path for includes
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/config.php");
 require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/admin/pages/members/functions/member_registration.class.php");
 
-// For debugging
-error_log("Initializing MemberRegistration class");
 $memberRegistration = new MemberRegistration();
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    header('Content-Type: application/json');
+// Handle AJAX requests
+if (isset($_GET['action'])) {
+    $memberRegistration = new MemberRegistration($pdo);
     
-    if ($_POST['action'] === 'add_member') {
-        $result = $memberRegistration->addMember($_POST);
-        echo json_encode($result);
+    if ($_GET['action'] === 'get_schedule') {
+        header('Content-Type: application/json');
+        
+        if (!isset($_GET['coach_program_type_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Missing coach program type ID']);
+            exit;
+        }
+
+        $coachProgramTypeId = $_GET['coach_program_type_id'];
+        $programType = $memberRegistration->getCoachProgramType($coachProgramTypeId);
+        
+        if (!$programType) {
+            echo json_encode(['success' => false, 'error' => 'Invalid coach program type']);
+            exit;
+        }
+
+        $schedules = $programType === 'personal' 
+            ? $memberRegistration->getCoachPersonalSchedule($coachProgramTypeId)
+            : $memberRegistration->getCoachGroupSchedule($coachProgramTypeId);
+
+        if (isset($schedules['error'])) {
+            echo json_encode(['success' => false, 'error' => $schedules['error']]);
+            exit;
+        }
+
+        if (isset($schedules['message'])) {
+            echo json_encode(['success' => true, 'data' => [], 'message' => $schedules['message'], 'program_type' => $programType]);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $schedules,
+            'program_type' => $programType
+        ]);
         exit;
     }
 }
 
-// Handle AJAX requests
-if (isset($_GET['action'])) {
-    error_log("Received action: " . $_GET['action']); // Debug log
+// Handle AJAX form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    error_log("=== FORM SUBMISSION DEBUG ===");
+    error_log("POST Data: " . print_r($_POST, true));
     
-    if ($_GET['action'] === 'get_schedule') {
-        error_log("Processing get_schedule request"); // Debug log
-        
-        // Ensure we're sending JSON
-        header('Content-Type: application/json');
-        
+    if ($_POST['action'] === 'add_member') {
         try {
-            if (!isset($_GET['coach_program_type_id'])) {
-                error_log("Missing coach_program_type_id"); // Debug log
-                echo json_encode(['success' => false, 'error' => 'Coach program type ID is required']);
-                exit;
-            }
-            
-            $coachProgramTypeId = intval($_GET['coach_program_type_id']);
-            error_log("Fetching schedule for coach program type ID: " . $coachProgramTypeId); // Debug log
-            
-            if ($coachProgramTypeId <= 0) {
-                error_log("Invalid coach program type ID: " . $coachProgramTypeId); // Debug log
-                echo json_encode(['success' => false, 'error' => 'Invalid coach program type ID']);
-                exit;
-            }
-            
-            // Get the program type using the class method
-            $programType = $memberRegistration->getCoachProgramType($coachProgramTypeId);
-            if ($programType === null) {
-                error_log("Failed to get program type for ID: " . $coachProgramTypeId);
-                echo json_encode(['success' => false, 'error' => 'Program type not found']);
-                exit;
-            }
-
-            // Get schedules based on program type
-            if ($programType === 'personal') {
-                $schedules = $memberRegistration->getCoachPersonalSchedule($coachProgramTypeId);
-            } else {
-                $schedules = $memberRegistration->getCoachGroupSchedule($coachProgramTypeId);
-            }
-
-            // Return the response with program type and coach program type ID
-            if (isset($schedules['error'])) {
-                echo json_encode(['success' => false, 'error' => $schedules['error']]);
-            } else if (isset($schedules['message'])) {
-                echo json_encode([
-                    'success' => true, 
-                    'program_type' => $programType,
-                    'coach_program_type_id' => $coachProgramTypeId,
-                    'data' => [],
-                    'message' => $schedules['message']
-                ]);
-            } else {
-                echo json_encode([
-                    'success' => true,
-                    'program_type' => $programType,
-                    'coach_program_type_id' => $coachProgramTypeId,
-                    'data' => $schedules
-                ]);
-            }
+            $result = $memberRegistration->addMember($_POST);
+            error_log("Add member result: " . print_r($result, true));
+            echo json_encode($result);
         } catch (Exception $e) {
-            error_log("Error in get_schedule: " . $e->getMessage()); // Debug log
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-            exit;
+            error_log("Error in add_member.php: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
+        exit;
     }
-    exit;
 }
 
 // Get initial data for the form
@@ -837,7 +817,6 @@ function generateProgramCard($program) {
                         action: 'get_schedule',
                         coach_program_type_id: coachProgramTypeId
                     },
-                    dataType: 'json',
                     success: function(response) {
                         const tableBody = $('#scheduleTableBody');
                         const tableHead = $('#scheduleTable thead');
@@ -855,7 +834,7 @@ function generateProgramCard($program) {
                             `);
 
                             const rows = response.data.map(schedule => `
-                                <tr data-id='${schedule.id}' data-type='${response.program_type}' data-coach-program-type-id='${response.coach_program_type_id}' data-program='${programName}' data-coach='${schedule.coach_name || ''}' data-day='${schedule.day}' data-start-time='${schedule.start_time}' data-end-time='${schedule.end_time}' data-price='${schedule.price}'>
+                                <tr data-id='${schedule.id}' data-type='${response.program_type}' data-coach-program-type-id='${coachProgramTypeId}' data-program='${programName}' data-coach='${schedule.coach_name || ''}' data-day='${schedule.day}' data-start-time='${schedule.start_time}' data-end-time='${schedule.end_time}' data-price='${schedule.price}'>
                                     <td>${schedule.day}</td>
                                     <td>${schedule.start_time}</td>
                                     <td>${schedule.end_time}</td>
@@ -873,7 +852,10 @@ function generateProgramCard($program) {
                         }
                         scheduleModal.show();
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching schedules:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
                         $('#scheduleTableBody').html('<tr><td colspan="6" class="text-center">Failed to load schedules</td></tr>');
                         scheduleModal.show();
                     }
@@ -1213,146 +1195,57 @@ function generateProgramCard($program) {
                 });
             }
 
-            // Handle form submission
-            $('#memberForm').submit(function(e) {
+            // Form submission handler
+            $('#memberForm').on('submit', function(e) {
                 e.preventDefault();
                 
-                const submitBtn = $(this).find('button[type="submit"]');
-                submitBtn.prop('disabled', true).html(`
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                    Processing...
-                `);
+                // Debug data before submission
+                console.log('=== FORM SUBMISSION DEBUG ===');
+                const formData = new FormData(this);
+                formData.append('action', 'add_member');
+
+                // Add selected programs
+                formData.append('selected_programs', JSON.stringify(selectedPrograms || []));
                 
-                // Debug data collection
-                const debugData = {
-                    'personal_details': {
-                        'username': $('#username').val(),
-                        'password': '[HIDDEN]',
-                        'first_name': $('#first_name').val(),
-                        'middle_name': $('#middle_name').val() || 'NULL',
-                        'last_name': $('#last_name').val(),
-                        'sex': $('input[name="sex"]:checked').val(),
-                        'birthdate': $('#birthdate').val(),
-                        'phone_number': $('#contact').val()
-                    },
-                    'transactions': {
-                        'status': 'pending'
-                    },
-                    'registration_records': {
-                        'registration_id': 1,
-                        'amount': parseFloat('<?= $memberRegistration->getRegistrationFee() ?>'),
-                        'is_paid': 0
-                    }
-                };
-
-                // Add membership plan data if selected
-                const selectedPlan = $('input[name="membership_plan"]:checked');
-                if (selectedPlan.length) {
-                    const startDate = $('#membership_start_date').val() || new Date().toISOString().split('T')[0];
-                    debugData['memberships'] = {
-                        'membership_plan_id': selectedPlan.val(),
-                        'start_date': startDate,
-                        'end_date': calculateEndDate(startDate, selectedPlan.data('duration'), selectedPlan.data('duration-type')),
-                        'amount': parseFloat(selectedPlan.data('price')),
-                        'status': 'pending',
-                        'is_paid': 0
-                    };
+                // Log form data for debugging
+                console.log('Form Data:');
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ':', pair[0] === 'password' ? '[HIDDEN]' : pair[1]);
                 }
 
-                // Add program subscriptions data if selected
-                if (selectedPrograms.length) {
-                    debugData['program_subscriptions'] = selectedPrograms.map(program => ({
-                        'coach_program_type_id': program.coach_program_type_id,
-                        'status': 'pending'
-                    }));
-
-                    debugData['program_subscription_schedule'] = selectedPrograms.map(program => ({
-                        'coach_group_schedule_id': program.type === 'group' ? program.id : 'NULL',
-                        'coach_personal_schedule_id': program.type === 'personal' ? program.id : 'NULL',
-                        'date': new Date().toISOString().split('T')[0],
-                        'day': program.day,
-                        'start_time': program.startTime,
-                        'end_time': program.endTime,
-                        'amount': parseFloat(program.price),
-                        'is_paid': 0
-                    }));
-                }
-
-                // Add rental services data if selected
-                const selectedRentals = [];
-                $('.rental-service-checkbox:checked').each(function() {
-                    const startDate = new Date().toISOString().split('T')[0];
-                    selectedRentals.push({
-                        'rental_service_id': $(this).val(),
-                        'start_date': startDate,
-                        'end_date': calculateEndDate(startDate, $(this).data('duration'), $(this).data('duration-type')),
-                        'amount': parseFloat($(this).data('price')),
-                        'status': 'pending',
-                        'is_paid': 0
-                    });
-                });
-                
-                if (selectedRentals.length) {
-                    debugData['rental_subscriptions'] = selectedRentals;
-                }
-
-                // Prepare form data for submission
-                const formData = {
-                    action: 'add_member',
-                    username: $('#username').val().trim(),
-                    password: $('#password').val().trim(),
-                    first_name: $('#first_name').val().trim(),
-                    middle_name: $('#middle_name').val().trim(),
-                    last_name: $('#last_name').val().trim(),
-                    sex: $('input[name="sex"]:checked').val(),
-                    birthdate: $('#birthdate').val(),
-                    contact: $('#contact').val(),
-                    membership_plan: $('input[name="membership_plan"]:checked').val(),
-                    membership_start_date: $('#membership_start_date').val(),
-                    selected_programs: JSON.stringify(selectedPrograms),
-                    rental_services: $('input[name="rental_services[]"]:checked').map(function() {
-                        return $(this).val();
-                    }).get()
-                };
-
-                // Log the debug data in a formatted way
-                console.log('=== FORM SUBMISSION DEBUG DATA ===');
-                let counter = 1;
-                Object.entries(debugData).forEach(([table, data]) => {
-                    console.log(`\n${counter}. ${table} table:`);
-                    if (Array.isArray(data)) {
-                        data.forEach((item, index) => {
-                            if (index > 0) console.log(''); // Add space between items
-                            Object.entries(item).forEach(([column, value]) => {
-                                console.log(`• ${column}: ${value}`);
-                            });
-                        });
-                    } else {
-                        Object.entries(data).forEach(([column, value]) => {
-                            console.log(`• ${column}: ${value}`);
-                        });
-                    }
-                    counter++;
-                });
-                console.log('\n=== END DEBUG DATA ===');
-
-                // Proceed with form submission
+                // Submit form
                 $.ajax({
-                    url: 'functions/member_registration.class.php',
+                    url: BASE_URL + '/admin/pages/members/add_member.php',
                     type: 'POST',
                     data: formData,
-                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
-                        if (response.success) {
-                            alert('Member registration successful!');
-                            window.location.href = '#';
-                        } else {
-                            alert('Error: ' + (response.message || 'Failed to register member'));
+                        console.log('Raw server response:', response);
+                        try {
+                            // Parse response if it's a string
+                            if (typeof response === 'string') {
+                                response = JSON.parse(response);
+                            }
+                            
+                            if (response.success) {
+                                alert('Member registration successful!');
+                                window.location.href = BASE_URL + '/admin/members_new';
+                            } else {
+                                alert('Error: ' + (response.message || 'Failed to register member'));
+                            }
+                        } catch (e) {
+                            console.error('Error parsing response:', e);
+                            console.error('Raw response:', response);
+                            alert('An error occurred while processing the server response. Check the console for details.');
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', error);
-                        alert('An error occurred while processing your request. Please try again.');
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                        console.error('URL used:', BASE_URL + '/admin/pages/members/add_member.php');
+                        alert('An error occurred while processing your request. Check the console for details.');
                     }
                 });
             });
@@ -1636,7 +1529,7 @@ function generateProgramCard($program) {
                 success: function(response) {
                     if (response.success) {
                         alert('Member added successfully!');
-                        window.location.href = BASE_URL + '/admin/pages/members/members.php';
+                        window.location.href = BASE_URL + '/admin/members_new';
                     } else {
                         alert(response.message || 'Failed to add member');
                     }
