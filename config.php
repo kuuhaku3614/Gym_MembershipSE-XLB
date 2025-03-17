@@ -7,7 +7,7 @@ $protocol = $is_https ? 'https://' : 'http://';
 // Define the mapping of hosts to their respective base paths
 $url_config = [
     'localhost' => '/Gym_MembershipSE-XLB',
-    'titanium-florida-versions-debt.trycloudflare.com' => '',
+    'statute-wood-hawaiian-disposal.trycloudflare.com' => '',
     // Add your production domain here when ready
     // 'yourdomain.com' => '',
 ];
