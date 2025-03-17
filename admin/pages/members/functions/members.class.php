@@ -19,6 +19,10 @@ class Members {
         }
     }
 
+    public function getPdo() {
+        return $this->pdo;
+    }
+
     public function getAllMembers() {
         try {
             $query = "SELECT 
@@ -293,22 +297,88 @@ class Members {
         }
     }
 
-    private function processMembershipPayment($membershipId) {
-        $sql = "UPDATE memberships SET is_paid = 1, payment_date = CURRENT_TIMESTAMP WHERE id = :id";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':id' => $membershipId]);
+    public function processMembershipPayment($membershipId) {
+        try {
+            $sql = "UPDATE memberships 
+                   SET is_paid = 1, 
+                       payment_date = CURRENT_TIMESTAMP 
+                   WHERE id = :id 
+                   AND is_paid = 0"; // Only update if not already paid
+            
+            $stmt = $this->pdo->prepare($sql);
+            $result = $stmt->execute([':id' => $membershipId]);
+            
+            if (!$result) {
+                error_log("Failed to process membership payment for ID: " . $membershipId);
+                return false;
+            }
+            
+            if ($stmt->rowCount() === 0) {
+                error_log("No membership found with ID: " . $membershipId . " or already paid");
+                return false;
+            }
+            
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error in processMembershipPayment: " . $e->getMessage());
+            throw $e; // Rethrow to handle in transaction
+        }
     }
 
-    private function processRegistrationPayment($registrationId) {
-        $sql = "UPDATE registration_records SET is_paid = 1, payment_date = CURRENT_TIMESTAMP WHERE id = :id";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':id' => $registrationId]);
+    public function processRegistrationPayment($registrationId) {
+        try {
+            $sql = "UPDATE registration_records 
+                   SET is_paid = 1, 
+                       payment_date = CURRENT_TIMESTAMP 
+                   WHERE id = :id 
+                   AND is_paid = 0"; // Only update if not already paid
+            
+            $stmt = $this->pdo->prepare($sql);
+            $result = $stmt->execute([':id' => $registrationId]);
+            
+            if (!$result) {
+                error_log("Failed to process registration payment for ID: " . $registrationId);
+                return false;
+            }
+            
+            if ($stmt->rowCount() === 0) {
+                error_log("No registration record found with ID: " . $registrationId . " or already paid");
+                return false;
+            }
+            
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error in processRegistrationPayment: " . $e->getMessage());
+            throw $e; // Rethrow to handle in transaction
+        }
     }
 
-    private function processRentalPayment($rentalId) {
-        $sql = "UPDATE rental_subscriptions SET is_paid = 1, payment_date = CURRENT_TIMESTAMP WHERE id = :id";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':id' => $rentalId]);
+    public function processRentalPayment($rentalId) {
+        try {
+            $sql = "UPDATE rental_subscriptions 
+                   SET is_paid = 1, 
+                       payment_date = CURRENT_TIMESTAMP 
+                   WHERE id = :id 
+                   AND is_paid = 0"; // Only update if not already paid
+            
+            $stmt = $this->pdo->prepare($sql);
+            $result = $stmt->execute([':id' => $rentalId]);
+            
+            if (!$result) {
+                error_log("Failed to process rental payment for ID: " . $rentalId);
+                return false;
+            }
+            
+            if ($stmt->rowCount() === 0) {
+                error_log("No rental subscription found with ID: " . $rentalId . " or already paid");
+                return false;
+            }
+            
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error in processRentalPayment: " . $e->getMessage());
+            throw $e; // Rethrow to handle in transaction
+        }
     }
 
     public function cancelMembership($membershipId) {
