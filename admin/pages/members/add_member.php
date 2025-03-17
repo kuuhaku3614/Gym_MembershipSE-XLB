@@ -10,8 +10,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Use absolute path for includes
-require_once(__DIR__ . '/../../../config.php');
-require_once(__DIR__ . "/functions/member_registration.class.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/config.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/admin/pages/members/functions/member_registration.class.php");
 
 $memberRegistration = new MemberRegistration();
 
@@ -133,7 +133,7 @@ function generateProgramCard($program) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Member</title>
-    <?php include $_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/admin/includes/header.php"; ?>
+    <?php include '../../includes/header.php'; ?>
     <script>
         const BASE_URL = '<?= BASE_URL ?>';
     </script>
@@ -454,7 +454,7 @@ function generateProgramCard($program) {
                         <div class="form-group mt-4">
                             <label for="membership_start_date">Start Date:</label>
                             <input type="date" class="form-control" id="membership_start_date" name="membership_start_date" 
-                                   min="<?= date('Y-m-d') ?>" required>
+                                   min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d') ?>" required>
                         </div>
                     </div>
 
@@ -560,8 +560,8 @@ function generateProgramCard($program) {
                                     <p><strong>Duration:</strong> <span id="review-duration"></span></p>
                                     <p><strong>Start Date:</strong> <span id="review-start-date"></span></p>
                                     <p><strong>End Date:</strong> <span id="review-end-date"></span></p>
-                                    <p><strong>Plan Amount:</strong> ₱<span id="review-price">0.00</span></p>
-                                    <p><strong>Registration Fee:</strong> ₱<span id="review-registration-fee">0.00</span></p>
+                                    <p><strong>Price:</strong><span id="review-price">0.00</span></p>
+                                    <p><strong>Registration Fee:</strong><span id="review-registration-fee">0.00</span></p>
                                 </div>
                             </div>
                             
@@ -584,11 +584,11 @@ function generateProgramCard($program) {
                             <div class="review-section">
                                 <h5>Total Amount</h5>
                                 <div class="review-info">
-                                    <p><strong>Registration Fee:</strong> ₱<span id="review-registration-fee">0.00</span></p>
-                                    <p><strong>Plan Amount:</strong> ₱<span id="review-price">0.00</span></p>
-                                    <p><strong>Programs Fee:</strong> ₱<span id="review-programs-fee">0.00</span></p>
-                                    <p><strong>Rentals Fee:</strong> ₱<span id="review-rentals-fee">0.00</span></p>
-                                    <h4 class="mt-3"><strong>Total:</strong> ₱<span id="review-total-amount">0.00</span></h4>
+                                    <p><strong>Registration Fee:</strong><span id="review-registration-fee">0.00</span></p>
+                                    <p><strong>Plan Amount:</strong><span id="review-price">0.00</span></p>
+                                    <p><strong>Programs Fee:</strong><span id="review-programs-fee">0.00</span></p>
+                                    <p><strong>Rentals Fee:</strong><span id="review-rentals-fee">0.00</span></p>
+                                    <h4 class="mt-3"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
                                 </div>
                             </div>
                             
@@ -632,7 +632,7 @@ function generateProgramCard($program) {
                     <p><strong>Duration:</strong> <span class="membership-duration"></span></p>
                     <p><strong>Start Date:</strong> <span class="membership-start-date"></span></p>
                     <p><strong>End Date:</strong> <span class="membership-end-date"></span></p>
-                    <p><strong>Amount:</strong> ₱<span class="membership-amount">0.00</span></p>
+                    <p><strong>Price:</strong> ₱<span class="membership-amount">0.00</span></p>
                 </div>
             </div>
 
@@ -1040,7 +1040,7 @@ function generateProgramCard($program) {
                                 <p><strong>Type:</strong> ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program</p>
                                 <p><strong>Coach:</strong> ${program.coach}</p>
                                 <p><strong>Schedule:</strong> ${program.day}, ${program.startTime} - ${program.endTime}</p>
-                                <p><strong>Amount:</strong> ₱${parseFloat(program.price).toFixed(2)}</p>
+                                <p><strong>Price:</strong> ₱${parseFloat(program.price).toFixed(2)}</p>
                             </div>
                         </div>
                     `;
@@ -1058,8 +1058,8 @@ function generateProgramCard($program) {
                                 <div class="program-details">
                                     Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
                                     Coach: ${program.coach}<br>
-                                    Schedule: ${program.day}, ${program.startTime} - ${program.endTime}<br>
-                                    Amount: ₱${parseFloat(program.price).toFixed(2)}
+                                    Schedule: Every ${program.day}, ${program.startTime} - ${program.endTime}<br>
+                                    Price: ₱${parseFloat(program.price).toFixed(2)}
                                 </div>
                             </div>
                         `;
@@ -1102,7 +1102,7 @@ function generateProgramCard($program) {
                     $('#review-duration').text(duration + ' ' + durationType);
                     $('#review-start-date').text(startDate);
                     $('#review-end-date').text(endDate);
-                    $('#review-price').text('₱' + price.toFixed(2));
+                    $('#review-price').text('₱ ' + price.toFixed(2));
                     $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
                 } else {
                     $('#review-membership').hide();
@@ -1119,7 +1119,7 @@ function generateProgramCard($program) {
                                 Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
                                 Coach: ${program.coach}<br>
                                 Schedule: ${program.day}, ${program.startTime} - ${program.endTime}<br>
-                                Amount: ₱${parseFloat(program.price).toFixed(2)}
+                                Price: ₱${parseFloat(program.price).toFixed(2)}
                             </div>
                         </div>
                     `;
@@ -1150,7 +1150,7 @@ function generateProgramCard($program) {
                                 Duration: ${rental.duration} ${rental.durationType}<br>
                                 Start Date: ${startDate}<br>
                                 End Date: ${endDate}<br>
-                                Amount: ₱${rental.price.toFixed(2)}
+                                Price: ₱${rental.price.toFixed(2)}
                             </div>
                         </div>`;
                     $('#review-rentals-list').append(rentalHtml);
@@ -1160,7 +1160,7 @@ function generateProgramCard($program) {
                 $('#review-rentals').toggle($('input[name="rental_services[]"]:checked').length > 0);
 
                 // Update registration fee and total
-                $('#review-registration-fee').text(registrationFee.toFixed(2));
+                $('#review-registration-fee').text('₱ ' + registrationFee.toFixed(2));
                 updateTotalAmount();
             }
 
@@ -1350,7 +1350,7 @@ function generateProgramCard($program) {
                     $('#review-duration').text(duration + ' ' + durationType);
                     $('#review-start-date').text(startDate);
                     $('#review-end-date').text(endDate);
-                    $('#review-price').text('₱' + price.toFixed(2));
+                    $('#review-price').text('₱ ' + price.toFixed(2));
                     $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
                 } else {
                     $('.summary-row[data-type="membership"]').hide();
@@ -1490,7 +1490,6 @@ function generateProgramCard($program) {
                         }
 
                         if (!isValid) {
-                            alert('Please fill in the following required fields:\n' + missingFields.join('\n'));
                             return;
                         }
                     }
