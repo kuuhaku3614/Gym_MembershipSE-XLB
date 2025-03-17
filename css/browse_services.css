@@ -59,7 +59,6 @@
 }
 
 .services-page .card-header {
-  background: linear-gradient(45deg, #ff0000, #cc0000) !important;
   flex: 3;
   display: flex;
   align-items: center;
@@ -424,7 +423,6 @@
 
 /* Update or add these styles */
 .services-page .card .card-header {
-  background-color: var(--primary-color);
   color: white;
   padding: 1rem;
 }
@@ -454,6 +452,3 @@
 }
 
 /* Make sure these important rules are applied */
-.card .card-header {
-  background-color: var(--primary-color) !important;
-}
