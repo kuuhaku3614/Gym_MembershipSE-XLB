@@ -1,5 +1,15 @@
 <?php
 session_start();
+header("Access-Control-Allow-Origin: *"); // Allow all origins (or specify your frontend URL)
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Allowed request methods
+header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Allowed headers
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: " . BASE_URL . "/login.php");
     exit;
