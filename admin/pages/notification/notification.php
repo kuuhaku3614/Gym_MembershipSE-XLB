@@ -215,23 +215,6 @@
                     </div>
                 </div>
 
-                <!-- Program Details -->
-                <div id="programSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Program Details</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Program:</strong> <span id="programName"></span></p>
-                            <p><strong>Type:</strong> <span id="programType"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="programAmount"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Coach:</strong> <span id="coachName"></span></p>
-                            <p><strong>Start Date:</strong> <span id="programStart"></span></p>
-                            <p><strong>End Date:</strong> <span id="programEnd"></span></p>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Rental Details -->
                 <div id="rentalSection" class="section-card mb-4" style="display: none;">
                     <h6 class="section-title">Rental Details</h6>
@@ -322,7 +305,6 @@
         document.getElementById('memberInfoSection').style.display = 'none';
         document.getElementById('walkInInfoSection').style.display = 'none';
         document.getElementById('membershipSection').style.display = 'none';
-        document.getElementById('programSection').style.display = 'none';
         document.getElementById('rentalSection').style.display = 'none';
         document.getElementById('registrationSection').style.display = 'none';
 
@@ -383,19 +365,6 @@
             document.getElementById('membershipEnd').textContent = details.membership.end_date;
             // Add membership amount to total
             totalAmount += parseFloat(details.membership.amount.replace(/,/g, '')) || 0;
-        }
-    
-        // Show program details if present
-        if (details.program) {
-            document.getElementById('programSection').style.display = 'block';
-            document.getElementById('programName').textContent = details.program.name;
-            document.getElementById('programType').textContent = details.program.type;
-            document.getElementById('coachName').textContent = details.program.coach;
-            document.getElementById('programAmount').textContent = details.program.amount;
-            document.getElementById('programStart').textContent = details.program.start_date;
-            document.getElementById('programEnd').textContent = details.program.end_date;
-            // Add program amount to total
-            totalAmount += parseFloat(details.program.amount.replace(/,/g, '')) || 0;
         }
     
         // Show rental details if present
@@ -743,9 +712,8 @@ function markSingleAsRead() {
                             
                             card.classList.remove('unread');
                             card.classList.add('read');
-                            
-                            // Remove "New" badge
-                            const newBadge = card.querySelector('.new-badge');
+                                                        // Remove the "New" badge if present
+                                                        const newBadge = card.querySelector('.new-badge');
                             if (newBadge) {
                                 newBadge.remove();
                             }
@@ -755,7 +723,7 @@ function markSingleAsRead() {
                     // Update notification counter
                     updateNotificationCount();
                 } else {
-                    console.error("Error in response:", result);
+                    console.error('Error marking notification as read:', result.error);
                 }
             } catch (e) {
                 console.error("Error parsing response:", e, "Raw response:", response);
@@ -767,69 +735,35 @@ function markSingleAsRead() {
     });
 }
 
-// Function to add a hidden user ID field to the page if needed
-function addUserIdFieldIfNeeded() {
-    if (!document.getElementById('pageUserIdField')) {
-        // Get user ID from PHP session
-        const userId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0; ?>;
-        
-        // Create a hidden input field with the user ID
-        const hiddenField = document.createElement('input');
-        hiddenField.type = 'hidden';
-        hiddenField.id = 'pageUserIdField';
-        hiddenField.value = userId;
-        document.body.appendChild(hiddenField);
+function updateNotificationCount() {
+    // Count remaining unread notifications
+    const unreadCount = document.querySelectorAll('.notification-card.unread').length;
+    
+    // Update the badge count
+    const badgeElement = document.querySelector('.badge.bg-danger');
+    if (badgeElement) {
+        badgeElement.textContent = unreadCount + ' Unread';
+    }
+    
+    // Disable the "Mark All as Read" button if no unread notifications
+    const markReadBtn = document.getElementById('markReadBtn');
+    if (markReadBtn) {
+        markReadBtn.disabled = (unreadCount === 0);
     }
 }
 
-// Call this function when the document is loaded
+// Initialize tooltips and other UI elements
 document.addEventListener('DOMContentLoaded', function() {
-    addUserIdFieldIfNeeded();
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
     
-    // Initialize notification count
+    // Initialize notification counter
     updateNotificationCount();
 });
-
-function updateNotificationCount() {
-    // Count all unread notifications
-    const unreadNotifications = document.querySelectorAll('.notification-card.unread').length;
-    const transactionNotifications = document.querySelectorAll('.notification-card.transaction-notification').length;
-    
-    // Update badge in the header
-    const badge = document.querySelector('.badge.bg-danger');
-    if (badge) {
-        const totalCount = unreadNotifications + transactionNotifications;
-        badge.textContent = totalCount + ' Unread';
-        badge.style.display = totalCount > 0 ? 'inline' : 'none';
-    }
-}
-
-// Fix for accessibility issue with aria-hidden
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle modal focus management
-    const modals = document.querySelectorAll('.modal');
-    
-    modals.forEach(modal => {
-        modal.addEventListener('hidden.bs.modal', function(event) {
-            // When modal is closed, ensure focus is returned to an appropriate element
-            // This prevents focus being trapped on an element that becomes aria-hidden
-            const activeElement = document.activeElement;
-            if (activeElement && activeElement.tagName === 'BUTTON') {
-                // Move focus to the first focusable element that's not aria-hidden
-                const focusableElements = document.querySelectorAll('button:not([aria-hidden="true"]), a:not([aria-hidden="true"]), input:not([aria-hidden="true"])');
-                if (focusableElements.length > 0) {
-                    focusableElements[0].focus();
-                } else {
-                    // Fallback to body if no suitable element found
-                    document.body.focus();
-                }
-            }
-        });
-    });
-});
-
 </script>
-
 <style>
 .notification-container {
     max-height: 600px;

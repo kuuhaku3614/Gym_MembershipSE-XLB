@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function checkUsername(username) {
         try {
             console.log('Current page URL:', window.location.href);
-            const fetchUrl = '/gym_membershipse-xlb/website/includes/update_profile.php';
+            const fetchUrl = '../website/includes/update_profile.php';
             console.log('Attempting to fetch from:', fetchUrl);
             
             const response = await fetch(fetchUrl, {
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function updateUsername(username) {
         try {
-            const response = await fetch('/gym_membershipse-xlb/website/includes/update_profile.php', {
+            const response = await fetch('../website/includes/update_profile.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('photo', file);
 
         try {
-            const response = await fetch('/gym_membershipse-xlb/website/includes/update_profile.php', {
+            const response = await fetch('../website/includes/update_profile.php', {
                 method: 'POST',
                 body: formData
             });

@@ -109,7 +109,7 @@
                   </tr>
               </thead>
               <tbody>
-                <?php 
+              <?php 
                 if(!empty($array)){
                     $count = 1;
                     foreach($array as $row){
@@ -160,14 +160,10 @@
                             <?php endif; ?>
                         </td>
                     </tr>
-                <?php 
-                    }
-                } else {
+                <?php
+                    } // Closing foreach
+                }
                 ?>
-                    <tr>
-                        <td colspan="8" class="text-center">No records found</td>
-                    </tr>
-                <?php } ?>
               </tbody>
           </table>
         </div>
@@ -322,7 +318,7 @@ $(document).ready(function() {
         e.preventDefault();
         
         $.ajax({
-            url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
+            url: '../admin/pages/walk in/walk_in.php',
             type: 'POST',
             data: $(this).serialize(),
             dataType: 'json',
@@ -351,11 +347,24 @@ $(document).ready(function() {
         dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
         language: {
             search: "_INPUT_",
-            searchPlaceholder: "Search members..."
+            searchPlaceholder: "Search members...",
+            emptyTable: "No records found"
         },
         columnDefs: [
-            { orderable: false, targets: [0] } // Disable sorting for photo column
-        ]
+            { orderable: false, targets: [0, 7] } // Disable sorting for number and action columns
+        ],
+        drawCallback: function() {
+            // Check if there are no records and modify the table structure if needed
+            if ($('#walk_inTable tbody tr.no-records-row').length > 0) {
+                // Remove the action column header if showing "no records" row
+                if ($('#walk_inTable thead th').length === 8) {
+                    $('#walk_inTable thead th:last-child').hide();
+                }
+            } else {
+                // Make sure the action column header is visible when records exist
+                $('#walk_inTable thead th:last-child').show();
+            }
+        }
     });
 
         // Handle price update form submission
@@ -370,7 +379,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
+            url: '../admin/pages/walk in/walk_in.php',
             type: 'POST',
             data: $(this).serialize(),
             dataType: 'json',
@@ -396,7 +405,7 @@ function processWalkIn(id) {
     }
 
     $.ajax({
-        url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
+        url: '../admin/pages/walk in/walk_in.php',
         type: 'POST',
         data: {
             action: 'process_walkin',
@@ -423,7 +432,7 @@ function removeWalkIn(id) {
     }
 
     $.ajax({
-        url: '/Gym_MembershipSE-XLB/admin/pages/walk in/walk_in.php',
+        url: '../admin/pages/walk in/walk_in.php',
         type: 'POST',
         data: {
             action: 'remove_walkin',

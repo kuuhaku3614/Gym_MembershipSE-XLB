@@ -379,12 +379,19 @@ $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'w
                 </div>
             </a>
 
-            <a href="website_settings" id="website_settings-link" class="nav-item">
+            <a href="website_settings" id="website_settings-link" class="nav-item has-subnav">
                 <div class="nav-item-content">
                     <i class="fas fa-cog"></i>
                     Website Settings
                 </div>
+                <i class="fas fa-chevron-down dropdown-icon"></i>
             </a>
+            <div class="sub-nav">
+                <a href="content_management" id="content_management-link" class="sub-nav-item">
+                    <i class="fas fa-file-alt"></i>
+                    Content Management
+                </a>
+            </div>
 
             <a href="report" id="report-link" class="nav-item">
                 <div class="nav-item-content">
