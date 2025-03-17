@@ -67,11 +67,15 @@ try {
 
     $Cart = new Cart_Class();
     if ($Cart->addWalkinToCart(1, $date)) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Walk-in service added to cart successfully',
-            'redirect' => '../services.php'
-        ]);
+        $_SESSION['success_message'] = "Successfully added item to the list!";
+                
+                // Return a JSON response instead of redirecting immediately
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'redirect' => '../services.php'
+                ]);
+                exit;
     } else {
         throw new Exception('Failed to add walk-in service to cart.');
     }

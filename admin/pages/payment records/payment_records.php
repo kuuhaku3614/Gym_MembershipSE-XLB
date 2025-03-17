@@ -1,13 +1,12 @@
 <?php
 require_once 'config.php';
 
-// Modified query to include staff details using staff_id
+// Modified query to remove program subscriptions
 $query = "SELECT 
     t.id AS transaction_id,
     (
         COALESCE(m.amount, 0) + 
         COALESCE(rs.amount, 0) + 
-        COALESCE(ps.amount, 0) + 
         COALESCE(w.amount, 0) +
         COALESCE(rr.amount, 0)
     ) AS total_amount,
@@ -15,21 +14,19 @@ $query = "SELECT
     CASE 
         WHEN m.id IS NOT NULL THEN CONCAT(pd.first_name, ' ', pd.last_name, ' - Membership Plan')
         WHEN rs.id IS NOT NULL THEN CONCAT(pd.first_name, ' ', pd.last_name, ' - Rental Service')
-        WHEN ps.id IS NOT NULL THEN CONCAT(pd.first_name, ' ', pd.last_name, ' - Program')
         WHEN w.id IS NOT NULL THEN CONCAT(w.name, ' - Walk-in')
     END AS transaction_details,
     CASE 
         WHEN m.id IS NOT NULL THEN mp.plan_name
         WHEN rs.id IS NOT NULL THEN r.service_name
-        WHEN ps.id IS NOT NULL THEN p.program_name
         WHEN w.id IS NOT NULL THEN 'Walk-in'
     END AS service_type,
-    -- New fields for staff who processed the transaction
+    -- Staff fields
     t.staff_id AS staff_id,
     staff_pd.first_name AS staff_first_name,
     staff_pd.last_name AS staff_last_name,
     staff_u.username AS staff_username,
-    -- Existing detailed fields remain the same
+    -- Detailed fields
     m.id AS membership_id,
     m.start_date AS membership_start,
     m.end_date AS membership_end,
@@ -40,11 +37,6 @@ $query = "SELECT
     rs.end_date AS rental_end,
     rs.amount AS rental_amount,
     r.service_name AS rental_service,
-    ps.id AS program_id,
-    ps.start_date AS program_start,
-    ps.end_date AS program_end,
-    ps.amount AS program_amount,
-    p.program_name,
     w.id AS walk_in_id,
     w.date AS walk_in_date,
     w.amount AS walk_in_amount,
@@ -59,8 +51,6 @@ LEFT JOIN memberships m ON t.id = m.transaction_id AND m.is_paid = 1
 LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
 LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id AND rs.is_paid = 1
 LEFT JOIN rental_services r ON rs.rental_service_id = r.id
-LEFT JOIN program_subscription_schedule ps ON t.id = ps.transaction_id AND ps.is_paid = 1
-LEFT JOIN programs p ON ps.program_id = p.id
 LEFT JOIN walk_in_records w ON t.id = w.transaction_id AND w.is_paid = 1
 LEFT JOIN registration_records rr ON t.id = rr.transaction_id
 LEFT JOIN registration reg ON rr.registration_id = reg.id
@@ -70,7 +60,6 @@ WHERE t.status = 'confirmed'
 AND (
     (m.id IS NOT NULL AND m.is_paid = 1) OR
     (rs.id IS NOT NULL AND rs.is_paid = 1) OR
-    (ps.id IS NOT NULL AND ps.is_paid = 1) OR
     (w.id IS NOT NULL AND w.is_paid = 1)
 )
 ORDER BY t.created_at DESC";
@@ -194,15 +183,6 @@ try {
                                             </div>
                                             <?php endif; ?>
 
-                                            <?php if ($row['program_id']): ?>
-                                            <div class="service-item mb-3">
-                                                <h6 class="text-primary">Program Subscription</h6>
-                                                <p class="mb-1">Program: <?php echo htmlspecialchars($row['program_name']); ?></p>
-                                                <p class="mb-1">Duration: <?php echo date('M d, Y', strtotime($row['program_start'])) . ' to ' . date('M d, Y', strtotime($row['program_end'])); ?></p>
-                                                <p class="mb-1">Amount: ₱<?php echo number_format($row['program_amount'], 2); ?></p>
-                                            </div>
-                                            <?php endif; ?>
-
                                             <?php if ($row['walk_in_id']): ?>
                                             <div class="service-item mb-3">
                                                 <h6 class="text-primary">Walk-in Service</h6>
@@ -234,6 +214,7 @@ try {
                                             ?>
                                         </p>
                                     </div>
+                                </div>
                                 <div class="receipt-footer mt-4">
                                     <p>Thank you for your payment!</p>
                                     <small>This is your official receipt.</small>

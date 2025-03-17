@@ -786,6 +786,10 @@ nav.sticky {
   color: #0f0f0f;
   width: 90%;
 }
+.S-Products p,
+.S-AboutUs p {
+  font-size: 1.25rem;
+}
 
 .offers-container {
   width: 100%;
@@ -1661,7 +1665,8 @@ nav.sticky {
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -1674,7 +1679,7 @@ nav.sticky {
     bottom: 20px;
     right: 20px;
   }
-  
+
   .location-box {
     padding: 8px 15px;
     font-size: 0.9em;
