@@ -1,19 +1,5 @@
 <?php
 session_start();
-header("Access-Control-Allow-Origin: *"); // Allow all origins (or specify your frontend URL)
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Allowed request methods
-header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Allowed headers
-
-// Handle preflight requests
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: " . BASE_URL . "/login.php");
-    exit;
-}
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);
@@ -21,7 +7,25 @@ ini_set('display_errors', 1);
 
 // Use absolute path for includes
 require_once(__DIR__ . '/../../../config.php');
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: " . BASE_URL . "/login.php");
+    exit;
+}
+
+// Additional includes
 require_once(__DIR__ . "/functions/member_registration.class.php");
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// Set CORS headers
+header("Access-Control-Allow-Origin: *"); // Allow all origins (or specify your frontend URL)
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Allowed request methods
+header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Allowed headers
 
 $memberRegistration = new MemberRegistration();
 
