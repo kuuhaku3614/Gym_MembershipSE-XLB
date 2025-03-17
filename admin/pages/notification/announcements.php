@@ -285,44 +285,80 @@ body {
         </div>
     </div>
     </form>
+    
     <!-- Manage Announcements Section -->
     <div class="table-responsive">
-    <div class="mt-4">
-        <button type="button" class="btn btn-secondary" id="showPreviousBtn">
-            <i class="fas fa-history me-2"></i>View Previous Announcements
-        </button>
+        <div class="mt-4">
+            <button type="button" class="btn btn-secondary" id="showPreviousBtn">
+                <i class="fas fa-history me-2"></i>View Previous Announcements
+            </button>
+        </div>
+        <table id="announcementsTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($announcements as $announcement): ?>
+                    <tr>
+                        <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
+                        <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
+                        <td><?= ucfirst(htmlspecialchars($announcement['announcement_type'])) ?></td>
+                        <td><?= htmlspecialchars($announcement['message']) ?></td>
+                        <td>
+                            <button class='btn btn-danger btn-sm remove-btn' data-id='<?= $announcement["id"] ?>'>
+                                <i class="fas fa-trash-alt me-1"></i>Remove
+                            </button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
-    <table id="announcementsTable" class="table table-striped table-hover">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Type</th>
-            <th>Message</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($announcements as $announcement): ?>
-            <tr>
-                <td><?= date('F d, Y', strtotime($announcement['applied_date'])) ?></td>
-                <td><?= date('h:i A', strtotime($announcement['applied_time'])) ?></td>
-                <td><?= ucfirst(htmlspecialchars($announcement['announcement_type'])) ?></td>
-                <td><?= htmlspecialchars($announcement['message']) ?></td>
-                <td>
-                    <button class='btn btn-danger btn-sm remove-btn' data-id='<?= $announcement["id"] ?>'>
-                        <i class="fas fa-trash-alt me-1"></i>Remove
-                    </button>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
+
+    <!-- Previous Announcements Modal -->
+<div class="modal fade" id="previousAnnouncementsModal" tabindex="-1" aria-labelledby="previousAnnouncementsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previousAnnouncementsModalLabel">Previous Announcements</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="previousAnnouncementsTable" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Message</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Previous announcements will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>
 $(document).ready(function() {
     // Initialize DataTable
     const table = $('#announcementsTable').DataTable({
@@ -334,6 +370,14 @@ $(document).ready(function() {
             search: "_INPUT_",
             searchPlaceholder: "Search announcements...",
         }
+    });
+
+    // Initialize Previous Announcements DataTable
+    const previousTable = $('#previousAnnouncementsTable').DataTable({
+        order: [[0, 'desc']],
+        pageLength: 5,
+        lengthMenu: [[5, 10, 25, 50], [5, 10, 25, 50]],
+        responsive: true
     });
 
     // Add Announcement Form Submission
@@ -382,40 +426,117 @@ $(document).ready(function() {
 
     // Remove Announcement Button Handler
     $('#announcementsTable').on('click', '.remove-btn', function() {
-    const id = $(this).data('id');
-    
-    // Add validation to ensure ID exists and is a number
-    if (!id || isNaN(id)) {
-        alert('Invalid announcement ID');
-        return;
-    }
+        const id = $(this).data('id');
+        const button = $(this); // Store reference to the button
+        
+        // Add validation to ensure ID exists and is a number
+        if (!id || isNaN(id)) {
+            alert('Invalid announcement ID');
+            return;
+        }
 
-    if (confirm('Are you sure you want to remove this announcement?')) {
+        if (confirm('Are you sure you want to remove this announcement?')) {
+            $.ajax({
+                url: 'pages/notification/functions/remove_announcement.php',
+                method: 'POST',
+                data: { id: id },
+                dataType: 'json', // Explicitly expect JSON response
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Remove the row from DataTable
+                        table.row(button.closest('tr')).remove().draw();
+                        alert(response.message);
+                    } else {
+                        alert(response.message || 'Error removing announcement');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', {
+                        response: xhr.responseText,
+                        status: status,
+                        error: error
+                    });
+                    alert('Error removing announcement. Please try again.');
+                }
+            });
+        }
+    });
+
+    // Restore Announcement Button Handler
+    $('#previousAnnouncementsTable').on('click', '.restore-btn', function() {
+        const id = $(this).data('id');
+        const button = $(this); // Store reference to the button
+        
+        // Add validation to ensure ID exists and is a number
+        if (!id || isNaN(id)) {
+            alert('Invalid announcement ID');
+            return;
+        }
+
+        if (confirm('Are you sure you want to restore this announcement?')) {
+            $.ajax({
+                url: 'pages/notification/functions/restore_announcement.php',
+                method: 'POST',
+                data: { id: id },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Remove the row from DataTable
+                        previousTable.row(button.closest('tr')).remove().draw();
+                        alert(response.message);
+                        
+                        // Optional: Refresh the main table to show the restored announcement
+                        // You can choose to do a full page reload or just update the main table
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Error restoring announcement');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', {
+                        response: xhr.responseText,
+                        status: status,
+                        error: error
+                    });
+                    alert('Error restoring announcement. Please try again.');
+                }
+            });
+        }
+    });
+
+    // Show Previous Announcements Button Handler
+    $('#showPreviousBtn').on('click', function() {
+        // Clear previous data
+        previousTable.clear();
+        
+        // Load previous announcements
         $.ajax({
-            url: 'pages/notification/functions/remove_announcement.php',
-            method: 'POST',
-            data: { id: id },
-            dataType: 'json', // Explicitly expect JSON response
+            url: 'pages/notification/functions/get_previous_announcements.php',
+            method: 'GET',
+            dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    // Remove the row from DataTable instead of reloading
-                    const row = $(this).closest('tr');
-                    table.row(row).remove().draw();
-                    alert(response.message);
+                    // Add data to the table
+                    $.each(response.data, function(i, announcement) {
+                        previousTable.row.add([
+                            announcement.applied_date,
+                            announcement.applied_time,
+                            announcement.announcement_type.charAt(0).toUpperCase() + announcement.announcement_type.slice(1),
+                            announcement.message,
+                            '<button class="btn btn-success btn-sm restore-btn" data-id="' + announcement.id + '"><i class="fas fa-undo me-1"></i>Restore</button>'
+                        ]);
+                    });
+                    previousTable.draw();
+                    $('#previousAnnouncementsModal').modal('show');
                 } else {
-                    alert(response.message || 'Error removing announcement');
+                    alert(response.message || 'Error loading previous announcements');
                 }
             },
-            error: function(xhr, status, error) {
-                console.error('AJAX Error:', {
-                    response: xhr.responseText,
-                    status: status,
-                    error: error
-                });
-                alert('Error removing announcement. Please try again.');
+            error: function() {
+                alert('Error loading previous announcements. Please try again.');
             }
         });
-    }
+    });
 });
-});
-</script>
+    </script>
+</div>

@@ -64,6 +64,47 @@ class ExpiryNotifications {
     }
     
     /**
+     * Mark all notifications as read for a specific user
+     * 
+     * @param int $userId The ID of the user
+     * @param array $notificationData Array of notification data to mark as read
+     * @return bool True on success, false on failure
+     */
+    public function markAllAsRead($userId, $notificationData) {
+        try {
+            // Start transaction for multiple inserts
+            $this->pdo->beginTransaction();
+            
+            // Prepare the statement
+            $stmt = $this->pdo->prepare("INSERT IGNORE INTO notification_reads 
+                                  (user_id, notification_type, notification_id, read_at) 
+                                  VALUES (?, ?, ?, NOW())");
+            
+            // For each notification, insert a record
+            foreach ($notificationData as $notification) {
+                // Check if the notification is already marked as read
+                if (!$this->isNotificationRead($userId, $notification['type'], $notification['id'])) {
+                    $stmt->execute([
+                        $userId, 
+                        $notification['type'], // e.g., 'expiring_membership', 'expired_rental', etc.
+                        $notification['id']
+                    ]);
+                }
+            }
+            
+            // Commit the transaction
+            $this->pdo->commit();
+            
+            return true;
+        } catch (Exception $e) {
+            // Roll back the transaction in case of error
+            $this->pdo->rollBack();
+            error_log("Error marking all notifications as read: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Get expiring memberships (within 7 days)
      * @return array Array of expiring membership notifications
      */
@@ -328,47 +369,5 @@ class ExpiryNotifications {
         
         return $notifications;
     }
-    
-    /**
-     * Update membership status to expired
-     * @param int $membershipId Membership ID
-     * @return bool True if successful
-     */
-    public function updateMembershipExpired($membershipId) {
-        $stmt = $this->pdo->prepare("UPDATE memberships SET status = 'expired' WHERE id = ?");
-        return $stmt->execute([$membershipId]);
-    }
-    
-    /**
-     * Update rental subscription status to expired
-     * @param int $rentalId Rental subscription ID
-     * @return bool True if successful
-     */
-    public function updateRentalExpired($rentalId) {
-        $stmt = $this->pdo->prepare("UPDATE rental_subscriptions SET status = 'expired' WHERE id = ?");
-        return $stmt->execute([$rentalId]);
-    }
-    
-    /**
-     * Renew a membership
-     * @param int $membershipId Membership ID
-     * @param string $newEndDate New end date
-     * @return bool True if successful
-     */
-    public function renewMembership($membershipId, $newEndDate) {
-        $stmt = $this->pdo->prepare("UPDATE memberships SET status = 'active', end_date = ? WHERE id = ?");
-        return $stmt->execute([$newEndDate, $membershipId]);
-    }
-    
-    /**
-     * Renew a rental subscription
-     * @param int $rentalId Rental subscription ID
-     * @param string $newEndDate New end date
-     * @return bool True if successful
-     */
-    public function renewRental($rentalId, $newEndDate) {
-        $stmt = $this->pdo->prepare("UPDATE rental_subscriptions SET status = 'active', end_date = ? WHERE id = ?");
-        return $stmt->execute([$newEndDate, $rentalId]);
-    }
+
 }
-?>

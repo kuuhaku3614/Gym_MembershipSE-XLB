@@ -295,6 +295,177 @@ $gymOffers = fetchExistingContent('gym_offers');
 $products = fetchExistingContent('products');
 $staffMembers = fetchExistingContent('staff');
 $galleryImages = fetchExistingContent('gallery_images');
+// Fetch logo content
+$logoContent = getDynamicContent('logo');
+$colorContent = getDynamicContent('colors');
+
+// Handle logo upload
+if (isset($_POST['update_logo'])) {
+    try {
+        if (isset($_FILES['logo_image']) && $_FILES['logo_image']['error'] === UPLOAD_ERR_OK) {
+            $imagePath = uploadFile($_FILES['logo_image'], 'logo', ['jpg', 'jpeg', 'png', 'svg']);
+            
+            // Check if logo entry exists
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM website_content WHERE section = 'logo'");
+            $stmt->execute();
+            $logoExists = $stmt->fetchColumn() > 0;
+            
+            if ($logoExists) {
+                // Update existing logo
+                $stmt = $pdo->prepare("UPDATE website_content SET logo_path = :path WHERE section = 'logo'");
+                $stmt->execute([':path' => $imagePath]);
+            } else {
+                // Insert new logo
+                $stmt = $pdo->prepare("INSERT INTO website_content (section, logo_path) VALUES ('logo', :path)");
+                $stmt->execute([':path' => $imagePath]);
+            }
+            
+            $_SESSION['success_message'] = "Logo updated successfully!";
+        } else {
+            if ($_FILES['logo_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                throw new Exception("Error uploading logo: " . $_FILES['logo_image']['error']);
+            }
+        }
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = $e->getMessage();
+    }
+    
+    // Store scroll position
+    $_SESSION['scroll_to'] = 'logo';
+    
+    // Redirect to prevent form resubmission
+    header("Location: /Gym_MembershipSE-XLB/admin/content_management");
+    exit();
+}
+
+// Handle color palette update
+if (isset($_POST['update_colors'])) {
+    try {
+        $primaryColor = $_POST['primary_color'];
+        $secondaryColor = $_POST['secondary_color'];
+        $accentColor = $_POST['accent_color'];
+        $textColor = $_POST['text_color'];
+        
+        // Validate color values (optional)
+        $hexPattern = '/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/';
+        if (!preg_match($hexPattern, $primaryColor) || 
+            !preg_match($hexPattern, $secondaryColor) || 
+            !preg_match($hexPattern, $accentColor) || 
+            !preg_match($hexPattern, $textColor)) {
+            throw new Exception("Invalid color format. Please use hexadecimal color codes (e.g., #FF5500).");
+        }
+        
+        // Check if colors entry exists
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM website_content WHERE section = 'colors'");
+        $stmt->execute();
+        $colorsExist = $stmt->fetchColumn() > 0;
+        
+        if ($colorsExist) {
+            // Update existing colors
+            $stmt = $pdo->prepare("UPDATE website_content SET 
+                primary_color = :primary,
+                secondary_color = :secondary,
+                accent_color = :accent,
+                text_color = :text
+                WHERE section = 'colors'");
+        } else {
+            // Insert new colors
+            $stmt = $pdo->prepare("INSERT INTO website_content 
+                (section, primary_color, secondary_color, accent_color, text_color) 
+                VALUES ('colors', :primary, :secondary, :accent, :text)");
+        }
+        
+        $stmt->execute([
+            ':primary' => $primaryColor,
+            ':secondary' => $secondaryColor,
+            ':accent' => $accentColor,
+            ':text' => $textColor
+        ]);
+        
+        $_SESSION['success_message'] = "Color palette updated successfully!";
+        
+        // Generate CSS file with the new colors
+        generateCustomCss($primaryColor, $secondaryColor, $accentColor, $textColor);
+        
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = $e->getMessage();
+    }
+    
+    // Store scroll position
+    $_SESSION['scroll_to'] = 'colors';
+    
+    // Redirect to prevent form resubmission
+    header("Location: /Gym_MembershipSE-XLB/admin/content_management");
+    exit();
+}
+
+// Function to generate custom CSS file
+function generateCustomCss($primary, $secondary, $accent, $text) {
+    $cssContent = <<<CSS
+/* Auto-generated custom theme CSS */
+:root {
+    --primary-color: {$primary};
+    --secondary-color: {$secondary};
+    --accent-color: {$accent};
+    --text-color: {$text};
+}
+
+/* Primary color elements */
+.btn-primary, 
+.primary-bg,
+.nav-link.active,
+.section h2::after,
+input[type="submit"] {
+    background-color: var(--primary-color);
+}
+
+.primary-border {
+    border-color: var(--primary-color);
+}
+
+.primary-text {
+    color: var(--primary-color);
+}
+
+/* Secondary color elements */
+.secondary-bg,
+footer,
+.nav-item:hover {
+    background-color: var(--secondary-color);
+}
+
+.secondary-border {
+    border-color: var(--secondary-color);
+}
+
+.secondary-text {
+    color: var(--secondary-color);
+}
+
+/* Accent color elements */
+.accent-bg,
+.btn-accent,
+.badge {
+    background-color: var(--accent-color);
+}
+
+.accent-border {
+    border-color: var(--accent-color);
+}
+
+.accent-text {
+    color: var(--accent-color);
+}
+
+/* Text color elements */
+body, h1, h2, h3, h4, h5, h6, p, .text-default {
+    color: var(--text-color);
+}
+CSS;
+
+    $cssFilePath = dirname(__DIR__, 3) . '/css/custom-theme.css';
+    file_put_contents($cssFilePath, $cssContent);
+}
 ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -484,7 +655,82 @@ $galleryImages = fetchExistingContent('gallery_images');
   color: white; /* Keep link color on hover */
   text-decoration: none; /* Ensure link underline stays removed */
 }
-<?php require_once '../../includes/header.php'; ?>
+/* Logo and Color Palette Styles */
+.current-logo {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.color-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-item input[type="color"] {
+    width: 100%;
+    height: 40px;
+    padding: 2px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.color-hex {
+    font-family: monospace;
+    text-align: center;
+}
+
+.color-preview {
+    margin-top: 30px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #f9f9f9;
+}
+
+.preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.preview-header {
+    height: 60px;
+    border-radius: 6px;
+    background-color: var(--primary-color, #4CAF50);
+}
+
+.preview-body {
+    height: 100px;
+    border-radius: 6px;
+    background-color: var(--secondary-color, #333333);
+}
+
+.preview-button {
+    width: 120px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: var(--accent-color, #FF9800);
+}
 </style>
 
 <div class="container-fluid px-4 py-4">
@@ -518,7 +764,112 @@ $galleryImages = fetchExistingContent('gallery_images');
             <input type="submit" name="update_welcome" value="Update Welcome Section">
         </form>
     </div>
+<!-- Logo Upload Section -->
+<div class="section" data-section="logo">
+    <h2>Logo Management</h2>
+    <form method="post" enctype="multipart/form-data">
+        <p>Current Logo:</p>
+        <?php if(isset($logoContent['logo_path']) && !empty($logoContent['logo_path'])): ?>
+            <div class="current-logo">
+                <img src="../<?php echo htmlspecialchars($logoContent['logo_path']); ?>" alt="Current Logo" style="max-height: 100px; max-width: 300px;">
+            </div>
+        <?php else: ?>
+            <p>No custom logo uploaded. Using default logo.</p>
+        <?php endif; ?>
+        
+        <label>Upload New Logo:</label>
+        <input type="file" name="logo_image" accept="image/*">
+        <p class="hint">Recommended size: 300x100px. Supported formats: PNG, JPG, SVG.</p>
+        
+        <input type="submit" name="update_logo" value="Update Logo">
+    </form>
+</div>
 
+<!-- Color Palette Section -->
+<div class="section" data-section="colors">
+    <h2>Color Palette</h2>
+    <form method="post">
+        <div class="color-grid">
+            <div class="color-item">
+                <label>Primary Color:</label>
+                <input type="color" name="primary_color" value="<?php echo htmlspecialchars($colorContent['primary_color'] ?? '#4CAF50'); ?>">
+                <input type="text" name="primary_color_hex" value="<?php echo htmlspecialchars($colorContent['primary_color'] ?? '#4CAF50'); ?>" class="color-hex">
+            </div>
+            
+            <div class="color-item">
+                <label>Secondary Color:</label>
+                <input type="color" name="secondary_color" value="<?php echo htmlspecialchars($colorContent['secondary_color'] ?? '#333333'); ?>">
+                <input type="text" name="secondary_color_hex" value="<?php echo htmlspecialchars($colorContent['secondary_color'] ?? '#333333'); ?>" class="color-hex">
+            </div>
+            
+            <div class="color-item">
+                <label>Accent Color:</label>
+                <input type="color" name="accent_color" value="<?php echo htmlspecialchars($colorContent['accent_color'] ?? '#FF9800'); ?>">
+                <input type="text" name="accent_color_hex" value="<?php echo htmlspecialchars($colorContent['accent_color'] ?? '#FF9800'); ?>" class="color-hex">
+            </div>
+            
+            <div class="color-item">
+                <label>Text Color:</label>
+                <input type="color" name="text_color" value="<?php echo htmlspecialchars($colorContent['text_color'] ?? '#212121'); ?>">
+                <input type="text" name="text_color_hex" value="<?php echo htmlspecialchars($colorContent['text_color'] ?? '#212121'); ?>" class="color-hex">
+            </div>
+        </div>
+        
+        <div class="color-preview">
+            <h3>Preview</h3>
+            <div class="preview-container">
+                <div class="preview-header"></div>
+                <div class="preview-body"></div>
+                <div class="preview-button"></div>
+            </div>
+        </div>
+        
+        <input type="submit" name="update_colors" value="Update Color Palette">
+    </form>
+</div>
+<script>
+    // Color picker functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Connect color picker with hex input
+    const colorInputs = document.querySelectorAll('input[type="color"]');
+    colorInputs.forEach(input => {
+        const hexInput = input.nextElementSibling;
+        
+        // Update hex input when color changes
+        input.addEventListener('input', function() {
+            hexInput.value = this.value;
+            updatePreview();
+        });
+        
+        // Update color input when hex changes
+        hexInput.addEventListener('input', function() {
+            const hexPattern = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+            if (hexPattern.test(this.value)) {
+                input.value = this.value;
+                updatePreview();
+            }
+        });
+    });
+    
+    // Initialize preview
+    updatePreview();
+    
+    // Update preview function
+    function updatePreview() {
+        const primaryColor = document.querySelector('input[name="primary_color"]').value;
+        const secondaryColor = document.querySelector('input[name="secondary_color"]').value;
+        const accentColor = document.querySelector('input[name="accent_color"]').value;
+        
+        const previewHeader = document.querySelector('.preview-header');
+        const previewBody = document.querySelector('.preview-body');
+        const previewButton = document.querySelector('.preview-button');
+        
+        previewHeader.style.backgroundColor = primaryColor;
+        previewBody.style.backgroundColor = secondaryColor;
+        previewButton.style.backgroundColor = accentColor;
+    }
+});
+</script>
     <!-- Offers Section Update -->
     <div class="section" data-section="offers">
         <h2>Offers Section</h2>

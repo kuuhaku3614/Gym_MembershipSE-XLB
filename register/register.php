@@ -13,7 +13,7 @@
     <div class="page-container">
         <div class="registration-container">
             <div class="registration-header">
-                <h2 class="mb-0">Register Information</h2>
+                <h2 class="mb-0">Sign Up Information</h2>
                 <p class="text-muted medium mb-0">Start your journey with us!</p>
             </div>
             

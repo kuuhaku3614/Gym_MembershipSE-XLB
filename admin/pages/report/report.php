@@ -325,7 +325,7 @@ date_default_timezone_set('Asia/Manila');
                                     <td><?= date('F', mktime(0, 0, 0, $row['month'], 10)) ?></td>
                                     <td><?= $row['year'] ?></td>
                                     <td><?= number_format($row['total_memberships']) ?></td>
-                                    <td>$<?= number_format($row['total_amount'], 2) ?></td>
+                                    <td>₱<?= number_format($row['total_amount'], 2) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -400,7 +400,7 @@ date_default_timezone_set('Asia/Manila');
                                     <td><?= date('F', mktime(0, 0, 0, $row['month'], 10)) ?></td>
                                     <td><?= $row['year'] ?></td>
                                     <td><?= number_format($row['total_subscriptions']) ?></td>
-                                    <td>$<?= number_format($row['total_amount'], 2) ?></td>
+                                    <td>₱<?= number_format($row['total_amount'], 2) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -435,7 +435,7 @@ date_default_timezone_set('Asia/Manila');
                                     <td><?= date('F', mktime(0, 0, 0, $row['month'], 10)) ?></td>
                                     <td><?= $row['year'] ?></td>
                                     <td><?= number_format($row['total_rentals']) ?></td>
-                                    <td>$<?= number_format($row['total_amount'], 2) ?></td>
+                                    <td>₱<?= number_format($row['total_amount'], 2) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -510,7 +510,7 @@ date_default_timezone_set('Asia/Manila');
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" name="generate_report" id="preview_report">Preview Report</button>
+                    <button type="submit" class="btn btn-primary" name="generate_report" id="preview_report">Preview</button>
                 </div>
             </form>
         </div>
@@ -541,7 +541,7 @@ date_default_timezone_set('Asia/Manila');
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-success" id="export_pdf_btn">
-                    <i class="fas fa-file-pdf me-2"></i>Export as PDF
+                    <i class="fas fa-file-pdf me-2"></i>Export
                 </button>
             </div>
         </div>

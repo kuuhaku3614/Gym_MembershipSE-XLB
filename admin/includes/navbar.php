@@ -184,6 +184,21 @@ function getNotificationCounts() {
 
 // Get notification counts
 $notificationCounts = getNotificationCounts();
+// Centralized function for querying the database
+function executeQuery($query, $params = []) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Database query error: ' . $e->getMessage());
+        return [];
+    }
+}
+
+// Fetch specific content for sections
+$welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
 ?>
 
 <?php
@@ -272,7 +287,9 @@ $notificationCounts = getNotificationCounts();
     <!-- Logo and Admin Container -->
     <div class="logo-container">
         <img src="../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
-        <p class="admin-text">JC Powerzone</p>
+        <p class="admin-text"><?php 
+                echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
+            ?></p>
     </div>
 
     <!-- Navigation Links Container -->

@@ -95,11 +95,19 @@ require_once('includes/header.php');
             <p class="description subtext1"><?php 
                 echo htmlspecialchars($welcomeContent['description'] ?? 'Welcome description goes here.'); 
             ?></p>
-            <a href="?services=1" style="text-decoration: none;">
+            <?php if (!$isLoggedIn): ?>
+            <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton">
                     Start your Journey <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
                 </button>
             </a>
+            <?php endif; ?>
+        </div>
+        <div class="location-pointer">
+            <div class="location-box">
+                <span>Gym Location</span>
+                <i class="location-arrow">↓</i>
+            </div>
         </div>
     </header>
 
@@ -289,13 +297,13 @@ require_once('includes/header.php');
         <div class="aboutUs-content">
         <p class="text-secondary subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
         <div class="joinNow-container">
-            <!-- <h1 class="tagline">Go Home or Go Hard</h1> -->
-            <p>Come be one of us now</p>
-            <a href="?services=1" style="text-decoration: none;">
+            <?php if (!$isLoggedIn): ?>
+            <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-1">
                     Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
                 </button>
             </a>
+            <?php endif; ?>
         </div>
         </div>
     </div>
@@ -499,11 +507,13 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         <h1 class="title">You can find us here, sign up, local supplements and equipments</h1>
 
         <div class="joinNow-container">
-            <a href="?services=1" style="text-decoration: none;">
+            <?php if (!$isLoggedIn): ?>
+            <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-2">
                     Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
                 </button>
             </a>
+            <?php endif; ?>
         </div>
     </div>
     <div class="image-location">
@@ -663,6 +673,19 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     });
 });
   </script>
+  <!-- location pointer -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const locationBox = document.querySelector('.location-box');
+        const mapSection = document.getElementById('S-ContactUs');
+        
+        locationBox.addEventListener('click', function() {
+        mapSection.scrollIntoView({ 
+            behavior: 'smooth' 
+        });
+        });
+    });
+</script>
   <script>
 // document.addEventListener('DOMContentLoaded', function() {
 //     const carousel = document.querySelector('.carousel-wrapper');

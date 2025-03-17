@@ -509,8 +509,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             $expiring_memberships_sql = "
             SELECT COALESCE(COUNT(*), 0) AS expiring_memberships 
             FROM memberships 
-            WHERE status = 'active' 
-            AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+            WHERE status = 'expiring'
             ";
             $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
             $expiring_memberships_stmt->execute();
@@ -601,59 +600,3 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-<!-- JavaScript for notification dropdown functionality -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const notificationCard = document.getElementById('notificationCard');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    
-    // Toggle notification dropdown
-    notificationCard.addEventListener('click', function(e) {
-        e.stopPropagation();
-        notificationDropdown.classList.toggle('notification-show');
-    });
-    
-    // Close dropdown when clicking elsewhere on the page
-    document.addEventListener('click', function(e) {
-        if (!notificationCard.contains(e.target)) {
-            notificationDropdown.classList.remove('notification-show');
-        }
-    });
-    
-    // Handle notification item clicks
-    const notificationItems = document.querySelectorAll('.notification-item');
-    notificationItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const notificationType = this.getAttribute('data-type');
-            const notificationId = this.getAttribute('data-id');
-            
-            // Mark notification as read
-            if (notificationType && notificationId) {
-                markNotificationAsRead(notificationId, notificationType);
-            }
-            
-            // Redirect based on notification type
-            if (notificationType === 'pending_transaction') {
-                window.location.href = 'transactions.php';
-            } else if (notificationType.includes('membership')) {
-                window.location.href = 'members/memberships.php';
-            } else if (notificationType.includes('rental')) {
-                window.location.href = 'rentals/subscriptions.php';
-            }
-        });
-    });
-    
-    // AJAX function to mark notification as read
-    function markNotificationAsRead(id, type) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'ajax/mark_notification_read.php', true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onload = function() {
-            if (this.status === 200) {
-                console.log('Notification marked as read');
-            }
-        };
-        xhr.send(`notification_id=${id}&notification_type=${type}&user_id=<?= $_SESSION['user_id'] ?? 0 ?>`);
-    }
-});
-</script>

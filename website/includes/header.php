@@ -336,7 +336,8 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                 </div>
             </div>
         <?php else: ?>
-            <a href="<?php echo $basePath; ?>login/login.php" class="home-signIn">Sign Up</a>
+            <a href="<?php echo $basePath; ?>login/login.php" class="home-LogIn">Log In</a>
+            <a href="<?php echo $basePath; ?>register/register.php" class="home-signIn">Sign Up</a>
         <?php endif; ?>
     </div>
 </nav>

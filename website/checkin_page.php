@@ -236,16 +236,16 @@ try {
                                     
                                     if ($row['status'] === 'checked_in') {
                                         $statusClass = 'bg-success';
-                                        $statusText = 'Checked In';
+                                        $statusText = 'Time In';
                                     } else if ($row['status'] === 'checked_out') {
                                         $statusClass = 'bg-secondary';
-                                        $statusText = 'Checked Out';
+                                        $statusText = 'Time Out';
                                     } else if ($row['status'] === 'missed') {
                                         $statusClass = 'bg-danger';
                                         $statusText = 'Missed';
                                     } else {
                                         $statusClass = 'bg-warning';
-                                        $statusText = 'Not Checked In';
+                                        $statusText = 'No Record';
                                     }
                                     ?>
                                     <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>

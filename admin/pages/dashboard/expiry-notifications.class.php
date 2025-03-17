@@ -91,8 +91,7 @@ class ExpiryNotifications {
                 JOIN
                     membership_plans mp ON m.membership_plan_id = mp.id
                 WHERE 
-                    m.status = 'active' 
-                    AND m.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+                    m.status = 'expiring'";
         
         $stmt = $this->pdo->query($query);
         $notifications = [];
@@ -219,8 +218,7 @@ class ExpiryNotifications {
                 JOIN
                     rental_services s ON rs.rental_service_id = s.id
                 WHERE 
-                    rs.status = 'active' 
-                    AND rs.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+                    rs.status = 'expiring' ";
         
         $stmt = $this->pdo->query($query);
         $notifications = [];
@@ -317,47 +315,6 @@ class ExpiryNotifications {
         
         return $notifications;
     }
-    
-    /**
-     * Update membership status to expired
-     * @param int $membershipId Membership ID
-     * @return bool True if successful
-     */
-    public function updateMembershipExpired($membershipId) {
-        $stmt = $this->pdo->prepare("UPDATE memberships SET status = 'expired' WHERE id = ?");
-        return $stmt->execute([$membershipId]);
-    }
-    
-    /**
-     * Update rental subscription status to expired
-     * @param int $rentalId Rental subscription ID
-     * @return bool True if successful
-     */
-    public function updateRentalExpired($rentalId) {
-        $stmt = $this->pdo->prepare("UPDATE rental_subscriptions SET status = 'expired' WHERE id = ?");
-        return $stmt->execute([$rentalId]);
-    }
-    
-    /**
-     * Renew a membership
-     * @param int $membershipId Membership ID
-     * @param string $newEndDate New end date
-     * @return bool True if successful
-     */
-    public function renewMembership($membershipId, $newEndDate) {
-        $stmt = $this->pdo->prepare("UPDATE memberships SET status = 'active', end_date = ? WHERE id = ?");
-        return $stmt->execute([$newEndDate, $membershipId]);
-    }
-    
-    /**
-     * Renew a rental subscription
-     * @param int $rentalId Rental subscription ID
-     * @param string $newEndDate New end date
-     * @return bool True if successful
-     */
-    public function renewRental($rentalId, $newEndDate) {
-        $stmt = $this->pdo->prepare("UPDATE rental_subscriptions SET status = 'active', end_date = ? WHERE id = ?");
-        return $stmt->execute([$newEndDate, $rentalId]);
-    }
+
 }
 ?>
