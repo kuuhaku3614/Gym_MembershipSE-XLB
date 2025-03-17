@@ -357,8 +357,7 @@ require_once('includes/header.php');
 
         .joinNow-container {
             margin-top: 20px;
-            width: 100px;
-            height: 60px;
+            width: 100px!important;
             padding: 10px;
             align-self: flex-end;
         }

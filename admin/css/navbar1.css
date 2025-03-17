@@ -196,6 +196,7 @@ body {
 .nav-links-container {
   flex-grow: 1;
   overflow-y: auto;
+  padding: 10px 0;
 }
 
 .nav-links-container::-webkit-scrollbar {
@@ -238,7 +239,7 @@ body {
   color: #333;
 }
 .nav-item {
-  padding: 15px 25px;
+  padding: 8px 25px;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -249,7 +250,7 @@ body {
 .nav-item-content {
   display: flex;
   align-items: center;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .nav-item i {
@@ -292,6 +293,7 @@ body {
   display: flex;
   align-items: center;
   transition: background-color 0.3s;
+  font-size: 14px;
 }
 
 .sub-nav-item i {

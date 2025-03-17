@@ -123,7 +123,6 @@ h1 {
   font-size: 1rem;
   margin-left: 0.5rem;
   z-index: 5; /* Added higher z-index */
-  background-color: white; /* Ensure background is solid */
 }
 
 .form-floating input:focus ~ label,
@@ -141,6 +140,7 @@ h1 {
 .form-floating input:not(:focus):not(:placeholder-shown),
 .form-floating select:not(:focus):not([value=""]) {
   border: 1px solid #ced4da;
+  background-color: none;
 }
 
 /* Profile Photo Upload Styles */

@@ -97,13 +97,13 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo "<td>" . (!empty($row['description']) ? htmlspecialchars($row['description']) : 'N/A') . "</td>";
             echo "<td>" . htmlspecialchars($row['status']) . "</td>";
     
-            echo "<td class='d-flex flex-column align-items-center'>";
+            echo "<td class='d-grid gap-2'>";
             if ($row['status'] === 'active') {
-                echo "<button class='btn btn-sm btn-warning toggle-status-btn mb-1' data-id='" . $row['id'] . "'>Deactivate</button>";
+                echo "<button class='btn btn-sm btn-warning toggle-status-btn' data-id='" . $row['id'] . "'>Deactivate</button>";
             } else {
-                echo "<button class='btn btn-sm btn-success toggle-status-btn mb-1' data-id='" . $row['id'] . "'>Activate</button>";
+                echo "<button class='btn btn-sm btn-success toggle-status-btn' data-id='" . $row['id'] . "'>Activate</button>";
             }
-            echo "<button class='btn btn-sm btn-primary edit-gym-rate mb-1' data-id='" . $row['id'] . "'>Edit</button>";
+            echo "<button class='btn btn-sm btn-primary edit-gym-rate' data-id='" . $row['id'] . "'>Edit</button>";
             echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . $row['id'] . "'>Remove</button>";
             echo "</td>";
     
