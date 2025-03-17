@@ -130,9 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
-    .card-body {
-        /* border: 2px solid #ff0000; */
-    }
+
 @media screen and (max-width: 480px) {
     /* 1. Hide the services-header */
     .services-header {
