@@ -9,9 +9,17 @@ if (!isset($_SESSION['user_id'])) {
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+<<<<<<< HEAD
 // Use absolute path for includes
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/config.php");
-require_once($_SERVER['DOCUMENT_ROOT'] . "/Gym_MembershipSE-XLB/admin/pages/members/functions/member_registration.class.php");
+require_once(__DIR__ . '/../../../config.php');
+require_once(__DIR__ . "/functions/member_registration.class.php");
+=======
+// Use relative paths from current directory
+require_once('../../../config.php');
+require_once('./functions/member_registration.class.php');
+
+date_default_timezone_set('Asia/Manila');  // Set Philippines timezone
+>>>>>>> 01c6060eb0df97788a163c7d7aa8843db8e6cf4f
 
 $memberRegistration = new MemberRegistration();
 
