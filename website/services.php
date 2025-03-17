@@ -6,7 +6,6 @@
     $Obj = new Services_Class();
     $standard_plans = $Obj->displayStandardPlans();
     $special_plans = $Obj->displaySpecialPlans();
-    $programs = $Obj->displayPrograms();
     $rental_services = $Obj->displayRentalServices();
     $walkin = $Obj->displayWalkinServices();
 ?>
@@ -336,42 +335,8 @@
 
             <br id="Programs">
             <hr class="my-4" style="border: 2px solid #000;">
-
-            <!-- Programs Section -->
             <h2 class="section-heading">PROGRAMS</h2>
-            <div class="row g-4 mb-4">
-                <?php foreach ($programs as $program){
-                    // Default image path
-                    $defaultImage = '../cms_img/default/program.jpeg';
-
-                    // Get the image path
-                    $imagePath = $defaultImage; // Set default first
-                    if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
-                        $imagePath = '../cms_img/gym_rates/' . $program['image'];
-                    }           
-                    ?>
-                    <div class="col-sm-6 col-md-6 col-lg-3">
-                        <a href="services/avail_program.php?id=<?= $program['program_id'] ?>" class="program-link">
-                            <div class="card">
-                                <div class="card-header text-white text-center"
-                                style="background-image: url('<?= $imagePath ?>'); 
-                                background-size: cover; 
-                                background-position: center;
-                                position: relative;">
-                                    <div class="overlay-header">
-                                    <h2 class="fw-bold mb-0"><?= $program['program_name'] ?></h2>
-                                </div>
-                                <div class="overlay-darker"></div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text mb-1">Validity: <?= $program['validity'] ?></p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                <?php } ?>
-            </div>
-
+            
             <br id="Optional-Services">
             <hr class="my-4" style="border: 2px solid #000;">
 

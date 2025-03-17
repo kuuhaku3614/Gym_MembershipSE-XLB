@@ -115,22 +115,6 @@ class Profile_class{
         JOIN duration_types dt ON mp.duration_type_id = dt.id
         WHERE t.user_id = :user_id AND m.status = 'active' AND t.status = 'confirmed'";
 
-        // Fetch programs
-        $program_query = "SELECT 
-            ps.id,
-            'program' as type,
-            p.program_name as name,
-            CONCAT(p.duration, ' ', dt.type_name) as duration,
-            DATE_FORMAT(ps.end_date, '%M %d, %Y') as end_date,
-            CONCAT(pd.first_name, ' ', pd.last_name) as coach
-        FROM transactions t
-        JOIN program_subscriptions ps ON t.id = ps.transaction_id
-        JOIN programs p ON ps.program_id = p.id
-        JOIN duration_types dt ON p.duration_type_id = dt.id
-        JOIN users u ON ps.coach_id = u.id
-        JOIN personal_details pd ON u.id = pd.user_id
-        WHERE t.user_id = :user_id AND ps.status = 'active' AND t.status = 'confirmed'";
-
         // Fetch rentals
         $rental_query = "SELECT 
             rs.id,
@@ -159,7 +143,6 @@ class Profile_class{
         
         $result = [
             'memberships' => [],
-            'programs' => [],
             'rentals' => [],
             'walkins' => []
         ];
@@ -169,12 +152,6 @@ class Profile_class{
         $stmt->bindParam(':user_id', $_SESSION['user_id']);
         $stmt->execute();
         $result['memberships'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Execute program query
-        $stmt = $conn->prepare($program_query);
-        $stmt->bindParam(':user_id', $_SESSION['user_id']);
-        $stmt->execute();
-        $result['programs'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Execute rental query
         $stmt = $conn->prepare($rental_query);
@@ -215,30 +192,6 @@ class Profile_class{
             $stmt->bindParam(':user_id', $_SESSION['user_id']);
             $stmt->execute();
             $expired_services['memberships'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Fetch expired programs
-            $program_query = "SELECT ps.*, p.program_name, p.description, 
-                CONCAT(p.duration, ' ', dt.type_name) as duration_name,
-                DATE_FORMAT(ps.start_date, '%M %d, %Y') as formatted_start_date,
-                DATE_FORMAT(ps.end_date, '%M %d, %Y') as formatted_end_date,
-                DATE_FORMAT(t.created_at, '%M %d, %Y') as transaction_date,
-                t.created_at as raw_transaction_date,
-                t.id as transaction_id,
-                CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
-                FROM program_subscriptions ps
-                LEFT JOIN programs p ON ps.program_id = p.id
-                LEFT JOIN duration_types dt ON p.duration_type_id = dt.id
-                LEFT JOIN transactions t ON ps.transaction_id = t.id
-                LEFT JOIN users u ON ps.coach_id = u.id
-                LEFT JOIN personal_details pd ON u.id = pd.user_id
-                WHERE t.user_id = :user_id AND ps.end_date < CURDATE()
-                AND ps.status = 'expired' AND t.status = 'confirmed'
-                ORDER BY t.id DESC";
-            
-            $stmt = $this->db->connect()->prepare($program_query);
-            $stmt->bindParam(':user_id', $_SESSION['user_id']);
-            $stmt->execute();
-            $expired_services['programs'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Fetch expired rentals
             $rental_query = "SELECT rs.*, r.service_name as rental_name, r.description,
@@ -302,22 +255,6 @@ class Profile_class{
                             JOIN duration_types dt ON mp.duration_type_id = dt.id
                             JOIN transactions t ON m.transaction_id = t.id
                             WHERE m.id = :service_id";
-                    break;
-                    
-                case 'program':
-                    $query = "SELECT ps.*, p.program_name, p.description,
-                            pt.type_name as program_type,
-                            CONCAT(p.duration, ' ', dt.type_name) as duration_type,
-                            t.created_at as transaction_date,
-                            pd.first_name as coach_fname, pd.last_name as coach_lname
-                            FROM program_subscriptions ps
-                            JOIN programs p ON ps.program_id = p.id
-                            JOIN program_types pt ON p.program_type_id = pt.id
-                            JOIN duration_types dt ON p.duration_type_id = dt.id
-                            JOIN transactions t ON ps.transaction_id = t.id
-                            LEFT JOIN users u ON ps.coach_id = u.id
-                            LEFT JOIN personal_details pd ON u.id = pd.user_id
-                            WHERE ps.id = :service_id";
                     break;
                     
                 case 'rental':
