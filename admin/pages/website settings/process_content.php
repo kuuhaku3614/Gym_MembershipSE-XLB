@@ -163,5 +163,43 @@ if (isset($_POST['update_contact'])) {
     header("Location: /admin/content_management");
 
     exit;
+    // Function to fetch dynamic content
+function getDynamicContent($section) {
+    global $pdo;
+    $query = "SELECT * FROM website_content WHERE section = :section";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute(['section' => $section]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+// Function to process About Us update
+function updateAboutUs($aboutDescription) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("UPDATE website_content SET description = :desc WHERE section = 'about_us'");
+        $stmt->execute([':desc' => $aboutDescription]);
+        $_SESSION['success_message'] = "About Us content updated successfully!";
+        return true;
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = $e->getMessage();
+        return false;
+    }
+}
+
+// Process form submission for About Us
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_about'])) {
+    // Store scroll position if available
+    if (isset($_POST['scroll_to'])) {
+        $_SESSION['scroll_to'] = $_POST['scroll_to'];
+    }
     
+    updateAboutUs($_POST['about_description']);
+    
+    // Redirect to prevent form resubmission
+    header("Location: /Gym_MembershipSE-XLB/admin/content_management");
+    exit();
+}
+
+// Fetch current About Us content for pre-filling form
+$aboutUsContent = getDynamicContent('about_us');
 }

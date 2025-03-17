@@ -7,13 +7,6 @@ require_once(__DIR__ . '/process_content.php');
 $welcomeContent = getDynamicContent('welcome');
 $contactContent = getDynamicContent('contact');
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Admin Dashboard</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
@@ -123,8 +116,6 @@ $contactContent = getDynamicContent('contact');
             text-decoration: none;
         }
     </style>
-</head>
-<body>
 
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -173,7 +164,7 @@ $contactContent = getDynamicContent('contact');
             <label>Selected Location:</label>
             <input type="text" id="displayLocation" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
 
-            <div id="mapModalTrigger" class="btn btn-primary">Select Location on Map</div>
+            <div id="mapModalTrigger" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#locationModal">Select Location on Map</div>
             <br>
             <input type="submit" name="update_contact" value="Update Contact Information">
         </form>
@@ -181,20 +172,27 @@ $contactContent = getDynamicContent('contact');
 </div>
 
 <!-- Modal for Map -->
-<div id="locationModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-    <div style="background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 800px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3>Select Location</h3>
-            <span id="closeModal" style="cursor: pointer; font-size: 28px;">&times;</span>
-        </div>
-        <div id="map" style="height: 400px; width: 100%; margin-bottom: 20px;"></div>
-        <div>
-            <input type="text" id="searchLocation" placeholder="Search for a location..." style="width: 70%; padding: 8px;">
-            <button id="searchButton" class="btn btn-primary">Search</button>
-        </div>
-        <div style="margin-top: 20px;">
-            <input id="selectedLocationName" type="text" placeholder="Location Name" style="width: 70%; padding: 8px; margin-right: 10px;">
-            <button id="confirmLocation" class="btn btn-success">Confirm Location</button>
+<div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalLabel">Select Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="map" style="height: 400px; width: 100%; margin-bottom: 20px;"></div>
+                <div>
+                    <input type="text" id="searchLocation" placeholder="Search for a location..." style="width: 70%; padding: 8px;">
+                    <button id="searchButton" class="btn btn-primary">Search</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <input id="selectedLocationName" type="text" placeholder="Location Name" style="width: 70%; padding: 8px; margin-right: 10px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="confirmLocation" class="btn btn-success">Confirm</button>
+            </div>
         </div>
     </div>
 </div>
@@ -235,29 +233,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Initialize modal controls
-    const modal = document.getElementById('locationModal');
-    const modalTrigger = document.getElementById('mapModalTrigger');
-    const closeModal = document.getElementById('closeModal');
+    // Modal handling with Bootstrap
+    const locationModal = new bootstrap.Modal(document.getElementById('locationModal'));
     
-    if (modalTrigger && modal && closeModal) {
-        modalTrigger.addEventListener('click', function() {
-            modal.style.display = 'block';
-            setTimeout(() => {
-                initMap();
-            }, 300);
-        });
-        
-        closeModal.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
-        
-        window.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    }
+    // Initialize map when modal is shown
+    document.getElementById('locationModal').addEventListener('shown.bs.modal', function () {
+        initMap();
+    });
     
     // Initialize map
     function initMap() {
@@ -310,25 +292,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-        
-        // Initialize confirm location button
-        const confirmButton = document.getElementById('confirmLocation');
-        confirmButton.addEventListener('click', function() {
-            const locationName = document.getElementById('selectedLocationName').value.trim();
-            
-            if (!locationName) {
-                alert('Please enter a name for this location.');
-                return;
-            }
-            
-            document.getElementById('locationLatitude').value = currentLatitude;
-            document.getElementById('locationLongitude').value = currentLongitude;
-            document.getElementById('locationName').value = locationName;
-            document.getElementById('displayLocation').value = locationName;
-            
-            modal.style.display = 'none';
-        });
     }
+    
+    // Confirm location button
+    document.getElementById('confirmLocation').addEventListener('click', function() {
+        const locationName = document.getElementById('selectedLocationName').value.trim();
+        
+        if (!locationName) {
+            alert('Please enter a name for this location.');
+            return;
+        }
+        
+        document.getElementById('locationLatitude').value = currentLatitude;
+        document.getElementById('locationLongitude').value = currentLongitude;
+        document.getElementById('locationName').value = locationName;
+        document.getElementById('displayLocation').value = locationName;
+        
+        // Hide modal using Bootstrap's method
+        locationModal.hide();
+    });
     
     function searchLocation(query) {
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
@@ -389,7 +371,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
 });
 </script>
-</body>
-</html>
