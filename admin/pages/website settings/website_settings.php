@@ -193,9 +193,6 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="container-fluid px-4 py-4">
 <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Website Settings</h2>
-        <div class="mt-2">
-        <a href="/Gym_MembershipSE-XLB/admin/content_management" class="btn btn-primary mb-3">Update website</a>
-        </div>
         </div>
 
 <!-- Welcome Section Update -->
@@ -343,3 +340,24 @@ $galleryImages = fetchExistingContent('gallery_images');
     </div>
 </div>
 </div>
+<script>
+$(document).ready(function() {
+// With ID selector (if you add id="update_website-link" to your button)
+$('#update_website-link').on('click', function(e) {
+  e.preventDefault();
+  
+  $.ajax({
+    type: "GET",
+    url: "pages/website settings/content_management.php",
+    dataType: "html",
+    success: function(response) {
+      $(".main-content").html(response);
+    },
+    error: function(xhr, status, error) {
+      console.log("Error details:", xhr, status, error);
+      alert("Error loading the content management page.");
+    }
+  });
+});
+});
+</script>

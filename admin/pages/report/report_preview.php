@@ -43,7 +43,9 @@ function getFilteredData($pdo, $start_date, $end_date) {
     $data = [];
     
     // Calculate total members within date range
-    $total_members_sql = "SELECT COUNT(DISTINCT id) as total FROM users WHERE created_at BETWEEN :start_date AND :end_date";
+    $total_members_sql = "SELECT COALESCE(COUNT(*), 0) AS total
+FROM memberships
+WHERE status IN ('active', 'expired', 'expiring') and created_at BETWEEN :start_date AND :end_date";
     $total_members_stmt = $pdo->prepare($total_members_sql);
     $total_members_stmt->bindParam(':start_date', $start_date);
     $total_members_stmt->bindParam(':end_date', $end_date);
@@ -54,7 +56,7 @@ function getFilteredData($pdo, $start_date, $end_date) {
     $total_revenue_sql = "
         SELECT 
             (SELECT COALESCE(SUM(amount), 0) FROM memberships WHERE created_at BETWEEN :start_date1 AND :end_date1) +
-            (SELECT COALESCE(SUM(amount), 0) FROM program_subscriptions WHERE created_at BETWEEN :start_date2 AND :end_date2) +
+            (SELECT COALESCE(SUM(amount), 0) FROM program_subscription_schedule WHERE created_at BETWEEN :start_date2 AND :end_date2) +
             (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions WHERE created_at BETWEEN :start_date3 AND :end_date3) as total_revenue";
     $total_revenue_stmt = $pdo->prepare($total_revenue_sql);
     $total_revenue_stmt->bindParam(':start_date1', $start_date);
@@ -140,7 +142,7 @@ function getFilteredData($pdo, $start_date, $end_date) {
         JOIN personal_details pd ON u.id = pd.user_id
         LEFT JOIN transactions t ON u.id = t.user_id
         LEFT JOIN memberships m ON t.id = m.transaction_id AND m.created_at BETWEEN :start_date1 AND :end_date1
-        LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id AND ps.created_at BETWEEN :start_date2 AND :end_date2
+        LEFT JOIN program_subscriptions ps ON t.id = ps.id AND ps.created_at BETWEEN :start_date2 AND :end_date2
         LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id AND rs.created_at BETWEEN :start_date3 AND :end_date3
         JOIN roles r ON u.role_id = r.id
         WHERE r.role_name = 'member'
@@ -163,7 +165,7 @@ function getFilteredData($pdo, $start_date, $end_date) {
             YEAR(created_at) as year,
             COUNT(*) as total_subscriptions,
             SUM(amount) as total_amount
-        FROM program_subscriptions
+        FROM program_subscription_schedule
         WHERE created_at BETWEEN :start_date AND :end_date
         GROUP BY month, year
         ORDER BY year, month";

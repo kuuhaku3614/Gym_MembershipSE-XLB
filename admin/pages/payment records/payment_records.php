@@ -59,7 +59,7 @@ LEFT JOIN memberships m ON t.id = m.transaction_id AND m.is_paid = 1
 LEFT JOIN membership_plans mp ON m.membership_plan_id = mp.id
 LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id AND rs.is_paid = 1
 LEFT JOIN rental_services r ON rs.rental_service_id = r.id
-LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id AND ps.is_paid = 1
+LEFT JOIN program_subscription_schedule ps ON t.id = ps.transaction_id AND ps.is_paid = 1
 LEFT JOIN programs p ON ps.program_id = p.id
 LEFT JOIN walk_in_records w ON t.id = w.transaction_id AND w.is_paid = 1
 LEFT JOIN registration_records rr ON t.id = rr.transaction_id

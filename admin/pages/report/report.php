@@ -4,7 +4,10 @@ $database = new Database();
 $pdo = $database->connect();
 
 // Calculate total members (using COUNT of users)
-$total_members_sql = "SELECT COUNT(DISTINCT id) as total FROM users";
+$total_members_sql = "SELECT COALESCE(COUNT(*), 0) AS total
+FROM memberships
+WHERE status IN ('active', 'expired', 'expiring');
+";
 $total_members_stmt = $pdo->prepare($total_members_sql);
 $total_members_stmt->execute();
 $total_members = $total_members_stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -13,7 +16,7 @@ $total_members = $total_members_stmt->fetch(PDO::FETCH_ASSOC)['total'];
 $total_revenue_sql = "
     SELECT 
         (SELECT COALESCE(SUM(amount), 0) FROM memberships) +
-        (SELECT COALESCE(SUM(amount), 0) FROM program_subscriptions) +
+        (SELECT COALESCE(SUM(amount), 0) FROM program_subscription_schedule) +
         (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions) as total_revenue";
 $total_revenue_stmt = $pdo->prepare($total_revenue_sql);
 $total_revenue_stmt->execute();
@@ -84,7 +87,7 @@ $utilization_sql = "
     JOIN personal_details pd ON u.id = pd.user_id
     LEFT JOIN transactions t ON u.id = t.user_id
     LEFT JOIN memberships m ON t.id = m.transaction_id
-    LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
+    LEFT JOIN program_subscriptions ps ON t.id = ps.id
     LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
     JOIN roles r ON u.role_id = r.id
     WHERE r.role_name = 'member'
@@ -101,7 +104,7 @@ $programs_sql = "
         YEAR(created_at) as year,
         COUNT(*) as total_subscriptions,
         SUM(amount) as total_amount
-    FROM program_subscriptions
+    FROM program_subscription_schedule
     GROUP BY month, year
     ORDER BY year, month";
 $programs_stmt = $pdo->prepare($programs_sql);
