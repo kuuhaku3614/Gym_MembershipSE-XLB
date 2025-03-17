@@ -260,6 +260,35 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
   <link rel="stylesheet" href="<?php echo $basePath; ?>css/landing1.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    .cart-btn {
+        position: relative;
+    }
+    
+    .cart-count {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #ff0000;
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        min-width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        font-weight: bold;
+    }
+    
+    /* Hide the count when it's zero */
+    .cart-count.empty {
+        display: none;
+    }
+</style>
+
 </head>
 <body>
 
@@ -300,6 +329,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             ?>
                 <button class="cart-btn" id="showCartBtn" aria-label="Open Shopping Cart" title="Open Shopping Cart">
                     <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                    <span class="cart-count" id="cartCount">0</span>
                 </button>
             <?php endif; ?>
             
@@ -399,6 +429,13 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 </div>
 
 <script>
+    // Update cart count on page load
+    document.addEventListener("DOMContentLoaded", function() {
+        let cartCount = localStorage.getItem("cartTotal") || 0;
+        document.getElementById("cartCount").textContent = cartCount;
+    });
+
+
     document.addEventListener('DOMContentLoaded', function() {
   const hamburger = document.querySelector('.hamburger-menu');
   const navLinks = document.querySelector('.nav-links');

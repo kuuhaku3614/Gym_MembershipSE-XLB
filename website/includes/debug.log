@@ -319,37 +319,3 @@
     [username] => Jerd1234
 )
 
-2025-03-15 11:28:26 - Request received
-2025-03-15 11:28:26 - POST data: Array
-(
-    [action] => update_photo
-)
-
-2025-03-16 11:43:25 - Request received
-2025-03-16 11:43:25 - POST data: Array
-(
-    [action] => check_username
-    [username] => Gerby123w
-)
-
-2025-03-16 11:43:25 - Request received
-2025-03-16 11:43:25 - POST data: Array
-(
-    [action] => check_username
-    [username] => Gerby123ww
-)
-
-2025-03-16 11:43:27 - Request received
-2025-03-16 11:43:27 - POST data: Array
-(
-    [action] => check_username
-    [username] => Gerby123w
-)
-
-2025-03-16 11:43:27 - Request received
-2025-03-16 11:43:27 - POST data: Array
-(
-    [action] => check_username
-    [username] => Gerby123
-)
-

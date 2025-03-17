@@ -112,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 ?>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -132,12 +133,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     .card-body {
         /* border: 2px solid #ff0000; */
     }
+@media screen and (max-width: 480px) {
+    /* 1. Hide the services-header */
+    .services-header {
+        display: none !important;
+    }
+    
+    /* 2. Make the content fill the entire screen and scale properly */
+    body, html {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+    
+    .avail-membership-page {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .container-fluid {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        background-color: #f5f5f5;
+    }
+    
+    .main-container {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .col-12 {
+        padding: 10px;
+        margin-top: 0px!important;
+        margin-bottom: 0px!important;
+    }
+    
+
+    .card-body{
+        height: 100%;
+    }
+    
+    .scrollable-section {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+    }
+    
+    /* .btn-lg {
+        padding: 5px;
+        font-size: 0.875rem;
+    } */
+    
+    .row {
+        margin: 0;
+        height: 100%;
+    }
+/*     
+    .form-control-lg {
+        font-size: 0.875rem;
+    } */
+    .d-grid{
+        display: flex!important;
+        flex-direction: row!important;
+        flex-wrap: nowrap;
+    }
+    .h5{
+        font-size: 1.5rem!important;
+        margin-bottom: 5px!important;
+    }
+}
 </style>
 
 <div class="avail-rental-page">
     <div class="container-fluid p-0">
         <!-- Header -->
-        <div class="bg-custom-red text-white p-3 d-flex align-items-center">
+        <div class="bg-custom-red text-white p-3 d-flex align-items-center services-header">
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
@@ -249,10 +324,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <script>
 function validateForm() {
     const startDate = document.getElementById('start_date').value;
-    if (!startDate) {
-        alert('Please select a start date.');
-        return false;
-    }
+   
     
     // Update hidden fields before submission
     document.getElementById('hidden_start_date').value = startDate;
