@@ -321,7 +321,7 @@ function generateProgramCard($program) {
             line-height: 1.6;
         }
 
-        #review-total-amount {
+        .review-total-amount {
             font-size: 1.5em;
             color: #2c3e50;
         }
@@ -574,8 +574,8 @@ function generateProgramCard($program) {
                                     <p><strong>Duration:</strong> <span id="review-duration"></span></p>
                                     <p><strong>Start Date:</strong> <span id="review-start-date"></span></p>
                                     <p><strong>End Date:</strong> <span id="review-end-date"></span></p>
-                                    <p><strong>Price:</strong><span id="review-price">0.00</span></p>
-                                    <p><strong>Registration Fee:</strong><span id="review-registration-fee">0.00</span></p>
+                                    <p><strong>Price:</strong><span class="review-price">0.00</span></p>
+                                    <p><strong>Registration Fee:</strong><span class="review-registration-fee">0.00</span></p>
                                 </div>
                             </div>
                             
@@ -583,7 +583,7 @@ function generateProgramCard($program) {
                                 <h5>Selected Programs</h5>
                                 <div id="review-programs" class="review-programs">
                                     <div id="review-programs-list"></div>
-                                    <p class="mt-2"><strong>Total Programs Fee:</strong> ₱<span id="review-programs-fee">0.00</span></p>
+                                    <p class="mt-2"><strong>Total Programs Fee:</strong><span class="review-programs-fee">0.00</span></p>
                                 </div>
                             </div>
                             
@@ -591,18 +591,18 @@ function generateProgramCard($program) {
                                 <h5>Rental Services</h5>
                                 <div id="review-rentals" class="review-rentals">
                                     <div id="review-rentals-list"></div>
-                                    <p class="mt-2"><strong>Total Rentals Fee:</strong> ₱<span id="review-rentals-fee">0.00</span></p>
+                                    <p class="mt-2"><strong>Total Rentals Fee:</strong><span class="review-rentals-fee">0.00</span></p>
                                 </div>
                             </div>
 
                             <div class="review-section">
                                 <h5>Total Amount</h5>
                                 <div class="review-info">
-                                    <p><strong>Registration Fee:</strong><span id="review-registration-fee">0.00</span></p>
-                                    <p><strong>Plan Amount:</strong><span id="review-price">0.00</span></p>
-                                    <p><strong>Programs Fee:</strong><span id="review-programs-fee">0.00</span></p>
-                                    <p><strong>Rentals Fee:</strong><span id="review-rentals-fee">0.00</span></p>
-                                    <h4 class="mt-3"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
+                                    <p><strong>Registration Fee:</strong><span class="review-registration-fee">0.00</span></p>
+                                    <p><strong>Plan Amount:</strong><span class="review-price">0.00</span></p>
+                                    <p><strong>Programs Fee:</strong><span class="review-programs-fee">0.00</span></p>
+                                    <p><strong>Rentals Fee:</strong><span class="review-rentals-fee">0.00</span></p>
+                                    <h4 class="mt-3"><strong>Total:</strong><span class="totalAmount">0.00</span></h4>
                                 </div>
                             </div>
                             
@@ -664,7 +664,7 @@ function generateProgramCard($program) {
             <div class="summary-row mt-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Total Amount:</h5>
-                    <h5 class="mb-0">₱<span class="total-amount">0.00</span></h5>
+                    <h5 class="mb-0"><span class="totalAmount">0.00</span></h5>
                 </div>
             </div>
         </div>
@@ -709,12 +709,7 @@ function generateProgramCard($program) {
                 });
 
                 // Update membership summary total
-                $('#totalAmount').text('₱' + total.toFixed(2));
-
-                // Update review section total if visible
-                if ($('#phase4').is(':visible')) {
-                    $('#review-total-amount').text('₱' + total.toFixed(2));
-                }
+                $('.totalAmount').text(' ₱ ' + total.toFixed(2));
 
                 totalAmount = total;
             }
@@ -1116,7 +1111,7 @@ function generateProgramCard($program) {
                     $('#review-duration').text(duration + ' ' + durationType);
                     $('#review-start-date').text(startDate);
                     $('#review-end-date').text(endDate);
-                    $('#review-price').text('₱ ' + price.toFixed(2));
+                    $('.review-price').text('₱ ' + price.toFixed(2));
                     $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
                 } else {
                     $('#review-membership').hide();
@@ -1141,7 +1136,7 @@ function generateProgramCard($program) {
                     $('#review-programs-list').append(programHtml);
                     totalProgramsFee += parseFloat(program.price) || 0;
                 });
-                $('#review-programs-fee').text(totalProgramsFee.toFixed(2));
+                $('.review-programs-fee').text(' ₱ ' + totalProgramsFee.toFixed(2));
                 $('#review-programs').toggle(selectedPrograms.length > 0);
 
                 // Rental Services Review
@@ -1170,11 +1165,11 @@ function generateProgramCard($program) {
                     $('#review-rentals-list').append(rentalHtml);
                     totalRentalsFee += rental.price;
                 });
-                $('#review-rentals-fee').text(totalRentalsFee.toFixed(2));
+                $('.review-rentals-fee').text(' ₱ ' + totalRentalsFee.toFixed(2));
                 $('#review-rentals').toggle($('input[name="rental_services[]"]:checked').length > 0);
 
                 // Update registration fee and total
-                $('#review-registration-fee').text('₱ ' + registrationFee.toFixed(2));
+                $('.review-registration-fee').text('₱ ' + registrationFee.toFixed(2));
                 updateTotalAmount();
             }
 
@@ -1364,7 +1359,7 @@ function generateProgramCard($program) {
                     $('#review-duration').text(duration + ' ' + durationType);
                     $('#review-start-date').text(startDate);
                     $('#review-end-date').text(endDate);
-                    $('#review-price').text('₱ ' + price.toFixed(2));
+                    $('.review-price').text('₱ ' + price.toFixed(2));
                     $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
                 } else {
                     $('.summary-row[data-type="membership"]').hide();
