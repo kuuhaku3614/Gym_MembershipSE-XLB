@@ -329,7 +329,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
             ?>
                 <button class="cart-btn" id="showCartBtn" aria-label="Open Shopping Cart" title="Open Shopping Cart">
                     <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-                    <span class="cart-count" id="cartCount">0</span>
+                    <!-- <span class="cart-count" id="cartCount">0</span> -->
                 </button>
             <?php endif; ?>
             

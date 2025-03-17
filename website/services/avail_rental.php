@@ -98,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ];
             
             if($Cart->addRental($item)) {
+                $_SESSION['success_message'] = "Successfully added item to the list!";
                 header('location: ../services.php');
                 exit;
             } else {

@@ -415,6 +415,32 @@
 </div>
 </section>
 
+<?php if (isset($_SESSION['success_message'])): ?>
+    <div id="successToast" class="toast position-fixed top-50 start-50 translate-middle p-3" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 1050; width: 400px; font-size: 1.2rem;">
+        <div class="toast-header" style="background-color: transparent; font-size: 1.5rem;">
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" style="text-align: center;">
+            <?= $_SESSION['success_message']; ?>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let toastEl = document.getElementById('successToast');
+            let toast = new bootstrap.Toast(toastEl);
+            toast.show();
+
+            // Remove session message after displaying
+            setTimeout(() => { 
+                fetch('clear_session.php'); 
+            }, 3500);
+        });
+    </script>
+
+    <?php unset($_SESSION['success_message']); ?>
+<?php endif; ?>
 
 <!-- Cart Overlay -->
 <div class="cart-overlay" id="cartOverlay"></div>

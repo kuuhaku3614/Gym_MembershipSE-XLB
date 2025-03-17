@@ -153,7 +153,7 @@ require_once('includes/header.php');
 
     <div class="offers-text">
         <h1 class="title">Gym Offers</h1>
-        <p class="text-secondary subtext"><?php 
+        <p class="subtext"><?php 
             echo htmlspecialchars($offersContent['description'] ?? 'Offers description goes here.'); 
         ?></p>
   
@@ -230,7 +230,7 @@ require_once('includes/header.php');
     </div>
     <div class="products-text">
         <h1 class="title">Products you may like</h1>
-        <p class="text-secondary subtext">Check out our latest fitness products!</p>
+        <p class="subtext">Check out our latest fitness products!</p>
     </div>
     <div class="product-container">
         <?php foreach ($products as $product): ?>
@@ -295,7 +295,7 @@ require_once('includes/header.php');
     
         <h1 class="title">About Us</h1>
         <div class="aboutUs-content">
-        <p class="text-secondary subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
+        <p class="subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
         <div class="joinNow-container">
             <?php if (!$isLoggedIn): ?>
             <a href="../register/register.php" style="text-decoration: none;">
