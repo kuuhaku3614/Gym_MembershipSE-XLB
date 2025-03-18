@@ -101,6 +101,11 @@ $membersList = $members->getAllMembers();
                           <i class="fas fa-money-bill"></i> Pay
                         </button>
                       <?php endif; ?>
+
+                      <a href="#" class="btn btn-warning btn-sm renew_member-link" data-member-id="<?php echo (int)$member['user_id']; ?>">
+                        <i class="fas fa-sync"></i> Renew
+                      </a>
+                      
                     </div>
                   </td>
                 </tr>
@@ -691,6 +696,59 @@ $(document).ready(function() {
       },
       error: function() {
         alert("Error loading the add member form.");
+        // Show navigation elements back with transition
+        $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+          'display': '',
+          'opacity': '0',
+          'transform': 'translateX(-20px)'
+        });
+        setTimeout(function() {
+          $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+            'opacity': '1',
+            'transform': 'translateX(0)'
+          });
+          $('.main-content').css('margin-left', '');
+        }, 50);
+      }
+    });
+  });
+});
+
+$(document).ready(function() {
+  // Event delegation for renew member links
+  $(document).on('click', '.renew_member-link', function(e) {
+    e.preventDefault();
+    
+    const memberId = $(this).data('member-id');
+    console.log('Renewing member with ID:', memberId);
+    
+    // First adjust the opacity with transition
+    $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+      'opacity': '0',
+      'transform': 'translateX(-20px)'
+    });
+    
+    // Adjust main content with transition
+    $('.main-content').css('margin-left', '0');
+    
+    // After the transition, hide the elements completely
+    setTimeout(function() {
+      $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
+        'display': 'none',
+        'transform': 'translateX(0)'
+      });
+    }, 300);
+    
+    $.ajax({
+      type: "GET",
+      url: "pages/members/renew_member.php",
+      data: { member_id: memberId },
+      dataType: "html",
+      success: function(response) {
+        $(".main-content").html(response);
+      },
+      error: function() {
+        alert("Error loading the renew member form.");
         // Show navigation elements back with transition
         $('.sidebar, .burger-menu, .sidebar-overlay, #sidebar, #burgerMenu, #sidebarOverlay').css({
           'display': '',

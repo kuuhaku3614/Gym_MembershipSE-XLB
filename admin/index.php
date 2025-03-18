@@ -19,8 +19,8 @@ if ($page === 'members') {
 }
 
 // Define role-based page access
-$adminPages = ['dashboard', 'members', 'members_new', 'add_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'accounts', 'announcement', 'website_settings', 'content_management', 'report', 'staff_management', 'activity_logs'];
-$staffPages = ['dashboard', 'members', 'members_new', 'add_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'accounts', 'announcement', 'website_settings', 'content_management', 'report', 'activity_logs'];
+$adminPages = ['dashboard', 'members', 'members_new', 'add_member', 'renew_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'accounts', 'announcement', 'website_settings', 'content_management', 'report', 'staff_management', 'activity_logs'];
+$staffPages = ['dashboard', 'members', 'members_new', 'add_member', 'renew_member', 'attendance', 'member_status', 'walk_in', 'gym_rates', 'programs', 'rentals', 'payment_records', 'notification', 'accounts', 'announcement', 'website_settings', 'content_management', 'report', 'activity_logs'];
 
 // Check if the user is authorized for the requested page
 if (

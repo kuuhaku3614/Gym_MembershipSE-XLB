@@ -1,5 +1,5 @@
 <?php
-require_once(__DIR__ . '/../../../../config.php');
+require_once('config.php');
 
 class MemberRegistration {
     private $pdo;
@@ -335,13 +335,12 @@ class MemberRegistration {
                         
                         foreach ($selectedPrograms as $program) {
                             // Insert program subscription
-                            $sql = "INSERT INTO program_subscriptions (user_id, coach_program_type_id, status, transaction_id) 
-                                    VALUES (:user_id, :program_id, 'pending', :transaction_id)";
+                            $sql = "INSERT INTO program_subscriptions (user_id, coach_program_type_id, status) 
+                                    VALUES (:user_id, :program_id, 'pending')";
                             $stmt = $this->pdo->prepare($sql);
                             $result = $stmt->execute([
                                 ':user_id' => $userId,
-                                ':program_id' => $program['coach_program_type_id'],
-                                ':transaction_id' => $transactionId
+                                ':program_id' => $program['coach_program_type_id']
                             ]);
                             if (!$result) {
                                 error_log("ERROR: Failed to create program subscription. PDO Error: " . print_r($stmt->errorInfo(), true));

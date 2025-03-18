@@ -48,6 +48,7 @@ $(document).ready(function () {
       loadContent("pages/members/attendance_history.php"),
     "member_status-link": () => loadContent("pages/members/members_status.php"),
     "add_member-link": () => loadContent("pages/members/add_member.php"),
+    "renew_member-link": () => loadContent("pages/members/renew_member.php"),
 
     // Sub nav items for Gym Rates
     "programs-link": () => loadContent("pages/gym rates/programs.php"),
@@ -88,6 +89,7 @@ $(document).ready(function () {
     dashboard: "dashboard-link",
     members_new: "members-link", // Only support members_new
     add_member: "add_member-link",
+    renew_member: "renew_member-link",
     attendance: "attendance-link",
     attendance_history: "attendance_history-link",
     member_status: "member_status-link",
