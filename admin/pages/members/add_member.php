@@ -173,6 +173,7 @@ function generateProgramCard($program) {
             right: 0;
             background: #fff;
             padding: 15px;
+            padding-bottom: 70px;
             border-top: 1px solid #ddd;
             height: 200px;
             overflow-y: auto;
@@ -689,11 +690,11 @@ function generateProgramCard($program) {
                             <div class="review-section">
                                 <h5>Total Amount</h5>
                                 <div class="review-info">
-                                    <p><strong>Registration Fee:</strong><span class="review-registration-fee">0.00</span></p>
+                                    <p><strong>Registration Fee:</strong><span class="review-registration-fee">₱500.00</span></p>
                                     <p><strong>Plan Amount:</strong><span class="review-price">0.00</span></p>
                                     <p><strong>Programs Fee:</strong><span class="review-programs-fee">0.00</span></p>
                                     <p><strong>Rentals Fee:</strong><span class="review-rentals-fee">0.00</span></p>
-                                    <h4 class="mt-3"><strong>Total:</strong><span class="totalAmount">0.00</span></h4>
+                                    <h4 class="mt-3"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
                                 </div>
                             </div>
                             
@@ -728,6 +729,13 @@ function generateProgramCard($program) {
     <!-- Membership Summary Section -->
     <div class="membership-summary">
         <div class="container">
+
+            <div class="summary-row" data-type="registration">
+                <div class="details">
+                    <p><strong>Registration Fee:</strong> ₱<?= $memberRegistration->getRegistrationFee() ?></p>
+                </div>
+            </div>
+
             <!-- Selected Plan -->
             <div class="summary-row" data-type="membership" style="display: none;">
                 <h5>Membership Plan</h5>
@@ -776,6 +784,7 @@ function generateProgramCard($program) {
             const registrationFee = parseFloat('<?= $memberRegistration->getRegistrationFee() ?>');
             let selectedPrograms = [];
             let totalAmount = registrationFee;
+            let totalProgramsFee = 0;
 
             // Calculate and update all totals
             function updateTotalAmount() {
@@ -788,19 +797,16 @@ function generateProgramCard($program) {
                     total += parseFloat(selectedPlan.data('price')) || 0;
                 }
 
-                // Add program costs
-                selectedPrograms.forEach(program => {
-                    total += parseFloat(program.price) || 0;
-                });
-
-                // Add rental costs
+                // Add program and rental costs
+                total += totalProgramsFee;
                 $('.rental-service-checkbox:checked').each(function() {
                     total += parseFloat($(this).data('price')) || 0;
                 });
 
-                // Update membership summary total
-                $('.totalAmount').text(' ₱ ' + total.toFixed(2));
-
+                // Update totals in both summary and review
+                $('.totalAmount').text('₱' + total.toFixed(2));
+                $('#review-total-amount').text('₱' + total.toFixed(2));
+                $('.review-programs-fee').text('₱' + totalProgramsFee.toFixed(2));
                 totalAmount = total;
             }
 
@@ -1225,10 +1231,20 @@ function generateProgramCard($program) {
                 }
             });
 
+            // Helper function to format date nicely
+            function formatDate(dateStr) {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric'
+                });
+            }
+
             // Function to update programs summary
             function updateProgramsSummary() {
                 const programsContainer = $('#selectedProgramsContainer');
                 let html = '';
+                totalProgramsFee = 0; // Reset total
 
                 selectedPrograms.forEach((program, index) => {
                     // Skip invalid program data
@@ -1237,6 +1253,21 @@ function generateProgramCard($program) {
                         !program.price || isNaN(program.price)) {
                         return;
                     }
+
+                    const schedules = generateProgramDates(
+                        $('#membership_start_date').val(),
+                        calculateEndDate(
+                            $('#membership_start_date').val(),
+                            $('input[name="membership_plan"]:checked').data('duration'),
+                            $('input[name="membership_plan"]:checked').data('duration-type')
+                        ),
+                        program.day,
+                        program.startTime,
+                        program.endTime,
+                        program.price
+                    );
+
+                    totalProgramsFee += program.price * schedules.length;
 
                     html += `
                         <div class="summary-row" data-index="${index}">
@@ -1250,7 +1281,7 @@ function generateProgramCard($program) {
                                 <p class="mb-1"><strong>Type:</strong> ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program</p>
                                 <p class="mb-1"><strong>Coach:</strong> ${program.coach}</p>
                                 <p class="mb-1"><strong>Schedule:</strong> ${program.day}, ${program.startTime} - ${program.endTime}</p>
-                                <p class="mb-1"><strong>Price:</strong> ₱${parseFloat(program.price).toFixed(2)}</p>
+                                <p class="mb-1"><strong>Price:</strong> ₱${program.price} × ${schedules.length} = ₱${(program.price * schedules.length).toFixed(2)}</p>
                             </div>
                         </div>
                     `;
@@ -1319,6 +1350,19 @@ function generateProgramCard($program) {
                         return;
                     }
 
+                    const schedules = generateProgramDates(
+                        $('#membership_start_date').val(),
+                        calculateEndDate(
+                            $('#membership_start_date').val(),
+                            selectedPlan.data('duration'),
+                            selectedPlan.data('duration-type')
+                        ),
+                        program.day,
+                        program.startTime,
+                        program.endTime,
+                        program.price
+                    );
+
                     reviewHtml += `
                         <div class="program-item">
                             <div class="program-title">${program.program}</div>
@@ -1326,12 +1370,13 @@ function generateProgramCard($program) {
                                 Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
                                 Coach: ${program.coach}<br>
                                 Schedule: Every ${program.day}, ${program.startTime} - ${program.endTime}<br>
-                                Price: ₱${parseFloat(program.price).toFixed(2)}
+                                Dates: ${schedules.map(s => formatDate(s.date)).join(', ')}<br>
+                                Price: ₱${parseFloat(program.price).toFixed(2)} × ${schedules.length} = ₱${(program.price * schedules.length).toFixed(2)}
                             </div>
                         </div>
                     `;
                     
-                    totalProgramsFee += parseFloat(program.price);
+                    totalProgramsFee += program.price * schedules.length;
                 });
 
                 reviewProgramsContainer.html(reviewHtml || '<p class="text-muted">No programs selected</p>');
@@ -1427,16 +1472,38 @@ function generateProgramCard($program) {
                 const formData = new FormData(this);
                 formData.append('action', 'add_member');
 
-                // Add selected programs
-                formData.append('selected_programs', JSON.stringify(selectedPrograms.map(program => ({
-                    id: program.id,
-                    type: program.type,
-                    coach_program_type_id: program.coach_program_type_id,
-                    day: program.day,
-                    startTime: program.startTime,
-                    endTime: program.endTime,
-                    price: program.price
-                }))));
+                // Get membership dates
+                const membershipStartDate = $('#membership_start_date').val();
+                const selectedPlan = $('input[name="membership_plan"]:checked');
+                const duration = selectedPlan.data('duration');
+                const durationType = selectedPlan.data('duration-type');
+                
+                // Calculate end date
+                const membershipEndDate = calculateEndDate(membershipStartDate, duration, durationType);
+
+                // Generate program schedules
+                const programsWithSchedules = selectedPrograms.map(program => {
+                    // Get all dates between start and end date for this program's day
+                    const schedules = generateProgramDates(
+                        membershipStartDate,
+                        membershipEndDate,
+                        program.day,
+                        program.startTime,
+                        program.endTime,
+                        program.price
+                    );
+
+                    return {
+                        id: program.id,
+                        type: program.type,
+                        coach_program_type_id: program.coach_program_type_id,
+                        schedules: schedules
+                    };
+                });
+
+                formData.append('selected_programs', JSON.stringify(programsWithSchedules));
+                formData.append('membership_start_date', membershipStartDate);
+                formData.append('membership_end_date', membershipEndDate);
 
                 // Log form data for debugging
                 console.log('=== FORM SUBMISSION DEBUG ===');
@@ -1480,6 +1547,42 @@ function generateProgramCard($program) {
                     }
                 });
             });
+
+            // Function to generate program dates
+            function generateProgramDates(startDate, endDate, dayOfWeek, startTime, endTime, price) {
+                const schedules = [];
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                
+                // Map day names to numbers (0 = Sunday, 6 = Saturday)
+                const dayMap = {
+                    'Sunday': 0,
+                    'Monday': 1,
+                    'Tuesday': 2,
+                    'Wednesday': 3,
+                    'Thursday': 4,
+                    'Friday': 5,
+                    'Saturday': 6
+                };
+                
+                const targetDay = dayMap[dayOfWeek];
+                
+                // Iterate through each day in the date range
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    // Check if current day matches the target day of week
+                    if (d.getDay() === targetDay) {
+                        schedules.push({
+                            date: d.toISOString().split('T')[0],
+                            day: dayOfWeek,
+                            start_time: startTime,
+                            end_time: endTime,
+                            amount: price
+                        });
+                    }
+                }
+                
+                return schedules;
+            }
 
             // Function to generate random numbers of specified length
             function generateRandomNumbers(length) {
