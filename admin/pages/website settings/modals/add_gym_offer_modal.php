@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_gym_offer'])) {
                     <input type="hidden" name="add_gym_offer" value="1">
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Add Offer</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
                     </div>
                 </form>
             </div>

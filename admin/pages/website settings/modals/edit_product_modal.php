@@ -178,7 +178,7 @@ if (!$product) {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="saveProductChanges">Save Changes</button>
+                <button type="button" class="btn btn-primary" id="saveProductChanges">Save</button>
             </div>
         </div>
     </div>

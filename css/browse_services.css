@@ -26,7 +26,7 @@
 }
 .services-header {
   height: 60vh;
-  background-image: url(services-header.jpeg);
+  background-image: url(services-header.webp);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -114,11 +114,11 @@
 .button-shortcuts button {
   font-size: 1.2rem;
   width: 100%;
-  background: var( --secondary-color);
+  background: var(--secondary-color);
 }
 
 .button-shortcuts button:hover {
-  background: var( --secondary-color);
+  background: var(--secondary-color);
 }
 
 .services-page .container-fluid {

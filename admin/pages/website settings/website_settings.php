@@ -169,23 +169,42 @@ $galleryImages = fetchExistingContent('gallery_images');
         opacity: 0.9;
     }
     /* CSS */
-.btn {
-  color: white; /* Set the text color */
-  border: none; /* Remove border */
-  padding: 10px 20px; /* Add padding */
-  text-align: center; /* Center text */
-  text-decoration: none; /* Remove text decoration */
-  display: inline-block; /* Keep the element inline-block */
-  font-size: 16px; /* Set font size */
-  cursor: pointer; /* Change cursor to pointer */
-  background-color: #4CAF50; /* Green background */
-  border-radius: 4px; /* Rounded corners */
-  margin-top: 10px; /* Add some spacing */
+.update-logo-btn, .update-color-palette-btn, .update-welcome-btn, .update-offers-btn, .update-gym-offers-btn, 
+.update-about-us-btn, .update-contact-btn, .update-products-btn, .update-staff-btn, .update-gallery-btn,
+.update-staff-member-btn, .update-product-btn, .update-offer-btn {
+    color: white; /* Set the text color */
+    border: none; /* Remove border */
+    padding: 10px 20px; /* Add padding */
+    text-align: center; /* Center text */
+    text-decoration: none; /* Remove text decoration */
+    display: inline-block; /* Keep the element inline-block */
+    font-size: 16px; /* Set font size */
+    background-color: #4CAF50; /* Green background */
+    border-radius: 4px; /* Rounded corners */
+    margin-top: 10px; /* Add some spacing */
 }
 
-.btn:hover {
-  background-color: #45a049; /* Darker green on hover */
+.update-logo-btn:hover, 
+.update-color-palette-btn:hover, 
+.update-welcome-btn:hover, 
+.update-offers-btn:hover, 
+.update-gym-offers-btn:hover, 
+.update-about-us-btn:hover, 
+.update-contact-btn:hover, 
+.update-products-btn:hover, 
+.update-staff-btn:hover, 
+.update-gallery-btn:hover,
+.update-staff-member-btn:hover,
+.update-product-btn:hover,
+.update-offer-btn:hover {
+    background-color: #45a049; /* Slightly darker green */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
+
+/* .btn:hover {
+color: #f8f8f8;
+} */
 
 .button-link {
   color: white; /* Set link color */
@@ -248,7 +267,24 @@ $galleryImages = fetchExistingContent('gallery_images');
 
 .card-buttons .btn {
   flex: 1;
+ }/*
+.btn .btn-secondary {
+  background-color: #6e6e6e!important;
+  color: white;
 }
+.btn .btn-secondary:hover {
+  background-color: #616161!important;
+  color: white;
+}
+.btn .btn-primary {
+  background-color: #4361ee!important;
+  color: white;
+}
+.btn .btn-primary:hover {
+  background-color: rgb(39, 75, 238)!important;
+  color: white;
+} */
+
 
 </style>
 <div class="container-fluid px-4 py-4">
