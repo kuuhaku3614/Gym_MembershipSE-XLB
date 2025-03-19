@@ -359,26 +359,30 @@ class MemberRegistration {
                             $subscriptionId = $this->pdo->lastInsertId();
                             error_log("Program subscription created with ID: " . $subscriptionId);
                             
-                            // Insert schedule
-                            $sql = "INSERT INTO program_subscription_schedule 
-                                    (program_subscription_id, coach_group_schedule_id, coach_personal_schedule_id, date, day, start_time, end_time, amount, is_paid) 
-                                    VALUES (:sub_id, :group_id, :personal_id, :date, :day, :start_time, :end_time, :amount, 0)";
-                            $stmt = $this->pdo->prepare($sql);
-                            $result = $stmt->execute([
-                                ':sub_id' => $subscriptionId,
-                                ':group_id' => $program['type'] === 'group' ? $program['id'] : null,
-                                ':personal_id' => $program['type'] === 'personal' ? $program['id'] : null,
-                                ':date' => date('Y-m-d'),
-                                ':day' => $program['day'],
-                                ':start_time' => $program['startTime'],
-                                ':end_time' => $program['endTime'],
-                                ':amount' => $program['price']
-                            ]);
-                            if (!$result) {
-                                error_log("ERROR: Failed to create program schedule. PDO Error: " . print_r($stmt->errorInfo(), true));
-                                throw new Exception("Failed to process program schedule");
+                            // Insert each schedule date
+                            foreach ($program['schedules'] as $schedule) {
+                                $sql = "INSERT INTO program_subscription_schedule 
+                                        (program_subscription_id, coach_group_schedule_id, coach_personal_schedule_id, 
+                                        date, day, start_time, end_time, amount, is_paid) 
+                                        VALUES (:sub_id, :group_id, :personal_id, :date, :day, 
+                                        :start_time, :end_time, :amount, 0)";
+                                $stmt = $this->pdo->prepare($sql);
+                                $result = $stmt->execute([
+                                    ':sub_id' => $subscriptionId,
+                                    ':group_id' => $program['type'] === 'group' ? $program['id'] : null,
+                                    ':personal_id' => $program['type'] === 'personal' ? $program['id'] : null,
+                                    ':date' => $schedule['date'],
+                                    ':day' => $schedule['day'],
+                                    ':start_time' => $schedule['start_time'],
+                                    ':end_time' => $schedule['end_time'],
+                                    ':amount' => $schedule['amount']
+                                ]);
+                                if (!$result) {
+                                    error_log("ERROR: Failed to create program schedule. PDO Error: " . print_r($stmt->errorInfo(), true));
+                                    throw new Exception("Failed to process program schedule");
+                                }
                             }
-                            error_log("Program schedule created successfully");
+                            error_log("Program schedules created successfully");
                         }
                     } catch (PDOException $e) {
                         error_log("PDO ERROR in program subscriptions: " . $e->getMessage());
