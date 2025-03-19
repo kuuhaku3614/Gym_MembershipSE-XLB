@@ -87,6 +87,27 @@ try {
 }
     exit;
 }
+// Centralized function for querying the database
+function executeQuery($query, $params = []) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Database query error: ' . $e->getMessage());
+        return [];
+    }
+}
+$color = executeQuery("SELECT * FROM website_content WHERE section = 'color'")[0] ?? [];
+function decimalToHex($decimal) {
+    $hex = dechex(abs(floor($decimal * 16777215)));
+    // Ensure hex values are properly formatted with leading zeros
+    return '#' . str_pad($hex, 6, '0', STR_PAD_LEFT);
+}
+
+$primaryHex = isset($color['latitude']) ? decimalToHex($color['latitude']) : '#000000';
+$secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) : '#000000';
 ?>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -94,19 +115,21 @@ try {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <link rel="stylesheet" href="service.css">
 <style>
+    :root {
+        --primary-color: <?= $primaryHex ?>;
+        --secondary-color: <?= $secondaryHex ?>;
+    }
     .bg-custom-red {
-        background-color: #ff0000;
+        background-color: var(--primary-color) !important;
     }
     .card-header, .btn-custom-red {
         background-color: #ff0000;
         color: white;
     }
     .card-header {
-        background-color: #ff0000;
-        border-bottom: 2px solid #ff0000;
+        background-color: var(--primary-color);
         padding: 1rem;
     }
-
     @media screen and (max-width: 480px) {
     /* 1. Hide the services-header */
     .services-header {

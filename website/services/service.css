@@ -16,9 +16,6 @@ body {
 .bg-custom-red {
   background-color: #c92f2f !important;
 }
-.card-header {
-  background: linear-gradient(45deg, #cc0000, #ff3333);
-}
 .card-body p-4 {
   height: 60vh;
 }
