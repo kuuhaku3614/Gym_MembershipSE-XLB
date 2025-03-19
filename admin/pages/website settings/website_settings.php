@@ -494,6 +494,34 @@ $galleryImages = fetchExistingContent('gallery_images');
     </div>
 </div>
 
+<!-- Operating Schedule Section -->
+<div class="card mb-3" data-section="schedule">
+    <div class="card-header">
+        <h2>Operating Schedule</h2>
+        <button class="btn update-schedule-btn">Update</button>
+    </div>
+    <div class="card-body">
+        <?php
+        // Fetch schedule information
+        $scheduleContent = getDynamicContent('schedule');
+        ?>
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Days of Operation:</label>
+                <input type="text" class="form-control" name="days" value="<?php echo htmlspecialchars($scheduleContent['days'] ?? ''); ?>" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Hours of Operation:</label>
+                <input type="text" class="form-control" name="hours" value="<?php echo htmlspecialchars($scheduleContent['hours'] ?? ''); ?>" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Special Notes:</label>
+                <textarea class="form-control" name="notes" readonly><?php echo htmlspecialchars($scheduleContent['description'] ?? ''); ?></textarea>
+            </div>
+        </form>
+    </div>
+</div>
+
 </div>
 <script>
     $(document).ready(function() {
@@ -824,5 +852,21 @@ $galleryImages = fetchExistingContent('gallery_images');
         });
     });
 
+    // Operating Schedule
+    $('.update-schedule-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/schedule_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#scheduleModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the schedule modal.");
+            }
+        });
+    });
 });
 </script>

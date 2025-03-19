@@ -32,6 +32,7 @@ function executeQuery($query, $params = []) {
 
 // Fetch specific content for sections
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
+$schedule = executeQuery("SELECT * FROM website_content WHERE section = 'schedule'")[0] ?? [];
 $offersContent = executeQuery("SELECT * FROM website_content WHERE section = 'offers'")[0] ?? [];
 $aboutUsContent = executeQuery("SELECT * FROM website_content WHERE section = 'about_us'")[0] ?? [];
 // Fetch contact details with latitude and longitude
@@ -605,9 +606,7 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
             </div>
             <div class="contact-info">
-                <p>Simosa<br>
-               Canelar, Zamboanga City 7000</p>
-                <p>+ (63) 9056013159</p>    
+                <p><?php echo htmlspecialchars($contactContent['location']); ?></p>    
             </div>
             <!-- <div class="social-icons">
                 <a href="#"><img src="facebook.png" alt="Facebook"></a>
@@ -640,10 +639,10 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         <div class="operational-section">
             <h3>Operational</h3>
             <div class="operational-info">
-                <p>Every day: 9:00 – 22:00<br>
-                Sat - Sun: 8:00 – 21:00</p>
-                <p>New Schedule?</p>
-                <p>+ (63) 9056013159</p>
+                <p><?php echo htmlspecialchars($schedule['days']); ?> <br>
+                 <?php echo htmlspecialchars($schedule['hours']); ?></p>
+                <br>
+                <p><?php echo htmlspecialchars($contactContent['phone']); ?></p>
             </div>
         </div>
     </div>
