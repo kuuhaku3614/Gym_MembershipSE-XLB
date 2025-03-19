@@ -154,6 +154,11 @@ $membersList = $members->getAllMembers();
 
 <script>
 $(document).ready(function() {
+  // Destroy existing DataTable instance if it exists
+  if ($.fn.DataTable.isDataTable('#membersTable')) {
+    $('#membersTable').DataTable().destroy();
+  }
+  
   // Initialize DataTable with Bootstrap 5 styling
   $('#membersTable').DataTable({
     autoWidth: false,

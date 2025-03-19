@@ -19,6 +19,3 @@
 <!-- Custom Styles -->
 <link rel="stylesheet" href="../admin/css/navbar1.css">
 <link rel="stylesheet" href="../admin/css/admin.css">
-
-    
-</head>

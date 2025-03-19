@@ -325,11 +325,19 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === 'success') {
                     // Show success message
-                    alert(response.message);
-                    // Close modal
-                    $('#addWalkInModal').modal('hide');
-                    // Reload page to show new record
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: response.message,
+                        confirmButtonColor: '#3085d6',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        // Close modal after user acknowledges the success message
+                        $('#addWalkInModal').modal('hide');
+                        // Reload page to show new record
+                        location.reload();
+                    });
+                    
                 } else {
                     // Show error message
                     alert(response.message);
@@ -385,9 +393,17 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    alert(response.message);
-                    $('#updatePriceModal').modal('hide');
-                    location.reload();
+                    Swal.fire({
+                        text: response.message,
+                        color: '#ffffff',
+                        background: '#28a745',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        position: 'top'
+                    }).then(() => {
+                        $('#updatePriceModal').modal('hide');
+                        location.reload();
+                    });
                 } else {
                     alert(response.message);
                 }

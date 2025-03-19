@@ -19,3 +19,4 @@
 <!-- Custom Scripts -->
 <script src="../admin/js/navbar.js"></script>
 <script src="../admin/js/admin.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
