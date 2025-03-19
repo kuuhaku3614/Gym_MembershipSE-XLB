@@ -423,6 +423,21 @@ function generateProgramCard($program) {
         .details p:last-child {
             margin-bottom: 0;
         }
+        
+        /* Rental services styles */
+        .rental-option {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .rental-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .rental-option.selected {
+            border: 2px solid #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -588,22 +603,22 @@ function generateProgramCard($program) {
                         <div class="row">
                             <?php foreach ($rentalServices as $service): ?>
                             <div class="col-md-4 mb-4">
-                                <div class="card rental-service h-100">
+                                <div class="card rental-option h-100">
                                     <div class="card-body">
                                         <h5 class="card-title"><?= htmlspecialchars($service['rental_name']) ?></h5>
-                                        <div class="h4">₱<?= number_format($service['price'], 2) ?></div>
-                                        <p class="description"><?= htmlspecialchars($service['description']) ?></p>
-                                        <p class="duration">Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?></p>
-                                        <div class="form-check">
-                                            <input class="form-check-input rental-service-checkbox" type="checkbox" 
-                                                   name="rental_services[]" 
-                                                   value="<?= $service['id'] ?>"
-                                                   data-price="<?= $service['price'] ?>"
-                                                   data-name="<?= htmlspecialchars($service['rental_name']) ?>"
-                                                   data-duration="<?= htmlspecialchars($service['duration']) ?>"
-                                                   data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>">
-                                            <label class="form-check-label">Select this service</label>
-                                        </div>
+                                        <p class="card-text">
+                                            Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?><br>
+                                            Price: ₱<?= number_format($service['price'], 2) ?>
+                                        </p>
+                                        <input type="checkbox" 
+                                               name="rental_services[]" 
+                                               value="<?= $service['id']; ?>"
+                                               class="rental-service-checkbox"
+                                               data-name="<?= htmlspecialchars($service['rental_name']) ?>"
+                                               data-price="<?= $service['price'] ?>"
+                                               data-duration="<?= htmlspecialchars($service['duration']) ?>"
+                                               data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
+                                               style="display: none;">
                                     </div>
                                 </div>
                             </div>
@@ -1110,6 +1125,55 @@ function generateProgramCard($program) {
                 });
             }
 
+            // Function to check if two time ranges overlap
+            function checkTimeOverlap(start1, end1, start2, end2) {
+                // Convert time strings to minutes for easier comparison
+                function timeToMinutes(timeStr) {
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    return hours * 60 + minutes;
+                }
+                
+                const start1Mins = timeToMinutes(start1);
+                const end1Mins = timeToMinutes(end1);
+                const start2Mins = timeToMinutes(start2);
+                const end2Mins = timeToMinutes(end2);
+                
+                // Two time ranges overlap if one starts before the other ends
+                return !(end1Mins <= start2Mins || end2Mins <= start1Mins);
+            }
+
+            // Function to check if a schedule conflicts with existing selections
+            function hasScheduleConflict(newSchedule) {
+                return selectedPrograms.some(program => {
+                    // Check if same day
+                    if (program.day === newSchedule.day) {
+                        const hasConflict = checkTimeOverlap(
+                            newSchedule.startTime,
+                            newSchedule.endTime,
+                            program.startTime,
+                            program.endTime
+                        );
+                        
+                        if (hasConflict) {
+                            console.log('Schedule conflict found:', {
+                                existing: {
+                                    program: program.program,
+                                    day: program.day,
+                                    time: `${program.startTime} - ${program.endTime}`
+                                },
+                                new: {
+                                    program: newSchedule.program,
+                                    day: newSchedule.day,
+                                    time: `${newSchedule.startTime} - ${newSchedule.endTime}`
+                                }
+                            });
+                        }
+                        return hasConflict;
+                    }
+                    return false;
+                });
+            }
+
             // Handle schedule selection using event delegation
             $(document).on('click', '.select-schedule', function(e) {
                 e.preventDefault();
@@ -1126,10 +1190,19 @@ function generateProgramCard($program) {
                     price: row.data('price')
                 };
 
-                console.log('Schedule data before selection:', scheduleData);
+                console.log('Selected schedule:', scheduleData);
 
-                if (!scheduleData.id) {
-                    console.error('No schedule ID found:', row.data());
+                // Validate all required schedule data
+                if (!scheduleData.id || !scheduleData.program || !scheduleData.coach || 
+                    !scheduleData.day || !scheduleData.startTime || !scheduleData.endTime || 
+                    !scheduleData.price || isNaN(scheduleData.price)) {
+                    alert('Invalid schedule data. Please try again.');
+                    return;
+                }
+
+                // Check for schedule conflicts
+                if (hasScheduleConflict(scheduleData)) {
+                    alert('This schedule conflicts with another selected program. Please choose a different time slot.');
                     return;
                 }
 
@@ -1138,30 +1211,18 @@ function generateProgramCard($program) {
                     return;
                 }
 
-                // Store complete schedule information
                 selectedPrograms.push(scheduleData);
                 console.log('Updated selected programs:', selectedPrograms);
-
-                // Update programs summary
                 updateProgramsSummary();
-
-                // Update totals
                 updateTotalAmount();
 
-                // Update review section if visible
                 if ($('#phase4').is(':visible')) {
                     updateReviewInformation();
                 }
 
-                // Close the modal
                 if (scheduleModal) {
                     scheduleModal.hide();
                 }
-
-                // Reset all program coach dropdowns to default
-                $('.program-coach').each(function() {
-                    $(this).val('').find('option:first').prop('selected', true);
-                });
             });
 
             // Function to update programs summary
@@ -1170,6 +1231,13 @@ function generateProgramCard($program) {
                 let html = '';
 
                 selectedPrograms.forEach((program, index) => {
+                    // Skip invalid program data
+                    if (!program.id || !program.program || !program.coach || 
+                        !program.day || !program.startTime || !program.endTime || 
+                        !program.price || isNaN(program.price)) {
+                        return;
+                    }
+
                     html += `
                         <div class="summary-row" data-index="${index}">
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1188,29 +1256,7 @@ function generateProgramCard($program) {
                     `;
                 });
 
-                programsContainer.html(html || '<p class="text-muted">No programs selected</p>');
-
-                // Update the review section programs if it exists
-                const reviewProgramsContainer = $('#review-programs');
-                if (reviewProgramsContainer.length) {
-                    let reviewHtml = '';
-                    selectedPrograms.forEach(program => {
-                        reviewHtml += `
-                            <div class="program-item">
-                                <div class="program-title">${program.program}</div>
-                                <div class="program-details">
-                                    Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
-                                    Coach: ${program.coach}<br>
-                                    Schedule: Every ${program.day}, ${program.startTime} - ${program.endTime}<br>
-                                    Price: ₱${parseFloat(program.price).toFixed(2)}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    reviewProgramsContainer.html(reviewHtml || '<p class="text-muted">No programs selected</p>');
-                }
-
-                // Update total amount
+                programsContainer.html(html || '');
                 updateTotalAmount();
             }
 
@@ -1238,14 +1284,22 @@ function generateProgramCard($program) {
                     const duration = selectedPlan.data('duration');
                     const durationType = selectedPlan.data('duration-type');
                     const price = parseFloat(selectedPlan.data('price'));
-                    const startDate = $('#membership_start_date').val() || new Date().toISOString().split('T')[0];
-                    const endDate = calculateEndDate(startDate, duration, durationType);
+                    const startDate = $('#membership_start_date').val();
 
+                    // Update plan summary
+                    $('#selectedPlan').html(`
+                        <p>Plan: ${planName}</p>
+                        <p>Duration: ${duration} ${durationType}</p>
+                        <p>Price: ₱${price.toFixed(2)}</p>
+                        <p>Start Date: ${startDate || 'Not selected'}</p>
+                    `);
+
+                    // Update review section
                     $('#review-membership').show();
                     $('#review-plan').text(planName);
                     $('#review-duration').text(duration + ' ' + durationType);
                     $('#review-start-date').text(startDate);
-                    $('#review-end-date').text(endDate);
+                    $('#review-end-date').text(calculateEndDate(startDate, duration, durationType));
                     $('.review-price').text('₱ ' + price.toFixed(2));
                     $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
                 } else {
@@ -1253,10 +1307,19 @@ function generateProgramCard($program) {
                 }
 
                 // Programs Review
-                $('#review-programs-list').empty();
+                const reviewProgramsContainer = $('#review-programs');
+                let reviewHtml = '';
                 let totalProgramsFee = 0;
+
                 selectedPrograms.forEach(program => {
-                    const programHtml = `
+                    // Skip invalid program data
+                    if (!program.id || !program.program || !program.coach || 
+                        !program.day || !program.startTime || !program.endTime || 
+                        !program.price || isNaN(program.price)) {
+                        return;
+                    }
+
+                    reviewHtml += `
                         <div class="program-item">
                             <div class="program-title">${program.program}</div>
                             <div class="program-details">
@@ -1268,9 +1331,10 @@ function generateProgramCard($program) {
                         </div>
                     `;
                     
-                    $('#review-programs-list').append(programHtml);
-                    totalProgramsFee += parseFloat(program.price) || 0;
+                    totalProgramsFee += parseFloat(program.price);
                 });
+
+                reviewProgramsContainer.html(reviewHtml || '<p class="text-muted">No programs selected</p>');
                 $('.review-programs-fee').text(' ₱ ' + totalProgramsFee.toFixed(2));
                 $('#review-programs').toggle(selectedPrograms.length > 0);
 
@@ -1337,6 +1401,15 @@ function generateProgramCard($program) {
                     $('.rental-services-summary').append(rentalHtml);
                 });
             }
+
+            // Handle rental service card selection
+            $(document).on('click', '.rental-option', function() {
+                const checkbox = $(this).find('input[type="checkbox"]');
+                checkbox.prop('checked', !checkbox.prop('checked'));
+                $(this).toggleClass('selected');
+                updateTotalAmount();
+                updateRentalServicesSummary();
+            });
 
             // Form submission handler
             $('#memberForm').on('submit', function(e) {
@@ -1669,7 +1742,22 @@ function generateProgramCard($program) {
                             return;
                         }
                     }
-                    
+
+                    // Phase 2 validation
+                    if (currentPhase === 2) {
+                        // Check if a membership plan is selected
+                        if (!$('input[name="membership_plan"]:checked').length) {
+                            alert('Please select a membership plan before proceeding.');
+                            return;
+                        }
+                        
+                        // Check if start date is selected
+                        if (!$('#membership_start_date').val()) {
+                            alert('Please select a start date for the membership plan.');
+                            return;
+                        }
+                    }
+
                     showPhase(currentPhase + 1);
                 });
                 

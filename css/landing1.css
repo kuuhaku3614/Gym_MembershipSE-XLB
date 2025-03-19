@@ -25,9 +25,10 @@ html {
   font-size: 60px !important;
 }
 
-.dropdown-divider {
+/* .dropdown-divider {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
+  padding: 5px 0;
+} */
 
 /* .design-container2 {
   display: flex;
@@ -153,8 +154,8 @@ nav.sticky {
 }
 
 .nav-links a:hover {
-  border-bottom: 5px solid #fc3d3d;
-  transition: border-bottom 0.3s ease-in-out;
+  color: #d0d0d0;
+  transform: scale(2);
 }
 
 .nav-links li {
@@ -177,6 +178,9 @@ nav.sticky {
   text-decoration: none;
   color: #f5f5f5;
   transition: all 0.3s ease;
+}
+.home-LogIn:hover {
+  color: #d0d0d0;
 }
 
 .home-signIn:hover {
@@ -547,8 +551,8 @@ nav.sticky {
 }
 
 .dropdown-content a:hover {
-  background-color: #f1f1f1;
-  color: #c92f2f;
+  background-color: #e4e6e9;
+  border-radius: 10px;
 }
 
 .home-sectionDivider {
@@ -1010,6 +1014,7 @@ nav.sticky {
 
 .S-AboutUs h1 {
   font-size: 40px;
+  margin-top: 30px;
 }
 
 .aboutUs-text {

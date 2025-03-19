@@ -107,7 +107,7 @@ h1 {
   font-size: 0.9rem;
 }
 .forgot-password:hover {
-  color: #ff0000;
+  color: #4a5561;
   text-decoration: none;
 }
 .home-link {
@@ -118,7 +118,7 @@ h1 {
   display: inline-block;
 }
 .home-link:hover {
-  color: #ff0000;
+  color: #4a5561;
   text-decoration: none;
 }
 .remember-me-label {

@@ -153,7 +153,6 @@
                                         <th>Program Name</th>
                                         <th>Type</th>
                                         <th>Description</th>
-                                        <th>Price</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -165,7 +164,6 @@
                                                 <td><?= htmlspecialchars($program['program_name']) ?></td>
                                                 <td><?= htmlspecialchars($program['coach_program_type']) ?></td>
                                                 <td><?= htmlspecialchars($program['coach_program_description']) ?></td>
-                                                <td><?= '₱' . number_format($program['coach_program_price'], 2) ?></td>
                                                 <td>
                                                     <?php if ($program['coach_program_status'] === 'active'): ?>
                                                         <span class="badge bg-success">Active</span>
@@ -458,7 +456,7 @@ function viewGroupSchedule(programTypeId) {
                     <tr>
                         <td>${schedule.day}</td>
                         <td>${startTime} - ${endTime}</td>
-                        <td>₱${schedule.price}</td>
+                        <td>₱ ${schedule.price}</td>
                         <td>
                             ${schedule.current_members || 0}/${schedule.capacity}
                             <i class="fas fa-info-circle text-info ms-2" 
@@ -515,7 +513,7 @@ function viewPersonalSchedule(programTypeId) {
                     <tr>
                         <td>${schedule.day}</td>
                         <td>${startTime} - ${endTime}</td>
-                        <td>${schedule.price}</td>
+                        <td>₱ ${schedule.price}</td>
                         <td>${schedule.duration_rate}</td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="editPersonalSchedule(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, ${schedule.duration_rate})">Edit</button>
