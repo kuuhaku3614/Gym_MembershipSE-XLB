@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
 <style>
+    
     .overlay-header{
         position: relative;
         z-index: 2;
@@ -94,7 +95,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ff0000; /* Assuming you want red buttons to match your theme */
     border: none;
     border-radius: 8px;
     transition: all 0.3s ease;

@@ -114,11 +114,11 @@
 .button-shortcuts button {
   font-size: 1.2rem;
   width: 100%;
-  background: linear-gradient(45deg, #cc0000, #ff3333);
+  background: var( --secondary-color);
 }
 
 .button-shortcuts button:hover {
-  background: linear-gradient(45deg, #ff3333, #cc0000);
+  background: var( --secondary-color);
 }
 
 .services-page .container-fluid {

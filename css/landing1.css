@@ -59,7 +59,7 @@ html {
   transform: skew(-25deg);
 }
 .rhombus-1 {
-  background-color: #b11919;
+  background-color: var( --secondary-color);
 }
 
 .rhombus-2 {
@@ -75,7 +75,7 @@ html {
 }
 
 .rhombus-5 {
-  background-color: #ff0000;
+  background-color: var( --secondary-color);
 }
 
 .rhombus-6 {
@@ -1088,7 +1088,7 @@ nav.sticky {
   margin-top: 20px;
   width: 98%;
   height: 80vh;
-  background-color: #fc3d3d;
+  background-color: var(--primary-color);
   border-radius: 20px;
 
   /* Animation properties */
