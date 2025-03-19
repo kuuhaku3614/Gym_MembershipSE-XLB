@@ -603,7 +603,9 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     <div class="footer-container">
         <div class="logo-section">
         <div class="home-logo">
-        <img src="../cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
+        <img src="../<?php 
+                echo htmlspecialchars($logo['location']); 
+            ?>" alt="Gym Logo" class="logo-image">
             </div>
             <div class="contact-info">
                 <p>Simosa<br>
