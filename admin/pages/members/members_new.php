@@ -186,7 +186,7 @@ function processPayment(userId, type, itemId) {
     const baseUrl = '<?php echo BASE_URL; ?>';
     
     $.ajax({
-        url: `${baseUrl}/admin/pages/members/process_payment.php`,
+        url: `../admin/pages/members/process_payment.php`,
         type: 'POST',
         data: {
             user_id: userId,
@@ -227,7 +227,7 @@ function viewMemberDetails(userId) {
     document.querySelector('#memberDetailsModal .modal-body').innerHTML = loadingHtml;
     modal.show();
 
-    fetch('./pages/members/members_new.php?ajax_view_member=1&user_id=' + userId)
+    fetch('../admin/pages/members/members_new.php?ajax_view_member=1&user_id=' + userId)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -368,7 +368,7 @@ function viewPaymentDetails(userId) {
     // Get base URL from current page URL
     const baseUrl = '<?php echo BASE_URL; ?>';
 
-    fetch(`${baseUrl}/admin/pages/members/members_new.php?ajax_view_member=1&user_id=${userId}`)
+    fetch(`../admin/pages/members/members_new.php?ajax_view_member=1&user_id=${userId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -577,7 +577,7 @@ function cancelItem(type, itemId) {
     itemElement.html('<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Canceling...</div>');
 
     $.ajax({
-        url: `${baseUrl}/admin/pages/members/cancel_item.php`,
+        url: `../admin/pages/members/cancel_item.php`,
         type: 'POST',
         data: {
             type: type,
@@ -625,7 +625,7 @@ function processMultiplePayments(userId, payments) {
     const baseUrl = '<?php echo BASE_URL; ?>';
     
     $.ajax({
-        url: `${baseUrl}/admin/pages/members/process_payment.php`,
+        url: `../admin/pages/members/process_payment.php`,
         type: 'POST',
         data: {
             user_id: userId,

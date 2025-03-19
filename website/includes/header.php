@@ -244,6 +244,7 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
     $_SESSION['personal_details'] = $userDetails;
 }
+$logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
 ?>
 
 <!DOCTYPE html>
@@ -295,7 +296,9 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 <nav class="home-navbar">
     <!-- This logo shows on desktop only -->
     <div class="home-logo">
-        <img src="<?php echo $basePath; ?>cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
+        <img src="../<?php 
+                echo htmlspecialchars($logo['location']); 
+            ?>" alt="Gym Logo" class="logo-image">
     </div>
     
     <!-- Hamburger menu button -->

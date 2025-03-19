@@ -371,3 +371,43 @@
     [action] => update_photo
 )
 
+2025-03-19 16:36:19 - Request received
+2025-03-19 16:36:19 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby1234
+)
+
+2025-03-19 16:36:20 - Request received
+2025-03-19 16:36:20 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby1234
+)
+
+2025-03-19 16:36:26 - Request received
+2025-03-19 16:36:26 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-03-19 16:36:27 - Request received
+2025-03-19 16:36:27 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-03-19 16:43:22 - Request received
+2025-03-19 16:43:22 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-03-19 20:42:34 - Request received
+2025-03-19 20:42:34 - POST data: Array
+(
+    [action] => update_photo
+)
+

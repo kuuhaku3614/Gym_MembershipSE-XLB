@@ -299,8 +299,15 @@ h1 {
 
 .modal-logo {
   max-width: 120px;
+  height: 120px; /* Ensure it's a perfect circle */
+  object-fit: cover; /* Ensures the image fills the circle properly */
+  border-radius: 50%; /* Makes it circular */
   margin-bottom: 1rem;
+  display: block; /* Ensures proper rendering */
+  margin-left: auto; /* Centers horizontally */
+  margin-right: auto; /* Centers horizontally */
 }
+
 
 .verification-text,
 .success-message {

@@ -257,11 +257,11 @@ body {
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="dateInput" class="form-label">Date</label>
-                                <input type="date" class="form-control" id="dateInput" required>
+                                <input type="date" class="form-control" id="dateInput" >
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="time" class="form-label">Time</label>
-                                <input type="time" class="form-control" id="time" name="time" required>
+                                <input type="time" class="form-control" id="time" name="time" >
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="type" class="form-label">Announcement Type</label>

@@ -35,6 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
+function executeQuery($query, $params = []) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Database query error: ' . $e->getMessage());
+        return [];
+    }
+}
+// Fetch specific content for sections
+$welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
+$logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
 ?>
 
 <!DOCTYPE html>
@@ -54,9 +68,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="login-container">
     <div class="text-center d-flex justify-content-center mb-2 gap-2">
         <div class="logo-placeholder">
-            <img src="../cms_img/jc_logo1.png" alt="JC Powerzone Gym Logo EST 2022">
+            <img src="../<?php 
+                echo htmlspecialchars($logo['location']); 
+            ?>" alt="Gym Logo" class="logo-image">
         </div>
-        <h1 class="d-flex align-items-center justify-content-center m-0">JC POWERZONE</h1>
+        <h1 class="d-flex align-items-center justify-content-center m-0"><?php 
+                echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
+            ?></p></h1>
     </div>
     <div class=" mb-4">
         <h2>Log In</h2>

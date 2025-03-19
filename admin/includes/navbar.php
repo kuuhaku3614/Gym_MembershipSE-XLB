@@ -199,6 +199,7 @@ function executeQuery($query, $params = []) {
 
 // Fetch specific content for sections
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
+$logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
 ?>
 
 <?php
@@ -286,7 +287,9 @@ $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'w
 <div class="sidebar" id="sidebar">
     <!-- Logo and Admin Container -->
     <div class="logo-container">
-        <img src="../cms_img/jc_logo_2.png" alt="Gym Logo" class="logo-image">
+        <img src="../<?php 
+                echo htmlspecialchars($logo['location']); 
+            ?>" alt="Gym Logo" class="logo-image">
         <p class="admin-text"><?php 
                 echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
             ?></p>
@@ -384,14 +387,8 @@ $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'w
                     <i class="fas fa-cog"></i>
                     Website Settings
                 </div>
-                <i class="fas fa-chevron-down dropdown-icon"></i>
+                
             </a>
-            <div class="sub-nav">
-                <a href="content_management" id="content_management-link" class="sub-nav-item">
-                    <i class="fas fa-file-alt"></i>
-                    Content Management
-                </a>
-            </div>
 
             <a href="report" id="report-link" class="nav-item">
                 <div class="nav-item-content">

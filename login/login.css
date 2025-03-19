@@ -27,8 +27,14 @@ body {
     background-color: white;
   }
 }
-.logo-placeholder img {
+.logo-image {
   max-width: 100px;
+  height: 100px; /* Ensure it's a perfect circle */
+  object-fit: cover; /* Ensures the image fills the circle properly */
+  border-radius: 50%; /* Makes it circular */
+  margin-bottom: 1rem;
+  margin-right: 3px;
+  display: block; /* Ensures proper rendering */
 }
 .btn-login {
   background-color: #4361ee;
