@@ -75,8 +75,8 @@ $programs = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     echo "<td>" . htmlspecialchars($program['program_name']) . "</td>";
                     echo "<td>";
                     $description = $program['description'] ?: 'N/A';
-                    echo strlen($description) > 50 ? 
-                        htmlspecialchars(substr($description, 0, 50) . '...') : 
+                    echo strlen($description) > 20 ? 
+                        htmlspecialchars(substr($description, 0, 20) . '...') : 
                         htmlspecialchars($description);
                     echo "</td>";
                     echo "<td>" . htmlspecialchars($program['status']) . "</td>";
@@ -332,10 +332,13 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === 'success') {
                     $('#addProgramModal').modal('hide');
-                    $('#successModal').modal('show');
-                    $('#successModal').on('hidden.bs.modal', function() {
-                        location.reload();
-                    });
+                $('#successModal .modal-body p').text(response.message || 'Program created successfully!');
+                new bootstrap.Modal(document.getElementById('successModal')).show();
+
+                // Reload page after short delay
+                setTimeout(function() {
+                    location.reload();
+                }, 2000);
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -410,7 +413,6 @@ $(document).ready(function() {
     $('.remove-btn').on('click', function() {
         const programId = $(this).data('id');
         $('#deleteModal').data('id', programId).modal('show');
-    });
 
     // Confirm Delete
     $('#confirmDelete').on('click', function() {
@@ -438,6 +440,8 @@ $(document).ready(function() {
         });
     });
 
+});
+
     // Handle Status Toggle Buttons
     $('.toggle-status-btn').on('click', function() {
         const programId = $(this).data('id');
@@ -450,6 +454,8 @@ $(document).ready(function() {
             $('#deactivateModal').data('id', programId).modal('show');
         }
     });
+
+    
 
     // Confirm Activate
     $('#confirmActivate').on('click', function() {

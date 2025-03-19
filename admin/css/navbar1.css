@@ -236,7 +236,7 @@ body {
 .sub-nav-item {
   font-family: "Inter", sans-serif;
   font-weight: 600;
-  color: #333;
+  color: #5d5b5b;
 }
 .nav-item {
   padding: 8px 25px;
@@ -267,13 +267,11 @@ body {
 }
 
 .nav-item:hover {
-  background-color: #b30000;
-  color: var(--white);
+  color: #1a1a1a;
 }
 
 .nav-item.active {
-  color: #ff2525;
-  background-color: var(--white);
+  color: #1a1a1a;
 }
 
 .sub-nav {
@@ -288,7 +286,6 @@ body {
 
 .sub-nav-item {
   padding: 12px 25px 12px 60px;
-  color: #404040;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -303,13 +300,12 @@ body {
 }
 
 .sub-nav-item:hover {
-  background-color: #990000;
-  color: var(--white) !important;
+  color: #1a1a1a;
 }
 
 .sub-nav-item.active {
-  color: #990000;
-  border-left: 4px solid var(--white);
+  color: #1a1a1a;
+  border-left: 4px solid #1a1a1a;
 }
 
 /* Burger Menu and Sidebar Overlay */

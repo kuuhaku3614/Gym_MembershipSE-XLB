@@ -103,7 +103,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             left: 0;
             width: 4px;
             height: 100%;
-            background: var(--secondary-color);
+            background: grey;
         }
 
         .stats-title {

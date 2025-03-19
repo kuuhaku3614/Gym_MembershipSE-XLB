@@ -99,8 +99,8 @@ try {
                     <td class="text-center"><?= $rental['available_slots'] ?></td>
                     <td><?php 
                         $description = $rental['description'] ?: 'N/A';
-                        echo strlen($description) > 50 ? 
-                            htmlspecialchars(substr($description, 0, 50) . '...') : 
+                        echo strlen($description) > 20 ? 
+                            htmlspecialchars(substr($description, 0, 20) . '...') : 
                             htmlspecialchars($description);
                     ?></td>
                     <td class="text-center">
@@ -532,17 +532,23 @@ $(document).on('click', '.toggle-status', function() {
             data: {
                 action: 'toggle_status',
                 id: rentalId,
-                status: newStatus
+                new_status: newStatus
             },
             success: function(response) {
-                if (response === 'success') {
-                    // Close the modal and reload the page
-                    $('#deactivateModal, #activateModal').modal('hide');
-                    location.reload();
-                } else {
-                    alert('Error: ' + response);
-                }
-            },
+    try {
+        const result = typeof response === 'string' ? JSON.parse(response) : response;
+        
+        if (result.status === 'success') {
+            // Close the modal and reload the page
+            $('#deactivateModal, #activateModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error: ' + (result.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error parsing response: ' + response);
+    }
+},
             error: function(xhr, status, error) {
                 alert('Error occurred while updating status: ' + error);
             }
