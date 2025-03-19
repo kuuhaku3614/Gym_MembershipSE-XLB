@@ -3,7 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
+require_once 'DatabaseExtended.php';
 // Check if user is logged in and has valid session data
 $isLoggedIn = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) && isset($_SESSION['role']);
 $unreadNotificationsCount = 0;
@@ -244,13 +244,10 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
     $_SESSION['personal_details'] = $userDetails;
 }
-$logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
-$color = executeQuery("SELECT * FROM website_content WHERE section = 'color'")[0] ?? [];
-function decimalToHex($decimal) {
-    $hex = dechex(abs(floor($decimal * 16777215)));
-    // Ensure hex values are properly formatted with leading zeros
-    return '#' . str_pad($hex, 6, '0', STR_PAD_LEFT);
-}
+require_once 'DatabaseExtended.php';
+// Get the logo and color
+$logo = getWebsiteContent('logo');
+$color = getWebsiteContent('color');
 
 $primaryHex = isset($color['latitude']) ? decimalToHex($color['latitude']) : '#000000';
 $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) : '#000000';
@@ -309,10 +306,13 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 <nav class="home-navbar">
     <!-- This logo shows on desktop only -->
     <div class="home-logo">
-        <img src="../<?php 
-                echo htmlspecialchars($logo['location']); 
-            ?>" alt="Gym Logo" class="logo-image">
-    </div>
+    <?php if (!empty($logo['location'])): ?>
+        <img src="<?php echo BASE_URL . '/' . htmlspecialchars($logo['location']); ?>" alt="Gym Logo" class="logo-image">
+    <?php else: ?>
+        <!-- Fallback logo if none is found in the database -->
+        <img src="<?php echo BASE_URL; ?>/assets/images/default-logo.png" alt="Gym Logo" class="logo-image">
+    <?php endif; ?>
+</div>
     
     <!-- Hamburger menu button -->
     <div class="hamburger-menu d-lg-none">

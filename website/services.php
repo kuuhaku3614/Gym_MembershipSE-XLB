@@ -1,24 +1,13 @@
 <?php
     session_start();
+    require_once '../config.php';
     include('includes/header.php');
     require_once 'services/services.class.php';
-
     $Obj = new Services_Class();
     $standard_plans = $Obj->displayStandardPlans();
     $special_plans = $Obj->displaySpecialPlans();
     $rental_services = $Obj->displayRentalServices();
     $walkin = $Obj->displayWalkinServices();
-    function executeQuery($query, $params = []) {
-        global $pdo;
-        try {
-            $stmt = $pdo->prepare($query);
-            $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Database query error: ' . $e->getMessage());
-            return [];
-        }
-    }
     
 ?>
 <link rel="stylesheet" href="../css/browse_services.css">

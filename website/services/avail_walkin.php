@@ -5,10 +5,10 @@ require_once __DIR__ . '/../../functions/sanitize.php';
 require_once __DIR__ . '/services.class.php';
 require_once __DIR__ . '/cart.class.php';
 
-// if (!isset($_SESSION['user_id'])) {
-//     header('location: ../../login/login.php');
-//     exit;
-// }
+if (!isset($_SESSION['user_id'])) {
+    header('location: ../../login/login.php');
+    exit;
+}
 
 // Initialize Services class
 $Services = new Services_Class();
@@ -49,46 +49,38 @@ $start_dateErr = '';
 // Handle AJAX request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
+    
+    try {
+        if (!isset($_SESSION['user_id'])) {
+            throw new Exception('Please login first');
+        }
 
-try {
-    if (!isset($_SESSION['user_id'])) {
-        throw new Exception('Please login first.');
+        $date = isset($_POST['date']) ? clean_input($_POST['date']) : '';
+        
+        if (empty($date)) {
+            throw new Exception('Please select a date');
+        }
+
+        // Create cart instance with correct class name
+        $Cart = new Cart_Class();
+        if ($Cart->addWalkinToCart(1, $date)) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Walk-in service added to cart successfully',
+                'redirect' => '../services.php'
+            ]);
+        } else {
+            throw new Exception('Failed to add walk-in service to cart');
+        }
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
     }
-
-    $date = isset($_POST['date']) ? trim($_POST['date']) : '';
-
-    if (empty($date)) {
-        throw new Exception('Please select a date.');
-    }
-
-    if (strtotime($date) < strtotime(date('Y-m-d'))) {
-        throw new Exception('Selected date cannot be in the past.');
-    }
-
-    $Cart = new Cart_Class();
-    if ($Cart->addWalkinToCart(1, $date)) {
-        $_SESSION['success_message'] = "Successfully added item to the list!";
-                
-                // Return a JSON response instead of redirecting immediately
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => true,
-                    'redirect' => '../services.php'
-                ]);
-                exit;
-    } else {
-        throw new Exception('Failed to add walk-in service to cart.');
-    }
-} catch (Exception $e) {
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
-}
     exit;
 }
 ?>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -106,87 +98,12 @@ try {
         border-bottom: 2px solid #ff0000;
         padding: 1rem;
     }
-
-    @media screen and (max-width: 480px) {
-    /* 1. Hide the services-header */
-    .services-header {
-        display: none !important;
-    }
-    
-    /* 2. Make the content fill the entire screen and scale properly */
-    body, html {
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-    }
-    
-    .avail-membership-page {
-        width: 100%;
-        height: 100%;
-    }
-    
-    .container-fluid {
-        padding: 0;
-        margin: 0;
-        width: 100%;
-        background-color: #f5f5f5;
-    }
-    
-    .main-container {
-        height: 100%;
-        width: 100%;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .col-12 {
-        padding: 10px;
-        margin-top: 0px!important;
-        margin-bottom: 0px!important;
-    }
-    
-
-    .card-body{
-        height: 100%;
-    }
-    
-    .scrollable-section {
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 0;
-    }
-    
-    /* .btn-lg {
-        padding: 5px;
-        font-size: 0.875rem;
-    } */
-    
-    .row {
-        margin: 0;
-        height: 100%;
-    }
-/*     
-    .form-control-lg {
-        font-size: 0.875rem;
-    } */
-    .d-grid{
-        display: flex!important;
-        flex-direction: row!important;
-        flex-wrap: nowrap;
-    }
-    .h5{
-        font-size: 1.5rem!important;
-        margin-bottom: 5px!important;
-    }
-}
 </style>
 
 <div class="avail-walkin-page">
     <div class="container-fluid p-0">
         <!-- Header -->
-        <div class="bg-custom-red text-white p-3 d-flex align-items-center services-header">
+        <div class="bg-custom-red text-white p-3 d-flex align-items-center">
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
@@ -217,15 +134,16 @@ try {
                                             class="form-control form-control-lg" 
                                             id="start_date" 
                                             name="date" 
-                                            min="<?= date('Y-m-d', strtotime('today')) ?>" 
+                                            min="<?= date('Y-m-d') ?>" 
                                             value="<?= $start_date ?>"
                                             required
                                             onchange="updateEndDate(this.value)">
-                                        <div id="start_date_error" class="text-danger mt-1"></div> <!-- Error message area -->
+                                        <?php if(!empty($start_dateErr)): ?>
+                                            <div class="text-danger mt-1"><?= $start_dateErr ?></div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
-
 
                             <div class="col-12">
                                 <div class="border rounded p-3">
@@ -258,6 +176,7 @@ try {
         </div>
     </div>
 </div>
+
 <script>
 function updateEndDate(startDate) {
     if (!startDate) {
@@ -265,14 +184,9 @@ function updateEndDate(startDate) {
         return;
     }
     
-    const duration = <?= json_encode($duration) ?>; // Ensure proper PHP-to-JS conversion
-    if (!duration || isNaN(duration)) {
-        console.error('Invalid duration value');
-        return;
-    }
-
+    const duration = <?= $duration ?>;
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + parseInt(duration, 10));
+    endDate.setDate(endDate.getDate() + duration);
     
     const formattedEndDate = endDate.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -286,15 +200,9 @@ function updateEndDate(startDate) {
 function validateForm(event) {
     event.preventDefault();
     
-    const startDateInput = document.getElementById('start_date');
-    const startDate = startDateInput.value;
-    const startDateError = document.getElementById('start_date_error');
-
-    // Clear previous error messages
-    startDateError.textContent = '';
-
+    const startDate = document.getElementById('start_date').value;
     if (!startDate) {
-        startDateError.textContent = 'Please select a date.';
+        alert('Please select a date.');
         return false;
     }
     
@@ -303,7 +211,7 @@ function validateForm(event) {
     const selectedDate = new Date(startDate);
     
     if (selectedDate < today) {
-        startDateError.textContent = 'Date cannot be in the past.';
+        alert('Date cannot be in the past.');
         return false;
     }
     
@@ -316,37 +224,42 @@ function validateForm(event) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             window.location.href = data.redirect;
         } else {
-            startDateError.textContent = data.message; // Show error message in the form
+            alert(data.message || 'Failed to add to cart');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        startDateError.textContent = 'An error occurred. Please try again.';
+        alert('An error occurred. Please try again.');
     });
-
+    
     return false;
 }
 
-// Add event listener only if the element exists
-document.addEventListener("DOMContentLoaded", function() {
-    const startDateInput = document.getElementById('start_date');
-    if (startDateInput) {
-        startDateInput.addEventListener('change', function() {
-            updateEndDate(this.value);
-            document.getElementById('hidden_start_date').value = this.value;
-        });
-
-        // Initialize end date on page load
-        if (startDateInput.value) {
-            updateEndDate(startDateInput.value);
-        }
+// Update end date when start date changes
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = this.value;
+    if (startDate) {
+        document.getElementById('hidden_start_date').value = startDate;
     }
 });
+
+// Initialize end date on page load
+window.onload = function() {
+    const startDate = document.getElementById('start_date').value;
+    if (startDate) {
+        updateEndDate(startDate);
+    }
+};
 </script>
 
 <!-- Bootstrap Icons -->
