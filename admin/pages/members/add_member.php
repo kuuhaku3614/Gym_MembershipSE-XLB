@@ -122,7 +122,6 @@ function generateProgramCard($program) {
         return ''; // Skip if no coaches available
     }
 
-    $coachOptions = generateCoachOptions($program['coaches']);
     $programType = strtolower($program['program_type']);
 
     return sprintf(
@@ -132,8 +131,8 @@ function generateProgramCard($program) {
                 <p class="card-text">%s</p>
                 <div class="form-group">
                     <label class="form-label">Select Coach:</label>
-                    <select class="form-select program-coach" name="program_coaches[%d]">
-                        <option value="">Choose a coach</option>
+                    <select class="form-select program-coach" name="program_coaches[%d]" data-coaches=\'%s\'>
+                        <option value="" selected>Choose a coach</option>
                         %s
                     </select>
                 </div>
@@ -145,7 +144,8 @@ function generateProgramCard($program) {
         ucfirst($programType),
         htmlspecialchars($program['program_description']),
         $program['program_id'],
-        $coachOptions
+        json_encode($program['coaches']), // Store coach data as JSON
+        generateCoachOptions($program['coaches'])
     );
 }
 ?>
@@ -374,6 +374,54 @@ function generateProgramCard($program) {
         }
         .membership-option .form-check {
             display: none;
+        }
+        
+        .summary-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .summary-row {
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .remove-program,
+        .remove-rental {
+            cursor: pointer;
+            color: #dc3545;
+            transition: color 0.2s;
+            padding: 5px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-program:hover,
+        .remove-rental:hover {
+            color: #c82333;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .details {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .details p {
+            margin-bottom: 8px;
+        }
+
+        .details p:last-child {
+            margin-bottom: 0;
         }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -667,7 +715,6 @@ function generateProgramCard($program) {
         <div class="container">
             <!-- Selected Plan -->
             <div class="summary-row" data-type="membership" style="display: none;">
-                <i class="fas fa-times remove-program"></i>
                 <h5>Membership Plan</h5>
                 <div class="details">
                     <p><strong>Plan:</strong> <span class="membership-plan-name"></span></p>
@@ -679,7 +726,7 @@ function generateProgramCard($program) {
             </div>
 
             <!-- Selected Programs -->
-            <div id="selectedPrograms">
+            <div id="selectedProgramsContainer">
                 <!-- Programs will be dynamically added here -->
             </div>
             
@@ -831,13 +878,19 @@ function generateProgramCard($program) {
             });
 
             // Handle program coach selection
-            $(document).on('change', '.program-coach', function() {
+            $('.program-coach').on('change', function() {
                 const coachProgramTypeId = $(this).val();
                 if (!coachProgramTypeId) return;
 
                 const programCard = $(this).closest('.program-card');
                 const programName = programCard.find('.card-title').text().trim();
                 const programType = programCard.data('program-type');
+
+                // Reset dropdown to default immediately
+                $(this).val('').find('option:first').prop('selected', true);
+
+                // Store current program card for reference
+                $('#scheduleModal').data('current-program-card', programCard);
 
                 scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
                 
@@ -853,6 +906,10 @@ function generateProgramCard($program) {
                         const tableBody = $('#scheduleTableBody');
                         const tableHead = $('#scheduleTable thead');
                         const programDesc = $('#programDesc');
+                        
+                        // Clear previous content
+                        tableBody.empty();
+                        programDesc.empty();
                         
                         if (response.success && response.data?.length > 0) {
                             // Display program type description if available
@@ -875,7 +932,7 @@ function generateProgramCard($program) {
                             `);
 
                             const rows = response.data.map(schedule => `
-                                <tr data-id='${schedule.id}' data-type='${response.program_type}' data-coach-program-type-id='${coachProgramTypeId}' data-program='${programName}' data-coach='${schedule.coach_name || ''}' data-day='${schedule.day}' data-start-time='${schedule.start_time}' data-end-time='${schedule.end_time}' data-price='${schedule.price}'>
+                                <tr data-id='${schedule.id}' data-type='${response.program_type}' data-coach-program-type-id='${coachProgramTypeId}' data-program='${programName}' data-coach='${schedule.coach_name || ''}' data-day='${schedule.day}' data-starttime='${schedule.start_time}' data-endtime='${schedule.end_time}' data-price='${schedule.price}'>
                                     <td>${schedule.day}</td>
                                     <td>${schedule.start_time}</td>
                                     <td>${schedule.end_time}</td>
@@ -890,7 +947,15 @@ function generateProgramCard($program) {
                             tableBody.html(rows);
                         } else {
                             tableBody.html('<tr><td colspan="6" class="text-center">No schedules found</td></tr>');
+                            programDesc.hide();
                         }
+                        
+                        // Clear any previous selections
+                        $('.schedule-row').removeClass('selected');
+                        
+                        // Reset modal title
+                        $('#scheduleModalLabel').text('Select Schedule');
+                        
                         scheduleModal.show();
                     },
                     error: function(xhr, status, error) {
@@ -898,8 +963,30 @@ function generateProgramCard($program) {
                         console.error('Status:', status);
                         console.error('Response:', xhr.responseText);
                         $('#scheduleTableBody').html('<tr><td colspan="6" class="text-center">Failed to load schedules</td></tr>');
+                        $('#programDesc').hide();
                         scheduleModal.show();
                     }
+                });
+            });
+
+            // Reset modal when hidden
+            $('#scheduleModal').on('hidden.bs.modal', function() {
+                // Clear modal content
+                $('#scheduleTableBody').empty();
+                $('#programDesc').empty().hide();
+                
+                // Reset any program-specific UI elements
+                $('.program-specific-element').hide();
+                
+                // Update the modal title to default
+                $('#scheduleModalLabel').text('Select Schedule');
+                
+                // Remove stored program card reference
+                $(this).removeData('current-program-card');
+                
+                // Ensure all program coach dropdowns show default option
+                $('.program-coach').each(function() {
+                    $(this).val('').find('option:first').prop('selected', true);
                 });
             });
 
@@ -918,21 +1005,20 @@ function generateProgramCard($program) {
             });
 
             // Handle program removal using event delegation
-            $(document).on('click', '.remove-program', function() {
-                if ($(this).closest('.summary-row').data('type') === 'membership') {
-                    // If removing membership plan
-                    $('input[name="membership_plan"]:checked').prop('checked', false);
-                    $('.summary-row[data-type="membership"]').hide();
-                    $('#review-membership').hide();
-                } else {
-                    // If removing program
-                    const index = $(this).data('index');
-                    if (index >= 0 && index < selectedPrograms.length) {
-                        selectedPrograms.splice(index, 1);
-                        updateProgramsSummary();
+            $(document).on('click', '.remove-program', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = $(this).closest('.summary-row').data('index');
+                if (typeof index !== 'undefined') {
+                    selectedPrograms.splice(index, 1);
+                    updateProgramsSummary();
+                    updateTotalAmount();
+                    
+                    // Update review section if visible
+                    if ($('#phase4').is(':visible')) {
+                        updateReviewInformation();
                     }
                 }
-                updateTotalAmount();
             });
 
             function fetchSchedules(programType) {
@@ -992,8 +1078,8 @@ function generateProgramCard($program) {
                                         data-program="${programName}"
                                         data-coach="${schedule.coach_name || ''}"
                                         data-day="${schedule.day}"
-                                        data-start-time="${schedule.start_time}"
-                                        data-end-time="${schedule.end_time}"
+                                        data-starttime="${schedule.start_time}"
+                                        data-endtime="${schedule.end_time}"
                                         data-price="${schedule.price}"
                                     >
                                         <td>${schedule.day}</td>
@@ -1027,23 +1113,23 @@ function generateProgramCard($program) {
             // Handle schedule selection using event delegation
             $(document).on('click', '.select-schedule', function(e) {
                 e.preventDefault();
-                const $row = $(this).closest('tr');
+                const row = $(this).closest('tr');
                 const scheduleData = {
-                    id: $row.data('id'),
-                    type: $row.data('type'),
-                    coach_program_type_id: $row.data('coach-program-type-id'),
-                    program: $row.data('program'),
-                    coach: $row.data('coach'),
-                    day: $row.data('day'),
-                    startTime: $row.data('start-time'),
-                    endTime: $row.data('end-time'),
-                    price: $row.data('price')
+                    id: row.data('id'),
+                    type: row.data('type'),
+                    coach_program_type_id: row.data('coach-program-type-id'),
+                    program: row.data('program'),
+                    coach: row.data('coach'),
+                    day: row.data('day'),
+                    startTime: row.data('starttime'),
+                    endTime: row.data('endtime'),
+                    price: row.data('price')
                 };
 
                 console.log('Schedule data before selection:', scheduleData);
 
                 if (!scheduleData.id) {
-                    console.error('No schedule ID found:', $row.data());
+                    console.error('No schedule ID found:', row.data());
                     return;
                 }
 
@@ -1067,38 +1153,49 @@ function generateProgramCard($program) {
                     updateReviewInformation();
                 }
 
+                // Close the modal
                 if (scheduleModal) {
                     scheduleModal.hide();
                 }
+
+                // Reset all program coach dropdowns to default
+                $('.program-coach').each(function() {
+                    $(this).val('').find('option:first').prop('selected', true);
+                });
             });
 
             // Function to update programs summary
             function updateProgramsSummary() {
-                $('#selectedPrograms').empty();
-                
+                const programsContainer = $('#selectedProgramsContainer');
+                let html = '';
+
                 selectedPrograms.forEach((program, index) => {
-                    console.log('Updating program summary:', program); // Debug log
-                    const programHtml = `
-                        <div class="summary-row" data-type="program">
-                            <i class="fas fa-times remove-program" data-index="${index}"></i>
-                            <h5>${program.program}</h5>
+                    html += `
+                        <div class="summary-row" data-index="${index}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0">${program.program}</h5>
+                                <button type="button" class="btn btn-link text-danger remove-program p-0" style="font-size: 1.2rem;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                             <div class="details">
-                                <p><strong>Type:</strong> ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program</p>
-                                <p><strong>Coach:</strong> ${program.coach}</p>
-                                <p><strong>Schedule:</strong> ${program.day}, ${program.startTime} - ${program.endTime}</p>
-                                <p><strong>Price:</strong> ₱${parseFloat(program.price).toFixed(2)}</p>
+                                <p class="mb-1"><strong>Type:</strong> ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program</p>
+                                <p class="mb-1"><strong>Coach:</strong> ${program.coach}</p>
+                                <p class="mb-1"><strong>Schedule:</strong> ${program.day}, ${program.startTime} - ${program.endTime}</p>
+                                <p class="mb-1"><strong>Price:</strong> ₱${parseFloat(program.price).toFixed(2)}</p>
                             </div>
                         </div>
                     `;
-                    
-                    $('#selectedPrograms').append(programHtml);
                 });
 
-                // Update the review section if visible
-                if ($('#phase4').is(':visible')) {
-                    $('#review-programs-list').empty();
+                programsContainer.html(html || '<p class="text-muted">No programs selected</p>');
+
+                // Update the review section programs if it exists
+                const reviewProgramsContainer = $('#review-programs');
+                if (reviewProgramsContainer.length) {
+                    let reviewHtml = '';
                     selectedPrograms.forEach(program => {
-                        const reviewHtml = `
+                        reviewHtml += `
                             <div class="program-item">
                                 <div class="program-title">${program.program}</div>
                                 <div class="program-details">
@@ -1109,10 +1206,11 @@ function generateProgramCard($program) {
                                 </div>
                             </div>
                         `;
-                        $('#review-programs-list').append(reviewHtml);
                     });
+                    reviewProgramsContainer.html(reviewHtml || '<p class="text-muted">No programs selected</p>');
                 }
-                
+
+                // Update total amount
                 updateTotalAmount();
             }
 
@@ -1164,7 +1262,7 @@ function generateProgramCard($program) {
                             <div class="program-details">
                                 Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
                                 Coach: ${program.coach}<br>
-                                Schedule: ${program.day}, ${program.startTime} - ${program.endTime}<br>
+                                Schedule: Every ${program.day}, ${program.startTime} - ${program.endTime}<br>
                                 Price: ₱${parseFloat(program.price).toFixed(2)}
                             </div>
                         </div>
@@ -1223,11 +1321,15 @@ function generateProgramCard($program) {
                     
                     const rentalHtml = `
                         <div class="summary-row" data-type="rental" data-rental-id="${rentalId}">
-                            <i class="fas fa-times remove-rental"></i>
-                            <h5>${rentalName}</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0">${rentalName}</h5>
+                                <button type="button" class="btn btn-link text-danger remove-rental p-0" style="font-size: 1.2rem;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                             <div class="details">
-                                <p><strong>Duration:</strong> ${rentalDuration} ${rentalDurationType}</p>
-                                <p><strong>Amount:</strong> ₱${rentalPrice.toFixed(2)}</p>
+                                <p class="mb-1"><strong>Duration:</strong> ${rentalDuration} ${rentalDurationType}</p>
+                                <p class="mb-1"><strong>Amount:</strong> ₱${rentalPrice.toFixed(2)}</p>
                             </div>
                         </div>
                     `;
@@ -1253,8 +1355,16 @@ function generateProgramCard($program) {
                 formData.append('action', 'add_member');
 
                 // Add selected programs
-                formData.append('selected_programs', JSON.stringify(selectedPrograms || []));
-                
+                formData.append('selected_programs', JSON.stringify(selectedPrograms.map(program => ({
+                    id: program.id,
+                    type: program.type,
+                    coach_program_type_id: program.coach_program_type_id,
+                    day: program.day,
+                    startTime: program.startTime,
+                    endTime: program.endTime,
+                    price: program.price
+                }))));
+
                 // Log form data for debugging
                 console.log('=== FORM SUBMISSION DEBUG ===');
                 for (let pair of formData.entries()) {
@@ -1379,15 +1489,14 @@ function generateProgramCard($program) {
                     const duration = $(this).data('duration');
                     const durationType = $(this).data('duration-type');
                     const price = parseFloat($(this).data('price'));
-                    const startDate = $('#membership_start_date').val() || new Date().toISOString().split('T')[0];
-                    const endDate = calculateEndDate(startDate, duration, durationType);
+                    const startDate = $('#membership_start_date').val();
 
                     // Update summary section
                     $('.summary-row[data-type="membership"]').show();
                     $('.membership-plan-name').text(planName);
                     $('.membership-duration').text(duration + ' ' + durationType);
                     $('.membership-start-date').text(startDate);
-                    $('.membership-end-date').text(endDate);
+                    $('.membership-end-date').text(calculateEndDate(startDate, duration, durationType));
                     $('.membership-amount').text(price.toFixed(2));
 
                     // Update review section
@@ -1395,7 +1504,7 @@ function generateProgramCard($program) {
                     $('#review-plan').text(planName);
                     $('#review-duration').text(duration + ' ' + durationType);
                     $('#review-start-date').text(startDate);
-                    $('#review-end-date').text(endDate);
+                    $('#review-end-date').text(calculateEndDate(startDate, duration, durationType));
                     $('.review-price').text('₱ ' + price.toFixed(2));
                     $('#review-membership-fee').text('₱' + registrationFee.toFixed(2));
                 } else {

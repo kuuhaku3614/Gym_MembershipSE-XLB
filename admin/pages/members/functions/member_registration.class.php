@@ -15,7 +15,7 @@ class MemberRegistration {
 
     public function getPrograms() {
         try {
-            $sql = "SELECT 
+            $sql = "SELECT DISTINCT
                     p.id as program_id,
                     p.program_name,
                     p.description as program_description,
@@ -28,12 +28,19 @@ class MemberRegistration {
                 JOIN coach_program_types cpt ON p.id = cpt.program_id
                 JOIN users u ON cpt.coach_id = u.id
                 JOIN personal_details pd ON u.id = pd.user_id
+                LEFT JOIN coach_group_schedule cgs ON cpt.id = cgs.coach_program_type_id
+                LEFT JOIN coach_personal_schedule cps ON cpt.id = cps.coach_program_type_id
                 WHERE p.status = 'active' 
                 AND cpt.status = 'active' 
                 AND p.is_removed = 0
                 AND u.is_active = 1
                 AND u.is_banned = 0
                 AND u.role_id = 4
+                AND (
+                    (cpt.type = 'group' AND cgs.id IS NOT NULL)
+                    OR 
+                    (cpt.type = 'personal' AND cps.id IS NOT NULL)
+                )
                 ORDER BY p.program_name, cpt.type, pd.first_name, pd.last_name";
             
             $results = $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -62,6 +69,7 @@ class MemberRegistration {
             
             return array_values($programs);
         } catch (Exception $e) {
+            error_log("Error in getPrograms: " . $e->getMessage());
             return [];
         }
     }
