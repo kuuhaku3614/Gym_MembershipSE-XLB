@@ -49,7 +49,7 @@ if (isset($_GET['action'])) {
             exit;
         }
 
-        $schedules = $programType === 'personal' 
+        $schedules = $programType['type'] === 'personal' 
             ? $memberRegistration->getCoachPersonalSchedule($coachProgramTypeId)
             : $memberRegistration->getCoachGroupSchedule($coachProgramTypeId);
 
@@ -59,14 +59,21 @@ if (isset($_GET['action'])) {
         }
 
         if (isset($schedules['message'])) {
-            echo json_encode(['success' => true, 'data' => [], 'message' => $schedules['message'], 'program_type' => $programType]);
+            echo json_encode([
+                'success' => true, 
+                'data' => [], 
+                'message' => $schedules['message'], 
+                'program_type' => $programType['type'],
+                'program_type_description' => $programType['description']
+            ]);
             exit;
         }
 
         echo json_encode([
             'success' => true,
             'data' => $schedules,
-            'program_type' => $programType
+            'program_type' => $programType['type'],
+            'program_type_description' => $programType['description']
         ]);
         exit;
     }
@@ -121,7 +128,7 @@ function generateProgramCard($program) {
     return sprintf(
         '<div class="card program-card mb-3" data-program-type="%s" data-program-id="%d">
             <div class="card-body">
-                <h5 class="card-title">%s</h5>
+                <h5 class="card-title">%s (%s)</h5>
                 <p class="card-text">%s</p>
                 <div class="form-group">
                     <label class="form-label">Select Coach:</label>
@@ -135,6 +142,7 @@ function generateProgramCard($program) {
         $programType,
         $program['program_id'],
         htmlspecialchars($program['program_name']),
+        ucfirst($programType),
         htmlspecialchars($program['program_description']),
         $program['program_id'],
         $coachOptions
@@ -349,6 +357,24 @@ function generateProgramCard($program) {
             color: #2c3e50;
             text-align: right;
         }
+        
+        /* Membership plan card styles */
+        .membership-option {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .membership-option:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .membership-option.selected {
+            border: 2px solid #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .membership-option .form-check {
+            display: none;
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -385,7 +411,7 @@ function generateProgramCard($program) {
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="first_name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                        <input type="text" class="form-control" id="first_name" name="first_name">
                                         <div class="invalid-feedback">Please enter your first name</div>
                                     </div>
                                     <div class="col-md-4 mb-3">
@@ -394,7 +420,7 @@ function generateProgramCard($program) {
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="last_name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                        <input type="text" class="form-control" id="last_name" name="last_name">
                                         <div class="invalid-feedback">Please enter your last name</div>
                                     </div>
                                 </div>
@@ -403,24 +429,24 @@ function generateProgramCard($program) {
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label d-block">Sex</label>
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="sex" id="male" value="Male" required>
+                                            <input class="form-check-input" type="radio" name="sex" id="male" value="Male">
                                             <label class="form-check-label" for="male">Male</label>
                                         </div>
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="sex" id="female" value="Female" required>
+                                            <input class="form-check-input" type="radio" name="sex" id="female" value="Female">
                                             <label class="form-check-label" for="female">Female</label>
                                         </div>
                                         <div class="invalid-feedback">Please select your sex</div>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="birthdate" class="form-label">Birth Date</label>
-                                        <input type="date" class="form-control" id="birthdate" name="birthdate" required>
+                                        <input type="date" class="form-control" id="birthdate" name="birthdate">
                                         <div class="invalid-feedback">Please enter your birth date</div>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="contact" class="form-label">Contact Number</label>
-                                        <input type="tel" class="form-control" id="contact" name="contact" pattern="[0-9]{11}" required>
-                                        <div class="invalid-feedback">Please enter a valid 11-digit contact number</div>
+                                        <input type="tel" class="form-control" id="contact" name="contact" pattern="[0-9]{11}">
+                                        <div class="invalid-feedback">Please enter your contact number</div>
                                     </div>
                                 </div>
                             </div>
@@ -443,7 +469,12 @@ function generateProgramCard($program) {
 
                             foreach ($membershipPlans as $plan): ?>
                             <div class="col-md-4 mb-4">
-                                <div class="card membership-option h-100">
+                                <div class="card membership-option h-100" onclick="selectMembershipPlan(this)" 
+                                     data-plan-id="<?= $plan['id'] ?>"
+                                     data-price="<?= $plan['price'] ?>"
+                                     data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                                     data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                                     data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
                                     <div class="card-body">
                                         <h5 class="card-title"><?= htmlspecialchars($plan['plan_name']) ?></h5>
                                         <span class="duration-badge">
@@ -451,14 +482,12 @@ function generateProgramCard($program) {
                                         </span>
                                         <div class="h4">₱<?= number_format($plan['price'], 2) ?></div>
                                         <p class="description"><?= htmlspecialchars($plan['description']) ?></p>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="membership_plan" 
-                                                   value="<?= $plan['id'] ?>" 
-                                                   data-price="<?= $plan['price'] ?>"
-                                                   data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
-                                                   data-duration="<?= htmlspecialchars($plan['duration']) ?>"
-                                                   data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
-                                        </div>
+                                        <input type="radio" name="membership_plan" class="d-none"
+                                               value="<?= $plan['id'] ?>" 
+                                               data-price="<?= $plan['price'] ?>"
+                                               data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                                               data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                                               data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
                                     </div>
                                 </div>
                             </div>
@@ -492,16 +521,15 @@ function generateProgramCard($program) {
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
+                                        <div class="modal-body">
+                                            <p id="programDesc"></p>
+                                        </div>
                                         <div id="scheduleTableContainer">
                                             <table id="scheduleTable" class="table table-striped">
                                                 <thead id="scheduleTableHead"></thead>
                                                 <tbody id="scheduleTableBody"></tbody>
                                             </table>
                                         </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        <button type="button" class="btn btn-primary" id="selectScheduleBtn">Select Schedule</button>
                                     </div>
                                 </div>
                             </div>
@@ -824,8 +852,17 @@ function generateProgramCard($program) {
                     success: function(response) {
                         const tableBody = $('#scheduleTableBody');
                         const tableHead = $('#scheduleTable thead');
+                        const programDesc = $('#programDesc');
                         
                         if (response.success && response.data?.length > 0) {
+                            // Display program type description if available
+                            if (response.program_type_description) {
+                                programDesc.html(`<strong>Program Description:</strong><br>${response.program_type_description}`);
+                                programDesc.show();
+                            } else {
+                                programDesc.hide();
+                            }
+                            
                             tableHead.html(`
                                 <tr>
                                     <th>Day</th>
@@ -1490,12 +1527,33 @@ function generateProgramCard($program) {
                             $('#birthdate').addClass('is-invalid');
                             missingFields.push('Birth Date');
                             isValid = false;
+                        } else {
+                            const selectedDate = new Date(birthdate);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0); // Reset time part for accurate date comparison
+                            
+                            if (selectedDate >= today) {
+                                $('#birthdate').addClass('is-invalid');
+                                $('#birthdate').next('.invalid-feedback').text('Birth date cannot be today or in the future');
+                                isValid = false;
+                            } else {
+                                $('#birthdate').removeClass('is-invalid');
+                            }
                         }
 
                         if (!contact) {
                             $('#contact').addClass('is-invalid');
                             missingFields.push('Contact Number');
                             isValid = false;
+                        } else {
+                            const contactRegex = /^09\d{9}$/;
+                            if (!contactRegex.test(contact)) {
+                                $('#contact').addClass('is-invalid');
+                                $('#contact').next('.invalid-feedback').text('Please enter a valid 11-digit contact number');
+                                isValid = false;
+                            } else {
+                                $('#contact').removeClass('is-invalid');
+                            }
                         }
 
                         if (!isValid) {
@@ -1521,72 +1579,21 @@ function generateProgramCard($program) {
         });
     </script>
     <script>
-        const BASE_URL = '<?= BASE_URL ?>';
-        
-        // Username validation on input
-        $('#username').on('input', function() {
-            const username = $(this).val();
-            if (!username) {
-                $(this).addClass('is-invalid');
-                $(this).next('.invalid-feedback').text('Username is required');
-            } else {
-                $(this).removeClass('is-invalid');
-            }
-        });
 
-        // Password validation on input
-        $('#password').on('input', function() {
-            const password = $(this).val();
-            if (!password) {
-                $(this).addClass('is-invalid');
-                $(this).next('.invalid-feedback').text('Password is required');
-            } else {
-                $(this).removeClass('is-invalid');
-            }
-        });
-
-        // Form submission handling
-        $('#memberForm').on('submit', function(e) {
-            e.preventDefault();
+        function selectMembershipPlan(card) {
+            // Remove selected class from all cards
+            document.querySelectorAll('.membership-option').forEach(c => c.classList.remove('selected'));
             
-            // Basic validation
-            const username = $('#username').val();
-            const password = $('#password').val();
+            // Add selected class to clicked card
+            card.classList.add('selected');
             
-            if (!username || !password) {
-                alert('Username and password are required');
-                return;
-            }
-
-            const formData = new FormData(this);
-            formData.append('action', 'add_member');
-
-            $.ajax({
-                url: window.location.href,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    if (response.success) {
-                        alert('Member added successfully!');
-                        window.location.href = BASE_URL + '/admin/members_new';
-                    } else {
-                        alert(response.message || 'Failed to add member');
-                    }
-                },
-                error: function(xhr) {
-                    let errorMessage = 'An error occurred';
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        errorMessage = response.message || errorMessage;
-                    } catch(e) {
-                        console.error('Error parsing response:', e);
-                    }
-                    alert(errorMessage);
-                }
-            });
-        });
+            // Find and check the radio button inside the card
+            const radio = card.querySelector('input[type="radio"]');
+            radio.checked = true;
+            
+            // Trigger any existing change handlers
+            $(radio).trigger('change');
+        }
     </script>
 </body>
 </html>

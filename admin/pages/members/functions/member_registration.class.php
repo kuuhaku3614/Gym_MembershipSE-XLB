@@ -444,12 +444,12 @@ class MemberRegistration {
 
     public function getCoachProgramType($coachProgramTypeId) {
         try {
-            $sql = "SELECT type FROM coach_program_types WHERE id = :id";
+            $sql = "SELECT type, description FROM coach_program_types WHERE id = :id";
             $stmt = $this->executeQuery($sql, [':id' => $coachProgramTypeId]);
-            return $stmt->fetchColumn();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Error in getCoachProgramType: " . $e->getMessage());
-            return null;
+            return false;
         }
     }
 
