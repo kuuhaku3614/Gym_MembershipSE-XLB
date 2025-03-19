@@ -474,19 +474,27 @@ class MemberRegistration {
                     TIME_FORMAT(cgs.end_time, '%h:%i %p') as end_time,
                     cgs.capacity,
                     cgs.price,
-                    CONCAT(pd.first_name, ' ', pd.last_name) as coach_name
+                    CONCAT(pd.first_name, ' ', pd.last_name) as coach_name,
+                    (
+                        SELECT COUNT(DISTINCT ps.id) 
+                        FROM program_subscription_schedule pss
+                        JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id 
+                        WHERE pss.coach_group_schedule_id = cgs.id 
+                        AND (ps.status = 'active' OR ps.status = 'pending')
+                    ) as current_subscribers
                 FROM coach_group_schedule cgs
                 JOIN coach_program_types cpt ON cgs.coach_program_type_id = cpt.id
                 JOIN users u ON cpt.coach_id = u.id
                 JOIN personal_details pd ON u.id = pd.user_id
                 WHERE cgs.coach_program_type_id = :coach_program_type_id
+                HAVING current_subscribers < capacity
                 ORDER BY FIELD(cgs.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
             
             $stmt = $this->executeQuery($sql, [':coach_program_type_id' => $coachProgramTypeId]);
             $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             if (empty($schedules)) {
-                return ['message' => 'No schedules found for this coach'];
+                return ['message' => 'No available schedules found for this coach'];
             }
             return $schedules;
             

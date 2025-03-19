@@ -957,7 +957,7 @@ function generateProgramCard($program) {
                                     <td>${schedule.day}</td>
                                     <td>${schedule.start_time}</td>
                                     <td>${schedule.end_time}</td>
-                                    <td>${response.program_type === 'personal' ? schedule.duration_rate : schedule.capacity}</td>
+                                    <td>${response.program_type === 'personal' ? schedule.duration_rate : schedule.current_subscribers + ' / ' + schedule.capacity}</td>
                                     <td>₱${schedule.price}</td>
                                     <td>
                                         <button type="button" class="btn btn-sm btn-primary select-schedule">Select</button>
