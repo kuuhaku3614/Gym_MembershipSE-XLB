@@ -1,6 +1,6 @@
 <?php
 // Configuration and Database Connection
-require_once '../config.php';
+require_once('includes/header.php');
 
 // Function to dynamically fetch image paths
 function getImagePath($imageName) {
@@ -31,6 +31,7 @@ function executeQuery($query, $params = []) {
 }
 
 // Fetch specific content for sections
+
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
 $offersContent = executeQuery("SELECT * FROM website_content WHERE section = 'offers'")[0] ?? [];
 $aboutUsContent = executeQuery("SELECT * FROM website_content WHERE section = 'about_us'")[0] ?? [];
@@ -45,7 +46,7 @@ $offers = executeQuery("SELECT * FROM gym_offers LIMIT 8");
 $products = executeQuery("SELECT * FROM products LIMIT 6");
 $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
-require_once('includes/header.php');
+
 ?>
   <style>
    .offer-button {
@@ -296,8 +297,8 @@ require_once('includes/header.php');
         <h1 class="title">About Us</h1>
         <div class="aboutUs-content">
         <p class="subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
+        <?php if (!$isLoggedIn): ?>
         <div class="joinNow-container">
-            <?php if (!$isLoggedIn): ?>
             <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-1">
                     Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
@@ -504,9 +505,9 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     </div>
     <div class="contactUs-text">
         <h1 class="title">You can find us here, sign up, local supplements and equipments</h1>
-
-        <div class="joinNow-container">
-            <?php if (!$isLoggedIn): ?>
+        
+        <?php if (!$isLoggedIn): ?>
+        <div class="joinNow-container">   
             <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-2">
                     Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />

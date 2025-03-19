@@ -19,6 +19,7 @@ function fetchExistingContent($table) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 // Fetch current content for pre-filling forms
+$logo = getDynamicContent('logo');
 $welcomeContent = getDynamicContent('welcome');
 $offersContent = getDynamicContent('offers');
 $aboutUsContent = getDynamicContent('about_us');
@@ -177,6 +178,13 @@ $galleryImages = fetchExistingContent('gallery_images');
   display: inline-block; /* Keep the element inline-block */
   font-size: 16px; /* Set font size */
   cursor: pointer; /* Change cursor to pointer */
+  background-color: #4CAF50; /* Green background */
+  border-radius: 4px; /* Rounded corners */
+  margin-top: 10px; /* Add some spacing */
+}
+
+.btn:hover {
+  background-color: #45a049; /* Darker green on hover */
 }
 
 .button-link {
@@ -189,16 +197,130 @@ $galleryImages = fetchExistingContent('gallery_images');
   text-decoration: none; /* Ensure link underline stays removed */
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Fixed height cards with consistent button positioning */
+.item-card {
+  width: 18rem;
+  height: 400px; /* Fixed height for all cards */
+  margin-bottom: 20px;
+  position: relative; /* For absolute positioning of content */
+  display: flex;
+  flex-direction: column;
+}
+
+.item-card .card-img-container {
+  height: 220px; /* Fixed height for image container */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.item-card .card-img-top {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* Maintain aspect ratio */
+}
+
+.item-card .card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Take remaining space */
+}
+
+.item-card .card-title {
+  margin-bottom: 1rem;
+  height: 50px; /* Fixed height for title */
+  overflow: hidden;
+}
+
+.item-card .card-buttons {
+  margin-top: auto; /* Push to bottom */
+  display: flex;
+  gap: 10px;
+}
+
+.card-buttons .btn {
+  flex: 1;
+}
+
 </style>
 <div class="container-fluid px-4 py-4">
 <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Website Settings</h2>
         </div>
+<!-- Logo Section Update -->
+<div class="card mb-3" data-section="logo">
+    <div class="card-header">
+        <h2>Logo</h2>
+        <button class="btn update-logo-btn">Update</button>
+    </div>
+    <div class="card-body">
+        <div class="text-center">
+            <?php
+            // Fetch logo information
+            $logoContent = getDynamicContent('logo');
+            if (!empty($logoContent) && !empty($logoContent['location'])):
+            ?>
+                <img src="../<?php echo htmlspecialchars($logoContent['location']); ?>" alt="Site Logo" class="img-fluid" style="max-height: 100px;">
+            <?php else: ?>
+                <p>No logo currently set.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Color Palette Section -->
+<div class="card mb-3" data-section="color-palette">
+    <div class="card-header">
+        <h2>Color Palette</h2>
+        <button class="btn update-color-palette-btn">Update</button>
+    </div>
+    <div class="card-body">
+        <?php
+        // Fetch color palette information
+        $colorContent = getDynamicContent('color');
+        
+        // Convert stored decimal values to hex colors
+        $primaryColor = $colorContent && isset($colorContent['latitude']) ? 
+            '#'.str_pad(dechex(abs(floor($colorContent['latitude'] * 16777215))), 6, '0', STR_PAD_LEFT) : 
+            '#4CAF50';
+            
+        $secondaryColor = $colorContent && isset($colorContent['longitude']) ? 
+            '#'.str_pad(dechex(abs(floor($colorContent['longitude'] * 16777215))), 6, '0', STR_PAD_LEFT) : 
+            '#2196F3';
+        ?>
+        <div class="d-flex justify-content-around mb-3">
+            <div class="color-swatch-container text-center">
+                <div class="color-swatch" style="background-color: <?php echo $primaryColor; ?>; width: 150px; height: 150px; border-radius: 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.16);"></div>
+                <p class="mt-3"><strong>Primary Color</strong><br><?php echo strtoupper($primaryColor); ?></p>
+            </div>
+            <div class="color-swatch-container text-center">
+                <div class="color-swatch" style="background-color: <?php echo $secondaryColor; ?>; width: 150px; height: 150px; border-radius: 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.16);"></div>
+                <p class="mt-3"><strong>Secondary Color</strong><br><?php echo strtoupper($secondaryColor); ?></p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <h5>Preview:</h5>
+            <div class="d-flex gap-3 mt-3">
+                <button class="btn" style="background-color: <?php echo $primaryColor; ?>; color: white;">Primary Button</button>
+                <button class="btn" style="background-color: <?php echo $secondaryColor; ?>; color: white;">Secondary Button</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Welcome Section Update -->
 <div class="card mb-3" data-section="welcome">
     <div class="card-header">
         <h2>Welcome Section</h2>
+        <button class="btn update-welcome-btn">Update</button>
     </div>
     <div class="card-body">
         <form method="post">
@@ -218,6 +340,7 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="offers">
     <div class="card-header">
         <h2>Offers Section</h2>
+        <button class="btn update-offers-btn">Update</button>
     </div>
     <div class="card-body">
         <form method="post">
@@ -233,14 +356,21 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="manage-gym-offers">
     <div class="card-header">
         <h2>Manage Existing Gym Offers</h2>
+        <button class="btn update-gym-offers-btn">Add New Offer</button>
     </div>
     <div class="card-body">
         <div class="d-flex flex-wrap gap-3">
             <?php foreach ($gymOffers as $offer): ?>
-                <div class="card" style="width: 18rem;">
-                    <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($offer['title']); ?>">
+                <div class="card item-card">
+                    <div class="card-img-container">
+                        <img src="../<?php echo 'cms_img/offers/' . basename($offer['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($offer['title']); ?>">
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title"><?php echo htmlspecialchars($offer['name'] ?? $offer['title']); ?></h5>
+                        <div class="card-buttons">
+                            <button class="btn update-offer-btn" data-id="<?php echo $offer['id']; ?>">Edit</button>
+                            <button class="btn delete-offer-btn" data-id="<?php echo $offer['id']; ?>" style="background-color: #f44336;">Delete</button>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -252,6 +382,7 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="about-us">
     <div class="card-header">
         <h2>About Us Section</h2>
+        <button class="btn update-about-us-btn">Update</button>
     </div>
     <div class="card-body">
         <form method="post">
@@ -267,6 +398,7 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="contact">
     <div class="card-header">
         <h2>Contact Information</h2>
+        <button class="btn update-contact-btn">Update</button>
     </div>
     <div class="card-body">
         <form method="post">
@@ -290,14 +422,21 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="products">
     <div class="card-header">
         <h2>Manage Existing Products</h2>
+        <button class="btn update-products-btn">Add New Product</button>
     </div>
     <div class="card-body">
         <div class="d-flex flex-wrap gap-3">
             <?php foreach ($products as $product): ?>
-                <div class="card" style="width: 18rem;">
-                    <img src="../<?php echo 'cms_img/products/' . basename($product['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                <div class="card item-card">
+                    <div class="card-img-container">
+                        <img src="../<?php echo 'cms_img/products/' . basename($product['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title"><?php echo htmlspecialchars($product['name']); ?></h5>
+                        <div class="card-buttons">
+                            <button class="btn update-product-btn" data-id="<?php echo $product['id']; ?>">Edit</button>
+                            <button class="btn delete-product-btn" data-id="<?php echo $product['id']; ?>" style="background-color: #f44336;">Delete</button>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -309,14 +448,21 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="staff">
     <div class="card-header">
         <h2>Manage Staff Members</h2>
+        <button class="btn update-staff-btn">Add New Staff</button>
     </div>
     <div class="card-body">
         <div class="d-flex flex-wrap gap-3">
             <?php foreach ($staffMembers as $staff): ?>
-                <div class="card" style="width: 18rem;">
-                    <img src="../<?php echo 'cms_img/staff/' . basename($staff['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($staff['name']); ?>">
+                <div class="card item-card">
+                    <div class="card-img-container">
+                        <img src="../<?php echo 'cms_img/staff/' . basename($staff['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($staff['name']); ?>">
+                    </div>
                     <div class="card-body">
                         <h5 class="card-title"><?php echo htmlspecialchars($staff['name']); ?> (<?php echo htmlspecialchars($staff['status']); ?>)</h5>
+                        <div class="card-buttons">
+                            <button class="btn update-staff-member-btn" data-id="<?php echo $staff['id']; ?>">Edit</button>
+                            <button class="btn delete-staff-btn" data-id="<?php echo $staff['id']; ?>" style="background-color: #f44336;">Delete</button>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -328,36 +474,355 @@ $galleryImages = fetchExistingContent('gallery_images');
 <div class="card mb-3" data-section="gallery">
     <div class="card-header">
         <h2>Manage Gallery Images</h2>
+        <button class="btn update-gallery-btn">Add New Image</button>
     </div>
     <div class="card-body">
         <div class="d-flex flex-wrap gap-3">
             <?php foreach ($galleryImages as $image): ?>
-                <div class="card" style="width: 18rem;">
-                    <img src="../<?php echo 'cms_img/gallery/' . basename($image['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>">
+                <div class="card item-card">
+                    <div class="card-img-container">
+                        <img src="../<?php echo 'cms_img/gallery/' . basename($image['image_path']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($image['alt_text'] ?? 'Gallery Image'); ?>">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-buttons">
+                            <button class="btn delete-gallery-btn" data-id="<?php echo $image['id']; ?>" style="background-color: #f44336;">Delete</button>
+                        </div>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
 </div>
+
 </div>
 <script>
-$(document).ready(function() {
-// With ID selector (if you add id="update_website-link" to your button)
-$('#update_website-link').on('click', function(e) {
-  e.preventDefault();
-  
-  $.ajax({
-    type: "GET",
-    url: "pages/website settings/content_management.php",
-    dataType: "html",
-    success: function(response) {
-      $(".main-content").html(response);
-    },
-    error: function(xhr, status, error) {
-      console.log("Error details:", xhr, status, error);
-      alert("Error loading the content management page.");
-    }
-  });
-});
+    $(document).ready(function() {
+    // Welcome Section
+    $('.update-welcome-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/welcome_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#welcomeModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the welcome modal.");
+            }
+        });
+    });
+
+    // Offers Section
+    $('.update-offers-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/offers_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#offersModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the offers modal.");
+            }
+        });
+    });
+
+    // Gym Offers Management
+    $('.update-gym-offers-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/add_gym_offer_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#addGymOfferModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the add gym offer modal.");
+            }
+        });
+    });
+
+    // Edit Existing Gym Offer
+    $('.update-offer-btn').on('click', function() {
+        var offerId = $(this).data('id');
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/edit_gym_offer_modal.php",
+            data: { id: offerId },
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#editGymOfferModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the edit gym offer modal.");
+            }
+        });
+    });
+
+    // Delete Gym Offer
+    $('.delete-offer-btn').on('click', function() {
+        var offerId = $(this).data('id');
+        if(confirm("Are you sure you want to delete this offer?")) {
+            $.ajax({
+                type: "POST",
+                url: "pages/website settings/modals/delete_gym_offer.php",
+                data: { id: offerId },
+                dataType: "json",
+                success: function(response) {
+                    if(response.success) {
+                        alert("Offer deleted successfully!");
+                        location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error details:", xhr, status, error);
+                    alert("Error deleting the offer.");
+                }
+            });
+        }
+    });
+
+    // About Us Section
+    $('.update-about-us-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/about_us_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#aboutUsModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the about us modal.");
+            }
+        });
+    });
+
+    // Contact Information
+    $('.update-contact-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/contact_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#contactModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the contact modal.");
+            }
+        });
+    });
+
+    // Products Management
+    $('.update-products-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/add_product_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#addProductModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the add product modal.");
+            }
+        });
+    });
+
+    // Edit Existing Product
+    $('.update-product-btn').on('click', function() {
+        var productId = $(this).data('id');
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/edit_product_modal.php",
+            data: { id: productId },
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#editProductModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the edit product modal.");
+            }
+        });
+    });
+
+    // Delete Product
+    $('.delete-product-btn').on('click', function() {
+        var productId = $(this).data('id');
+        if(confirm("Are you sure you want to delete this product?")) {
+            $.ajax({
+                type: "POST",
+                url: "pages/website settings/modals/delete_product.php",
+                data: { id: productId },
+                dataType: "json",
+                success: function(response) {
+                    if(response.success) {
+                        alert("Product deleted successfully!");
+                        location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error details:", xhr, status, error);
+                    alert("Error deleting the product.");
+                }
+            });
+        }
+    });
+
+    // Staff Management
+    $('.update-staff-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/add_staff_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#addStaffModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the add staff modal.");
+            }
+        });
+    });
+
+    // Edit Existing Staff Member
+    $('.update-staff-member-btn').on('click', function() {
+        var staffId = $(this).data('id');
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/edit_staff_modal.php",
+            data: { id: staffId },
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#editStaffModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the edit staff modal.");
+            }
+        });
+    });
+
+    // Delete Staff Member
+    $('.delete-staff-btn').on('click', function() {
+        var staffId = $(this).data('id');
+        if(confirm("Are you sure you want to delete this staff member?")) {
+            $.ajax({
+                type: "POST",
+                url: "pages/website settings/modals/delete_staff.php",
+                data: { id: staffId },
+                dataType: "json",
+                success: function(response) {
+                    if(response.success) {
+                        alert("Staff member deleted successfully!");
+                        location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error details:", xhr, status, error);
+                    alert("Error deleting the staff member.");
+                }
+            });
+        }
+    });
+
+    // Gallery Management
+    $('.update-gallery-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/add_gallery_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#addGalleryModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the add gallery modal.");
+            }
+        });
+    });
+
+    // Delete Gallery Image
+    $('.delete-gallery-btn').on('click', function() {
+        var imageId = $(this).data('id');
+        if(confirm("Are you sure you want to delete this image?")) {
+            $.ajax({
+                type: "POST",
+                url: "pages/website settings/modals/delete_gallery.php",
+                data: { id: imageId },
+                dataType: "json",
+                success: function(response) {
+                    if(response.success) {
+                        alert("Image deleted successfully!");
+                        location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error details:", xhr, status, error);
+                    alert("Error deleting the image.");
+                }
+            });
+        }
+    });
+
+    // Logo Management
+    $('.update-logo-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/logo_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#logoModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the logo modal.");
+            }
+        });
+    });
+
+    // Color Palette
+    $('.update-color-palette-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/color_palette_modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#colorPaletteModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the color palette modal.");
+            }
+        });
+    });
+
 });
 </script>

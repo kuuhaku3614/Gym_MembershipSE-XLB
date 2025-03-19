@@ -37,7 +37,6 @@ $(document).ready(function () {
       loadContent("pages/accounts/accounts.php"),
     "website_settings-link": () =>
       loadContent("pages/website settings/website_settings.php"),
-    "content_management-link": () => loadContent("pages/website settings/content_management.php"),
     "report-link": () => loadContent("pages/report/report.php"),
     "staff_management-link": () =>
       loadContent("pages/staff management/staff_management.php"),
@@ -102,7 +101,6 @@ $(document).ready(function () {
     announcement: "announcement-link",
     accounts: "accounts-link",
     website_settings: "website_settings-link",
-    content_management: "content_management-link",
     report: "report-link",
     staff_management: "staff_management-link",
   };

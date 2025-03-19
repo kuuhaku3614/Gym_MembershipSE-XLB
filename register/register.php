@@ -1,3 +1,20 @@
+<?php
+require_once '../config.php';
+function executeQuery($query, $params = []) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Database query error: ' . $e->getMessage());
+        return [];
+    }
+}
+// Fetch specific content for sections
+$welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
+$logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -132,7 +149,9 @@
 
     <!-- Verification Modal -->
     <div class="verification-modal">
-        <img src="../cms_img/jc_logo_2.png" alt="JC Powerzone Logo" class="modal-logo">
+        <img src="../<?php 
+                echo htmlspecialchars($logo['location']); 
+            ?>" alt="JC Powerzone Logo" class="modal-logo">
         <h1 class="welcome-text">WELCOME TO<br>JC POWERZONE</h1>
         <p class="verification-text">
             Enter verification code to verify phone number.<br>
