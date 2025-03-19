@@ -29,7 +29,7 @@
         background-color: #efefef!important;
     }
     .home-navbar {
-        background-color: #c92f2f;
+        background-color:var(--primary-color);
         position: fixed;
         border-radius: 0;
         width: 100%;
