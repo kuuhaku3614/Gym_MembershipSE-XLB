@@ -296,8 +296,8 @@ require_once('includes/header.php');
         <h1 class="title">About Us</h1>
         <div class="aboutUs-content">
         <p class="subtext"><?php echo htmlspecialchars($aboutUsContent['description'] ?? 'About us description goes here.'); ?></p>
-        <div class="joinNow-container">
-            <?php if (!$isLoggedIn): ?>
+        <?php if (!$isLoggedIn): ?>
+        <div class="joinNow-container">    
             <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-1">
                     Join Now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
@@ -504,9 +504,8 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     </div>
     <div class="contactUs-text">
         <h1 class="title">You can find us here, sign up, local supplements and equipments</h1>
-
+        <?php if (!$isLoggedIn): ?>
         <div class="joinNow-container">
-            <?php if (!$isLoggedIn): ?>
             <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-2">
                     Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
