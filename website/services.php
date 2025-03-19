@@ -414,7 +414,7 @@
 <!-- Cart Sidebar -->
 <div class="cart-sidebar" id="cartSidebar" aria-label="Shopping Cart">
     <div class="cart-header">
-        <h5>Shopping Cart</h5>
+        <h5>Item List</h5>
         <button class="close-cart" 
                 id="closeCart" 
                 aria-label="Close shopping cart"

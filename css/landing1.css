@@ -694,7 +694,7 @@ nav.sticky {
   justify-content: center;
   align-items: center;
   padding: 0.75rem 0.5rem 0.75rem 1.5rem;
-  background-color: #f44336;
+  background-color: var(--secondary-color);
   color: #f5f5f5;
   border: none;
   border-radius: 5px;
@@ -709,7 +709,7 @@ nav.sticky {
   width: 100%;
   justify-content: center;
   align-items: center;
-  background-color: #f44336;
+  background-color: var(--secondary-color);
   color: #f5f5f5;
   padding: 10px 15px;
   border: none;
@@ -722,9 +722,8 @@ nav.sticky {
 
 .joinButton-1:hover,
 .joinButton-2:hover {
-  background-color: #ff0000;
+  background-color: var(--secondary-color);
   transform: scale(1.05);
-  box-shadow: 0 0 10px #ff0000, 0 0 20px rgba(255, 0, 0, 0.5);
   transition: all 0.3s ease-in-out;
 }
 
@@ -738,7 +737,7 @@ nav.sticky {
 }
 
 .joinButton:hover {
-  background-color: #ff0000;
+  background-color: var(--secondary-color);
   transform: scale(1.05);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
@@ -1165,7 +1164,7 @@ nav.sticky {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f44336;
+  background-color: var(--secondary-color);
   color: #f5f5f5;
   padding: 10px 15px;
   border: none;
