@@ -148,15 +148,14 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         max-height: 100vh;
     }
     .bg-custom-red {
-        background-color: var(--secondary-color) !important;
+        background-color: var(--primary-color) !important;
     }
     .card-header, .btn-custom-red {
         background-color: #ff0000;
         color: white;
     }
     .card-header {
-        background-color: #ff0000;
-        border-bottom: 2px solid #ff0000;
+        background-color: var(--primary-color);
         padding: 1rem;
     }
  @media screen and (max-width: 480px) {

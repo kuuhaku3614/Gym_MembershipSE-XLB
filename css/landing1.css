@@ -59,7 +59,7 @@ html {
   transform: skew(-25deg);
 }
 .rhombus-1 {
-  background-color: var( --secondary-color);
+  background-color: var(--secondary-color);
 }
 
 .rhombus-2 {
@@ -75,7 +75,7 @@ html {
 }
 
 .rhombus-5 {
-  background-color: var( --secondary-color);
+  background-color: var(--secondary-color);
 }
 
 .rhombus-6 {
@@ -622,6 +622,7 @@ nav.sticky {
 }
 
 .description {
+  font-family: "Inter", sans-serif;
   font-size: 1.2em;
   margin-bottom: 2rem;
   animation: slideFromLeft 1.75s ease-out;
