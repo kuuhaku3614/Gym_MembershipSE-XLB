@@ -94,7 +94,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo "<td>" . htmlspecialchars($row['start_date']) . "</td>";
             echo "<td>" . htmlspecialchars($row['end_date']) . "</td>";
             echo "<td>₱" . number_format($row['price'], 2) . "</td>";
-            echo "<td>" . (!empty($row['description']) ? htmlspecialchars($row['description']) : 'N/A') . "</td>";
+            echo "<td>" . (!empty($row['description']) ? (strlen($row['description']) > 20 ? htmlspecialchars(substr($row['description'], 0, 20)) . '...' : htmlspecialchars($row['description'])) : 'N/A') . "</td>";
             echo "<td>" . htmlspecialchars($row['status']) . "</td>";
     
             echo "<td class='d-grid gap-2'>";
@@ -589,8 +589,17 @@ $('#saveRegistrationFeeBtn').click(function() {
         },
         success: function(response) {
             if (response.trim() === 'success') {
-                $('#updateRegistrationModal').modal('hide');
-                $('#updateSuccessModal').modal('show');
+               Swal.fire({
+                        text: response.message,
+                        color: '#ffffff',
+                        background: '#28a745',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        position: 'top'
+                    }).then(() => {
+                        $('#updateRegistrationModal').modal('hide');
+                        location.reload();
+                    });
             } else {
                 alert(response);
             }
