@@ -351,7 +351,7 @@
         if (details.transaction_type === 'membership') {
             document.getElementById('memberInfoSection').style.display = 'block';
             // Set member information
-            document.getElementById('memberProfilePic').src = '/Gym_MembershipSE-XLB/' + details.profile_picture || '/Gym_MembershipSE-XLB/assets/images/default-profile.png';
+            document.getElementById('memberProfilePic').src = '/../' + details.profile_picture || '/Gym_MembershipSE-XLB/assets/images/default-profile.png';
             document.getElementById('memberName').textContent = details.member_name;
             document.getElementById('phoneNumber').textContent = details.phone_number;
             document.getElementById('sex').textContent = details.sex;
