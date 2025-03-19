@@ -38,8 +38,15 @@ class ExpiryNotifications {
      * @return bool True if notification has been read
      */
     public function isNotificationRead($userId, $type, $notificationId) {
+        // First check session
+        if (isset($_SESSION['read_notifications'][$type]) && 
+            in_array($notificationId, $_SESSION['read_notifications'][$type])) {
+            return true;
+        }
+        
+        // Otherwise check database
         $stmt = $this->pdo->prepare("SELECT id FROM notification_reads 
-                                     WHERE user_id = ? AND notification_type = ? AND notification_id = ?");
+                                    WHERE user_id = ? AND notification_type = ? AND notification_id = ?");
         $stmt->execute([$userId, $type, $notificationId]);
         return $stmt->rowCount() > 0;
     }
@@ -52,15 +59,56 @@ class ExpiryNotifications {
      * @return bool True if successful
      */
     public function markAsRead($userId, $type, $notificationId) {
+        // Validate inputs
+        $userId = (int)$userId;
+        $notificationId = (int)$notificationId;
+        $type = filter_var($type, FILTER_SANITIZE_STRING);
+        
+        if (!$userId || !$notificationId || empty($type)) {
+            return false;
+        }
+        
         // Check if already read
         if ($this->isNotificationRead($userId, $type, $notificationId)) {
             return true;
         }
         
-        $stmt = $this->pdo->prepare("INSERT INTO notification_reads 
-                                     (user_id, notification_type, notification_id, read_at) 
-                                     VALUES (?, ?, ?, NOW())");
-        return $stmt->execute([$userId, $type, $notificationId]);
+        try {
+            // Insert a new record
+            $stmt = $this->pdo->prepare("INSERT INTO notification_reads 
+                                        (user_id, notification_type, notification_id, read_at) 
+                                        VALUES (?, ?, ?, NOW())");
+            $success = $stmt->execute([$userId, $type, $notificationId]);
+            
+            // Also update the session
+            if (!isset($_SESSION['read_notifications'])) {
+                $_SESSION['read_notifications'] = [
+                    'transactions' => [],
+                    'memberships' => [],
+                    'announcements' => [],
+                    'expiring_membership' => [],
+                    'expired_membership' => [],
+                    'expiring_rental' => [],
+                    'expired_rental' => []
+                ];
+            }
+            
+            // Store the notification ID in the session
+            // Make sure the key exists in the session array
+            if (!isset($_SESSION['read_notifications'][$type])) {
+                $_SESSION['read_notifications'][$type] = [];
+            }
+
+            // Then check if the notification is already in the array
+            if (!in_array($notificationId, $_SESSION['read_notifications'][$type])) {
+                $_SESSION['read_notifications'][$type][] = $notificationId;
+            }
+            
+            return $success;
+        } catch (Exception $e) {
+            error_log("Error marking notification as read: " . $e->getMessage());
+            return false;
+        }
     }
     
     /**
@@ -89,6 +137,30 @@ class ExpiryNotifications {
                         $notification['type'], // e.g., 'expiring_membership', 'expired_rental', etc.
                         $notification['id']
                     ]);
+                    
+                    // Also update session
+                    if (!isset($_SESSION['read_notifications'])) {
+                        $_SESSION['read_notifications'] = [
+                            'transactions' => [],
+                            'memberships' => [],
+                            'announcements' => [],
+                            'expiring_membership' => [],
+                            'expired_membership' => [],
+                            'expiring_rental' => [],
+                            'expired_rental' => []
+                        ];
+                    }
+                    
+                    // Store the notification ID in the session
+                    // Make sure the key exists in the session array
+                    if (!isset($_SESSION['read_notifications'][$notification['type']])) {
+                        $_SESSION['read_notifications'][$notification['type']] = [];
+                    }
+
+                    // Then check if the notification is already in the array
+                    if (!in_array($notification['id'], $_SESSION['read_notifications'][$notification['type']])) {
+                        $_SESSION['read_notifications'][$notification['type']][] = $notification['id'];
+                    }
                 }
             }
             
@@ -369,5 +441,4 @@ class ExpiryNotifications {
         
         return $notifications;
     }
-
 }

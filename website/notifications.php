@@ -90,7 +90,17 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-
+function executeQuery($query, $params = []) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Database query error: ' . $e->getMessage());
+        return [];
+    }
+}
 ?>
 <link rel="stylesheet" href="../css/browse_services.css">
 <style>

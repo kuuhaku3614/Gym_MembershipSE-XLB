@@ -2,7 +2,10 @@
     require_once(__DIR__ . '/../../../config.php');
     require_once(__DIR__ . '/functions/notifications.class.php');
     require_once(__DIR__ . '/functions/expiry-notifications.class.php');
-    
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $current_user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0; 
     $notificationsObj = new Notifications();
     $expiryNotificationsObj = new ExpiryNotifications();
     
@@ -84,9 +87,24 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Notifications</h2>
     <div>
-        <span class="badge bg-danger me-2">
-            <?php echo count($transactionNotifications) + count($expiryNotifications); ?> Unread
-        </span>
+    <span class="badge bg-danger me-2">
+        <?php 
+            // Count only unread notifications
+            $unreadCount = 0;
+            
+            // Count unread transaction notifications
+            $unreadCount += count($transactionNotifications);
+            
+            // Count unread expiry notifications
+            foreach ($expiryNotifications as $notification) {
+                if (!$expiryNotificationsObj->isNotificationRead($currentUserId, $notification['type'], $notification['id'])) {
+                    $unreadCount++;
+                }
+            }
+            
+            echo $unreadCount; 
+        ?> Unread
+    </span>
         <button type="button" class="btn btn-primary" id="markReadBtn" onclick="markRead()">
             <i class="fas fa-check me-1"></i>Mark All as Read
         </button>
@@ -474,7 +492,7 @@
         
     // Mark this notification as read when opened
     // Check if notification is unread before sending request
-    const notificationCard = document.querySelector(`.notification-card.unread[onclick*="${notification.id}"]`);
+    const notificationCard = document.querySelector(`.notification-card.unread[data-notification-id="${notification.id}"][data-notification-type="${notification.type}"]`);
     if (notificationCard) {
         markSingleAsRead();
     }
@@ -601,7 +619,7 @@
                     }
                     
                     // Update notification counter
-                    updateNotificationCounter();
+                    updateNotificationCount();
                 });
             }
         })
@@ -736,7 +754,7 @@ function markSingleAsRead() {
 }
 
 function updateNotificationCount() {
-    // Count remaining unread notifications
+    // Count only unread notifications
     const unreadCount = document.querySelectorAll('.notification-card.unread').length;
     
     // Update the badge count

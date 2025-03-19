@@ -1,6 +1,6 @@
 <?php
 // Configuration and Database Connection
-require_once '../config.php';
+require_once('includes/header.php');
 
 // Function to dynamically fetch image paths
 function getImagePath($imageName) {
@@ -31,6 +31,7 @@ function executeQuery($query, $params = []) {
 }
 
 // Fetch specific content for sections
+
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
 $offersContent = executeQuery("SELECT * FROM website_content WHERE section = 'offers'")[0] ?? [];
 $aboutUsContent = executeQuery("SELECT * FROM website_content WHERE section = 'about_us'")[0] ?? [];
@@ -45,7 +46,7 @@ $offers = executeQuery("SELECT * FROM gym_offers LIMIT 8");
 $products = executeQuery("SELECT * FROM products LIMIT 6");
 $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
-require_once('includes/header.php');
+
 ?>
   <style>
    .offer-button {
