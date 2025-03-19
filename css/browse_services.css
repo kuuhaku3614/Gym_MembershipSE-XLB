@@ -234,7 +234,7 @@
 }
 
 .cart-header {
-  background: #ff0000;
+  background: grey;
   padding: 20px;
   display: flex;
   justify-content: space-between;

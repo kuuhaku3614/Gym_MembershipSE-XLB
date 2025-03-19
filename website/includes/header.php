@@ -354,15 +354,15 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
                     <?php else: ?>
                         <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php endif; ?>
-                    <hr class="dropdown-divider" aria-hidden="true">
-                    <a href="<?php echo $isCoachFolder ? '../notifications.php' : 'notifications.php'; ?>">
+                    <hr class="dropdown-divider" style="margin: 5px auto; border-top: 1px solid rgba(0,0,0,0.2); width: 90%;">
+                    <a class="notifications-btn" href="<?php echo $isCoachFolder ? '../notifications.php' : 'notifications.php'; ?>">
                         <i class="fas fa-bell pe-3"></i> Notifications
                         <?php if ($unreadNotificationsCount > 0): ?>
                             <span class="notification-badge"><?php echo $unreadNotificationsCount; ?></span>
                         <?php endif; ?>
                     </a>
                     <a href="" class="edit-profile-link" role="menuitem"> <i class="fas fa-user-edit pe-3"></i> Edit Profile</a>
-                    <a href="<?php echo $basePath; ?>login/logout.php" role="menuitem"> <i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
+                    <a href="#" onclick="showLogoutConfirmation(event)" role="menuitem"> <i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
                 </div>
             </div>
         <?php else: ?>
@@ -371,6 +371,19 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
         <?php endif; ?>
     </div>
 </nav>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+                        <div class="modal-content" style="background-color: #fff; margin: 15% auto; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+                            <h4>Confirm Logout</h4>
+                            <p>Are you sure you want to logout?</p>
+                            <div style="margin-top: 20px;">
+                                <a href="<?php echo $basePath; ?>login/logout.php" class="btn btn-danger" style="margin-right: 10px;">Yes, Logout</a>
+                                <button onclick="closeLogoutModal()" class="btn btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    
 <!-- Profile Edit Modal -->
 <div id="profileEditModal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -429,6 +442,23 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
 </div>
 
 <script>
+
+function showLogoutConfirmation(event) {
+                            event.preventDefault();
+                            document.getElementById('logoutModal').style.display = 'block';
+                        }
+                        
+                        function closeLogoutModal() {
+                            document.getElementById('logoutModal').style.display = 'none';
+                        }
+                        
+                        window.onclick = function(event) {
+                            let modal = document.getElementById('logoutModal');
+                            if (event.target == modal) {
+                                modal.style.display = 'none';
+                            }
+                        }
+                        
     // Update cart count on page load
     document.addEventListener("DOMContentLoaded", function() {
         let cartCount = localStorage.getItem("cartTotal") || 0;
