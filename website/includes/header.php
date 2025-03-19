@@ -245,6 +245,15 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     $_SESSION['personal_details'] = $userDetails;
 }
 $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
+$color = executeQuery("SELECT * FROM website_content WHERE section = 'color'")[0] ?? [];
+function decimalToHex($decimal) {
+    $hex = dechex(abs(floor($decimal * 16777215)));
+    // Ensure hex values are properly formatted with leading zeros
+    return '#' . str_pad($hex, 6, '0', STR_PAD_LEFT);
+}
+
+$primaryHex = isset($color['latitude']) ? decimalToHex($color['latitude']) : '#000000';
+$secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) : '#000000';
 ?>
 
 <!DOCTYPE html>
@@ -263,6 +272,10 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
   <style>
+    :root {
+    --primary-color: <?php echo $primaryHex; ?>;
+    --secondary-color: <?php echo $secondaryHex; ?>;
+    }
     .cart-btn {
         position: relative;
     }
