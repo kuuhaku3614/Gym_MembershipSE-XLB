@@ -933,39 +933,93 @@ function generateProgramCard($program) {
                         programDesc.empty();
                         
                         if (response.success && response.data?.length > 0) {
-                            // Display program type description if available
-                            if (response.program_type_description) {
-                                programDesc.html(`<strong>Program Description:</strong><br>${response.program_type_description}`);
-                                programDesc.show();
+                            // Different headers for personal and group schedules
+                            if (response.program_type === 'personal') {
+                                tableHead.html(`
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Time Slot</th>
+                                        <th>Duration (mins)</th>
+                                        <th>Coach</th>
+                                        <th>Price</th>
+                                        <th>Action</th>
+                                    </tr>
+                                `);
                             } else {
-                                programDesc.hide();
+                                tableHead.html(`
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Time Slot</th>
+                                        <th>Capacity</th>
+                                        <th>Coach</th>
+                                        <th>Price</th>
+                                        <th>Action</th>
+                                    </tr>
+                                `);
                             }
-                            
-                            tableHead.html(`
-                                <tr>
-                                    <th>Day</th>
-                                    <th>Start Time</th>
-                                    <th>End Time</th>
-                                    <th>${response.program_type === 'personal' ? 'Duration (mins)' : 'Capacity'}</th>
-                                    <th>Price</th>
-                                    <th>Action</th>
-                                </tr>
-                            `);
 
-                            const rows = response.data.map(schedule => `
-                                <tr data-id='${schedule.id}' data-type='${response.program_type}' data-coach-program-type-id='${coachProgramTypeId}' data-program='${programName}' data-coach='${schedule.coach_name || ''}' data-day='${schedule.day}' data-starttime='${schedule.start_time}' data-endtime='${schedule.end_time}' data-price='${schedule.price}'>
-                                    <td>${schedule.day}</td>
-                                    <td>${schedule.start_time}</td>
-                                    <td>${schedule.end_time}</td>
-                                    <td>${response.program_type === 'personal' ? schedule.duration_rate : schedule.current_subscribers + ' / ' + schedule.capacity}</td>
-                                    <td>₱${schedule.price}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-primary select-schedule">Select</button>
-                                    </td>
-                                </tr>
-                            `).join('');
-                            
-                            tableBody.html(rows);
+                            // For personal training, split time slots based on duration
+                            if (response.program_type === 'personal') {
+                                const rows = [];
+                                response.data.forEach(schedule => {
+                                    // Calculate number of slots based on duration
+                                    const startTime = new Date(`2000-01-01 ${schedule.start_time}`);
+                                    const endTime = new Date(`2000-01-01 ${schedule.end_time}`);
+                                    const totalMinutes = (endTime - startTime) / 1000 / 60;
+                                    const numSlots = Math.floor(totalMinutes / schedule.duration_rate);
+                                    
+                                    // Create a slot for each duration period
+                                    for (let i = 0; i < numSlots; i++) {
+                                        const slotStart = new Date(startTime.getTime() + i * schedule.duration_rate * 60000);
+                                        const slotEnd = new Date(slotStart.getTime() + schedule.duration_rate * 60000);
+                                        
+                                        rows.push(`
+                                            <tr data-id='${schedule.id}' 
+                                                data-type='personal' 
+                                                data-coach-program-type-id='${coachProgramTypeId}' 
+                                                data-program='${programName}' 
+                                                data-coach='${schedule.coach_name}' 
+                                                data-day='${schedule.day}' 
+                                                data-starttime='${slotStart.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })}' 
+                                                data-endtime='${slotEnd.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })}' 
+                                                data-price='${schedule.price}'>
+                                                <td>${schedule.day}</td>
+                                                <td>${slotStart.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })} - ${slotEnd.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })}</td>
+                                                <td>${schedule.duration_rate}</td>
+                                                <td>${schedule.coach_name}</td>
+                                                <td>₱${schedule.price}</td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm select-schedule">Select</button>
+                                                </td>
+                                            </tr>
+                                        `);
+                                    }
+                                });
+                                tableBody.html(rows.join(''));
+                            } else {
+                                // Original group schedule display
+                                const rows = response.data.map(schedule => `
+                                    <tr data-id='${schedule.id}' 
+                                        data-type='group' 
+                                        data-coach-program-type-id='${coachProgramTypeId}' 
+                                        data-program='${programName}' 
+                                        data-coach='${schedule.coach_name}' 
+                                        data-day='${schedule.day}' 
+                                        data-starttime='${schedule.start_time}' 
+                                        data-endtime='${schedule.end_time}' 
+                                        data-price='${schedule.price}'>
+                                        <td>${schedule.day}</td>
+                                        <td>${schedule.start_time} - ${schedule.end_time}</td>
+                                        <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
+                                        <td>${schedule.coach_name}</td>
+                                        <td>₱${schedule.price}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary select-schedule">Select</button>
+                                        </td>
+                                    </tr>
+                                `).join('');
+                                tableBody.html(rows);
+                            }
                         } else {
                             tableBody.html('<tr><td colspan="6" class="text-center">No schedules found</td></tr>');
                             programDesc.hide();
@@ -1069,8 +1123,8 @@ function generateProgramCard($program) {
                                     <thead>
                                         <tr>
                                             <th>Day</th>
-                                            <th>Start Time</th>
-                                            <th>End Time</th>
+                                            <th>Time Slot</th>
+                                            <th>Duration (mins)</th>
                                             <th>Coach</th>
                                             <th>Price</th>
                                             <th>Action</th>
@@ -1104,8 +1158,8 @@ function generateProgramCard($program) {
                                         data-price="${schedule.price}"
                                     >
                                         <td>${schedule.day}</td>
-                                        <td>${schedule.start_time}</td>
-                                        <td>${schedule.end_time}</td>
+                                        <td>${schedule.start_time} - ${schedule.end_time}</td>
+                                        <td>${schedule.duration_rate}</td>
                                         <td>${schedule.coach_name || ''}</td>
                                         <td>₱${parseFloat(schedule.price).toFixed(2)}</td>
                                         <td>

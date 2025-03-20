@@ -506,9 +506,35 @@ class MemberRegistration {
 
     public function getCoachPersonalSchedule($coachProgramTypeId) {
         try {
+            // First, get all booked time slots
+            $bookedSlotsQuery = "
+                SELECT DISTINCT
+                    pss.coach_personal_schedule_id,
+                    pss.day,
+                    pss.start_time,
+                    pss.end_time
+                FROM program_subscription_schedule pss
+                JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+                JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
+                WHERE ps.status IN ('active', 'pending')
+                AND cps.coach_program_type_id = :coach_program_type_id";
+
+            $stmt = $this->executeQuery($bookedSlotsQuery, [':coach_program_type_id' => $coachProgramTypeId]);
+            $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Create a map of booked slots by day and time
+            $bookedSlotsMap = [];
+            foreach ($bookedSlots as $slot) {
+                $key = $slot['day'] . '_' . $slot['start_time'] . '_' . $slot['end_time'];
+                $bookedSlotsMap[$key] = true;
+            }
+
+            // Get available schedules
             $sql = "SELECT 
                     cps.id,
                     cps.day,
+                    TIME_FORMAT(cps.start_time, '%H:%i') as start_time_raw,
+                    TIME_FORMAT(cps.end_time, '%H:%i') as end_time_raw,
                     TIME_FORMAT(cps.start_time, '%h:%i %p') as start_time,
                     TIME_FORMAT(cps.end_time, '%h:%i %p') as end_time,
                     cps.duration_rate,
@@ -522,12 +548,53 @@ class MemberRegistration {
                 ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
             
             $stmt = $this->executeQuery($sql, [':coach_program_type_id' => $coachProgramTypeId]);
-            $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rawSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            if (empty($schedules)) {
+            if (empty($rawSchedules)) {
                 return ['message' => 'No schedules found for this coach'];
             }
-            return $schedules;
+
+            // Process schedules to create time slots based on duration
+            $processedSchedules = [];
+            foreach ($rawSchedules as $schedule) {
+                $startTime = strtotime($schedule['start_time_raw']);
+                $endTime = strtotime($schedule['end_time_raw']);
+                $duration = $schedule['duration_rate']; // in minutes
+                
+                // Calculate number of slots
+                $totalMinutes = ($endTime - $startTime) / 60;
+                $numSlots = floor($totalMinutes / $duration);
+                
+                // Create slots
+                for ($i = 0; $i < $numSlots; $i++) {
+                    $slotStart = $startTime + ($i * $duration * 60);
+                    $slotEnd = $slotStart + ($duration * 60);
+                    
+                    // Check if this time slot is booked
+                    $slotKey = $schedule['day'] . '_' . date('H:i', $slotStart) . '_' . date('H:i', $slotEnd);
+                    if (isset($bookedSlotsMap[$slotKey])) {
+                        continue;
+                    }
+                    
+                    $processedSchedules[] = [
+                        'id' => $schedule['id'],
+                        'day' => $schedule['day'],
+                        'start_time' => date('h:i A', $slotStart),
+                        'end_time' => date('h:i A', $slotEnd),
+                        'duration_rate' => $schedule['duration_rate'],
+                        'price' => $schedule['price'],
+                        'coach_name' => $schedule['coach_name'],
+                        'slot_index' => $i + 1,
+                        'total_slots' => $numSlots
+                    ];
+                }
+            }
+            
+            if (empty($processedSchedules)) {
+                return ['message' => 'No available time slots found for this coach'];
+            }
+            
+            return $processedSchedules;
             
         } catch (Exception $e) {
             error_log("Error in getCoachPersonalSchedule: " . $e->getMessage());
