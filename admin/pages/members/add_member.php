@@ -1096,100 +1096,35 @@ function generateProgramCard($program) {
                 }
             });
 
-            function fetchSchedules(programType) {
-                const selectedCoachProgramTypeId = $('#coach_program_type_id').val();
-                const programName = $('#program_name').val();
+            // Helper function to convert time string to minutes for comparison
+            function timeToMinutes(timeStr) {
+                const [time, period] = timeStr.split(' ');
+                let [hours, minutes] = time.split(':').map(Number);
                 
-                if (!selectedCoachProgramTypeId || !programName) {
-                    console.error('Missing required data:', { selectedCoachProgramTypeId, programName });
-                    return;
+                // Convert to 24-hour format
+                if (period === 'PM' && hours !== 12) {
+                    hours += 12;
+                } else if (period === 'AM' && hours === 12) {
+                    hours = 0;
                 }
-
-                $.ajax({
-                    url: 'functions/fetch_schedules.php',
-                    method: 'POST',
-                    data: {
-                        coach_program_type_id: selectedCoachProgramTypeId,
-                        program_type: programType
-                    },
-                    success: function(response) {
-                        try {
-                            response = JSON.parse(response);
-                            console.log('Fetched schedules:', response); // Debug log
-
-                            // Clear existing table content
-                            $('#scheduleTableContainer').html(`
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Day</th>
-                                            <th>Time Slot</th>
-                                            <th>Duration (mins)</th>
-                                            <th>Coach</th>
-                                            <th>Price</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            `);
-
-                            // Add table rows
-                            response.data.forEach(schedule => {
-                                const scheduleId = programType === 'personal' ? schedule.coach_personal_schedule_id : schedule.coach_group_schedule_id;
-                                console.log('Schedule row data:', { 
-                                    id: scheduleId,
-                                    type: programType,
-                                    program: programName,
-                                    schedule: schedule 
-                                }); // Debug log
-
-                                $('#scheduleTableContainer tbody').append(`
-                                    <tr
-                                        data-id="${scheduleId}"
-                                        data-type="${programType}"
-                                        data-coach-program-type-id="${selectedCoachProgramTypeId}"
-                                        data-program="${programName}"
-                                        data-coach="${schedule.coach_name || ''}"
-                                        data-day="${schedule.day}"
-                                        data-starttime="${schedule.start_time}"
-                                        data-endtime="${schedule.end_time}"
-                                        data-price="${schedule.price}"
-                                    >
-                                        <td>${schedule.day}</td>
-                                        <td>${schedule.start_time} - ${schedule.end_time}</td>
-                                        <td>${schedule.duration_rate}</td>
-                                        <td>${schedule.coach_name || ''}</td>
-                                        <td>₱${parseFloat(schedule.price).toFixed(2)}</td>
-                                        <td>
-                                            <button class="btn btn-primary btn-sm select-schedule">Select</button>
-                                        </td>
-                                    </tr>
-                                `);
-                            });
-
-                            scheduleModal.show();
-                        } catch (error) {
-                            console.error('Error parsing schedule data:', error);
-                            console.error('Response:', response);
-                            alert('Failed to load schedules. Please try again.');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error fetching schedules:', error);
-                        console.error('Status:', status);
-                        console.error('Response:', xhr.responseText);
-                        alert('Failed to fetch schedules. Please try again.');
-                    }
-                });
+                
+                return hours * 60 + minutes;
             }
 
             // Function to check if two time ranges overlap
             function checkTimeOverlap(start1, end1, start2, end2) {
                 // Convert time strings to minutes for easier comparison
                 function timeToMinutes(timeStr) {
-                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    const [time, period] = timeStr.split(' ');
+                    let [hours, minutes] = time.split(':').map(Number);
+                    
+                    // Convert to 24-hour format
+                    if (period === 'PM' && hours !== 12) {
+                        hours += 12;
+                    } else if (period === 'AM' && hours === 12) {
+                        hours = 0;
+                    }
+                    
                     return hours * 60 + minutes;
                 }
                 
@@ -1198,37 +1133,21 @@ function generateProgramCard($program) {
                 const start2Mins = timeToMinutes(start2);
                 const end2Mins = timeToMinutes(end2);
                 
-                // Two time ranges overlap if one starts before the other ends
+                // No overlap if one ends before or at the same time the other starts
                 return !(end1Mins <= start2Mins || end2Mins <= start1Mins);
             }
 
             // Function to check if a schedule conflicts with existing selections
             function hasScheduleConflict(newSchedule) {
                 return selectedPrograms.some(program => {
-                    // Check if same day
+                    // Only check if it's the same day
                     if (program.day === newSchedule.day) {
-                        const hasConflict = checkTimeOverlap(
+                        return checkTimeOverlap(
                             newSchedule.startTime,
                             newSchedule.endTime,
                             program.startTime,
                             program.endTime
                         );
-                        
-                        if (hasConflict) {
-                            console.log('Schedule conflict found:', {
-                                existing: {
-                                    program: program.program,
-                                    day: program.day,
-                                    time: `${program.startTime} - ${program.endTime}`
-                                },
-                                new: {
-                                    program: newSchedule.program,
-                                    day: newSchedule.day,
-                                    time: `${newSchedule.startTime} - ${newSchedule.endTime}`
-                                }
-                            });
-                        }
-                        return hasConflict;
                     }
                     return false;
                 });
