@@ -341,7 +341,7 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
                 submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
                 
                 $.ajax({
-                    url: '/register/register_handler.php',
+                    url: '../register/register_handler.php',
                     type: 'POST',
                     data: formData,
                     processData: false,
