@@ -284,6 +284,10 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
 }
 </style>
 
+<button class="mobile-toggle" id="sidebarToggle">
+    <i class="fas fa-bars"></i>
+</button>
+
 <div class="sidebar" id="sidebar">
     <!-- Logo and Admin Container -->
     <div class="logo-container">
@@ -463,4 +467,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // but we can add additional notification-specific behavior here if needed
     });
 });
+
+    // Mobile sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebarToggle');
+        
+        if (window.innerWidth <= 991) {
+            if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+                sidebar.classList.remove('active');
+            }
+        }
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('sidebar');
+        if (window.innerWidth > 991) {
+            sidebar.classList.remove('active');
+        }
+    });
 </script>
