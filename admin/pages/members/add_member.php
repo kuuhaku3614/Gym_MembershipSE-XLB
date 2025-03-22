@@ -863,12 +863,7 @@ function generateProgramCard($program) {
             $('.program-card').click(function() {
                 const card = $(this);
                 const programId = card.data('program-id');
-                const program = card.find('.card-title').text();
-                const type = card.data('program-type');
-                const coach = card.find('.program-coach option:selected').text();
-                const schedule = card.find('.program-coach option:selected').data('schedule');
-                const price = parseFloat(card.find('.program-coach option:selected').data('price'));
-
+                
                 if (card.hasClass('selected')) {
                     // Remove program
                     card.removeClass('selected');
@@ -876,22 +871,11 @@ function generateProgramCard($program) {
                 } else {
                     // Add program
                     card.addClass('selected');
-                    selectedPrograms.push({
-                        id: programId,
-                        program: program,
-                        type: type,
-                        coach: coach,
-                        schedule: schedule,
-                        price: price
-                    });
                 }
-
-                // Update programs summary
+                
+                // Always update summary after selection changes
                 updateProgramsSummary();
-
-                // Update totals
-                updateTotalAmount();
-
+                
                 // Update review section if visible
                 if ($('#phase4').is(':visible')) {
                     updateReviewInformation();
@@ -935,86 +919,113 @@ function generateProgramCard($program) {
                         if (response.success && response.data?.length > 0) {
                             // Different headers for personal and group schedules
                             if (response.program_type === 'personal') {
-                                tableHead.html(`
-                                    <tr>
-                                        <th>Day</th>
-                                        <th>Time Slot</th>
-                                        <th>Duration (mins)</th>
-                                        <th>Coach</th>
-                                        <th>Price</th>
-                                        <th>Action</th>
-                                    </tr>
-                                `);
-                            } else {
-                                tableHead.html(`
-                                    <tr>
-                                        <th>Day</th>
-                                        <th>Time Slot</th>
-                                        <th>Capacity</th>
-                                        <th>Coach</th>
-                                        <th>Price</th>
-                                        <th>Action</th>
-                                    </tr>
-                                `);
-                            }
-
-                            // For personal training, split time slots based on duration
-                            if (response.program_type === 'personal') {
-                                const rows = [];
+                                // For personal training, group time slots by day, duration, and price
+                                const scheduleGroups = {};
+                                
+                                // First, organize all time slots by day, duration, and price
                                 response.data.forEach(schedule => {
-                                    // Calculate number of slots based on duration
+                                    // Create a unique key for each combination
+                                    const groupKey = `${schedule.day}-${schedule.duration_rate}-${schedule.price}-${schedule.coach_name}`;
+                                    
+                                    if (!scheduleGroups[groupKey]) {
+                                        scheduleGroups[groupKey] = {
+                                            day: schedule.day,
+                                            duration: schedule.duration_rate,
+                                            price: schedule.price,
+                                            coach: schedule.coach_name,
+                                            slots: []
+                                        };
+                                    }
+                                    
+                                    // Calculate time slots for this schedule
                                     const startTime = new Date(`2000-01-01 ${schedule.start_time}`);
                                     const endTime = new Date(`2000-01-01 ${schedule.end_time}`);
                                     const totalMinutes = (endTime - startTime) / 1000 / 60;
                                     const numSlots = Math.floor(totalMinutes / schedule.duration_rate);
                                     
-                                    // Create a slot for each duration period
+                                    // Create slots for this schedule
                                     for (let i = 0; i < numSlots; i++) {
                                         const slotStart = new Date(startTime.getTime() + i * schedule.duration_rate * 60000);
                                         const slotEnd = new Date(slotStart.getTime() + schedule.duration_rate * 60000);
                                         
-                                        rows.push(`
-                                            <tr data-id='${schedule.id}' 
-                                                data-type='personal' 
-                                                data-coach-program-type-id='${coachProgramTypeId}' 
-                                                data-program='${programName}' 
-                                                data-coach='${schedule.coach_name}' 
-                                                data-day='${schedule.day}' 
-                                                data-starttime='${slotStart.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })}' 
-                                                data-endtime='${slotEnd.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })}' 
-                                                data-price='${schedule.price}'>
-                                                <td>${schedule.day}</td>
-                                                <td>${slotStart.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })} - ${slotEnd.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })}</td>
-                                                <td>${schedule.duration_rate}</td>
-                                                <td>${schedule.coach_name}</td>
-                                                <td>₱${schedule.price}</td>
-                                                <td>
-                                                    <button class="btn btn-primary btn-sm select-schedule">Select</button>
-                                                </td>
-                                            </tr>
-                                        `);
+                                        scheduleGroups[groupKey].slots.push({
+                                            id: schedule.id,
+                                            startTime: slotStart.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' }),
+                                            endTime: slotEnd.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit' })
+                                        });
                                     }
                                 });
+                                
+                                // Now create rows for each unique combination
+                                const rows = Object.values(scheduleGroups).map(group => {
+                                    const timeButtons = group.slots.map(slot => `
+                                        <button class="btn btn-primary btn-sm select-schedule m-1" type="button"
+                                            data-id="${slot.id}"
+                                            data-type="personal"
+                                            data-coach-program-type-id="${coachProgramTypeId}"
+                                            data-program="${programName}"
+                                            data-coach="${group.coach}"
+                                            data-day="${group.day}"
+                                            data-starttime="${slot.startTime}"
+                                            data-endtime="${slot.endTime}"
+                                            data-price="${group.price}">
+                                            ${slot.startTime} - ${slot.endTime}
+                                        </button>
+                                    `).join('');
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${group.day}</td>
+                                            <td>${group.duration}</td>
+                                            <td>${group.coach}</td>
+                                            <td>₱${group.price}</td>
+                                            <td>${timeButtons}</td>
+                                        </tr>
+                                    `;
+                                });
+                                
+                                // Sort rows by day, duration, and price
+                                rows.sort((a, b) => {
+                                    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                                    const dayA = $(a).find('td:first').text();
+                                    const dayB = $(b).find('td:first').text();
+                                    return dayOrder.indexOf(dayA) - dayOrder.indexOf(dayB);
+                                });
+                                
+                                // Update table header for the new format
+                                tableHead.html(`
+                                    <tr>
+                                        <th>Day</th>
+                                        <th>Duration (mins)</th>
+                                        <th>Coach</th>
+                                        <th>Price</th>
+                                        <th>Available Time Slots</th>
+                                    </tr>
+                                `);
+                                
                                 tableBody.html(rows.join(''));
                             } else {
                                 // Original group schedule display
                                 const rows = response.data.map(schedule => `
-                                    <tr data-id='${schedule.id}' 
-                                        data-type='group' 
-                                        data-coach-program-type-id='${coachProgramTypeId}' 
-                                        data-program='${programName}' 
-                                        data-coach='${schedule.coach_name}' 
-                                        data-day='${schedule.day}' 
-                                        data-starttime='${schedule.start_time}' 
-                                        data-endtime='${schedule.end_time}' 
-                                        data-price='${schedule.price}'>
+                                    <tr>
                                         <td>${schedule.day}</td>
                                         <td>${schedule.start_time} - ${schedule.end_time}</td>
                                         <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
                                         <td>${schedule.coach_name}</td>
                                         <td>₱${schedule.price}</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary select-schedule">Select</button>
+                                            <button type="button" class="btn btn-sm btn-primary select-schedule"
+                                                data-id="${schedule.id}"
+                                                data-type="group"
+                                                data-coach-program-type-id="${coachProgramTypeId}"
+                                                data-program="${programName}"
+                                                data-coach="${schedule.coach_name}"
+                                                data-day="${schedule.day}"
+                                                data-starttime="${schedule.start_time}"
+                                                data-endtime="${schedule.end_time}"
+                                                data-price="${schedule.price}">
+                                                Select
+                                            </button>
                                         </td>
                                     </tr>
                                 `).join('');
@@ -1083,11 +1094,20 @@ function generateProgramCard($program) {
             $(document).on('click', '.remove-program', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const index = $(this).closest('.summary-row').data('index');
-                if (typeof index !== 'undefined') {
-                    selectedPrograms.splice(index, 1);
+                
+                const summaryRow = $(this).closest('.summary-row');
+                const index = summaryRow.data('index');
+                const programId = summaryRow.data('program-id');
+                
+                if (typeof index !== 'undefined' && programId) {
+                    // Remove program from array
+                    selectedPrograms = selectedPrograms.filter((program, i) => i !== index);
+                    
+                    // Reset the program card's selection state
+                    $(`.program-card[data-program-id="${programId}"]`).removeClass('selected');
+                    
+                    // Update UI
                     updateProgramsSummary();
-                    updateTotalAmount();
                     
                     // Update review section if visible
                     if ($('#phase4').is(':visible')) {
@@ -1113,21 +1133,6 @@ function generateProgramCard($program) {
 
             // Function to check if two time ranges overlap
             function checkTimeOverlap(start1, end1, start2, end2) {
-                // Convert time strings to minutes for easier comparison
-                function timeToMinutes(timeStr) {
-                    const [time, period] = timeStr.split(' ');
-                    let [hours, minutes] = time.split(':').map(Number);
-                    
-                    // Convert to 24-hour format
-                    if (period === 'PM' && hours !== 12) {
-                        hours += 12;
-                    } else if (period === 'AM' && hours === 12) {
-                        hours = 0;
-                    }
-                    
-                    return hours * 60 + minutes;
-                }
-                
                 const start1Mins = timeToMinutes(start1);
                 const end1Mins = timeToMinutes(end1);
                 const start2Mins = timeToMinutes(start2);
@@ -1156,25 +1161,28 @@ function generateProgramCard($program) {
             // Handle schedule selection using event delegation
             $(document).on('click', '.select-schedule', function(e) {
                 e.preventDefault();
-                const row = $(this).closest('tr');
+                e.stopPropagation();
+                
+                const button = $(this);
                 const scheduleData = {
-                    id: row.data('id'),
-                    type: row.data('type'),
-                    coach_program_type_id: row.data('coach-program-type-id'),
-                    program: row.data('program'),
-                    coach: row.data('coach'),
-                    day: row.data('day'),
-                    startTime: row.data('starttime'),
-                    endTime: row.data('endtime'),
-                    price: row.data('price')
+                    id: button.data('id'),
+                    type: button.data('type'),
+                    coach_program_type_id: button.data('coach-program-type-id'),
+                    program: button.data('program'),
+                    coach: button.data('coach'),
+                    day: button.data('day'),
+                    startTime: button.data('starttime'),
+                    endTime: button.data('endtime'),
+                    price: parseFloat(button.data('price'))
                 };
 
-                console.log('Selected schedule:', scheduleData);
+                console.log('Selected schedule data:', scheduleData);
 
                 // Validate all required schedule data
                 if (!scheduleData.id || !scheduleData.program || !scheduleData.coach || 
                     !scheduleData.day || !scheduleData.startTime || !scheduleData.endTime || 
                     !scheduleData.price || isNaN(scheduleData.price)) {
+                    console.error('Invalid schedule data:', scheduleData);
                     alert('Invalid schedule data. Please try again.');
                     return;
                 }
@@ -1219,9 +1227,12 @@ function generateProgramCard($program) {
                 let html = '';
                 totalProgramsFee = 0; // Reset total
 
+                // Rebuild array to ensure clean indices
+                selectedPrograms = selectedPrograms.filter(program => program !== null);
+
                 selectedPrograms.forEach((program, index) => {
                     // Skip invalid program data
-                    if (!program.id || !program.program || !program.coach || 
+                    if (!program || !program.id || !program.program || !program.coach || 
                         !program.day || !program.startTime || !program.endTime || 
                         !program.price || isNaN(program.price)) {
                         return;
@@ -1243,24 +1254,23 @@ function generateProgramCard($program) {
                     totalProgramsFee += program.price * schedules.length;
 
                     html += `
-                        <div class="summary-row" data-index="${index}">
+                        <div class="summary-row" data-index="${index}" data-program-id="${program.id}">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h5 class="mb-0">${program.program}</h5>
-                                <button type="button" class="btn btn-link text-danger remove-program p-0" style="font-size: 1.2rem;">
+                                <button type="button" class="btn btn-sm btn-danger remove-program">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                            <div class="details">
-                                <p class="mb-1"><strong>Type:</strong> ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program</p>
-                                <p class="mb-1"><strong>Coach:</strong> ${program.coach}</p>
-                                <p class="mb-1"><strong>Schedule:</strong> ${program.day}, ${program.startTime} - ${program.endTime}</p>
-                                <p class="mb-1"><strong>Price:</strong> ₱${program.price} × ${schedules.length} = ₱${(program.price * schedules.length).toFixed(2)}</p>
-                            </div>
+                            <p class="mb-1">Coach: ${program.coach}</p>
+                            <p class="mb-1">Schedule: ${program.day} ${program.startTime} - ${program.endTime}</p>
+                            <p class="mb-1">Price per Session: ₱${program.price}</p>
+                            <p class="mb-1">Number of Sessions: ${schedules.length}</p>
+                            <p class="mb-1">Total: ₱${(program.price * schedules.length).toFixed(2)}</p>
                         </div>
                     `;
                 });
 
-                programsContainer.html(html || '');
+                programsContainer.html(html || '<p>No programs selected</p>');
                 updateTotalAmount();
             }
 
@@ -1317,7 +1327,7 @@ function generateProgramCard($program) {
 
                 selectedPrograms.forEach(program => {
                     // Skip invalid program data
-                    if (!program.id || !program.program || !program.coach || 
+                    if (!program || !program.id || !program.program || !program.coach || 
                         !program.day || !program.startTime || !program.endTime || 
                         !program.price || isNaN(program.price)) {
                         return;
@@ -1442,21 +1452,45 @@ function generateProgramCard($program) {
                     return;
                 }
 
+                // Validate membership plan selection
+                const selectedPlan = $('input[name="membership_plan"]:checked');
+                if (!selectedPlan.length) {
+                    alert('Please select a membership plan');
+                    return;
+                }
+
+                const membershipStartDate = $('#membership_start_date').val();
+                if (!membershipStartDate) {
+                    alert('Please select a start date for the membership plan');
+                    return;
+                }
+
+                // Validate program data before submission
+                const validPrograms = selectedPrograms.filter(program => {
+                    if (!program.id || !program.coach_program_type_id || !program.program || 
+                        !program.coach || !program.day || !program.startTime || 
+                        !program.endTime || !program.price || isNaN(program.price)) {
+                        console.error('Invalid program data:', program);
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (selectedPrograms.length !== validPrograms.length) {
+                    alert('Some selected programs have invalid data. Please try removing and re-adding them.');
+                    return;
+                }
+
                 const formData = new FormData(this);
                 formData.append('action', 'add_member');
-
-                // Get membership dates
-                const membershipStartDate = $('#membership_start_date').val();
-                const selectedPlan = $('input[name="membership_plan"]:checked');
-                const duration = selectedPlan.data('duration');
-                const durationType = selectedPlan.data('duration-type');
                 
                 // Calculate end date
+                const duration = selectedPlan.data('duration');
+                const durationType = selectedPlan.data('duration-type');
                 const membershipEndDate = calculateEndDate(membershipStartDate, duration, durationType);
 
-                // Generate program schedules
-                const programsWithSchedules = selectedPrograms.map(program => {
-                    // Get all dates between start and end date for this program's day
+                // Generate program schedules with validated data
+                const programsWithSchedules = validPrograms.map(program => {
                     const schedules = generateProgramDates(
                         membershipStartDate,
                         membershipEndDate,

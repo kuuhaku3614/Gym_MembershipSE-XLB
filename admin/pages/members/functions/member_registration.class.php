@@ -373,8 +373,8 @@ class MemberRegistration {
                                     ':personal_id' => $program['type'] === 'personal' ? $program['id'] : null,
                                     ':date' => $schedule['date'],
                                     ':day' => $schedule['day'],
-                                    ':start_time' => $schedule['start_time'],
-                                    ':end_time' => $schedule['end_time'],
+                                    ':start_time' => date('H:i', strtotime($schedule['start_time'])), // Convert to 24-hour
+                                    ':end_time' => date('H:i', strtotime($schedule['end_time'])), // Convert to 24-hour
                                     ':amount' => $schedule['amount']
                                 ]);
                                 if (!$result) {
@@ -518,7 +518,8 @@ class MemberRegistration {
                 JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
                 JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
                 WHERE ps.status IN ('active', 'pending')
-                AND cps.coach_program_type_id = :coach_program_type_id";
+                AND cps.coach_program_type_id = :coach_program_type_id
+                AND pss.day = cps.day";
 
             $stmt = $this->executeQuery($bookedSlotsQuery, [':coach_program_type_id' => $coachProgramTypeId]);
             $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -527,17 +528,20 @@ class MemberRegistration {
             $bookedSlotsMap = [];
             foreach ($bookedSlots as $slot) {
                 $day = $slot['day'];
-                $startTime = strtotime($slot['start_time']);
-                $endTime = strtotime($slot['end_time']);
+                
+                // Use a reference date (2000-01-01) to ensure we only compare times
+                $startTime = strtotime("2000-01-01 " . $slot['start_time']);
+                $endTime = strtotime("2000-01-01 " . $slot['end_time']);
                 
                 if (!isset($bookedSlotsMap[$day])) {
                     $bookedSlotsMap[$day] = [];
                 }
                 
-                // Store the time range
+                // Store the time range and day
                 $bookedSlotsMap[$day][] = [
                     'start' => $startTime,
-                    'end' => $endTime
+                    'end' => $endTime,
+                    'day' => $day  // Store the day for comparison
                 ];
             }
 
@@ -569,8 +573,9 @@ class MemberRegistration {
             // Process schedules to create time slots based on duration
             $processedSchedules = [];
             foreach ($rawSchedules as $schedule) {
-                $startTime = strtotime($schedule['start_time_raw']);
-                $endTime = strtotime($schedule['end_time_raw']);
+                // Use the same reference date for comparison
+                $startTime = strtotime("2000-01-01 " . $schedule['start_time_raw']);
+                $endTime = strtotime("2000-01-01 " . $schedule['end_time_raw']);
                 $duration = $schedule['duration_rate']; // in minutes
                 
                 // Calculate number of slots
@@ -586,8 +591,10 @@ class MemberRegistration {
                     $isBooked = false;
                     if (isset($bookedSlotsMap[$schedule['day']])) {
                         foreach ($bookedSlotsMap[$schedule['day']] as $bookedSlot) {
-                            // Check for overlap
-                            if ($slotStart < $bookedSlot['end'] && $slotEnd > $bookedSlot['start']) {
+                            // Check for overlap on the same day
+                            if ($schedule['day'] === $bookedSlot['day'] && 
+                                $slotStart < $bookedSlot['end'] && 
+                                $slotEnd > $bookedSlot['start']) {
                                 $isBooked = true;
                                 break;
                             }
@@ -625,23 +632,18 @@ class MemberRegistration {
 
     private function executeQuery($sql, $params = []) {
         try {
-            error_log("Executing query: " . $sql);
-            error_log("Parameters: " . print_r($params, true));
             
             if (!$this->pdo) {
-                error_log("PDO connection is null");
                 throw new Exception("Database connection not available");
             }
             
             $stmt = $this->pdo->prepare($sql);
             if (!$stmt) {
-                error_log("Failed to prepare statement");
                 throw new Exception("Failed to prepare statement");
             }
             
             $success = $stmt->execute($params);
             if (!$success) {
-                error_log("Failed to execute statement: " . print_r($stmt->errorInfo(), true));
                 throw new Exception("Failed to execute statement");
             }
             
