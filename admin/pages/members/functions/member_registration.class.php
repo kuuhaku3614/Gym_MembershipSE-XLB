@@ -506,13 +506,14 @@ class MemberRegistration {
 
     public function getCoachPersonalSchedule($coachProgramTypeId) {
         try {
-            // First, get all booked time slots
+            // First, get all booked time slots with their durations
             $bookedSlotsQuery = "
                 SELECT DISTINCT
                     pss.coach_personal_schedule_id,
                     pss.day,
-                    pss.start_time,
-                    pss.end_time
+                    TIME_FORMAT(pss.start_time, '%H:%i') as start_time,
+                    TIME_FORMAT(pss.end_time, '%H:%i') as end_time,
+                    cps.duration_rate
                 FROM program_subscription_schedule pss
                 JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
                 JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
@@ -522,11 +523,22 @@ class MemberRegistration {
             $stmt = $this->executeQuery($bookedSlotsQuery, [':coach_program_type_id' => $coachProgramTypeId]);
             $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Create a map of booked slots by day and time
+            // Create a map of booked slots by day and time range
             $bookedSlotsMap = [];
             foreach ($bookedSlots as $slot) {
-                $key = $slot['day'] . '_' . $slot['start_time'] . '_' . $slot['end_time'];
-                $bookedSlotsMap[$key] = true;
+                $day = $slot['day'];
+                $startTime = strtotime($slot['start_time']);
+                $endTime = strtotime($slot['end_time']);
+                
+                if (!isset($bookedSlotsMap[$day])) {
+                    $bookedSlotsMap[$day] = [];
+                }
+                
+                // Store the time range
+                $bookedSlotsMap[$day][] = [
+                    'start' => $startTime,
+                    'end' => $endTime
+                ];
             }
 
             // Get available schedules
@@ -570,23 +582,32 @@ class MemberRegistration {
                     $slotStart = $startTime + ($i * $duration * 60);
                     $slotEnd = $slotStart + ($duration * 60);
                     
-                    // Check if this time slot is booked
-                    $slotKey = $schedule['day'] . '_' . date('H:i', $slotStart) . '_' . date('H:i', $slotEnd);
-                    if (isset($bookedSlotsMap[$slotKey])) {
-                        continue;
+                    // Check if this time slot overlaps with any booked slot
+                    $isBooked = false;
+                    if (isset($bookedSlotsMap[$schedule['day']])) {
+                        foreach ($bookedSlotsMap[$schedule['day']] as $bookedSlot) {
+                            // Check for overlap
+                            if ($slotStart < $bookedSlot['end'] && $slotEnd > $bookedSlot['start']) {
+                                $isBooked = true;
+                                break;
+                            }
+                        }
                     }
                     
-                    $processedSchedules[] = [
-                        'id' => $schedule['id'],
-                        'day' => $schedule['day'],
-                        'start_time' => date('h:i A', $slotStart),
-                        'end_time' => date('h:i A', $slotEnd),
-                        'duration_rate' => $schedule['duration_rate'],
-                        'price' => $schedule['price'],
-                        'coach_name' => $schedule['coach_name'],
-                        'slot_index' => $i + 1,
-                        'total_slots' => $numSlots
-                    ];
+                    // Only add the slot if it's not booked
+                    if (!$isBooked) {
+                        $processedSchedules[] = [
+                            'id' => $schedule['id'],
+                            'day' => $schedule['day'],
+                            'start_time' => date('h:i A', $slotStart),
+                            'end_time' => date('h:i A', $slotEnd),
+                            'duration_rate' => $schedule['duration_rate'],
+                            'price' => $schedule['price'],
+                            'coach_name' => $schedule['coach_name'],
+                            'slot_index' => $i + 1,
+                            'total_slots' => $numSlots
+                        ];
+                    }
                 }
             }
             
