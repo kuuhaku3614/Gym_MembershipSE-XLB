@@ -904,5 +904,36 @@ color: #f8f8f8;
             }
         });
     });
+
+    // Color picker and hex input synchronization
+    function syncColorInputs(pickerElement, hexElement, swatchElement) {
+        // Update hex when color picker changes
+        $(pickerElement).on('input', function() {
+            $(hexElement).val($(this).val().toUpperCase());
+            $(swatchElement).css('background-color', $(this).val());
+        });
+
+        // Update color picker when hex input changes
+        $(hexElement).on('input', function() {
+            let hex = $(this).val();
+            if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+                $(pickerElement).val(hex);
+                $(swatchElement).css('background-color', hex);
+            }
+        });
+    }
+
+    // Initialize color input synchronization
+    syncColorInputs('#primaryColorPicker', '#primaryColorHex', '#primaryColorSwatch');
+    syncColorInputs('#secondaryColorPicker', '#secondaryColorHex', '#secondaryColorSwatch');
+
+    // Update preview buttons when colors change
+    function updatePreviewButtons() {
+        $('.preview-primary-btn').css('background-color', $('#primaryColorPicker').val());
+        $('.preview-secondary-btn').css('background-color', $('#secondaryColorPicker').val());
+    }
+
+    $('#primaryColorPicker, #secondaryColorPicker').on('input', updatePreviewButtons);
+    $('#primaryColorHex, #secondaryColorHex').on('change', updatePreviewButtons);
 });
 </script>

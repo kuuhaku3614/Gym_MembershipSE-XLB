@@ -131,20 +131,20 @@ $secondaryHex = strlen($secondaryHex) < 7 ? str_pad(substr($secondaryHex, 1), 6,
                         <label for="primary_color" class="form-label">Primary Color:</label>
                         <div class="input-group">
                             <input type="color" class="form-control form-control-color" id="primary_color" name="primary_color" value="<?php echo $primaryHex; ?>" title="Choose primary color">
-                            <input type="text" class="form-control" id="primary_color_hex" value="<?php echo $primaryHex; ?>" readonly>
+                            <input type="text" class="form-control" id="primary_color_hex" value="<?php echo strtoupper($primaryHex); ?>" pattern="^#[0-9A-Fa-f]{6}$" title="Please enter a valid hex color (e.g., #FF0000)">
                         </div>
                         <div class="mt-2">
-                            <div style="width: 100%; height: 40px; background-color: <?php echo $primaryHex; ?>; border-radius: 5px;"></div>
+                            <div id="primary_color_preview" style="width: 100%; height: 40px; background-color: <?php echo $primaryHex; ?>; border-radius: 5px;"></div>
                         </div>
                     </div>
                     <div class="mb-4">
                         <label for="secondary_color" class="form-label">Secondary Color:</label>
                         <div class="input-group">
                             <input type="color" class="form-control form-control-color" id="secondary_color" name="secondary_color" value="<?php echo $secondaryHex; ?>" title="Choose secondary color">
-                            <input type="text" class="form-control" id="secondary_color_hex" value="<?php echo $secondaryHex; ?>" readonly>
+                            <input type="text" class="form-control" id="secondary_color_hex" value="<?php echo strtoupper($secondaryHex); ?>" pattern="^#[0-9A-Fa-f]{6}$" title="Please enter a valid hex color (e.g., #FF0000)">
                         </div>
                         <div class="mt-2">
-                            <div style="width: 100%; height: 40px; background-color: <?php echo $secondaryHex; ?>; border-radius: 5px;"></div>
+                            <div id="secondary_color_preview" style="width: 100%; height: 40px; background-color: <?php echo $secondaryHex; ?>; border-radius: 5px;"></div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -166,18 +166,54 @@ $secondaryHex = strlen($secondaryHex) < 7 ? str_pad(substr($secondaryHex, 1), 6,
 
 <script>
 $(document).ready(function() {
-    // Update hex input when color picker changes
+    // Function to validate and format hex color
+    function isValidHex(hex) {
+        return /^#[0-9A-Fa-f]{6}$/.test(hex);
+    }
+
+    function formatHex(hex) {
+        hex = hex.toUpperCase();
+        if (!hex.startsWith('#')) {
+            hex = '#' + hex;
+        }
+        return hex;
+    }
+
+    // Update hex input and preview when color picker changes
     $('#primary_color').on('input', function() {
-        $('#primary_color_hex').val($(this).val());
+        var color = $(this).val().toUpperCase();
+        $('#primary_color_hex').val(color);
+        $('#primary_color_preview').css('background-color', color);
         updatePreview();
     });
     
     $('#secondary_color').on('input', function() {
-        $('#secondary_color_hex').val($(this).val());
+        var color = $(this).val().toUpperCase();
+        $('#secondary_color_hex').val(color);
+        $('#secondary_color_preview').css('background-color', color);
         updatePreview();
     });
+
+    // Update color picker and preview when hex input changes
+    $('#primary_color_hex').on('input', function() {
+        var hex = formatHex($(this).val());
+        if (isValidHex(hex)) {
+            $('#primary_color').val(hex);
+            $('#primary_color_preview').css('background-color', hex);
+            updatePreview();
+        }
+    });
     
-    // Function to update the preview
+    $('#secondary_color_hex').on('input', function() {
+        var hex = formatHex($(this).val());
+        if (isValidHex(hex)) {
+            $('#secondary_color').val(hex);
+            $('#secondary_color_preview').css('background-color', hex);
+            updatePreview();
+        }
+    });
+
+    // Function to update the preview buttons
     function updatePreview() {
         var primaryColor = $('#primary_color').val();
         var secondaryColor = $('#secondary_color').val();
