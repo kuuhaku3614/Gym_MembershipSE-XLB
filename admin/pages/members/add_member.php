@@ -785,6 +785,35 @@ function generateProgramCard($program) {
             let selectedPrograms = [];
             let totalAmount = registrationFee;
             let totalProgramsFee = 0;
+            let selectedSchedules = new Set(); // Track selected schedules
+
+            // Function to check if a schedule is already selected
+            function isScheduleSelected(scheduleId, scheduleDay, startTime, endTime) {
+                // For group schedules, just check the ID
+                if (scheduleId) {
+                    return selectedSchedules.has(scheduleId);
+                }
+                
+                // For personal schedules, check day and time overlap
+                for (const program of selectedPrograms) {
+                    if (program.schedules) {
+                        for (const schedule of program.schedules) {
+                            if (schedule.day === scheduleDay) {
+                                const newStart = new Date(`2000-01-01 ${startTime}`);
+                                const newEnd = new Date(`2000-01-01 ${endTime}`);
+                                const existingStart = new Date(`2000-01-01 ${schedule.start_time}`);
+                                const existingEnd = new Date(`2000-01-01 ${schedule.end_time}`);
+                                
+                                // Check for time overlap
+                                if (newStart < existingEnd && newEnd > existingStart) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
 
             // Calculate and update all totals
             function updateTotalAmount() {
@@ -1178,24 +1207,21 @@ function generateProgramCard($program) {
 
                 console.log('Selected schedule data:', scheduleData);
 
-                // Validate all required schedule data
-                if (!scheduleData.id || !scheduleData.program || !scheduleData.coach || 
-                    !scheduleData.day || !scheduleData.startTime || !scheduleData.endTime || 
-                    !scheduleData.price || isNaN(scheduleData.price)) {
-                    console.error('Invalid schedule data:', scheduleData);
-                    alert('Invalid schedule data. Please try again.');
+                // Validate schedule selection
+                if (!scheduleData.day || !scheduleData.startTime || !scheduleData.endTime) {
+                    alert('Invalid schedule data');
                     return;
                 }
 
-                // Check for schedule conflicts
-                if (hasScheduleConflict(scheduleData)) {
-                    alert('This schedule conflicts with another selected program. Please choose a different time slot.');
+                // Check if schedule is already selected
+                if (isScheduleSelected(scheduleData.id, scheduleData.day, scheduleData.startTime, scheduleData.endTime)) {
+                    alert('This schedule time slot is already selected. Please choose a different time.');
                     return;
                 }
 
-                if (selectedPrograms.some(p => p.id === scheduleData.id)) {
-                    alert('This schedule has already been selected.');
-                    return;
+                // Add to selected schedules tracking
+                if (scheduleData.id) {
+                    selectedSchedules.add(scheduleData.id);
                 }
 
                 selectedPrograms.push(scheduleData);
@@ -1203,12 +1229,22 @@ function generateProgramCard($program) {
                 updateProgramsSummary();
                 updateTotalAmount();
 
-                if ($('#phase4').is(':visible')) {
-                    updateReviewInformation();
-                }
+                // Close the modal
+                $('#scheduleModal').modal('hide');
+            });
 
-                if (scheduleModal) {
-                    scheduleModal.hide();
+            // Handle program removal
+            $(document).on('click', '.remove-program', function() {
+                const index = $(this).data('index');
+                if (index >= 0 && index < selectedPrograms.length) {
+                    const program = selectedPrograms[index];
+                    // Remove from selected schedules tracking
+                    if (program.id) {
+                        selectedSchedules.delete(program.id);
+                    }
+                    selectedPrograms.splice(index, 1);
+                    updateProgramsSummary();
+                    updateTotalAmount();
                 }
             });
 
@@ -1232,9 +1268,9 @@ function generateProgramCard($program) {
 
                 selectedPrograms.forEach((program, index) => {
                     // Skip invalid program data
-                    if (!program || !program.id || !program.program || !program.coach || 
-                        !program.day || !program.startTime || !program.endTime || 
-                        !program.price || isNaN(program.price)) {
+                    if (!program || !program.id || !program.coach_program_type_id || !program.program || 
+                        !program.coach || !program.day || !program.startTime || 
+                        !program.endTime || !program.price || isNaN(program.price)) {
                         return;
                     }
 
@@ -1467,7 +1503,7 @@ function generateProgramCard($program) {
 
                 // Validate program data before submission
                 const validPrograms = selectedPrograms.filter(program => {
-                    if (!program.id || !program.coach_program_type_id || !program.program || 
+                    if (!program || !program.id || !program.coach_program_type_id || !program.program || 
                         !program.coach || !program.day || !program.startTime || 
                         !program.endTime || !program.price || isNaN(program.price)) {
                         console.error('Invalid program data:', program);
@@ -1857,13 +1893,13 @@ function generateProgramCard($program) {
                     if (currentPhase === 2) {
                         // Check if a membership plan is selected
                         if (!$('input[name="membership_plan"]:checked').length) {
-                            alert('Please select a membership plan before proceeding.');
+                            alert('Please select a membership plan');
                             return;
                         }
                         
                         // Check if start date is selected
                         if (!$('#membership_start_date').val()) {
-                            alert('Please select a start date for the membership plan.');
+                            alert('Please select a start date for the membership plan');
                             return;
                         }
                     }
