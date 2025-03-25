@@ -597,7 +597,7 @@ $(document).ready(function() {
         let reviewHtml = '';
         let totalProgramsFee = 0;
 
-        selectedPrograms.forEach(program => {
+        selectedPrograms.forEach((program, index) => {
             // Skip invalid program data
             if (!program || !program.id || !program.program || !program.coach || 
                 !program.day || !program.startTime || !program.endTime || 
@@ -628,6 +628,7 @@ $(document).ready(function() {
                         Dates: ${schedules.map(s => formatDate(s.date)).join(', ')}<br>
                         Price: ₱${parseFloat(program.price).toFixed(2)} × ${schedules.length} = ₱${(program.price * schedules.length).toFixed(2)}
                     </div>
+                    <button type="button" class="btn-close remove-program-review" aria-label="Remove program"></button>
                 </div>
             `;
             
@@ -652,7 +653,7 @@ $(document).ready(function() {
             const endDate = calculateEndDate(startDate, rental.duration, rental.durationType);
             
             const rentalHtml = `
-                <div class="rental-item">
+                <div class="rental-item review-rental" data-rental-id="${$(this).val()}">
                     <div class="program-title">${rental.name}</div>
                     <div class="program-details">
                         Duration: ${rental.duration} ${rental.durationType}<br>
@@ -660,6 +661,7 @@ $(document).ready(function() {
                         End Date: ${endDate}<br>
                         Price: ₱${rental.price.toFixed(2)}
                     </div>
+                    <button type="button" class="btn-close remove-rental-review" aria-label="Remove rental"></button>
                 </div>`;
             $('#review-rentals-list').append(rentalHtml);
             totalRentalsFee += rental.price;
@@ -709,6 +711,68 @@ $(document).ready(function() {
         $(this).toggleClass('selected');
         updateTotalAmount();
         updateRentalServicesSummary();
+    });
+
+    // Handle program removal in review phase
+    $(document).on('click', '.remove-program-review', function() {
+        const programDiv = $(this).closest('.program-item');
+        const index = selectedPrograms.findIndex(program => program.program === programDiv.find('.program-title').text());
+        
+        // Remove program from array
+        if (typeof index !== 'undefined') {
+            selectedPrograms = selectedPrograms.filter((_, i) => i !== index);
+            
+            // Remove from UI
+            programDiv.remove();
+            
+            // Update program cards and summary
+            updateProgramsSummary();
+            updateTotalAmount();
+            
+            // Hide section if no programs left
+            if (selectedPrograms.length === 0) {
+                $('#review-programs').hide();
+            }
+        }
+    });
+
+    // Handle rental removal in review phase
+    $(document).on('click', '.remove-rental-review', function() {
+        const rentalDiv = $(this).closest('.review-rental');
+        const rentalId = rentalDiv.data('rental-id');
+        
+        // Uncheck the checkbox
+        const checkbox = $(`input[name="rental_services[]"][value="${rentalId}"]`);
+        checkbox.prop('checked', false);
+        
+        // Remove selected class from rental card
+        checkbox.closest('.rental-option').removeClass('selected');
+        
+        // Remove from UI
+        rentalDiv.remove();
+        
+        // Calculate total rental fees
+        let totalRentalsFee = 0;
+        $('input[name="rental_services[]"]:checked').each(function() {
+            totalRentalsFee += parseFloat($(this).data('price')) || 0;
+        });
+        
+        // Update rental fees display everywhere
+        $('.rental-amount, .total-rentals-fee, .review-rentals-fee').text('₱ ' + totalRentalsFee.toFixed(2));
+        
+        // Hide rentals fee row if no rentals
+        if (totalRentalsFee === 0) {
+            $('.rental-fee-row').hide();
+        }
+        
+        // Update summary and totals
+        updateRentalServicesSummary();
+        updateTotalAmount();
+        
+        // Hide section if no rentals left
+        if ($('.review-rental').length === 0) {
+            $('#review-rentals-section').hide();
+        }
     });
 
     // Form submission handler
@@ -1008,6 +1072,11 @@ $(document).ready(function() {
         // Generate default credentials when reaching phase 4
         if (phaseNumber === 4) {
             generateDefaultCredentials();
+            // Hide the membership summary section in phase 4
+            $('.membership-summary').hide();
+        } else {
+            // Show the membership summary section in other phases
+            $('.membership-summary').show();
         }
         
         // Update buttons
@@ -1159,20 +1228,21 @@ $(document).ready(function() {
         $('#backToProgramsBtn').click(function() {
             showPhase(3);
         });
-        });
     });
+});
 
-    function selectMembershipPlan(card) {
-        // Remove selected class from all cards
-        document.querySelectorAll('.membership-option').forEach(c => c.classList.remove('selected'));
-        
-        // Add selected class to clicked card
-        card.classList.add('selected');
-        
-        // Find and check the radio button inside the card
-        const radio = card.querySelector('input[type="radio"]');
-        radio.checked = true;
-        
-        // Trigger any existing change handlers
-        $(radio).trigger('change');
-    }
+// Function to handle membership plan selection
+function selectMembershipPlan(card) {
+    // Remove selected class from all cards
+    document.querySelectorAll('.membership-option').forEach(c => c.classList.remove('selected'));
+    
+    // Add selected class to clicked card
+    card.classList.add('selected');
+    
+    // Find and check the radio button inside the card
+    const radio = card.querySelector('input[type="radio"]');
+    radio.checked = true;
+    
+    // Trigger any existing change handlers
+    $(radio).trigger('change');
+}
