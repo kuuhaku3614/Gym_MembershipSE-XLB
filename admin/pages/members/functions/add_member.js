@@ -328,8 +328,18 @@ $(document).ready(function() {
     // Handle rental service removal
     $(document).on('click', '.remove-rental', function() {
         const rentalId = $(this).closest('.summary-row').data('rental-id');
-        $(`input[name="rental_services[]"][value="${rentalId}"]`).prop('checked', false);
+        const checkbox = $(`input[name="rental_services[]"][value="${rentalId}"]`);
+        
+        // Uncheck the checkbox
+        checkbox.prop('checked', false);
+        
+        // Remove selected class from the rental card
+        checkbox.closest('.rental-option').removeClass('selected');
+        
+        // Remove from summary
         $(this).closest('.summary-row').remove();
+        
+        // Update totals
         updateTotalAmount();
     });
 
