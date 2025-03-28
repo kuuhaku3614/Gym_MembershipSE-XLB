@@ -30,17 +30,38 @@
                                         <th>Program</th>
                                         <th>Contact</th>
                                         <th>Schedule</th>
-                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (!empty($members)): ?>
                                         <?php foreach ($members as $member): ?>
                                             <tr>
-                                                <td></td>
-                                                <td><?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?></td>
-                                                <td><?= htmlspecialchars($member['program_name']) . ' (' . htmlspecialchars($member['type']) . ')' ?></td>
-                                                <td><?= htmlspecialchars($member['contact_no']) ?></td>
+                                                <td><?= htmlspecialchars($member['subscription_status']) ?></td>
+                                                <td><?= htmlspecialchars($member['member_name']) ?></td>
+                                                <td><?= $member['programs'] ?></td>
+                                                <td><?= htmlspecialchars($member['contact']) ?></td>
+                                                <td>
+                                                    <?php 
+                                                    $subscription_ids = explode(',', $member['subscription_ids']);
+                                                    foreach ($subscription_ids as $subscription_id) {
+                                                        $schedules = $coach->getProgramSubscriptionSchedule($subscription_id);
+                                                        if (!empty($schedules)) {
+                                                            foreach ($schedules as $schedule) {
+                                                                echo htmlspecialchars(date('M d, Y', strtotime($schedule['date']))) . ' (' . 
+                                                                     htmlspecialchars($schedule['day']) . ')<br>' .
+                                                                     htmlspecialchars(date('h:i A', strtotime($schedule['start_time']))) . ' - ' .
+                                                                     htmlspecialchars(date('h:i A', strtotime($schedule['end_time']))) . '<br>' .
+                                                                     'Amount: ₱' . htmlspecialchars(number_format($schedule['amount'], 2)) .
+                                                                     ' (' . htmlspecialchars($schedule['schedule_type']) . ')' .
+                                                                     ' [' . ($schedule['is_paid'] ? 'Paid' : 'Unpaid') . ']<br><br>';
+                                                            }
+                                                        }
+                                                    }
+                                                    if (empty($schedules)) {
+                                                        echo 'No schedules found';
+                                                    }
+                                                    ?>
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>

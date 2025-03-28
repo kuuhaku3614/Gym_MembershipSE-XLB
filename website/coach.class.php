@@ -35,26 +35,30 @@ class Coach_class {
 
     public function getProgramMembers($coachId) {
         $sql = "SELECT 
-                    ps.id as subscription_id,
-                    u.id as member_id,
-                    ps.coach_program_type_id,
-                    cpt.program_id,
-                    ps.status as subscription_status,
-                    pd.first_name,
-                    pd.last_name,
-                    pd.phone_number as contact_no,
-                    p.program_name,
-                    cpt.type as type,
-                    COALESCE(cgs.price, cps.price) as program_price
+                    GROUP_CONCAT(ps.id) as subscription_ids,
+                    CONCAT_WS(' ', pd.first_name, NULLIF(pd.middle_name, ''), pd.last_name) as member_name,
+                    GROUP_CONCAT(
+                        CONCAT(
+                            p.program_name, 
+                            ' (', 
+                            cpt.type,
+                            ' - ',
+                            ps.status,
+                            ')'
+                        ) SEPARATOR '<br>'
+                    ) as programs,
+                    pd.phone_number as contact,
+                    MAX(ps.status) as subscription_status,
+                    MAX(t.created_at) as latest_subscription_date
                 FROM program_subscriptions ps
-                INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
-                INNER JOIN programs p ON cpt.program_id = p.id
                 INNER JOIN users u ON ps.user_id = u.id
                 INNER JOIN personal_details pd ON u.id = pd.user_id
-                LEFT JOIN coach_group_schedule cgs ON cgs.coach_program_type_id = cpt.id
-                LEFT JOIN coach_personal_schedule cps ON cps.coach_program_type_id = cpt.id
+                INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                INNER JOIN programs p ON cpt.program_id = p.id
+                LEFT JOIN transactions t ON ps.transaction_id = t.id
                 WHERE cpt.coach_id = ?
-                ORDER BY ps.created_at DESC";
+                GROUP BY u.id, pd.first_name, pd.middle_name, pd.last_name, pd.phone_number
+                ORDER BY latest_subscription_date DESC";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$coachId]);
@@ -333,6 +337,29 @@ class Coach_class {
             
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$scheduleId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getProgramSubscriptionSchedule($subscriptionId) {
+        $sql = "SELECT 
+                    pss.date,
+                    pss.day,
+                    pss.start_time,
+                    pss.end_time,
+                    pss.amount,
+                    pss.is_paid,
+                    CASE 
+                        WHEN cgs.id IS NOT NULL THEN 'Group'
+                        WHEN cps.id IS NOT NULL THEN 'Personal'
+                    END as schedule_type
+                FROM program_subscription_schedule pss
+                LEFT JOIN coach_group_schedule cgs ON pss.coach_group_schedule_id = cgs.id
+                LEFT JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
+                WHERE pss.program_subscription_id = ?
+                ORDER BY pss.date, pss.start_time";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$subscriptionId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
