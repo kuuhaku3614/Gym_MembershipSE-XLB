@@ -2,15 +2,36 @@
 // Include database connection
 require_once '../config.php';
 
+// Enhanced sanitize input function
+function sanitizeInput($input) {
+    // Remove whitespace from beginning and end
+    $input = trim($input);
+    
+    // Convert special characters to HTML entities to prevent XSS
+    $input = htmlspecialchars($input, ENT_QUOTES, 'UTF-8', true);
+    
+    // Strip out HTML tags completely
+    $input = strip_tags($input);
+    
+    // Limit input length
+    $input = mb_substr($input, 0, 5000);
+    
+    // Additional protection against potential SQL injection
+    $input = addslashes($input);
+    
+    return $input;
+}
+
 // Fetch current about us content
 function getAboutUsContent() {
-    global $pdo; // Declare $pdo as global to access it
+    global $pdo;
     try {
         $query = "SELECT * FROM website_content WHERE section = 'about_us'";
         $stmt = $pdo->prepare($query);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
+        error_log('Database error: ' . $e->getMessage());
         return false;
     }
 }
@@ -20,13 +41,18 @@ $aboutUsContent = getAboutUsContent();
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate inputs
-    $description = trim($_POST['about_description'] ?? '');
+    // Sanitize input
+    $description = sanitizeInput($_POST['about_description'] ?? '');
     
     $errors = [];
     
     if (empty($description)) {
         $errors[] = "About us description is required.";
+    }
+    
+    // Additional validation
+    if (strlen($description) > 5000) {
+        $errors[] = "Description cannot exceed 5000 characters.";
     }
     
     // Update content if no errors
@@ -38,26 +64,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'description' => $description
             ]);
             
-            if ($result) {
-                $response = [
-                    'success' => true,
-                    'message' => 'About Us section updated successfully!'
-                ];
-            } else {
-                $response = [
-                    'success' => false,
-                    'message' => 'Failed to update About Us section.'
-                ];
-            }
+            $response = $result 
+                ? ['success' => true, 'message' => 'Update successful']
+                : ['success' => false, 'message' => 'Update failed'];
             
-            // Return JSON response for AJAX
             header('Content-Type: application/json');
             echo json_encode($response);
             exit;
         } catch (PDOException $e) {
+            error_log('Database error: ' . $e->getMessage());
             $response = [
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'Database error occurred.'
             ];
             
             header('Content-Type: application/json');
@@ -78,8 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<!-- About Us Modal -->
-<div class="modal fade" id="aboutUsModal" tabindex="-1" aria-labelledby="aboutUsModalLabel" aria-hidden="true">
+<!-- About Us Modal (Static but Closable) -->
+<div class="modal fade" id="aboutUsModal" tabindex="-1" aria-labelledby="aboutUsModalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -90,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <form id="aboutUsForm" method="post">
                     <div class="mb-3">
                         <label for="about_description" class="form-label">About Us Description:</label>
-                        <textarea class="form-control" id="about_description" name="about_description" rows="10"><?php echo htmlspecialchars($aboutUsContent['description'] ?? ''); ?></textarea>
+                        <textarea class="form-control" id="about_description" name="about_description" rows="10"><?php echo htmlspecialchars($aboutUsContent['description'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                     </div>
                 </form>
             </div>
@@ -115,22 +133,8 @@ $(document).ready(function() {
             dataType: "json",
             success: function(response) {
                 if (response.success) {
-                    // Create success message element
-                    var successMessage = $('<div>', {
-                        class: 'alert alert-success',
-                        role: 'alert',
-                        text: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#aboutUsModal .modal-body').prepend(successMessage);
-                    
-                    // Auto-close modal after delay
-                    setTimeout(function() {
-                        $('#aboutUsModal').modal('hide');
-                        // Reload page to reflect changes
-                        location.reload();
-                    }, 500);
+                    // Redirect or update page without showing success message
+                    location.reload();
                 } else {
                     // Create error message element
                     var errorMessage = $('<div>', {

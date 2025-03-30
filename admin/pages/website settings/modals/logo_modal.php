@@ -15,6 +15,11 @@ function getLogoContent() {
     }
 }
 
+// Sanitize input function
+function sanitizeInput($input) {
+    return htmlspecialchars(strip_tags(trim($input)), ENT_QUOTES, 'UTF-8');
+}
+
 // Get current logo content
 $logoContent = getLogoContent();
 
@@ -47,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mkdir($uploadDir, 0777, true);
             }
             
-            // Generate unique filename
-            $fileName = uniqid() . '_' . basename($_FILES['logo_file']['name']);
+            // Generate unique filename with additional sanitization
+            $fileName = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '', basename($_FILES['logo_file']['name']));
             $targetPath = $uploadDir . $fileName;
             $dbPath = 'cms_img/logo/' . $fileName;
             
@@ -81,8 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     
                     $response = [
-                        'success' => true,
-                        'message' => 'Logo updated successfully!'
+                        'success' => true
                     ];
                 } else {
                     $response = [
@@ -105,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response = [
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'Database error: ' . sanitizeInput($e->getMessage())
             ];
             
             header('Content-Type: application/json');
@@ -116,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Return errors as JSON
         $response = [
             'success' => false,
-            'message' => implode('<br>', $errors)
+            'message' => implode('<br>', array_map('sanitizeInput', $errors))
         ];
         
         header('Content-Type: application/json');
@@ -127,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!-- Logo Modal -->
-<div class="modal fade" id="logoModal" tabindex="-1" aria-labelledby="logoModalLabel" aria-hidden="true">
+<div class="modal fade" id="logoModal" tabindex="-1" aria-labelledby="logoModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -139,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if (!empty($logoContent) && !empty($logoContent['image_path'])): ?>
                         <div class="mb-3 text-center">
                             <p>Current Logo:</p>
-                            <img src="../../<?php echo htmlspecialchars($logoContent['image_path']); ?>" alt="Current Logo" class="img-fluid" style="max-height: 100px;">
+                            <img src="../../<?php echo sanitizeInput($logoContent['image_path']); ?>" alt="Current Logo" class="img-fluid" style="max-height: 100px;">
                         </div>
                     <?php endif; ?>
                     
@@ -148,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="file" class="form-control" id="logo_file" name="logo_file" accept="image/*" required>
                         <div class="form-text">Recommended size: 200x80 pixels. PNG with transparent background preferred.</div>
                     </div>
+                    <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -163,6 +168,10 @@ $(document).ready(function() {
     // Submit form via AJAX
     $('#saveLogoChanges').on('click', function() {
         var formData = new FormData($('#logoForm')[0]);
+        var $errorContainer = $('#errorContainer');
+        
+        // Reset error container
+        $errorContainer.hide().empty();
         
         $.ajax({
             type: "POST",
@@ -173,46 +182,17 @@ $(document).ready(function() {
             dataType: "json",
             success: function(response) {
                 if (response.success) {
-                    // Create success message element
-                    var successMessage = $('<div>', {
-                        class: 'alert alert-success',
-                        role: 'alert',
-                        text: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#logoModal .modal-body').prepend(successMessage);
-                    
-                    // Auto-close modal after delay
-                    setTimeout(function() {
-                        $('#logoModal').modal('hide');
-                        // Reload page to reflect changes
-                        location.reload();
-                    }, 1000);
+                    // No success message, just reload page
+                    location.reload();
                 } else {
-                    // Create error message element
-                    var errorMessage = $('<div>', {
-                        class: 'alert alert-danger',
-                        role: 'alert',
-                        html: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#logoModal .modal-body').prepend(errorMessage);
+                    // Show error message
+                    $errorContainer.html(response.message).show();
                 }
             },
             error: function(xhr, status, error) {
+                // Show generic error message
+                $errorContainer.html("An error occurred while processing your request.").show();
                 console.log("Error details:", xhr, status, error);
-                
-                // Create error message element
-                var errorMessage = $('<div>', {
-                    class: 'alert alert-danger',
-                    role: 'alert',
-                    text: "An error occurred while processing your request."
-                });
-                
-                // Show message in modal body
-                $('#logoModal .modal-body').prepend(errorMessage);
             }
         });
     });

@@ -4,6 +4,41 @@ require_once __DIR__ . '/../config.php';
 $database = new Database();
 $pdo = $database->connect();
 
+/**
+ * Sanitizes input data to prevent XSS attacks
+ * @param string $data The input data to sanitize
+ * @return string Sanitized data
+ */
+function sanitizeInput($data) {
+    if (is_array($data)) {
+        $sanitized = [];
+        foreach ($data as $key => $value) {
+            $sanitized[$key] = sanitizeInput($value);
+        }
+        return $sanitized;
+    }
+    return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Sanitizes data for output to prevent XSS attacks
+ * @param mixed $data The data to be sanitized for output
+ * @return mixed Sanitized data
+ */
+function sanitizeOutput($data) {
+    if (is_array($data)) {
+        foreach ($data as $key => $value) {
+            $data[$key] = sanitizeOutput($value);
+        }
+        return $data;
+    }
+    return htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Redirects user based on their role
+ * @param string $role User role
+ */
 function redirectBasedOnRole($role) {
     $roleRoutes = [
         'admin' => '../admin/index.php',
@@ -12,6 +47,8 @@ function redirectBasedOnRole($role) {
         'member' => '../website/website.php',
         'user' => '../website/website.php',
     ];
+    
+    $role = sanitizeInput($role);
     
     if (isset($roleRoutes[$role])) {
         header("Location: " . $roleRoutes[$role]);
@@ -22,8 +59,17 @@ function redirectBasedOnRole($role) {
     exit();
 }
 
+/**
+ * Authenticates a user and returns result
+ * @param string $username Username
+ * @param string $password Password
+ * @return array Authentication result
+ */
 function loginUser($username, $password) {
     global $pdo;
+
+    // Sanitize inputs
+    $username = sanitizeInput($username);
 
     if (!$pdo) {
         return ['success' => false, 'message' => 'Database connection failed'];
@@ -72,19 +118,23 @@ function loginUser($username, $password) {
         return ['success' => false, 'message' => 'Invalid username or password.'];
     } catch (PDOException $e) {
         error_log("Login error: " . $e->getMessage());
-        return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        return ['success' => false, 'message' => 'Database error occurred. Please try again later.'];
     }
 }
 
-function sanitizeInput($data) {
-    return htmlspecialchars(strip_tags(trim($data)));
-}
-
+/**
+ * Checks if a username already exists
+ * @param string $username Username to check
+ * @return bool True if username exists, false otherwise
+ */
 function isUsernameExists($username) {
     global $pdo;
     
+    // Sanitize input
+    $username = sanitizeInput($username);
+    
     try {
-        $sql = "SELECT id FROM users WHERE username = :username AND u.is_active = 1";
+        $sql = "SELECT id FROM users WHERE username = :username AND is_active = 1";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
@@ -95,7 +145,16 @@ function isUsernameExists($username) {
         return true; // Assume exists in case of error
     }
 }
+
+/**
+ * Initializes notification session data
+ * @param Database $database Database instance
+ * @param int $user_id User ID
+ */
 function initializeNotificationSession($database, $user_id) {
+    // Sanitize input
+    $user_id = (int)$user_id;
+    
     // Initialize session array for read notifications
     $_SESSION['read_notifications'] = [
         'transactions' => [],
@@ -115,11 +174,30 @@ function initializeNotificationSession($database, $user_id) {
     
     // Populate session with database reads
     foreach ($db_reads as $read) {
-        $type = $read['notification_type'];
+        $type = sanitizeInput($read['notification_type']);
         $id = (int)$read['notification_id'];
         
         if (isset($_SESSION['read_notifications'][$type])) {
             $_SESSION['read_notifications'][$type][] = $id;
         }
+    }
+}
+
+/**
+ * Executes a database query with prepared statements
+ * @param string $query SQL query
+ * @param array $params Parameters for prepared statement
+ * @return array Query results
+ */
+function executeQuery($query, $params = []) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare($query);
+        $stmt->execute($params);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return sanitizeOutput($result);
+    } catch (PDOException $e) {
+        error_log('Database query error: ' . $e->getMessage());
+        return [];
     }
 }

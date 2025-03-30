@@ -2,6 +2,11 @@
 // Include database connection
 require_once '../config.php';
 
+// Sanitize input function
+function sanitizeInput($input) {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
 // Fetch current welcome content
 function getWelcomeContent() {
     global $pdo; // Declare $pdo as global to access it
@@ -11,6 +16,7 @@ function getWelcomeContent() {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
+        error_log('Database error: ' . $e->getMessage());
         return false;
     }
 }
@@ -20,9 +26,9 @@ $welcomeContent = getWelcomeContent();
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate inputs
-    $companyName = trim($_POST['company_name'] ?? '');
-    $description = trim($_POST['welcome_description'] ?? '');
+    // Validate and sanitize inputs
+    $companyName = sanitizeInput($_POST['company_name'] ?? '');
+    $description = sanitizeInput($_POST['welcome_description'] ?? '');
     
     $errors = [];
     
@@ -63,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response = [
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'Database error: ' . sanitizeInput($e->getMessage())
             ];
             
             header('Content-Type: application/json');
@@ -85,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!-- Welcome Modal -->
-<div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+<div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -93,14 +99,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="errorContainer" class="mb-3"></div>
                 <form id="welcomeForm" method="post">
                     <div class="mb-3">
                         <label for="company_name" class="form-label">Company Name:</label>
-                        <input type="text" class="form-control" id="company_name" name="company_name" value="<?php echo htmlspecialchars($welcomeContent['company_name'] ?? ''); ?>">
+                        <input type="text" class="form-control" id="company_name" name="company_name" value="<?php echo sanitizeInput($welcomeContent['company_name'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="welcome_description" class="form-label">Welcome Description:</label>
-                        <textarea class="form-control" id="welcome_description" name="welcome_description" rows="6"><?php echo htmlspecialchars($welcomeContent['description'] ?? ''); ?></textarea>
+                        <textarea class="form-control" id="welcome_description" name="welcome_description" rows="6"><?php echo sanitizeInput($welcomeContent['description'] ?? ''); ?></textarea>
                     </div>
                 </form>
             </div>
@@ -118,6 +125,9 @@ $(document).ready(function() {
     $('#saveWelcomeChanges').on('click', function() {
         var formData = $('#welcomeForm').serialize();
         
+        // Clear previous error messages
+        $('#errorContainer').empty();
+        
         $.ajax({
             type: "POST",
             url: "../admin/pages/website settings/modals/welcome_modal.php",
@@ -125,32 +135,19 @@ $(document).ready(function() {
             dataType: "json",
             success: function(response) {
                 if (response.success) {
-                    // Create success message element
-                    var successMessage = $('<div>', {
-                        class: 'alert alert-success',
-                        role: 'alert',
-                        text: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#welcomeModal .modal-body').prepend(successMessage);
-                    
-                    // Auto-close modal after delay
-                    setTimeout(function() {
-                        $('#welcomeModal').modal('hide');
-                        // Reload page to reflect changes
-                        location.reload();
-                    }, 500);
+                    // Reload page to reflect changes
+                    location.reload();
                 } else {
-                    // Create error message element
+                    // Show error message
                     var errorMessage = $('<div>', {
-                        class: 'alert alert-danger',
+                        class: 'alert alert-danger alert-dismissible fade show',
                         role: 'alert',
-                        html: response.message
+                        html: response.message + 
+                              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'
                     });
                     
-                    // Show message in modal body
-                    $('#welcomeModal .modal-body').prepend(errorMessage);
+                    // Show message in error container
+                    $('#errorContainer').append(errorMessage);
                 }
             },
             error: function(xhr, status, error) {
@@ -158,20 +155,16 @@ $(document).ready(function() {
                 
                 // Create error message element
                 var errorMessage = $('<div>', {
-                    class: 'alert alert-danger',
+                    class: 'alert alert-danger alert-dismissible fade show',
                     role: 'alert',
-                    text: "An error occurred while processing your request."
+                    html: "An error occurred while processing your request." +
+                          '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>'
                 });
                 
-                // Show message in modal body
-                $('#welcomeModal .modal-body').prepend(errorMessage);
+                // Show message in error container
+                $('#errorContainer').append(errorMessage);
             }
         });
-    });
-    
-    // Remove modal from DOM when hidden
-    $('#welcomeModal').on('hidden.bs.modal', function () {
-        $(this).remove();
     });
 });
 </script>

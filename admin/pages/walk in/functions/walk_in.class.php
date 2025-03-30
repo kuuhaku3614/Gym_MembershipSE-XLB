@@ -30,7 +30,7 @@ class Walk_in_class {
         }
     }
 
-    public function addWalkInRecord($name, $phone_number) {
+    public function addWalkInRecord($first_name, $middle_name, $last_name, $phone_number) {
         try {
             $connection = $this->db->connect();
             $connection->beginTransaction();
@@ -47,13 +47,38 @@ class Walk_in_class {
             $query->execute();
             $walk_in_price = $query->fetch(PDO::FETCH_ASSOC)['price'];
 
-            // Insert walk-in record
-            $sql = "INSERT INTO walk_in_records (transaction_id, walk_in_id, name, phone_number, date, time_in, amount, is_paid, status) 
-                   VALUES (:transaction_id, 1, :name, :phone_number, CURDATE(), CURTIME(), :amount, 1, 'walked-in')";
+            // Insert walk-in record with name fields directly
+            $sql = "INSERT INTO walk_in_records (
+                        transaction_id, 
+                        walk_in_id,
+                        first_name,
+                        middle_name,
+                        last_name,
+                        phone_number, 
+                        date, 
+                        time_in, 
+                        amount, 
+                        is_paid, 
+                        status
+                    ) VALUES (
+                        :transaction_id, 
+                        1,
+                        :first_name,
+                        :middle_name,
+                        :last_name,
+                        :phone_number, 
+                        CURDATE(), 
+                        CURTIME(), 
+                        :amount, 
+                        1, 
+                        'walked-in'
+                    )";
             $query = $connection->prepare($sql);
             $query->execute([
                 'transaction_id' => $transaction_id,
-                'name' => $name,
+                'first_name' => $first_name,
+                'middle_name' => $middle_name,
+                'last_name' => $last_name,
                 'phone_number' => $phone_number,
                 'amount' => $walk_in_price
             ]);

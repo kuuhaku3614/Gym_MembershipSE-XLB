@@ -14,7 +14,7 @@ $query = "SELECT
     CASE 
         WHEN m.id IS NOT NULL THEN CONCAT(pd.first_name, ' ', pd.last_name, ' - Membership Plan')
         WHEN rs.id IS NOT NULL THEN CONCAT(pd.first_name, ' ', pd.last_name, ' - Rental Service')
-        WHEN w.id IS NOT NULL THEN CONCAT(w.name, ' - Walk-in')
+        WHEN w.id IS NOT NULL THEN CONCAT(w.first_name, ' ', w.last_name, ' - Walk-in')
     END AS transaction_details,
     CASE 
         WHEN m.id IS NOT NULL THEN mp.plan_name
@@ -236,63 +236,66 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-       $(document).ready(function() {
-    // Initialize DataTable
-    $('#transactionTable').DataTable({
-        responsive: true,
-        order: [[3, 'desc']], // Sort by check-in time by default
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search members..."
-        },
-        columnDefs: [
-            { orderable: false, targets: [0] } // Disable sorting for photo column
-        ]
-    });
-    });
-    
-    function printReceipt(contentId) {
-        // Get the content of the receipt
-        const content = document.getElementById(contentId).innerHTML;
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
-        // Write the receipt content to the new window
-        printWindow.document.open();
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Print Receipt</title>
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-                    <style>
-                        .receipt-header, .receipt-footer {
-                            text-align: center;
-                            padding: 20px 0;
-                            border: 2px dashed #ddd;
-                        }
-                        .receipt-item-label {
-                            font-weight: bold;
-                            color: #666;
-                        }
-                        .member-photo {
-                            width: 100px;
-                            height: 100px;
-                            border-radius: 50%;
-                            object-fit: cover;
-                        }
-                        .total-amount {
-                            font-size: 1.5rem;
-                            font-weight: bold;
-                            color: #0d6efd;
-                        }
-                    </style>
-                </head>
-                <body onload="window.print(); window.close();">
-                    ${content}
-                </body>
-            </html>
-        `
-        );
-        printWindow.document.close();
+$(document).ready(function() {
+    // Check if table is already initialized before initializing
+    if (!$.fn.DataTable.isDataTable("#transactionTable")) {
+        // Initialize DataTable
+        $('#transactionTable').DataTable({
+            responsive: true,
+            order: [[3, 'desc']], // Sort by check-in time by default
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
+            language: {
+                search: "_INPUT_",
+                searchPlaceholder: "Search members..."
+            },
+            columnDefs: [
+                { orderable: false, targets: [0] } // Disable sorting for photo column
+            ]
+        });
     }
+});
+
+function printReceipt(contentId) {
+    // Get the content of the receipt
+    const content = document.getElementById(contentId).innerHTML;
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    // Write the receipt content to the new window
+    printWindow.document.open();
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Print Receipt</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+                <style>
+                    .receipt-header, .receipt-footer {
+                        text-align: center;
+                        padding: 20px 0;
+                        border: 2px dashed #ddd;
+                    }
+                    .receipt-item-label {
+                        font-weight: bold;
+                        color: #666;
+                    }
+                    .member-photo {
+                        width: 100px;
+                        height: 100px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                    }
+                    .total-amount {
+                        font-size: 1.5rem;
+                        font-weight: bold;
+                        color: #0d6efd;
+                    }
+                </style>
+            </head>
+            <body onload="window.print(); window.close();">
+                ${content}
+            </body>
+        </html>
+    `
+    );
+    printWindow.document.close();
+}
 </script>

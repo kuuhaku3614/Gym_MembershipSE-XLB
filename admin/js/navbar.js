@@ -41,7 +41,11 @@ document.querySelectorAll('.nav-item.has-subnav').forEach(item => {
         // Toggle the clicked dropdown
         this.classList.toggle('open');
         const subNav = this.nextElementSibling;
-        subNav.classList.toggle('open');
+        
+        // Add null check
+        if (subNav) {
+            subNav.classList.toggle('open');
+        }
         
         // Handle active states
         if (!e.target.closest('.sub-nav-item')) {

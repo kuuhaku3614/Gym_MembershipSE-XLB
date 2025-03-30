@@ -147,22 +147,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Create walk-in records
         if (!empty($cart['walkins'])) {
             foreach ($cart['walkins'] as $walkin) {
-                // Get personal details for the user
-                $sql = "SELECT first_name, last_name, phone_number FROM personal_details WHERE user_id = ?";
+                // Get personal details for the user including middle name
+                $sql = "SELECT first_name, middle_name, last_name, phone_number FROM personal_details WHERE user_id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([$_SESSION['user_id']]);
                 $user_details = $stmt->fetch();
                 
-                $name = $user_details['first_name'] . ' ' . $user_details['last_name'];
-                
-                $sql = "INSERT INTO walk_in_records (transaction_id, walk_in_id, name, 
-                        phone_number, date, amount, is_paid, status) 
-                        VALUES (?, 1, ?, ?, ?, ?, 0, 'pending')";
+                $sql = "INSERT INTO walk_in_records (transaction_id, walk_in_id, first_name, middle_name, last_name,
+                        phone_number, date, amount, is_paid, status)
+                        VALUES (?, 1, ?, ?, ?, ?, ?, ?, 0, 'pending')";
                 
                 $stmt = $conn->prepare($sql);
                 $stmt->execute([
                     $transaction_id,
-                    $name,
+                    $user_details['first_name'],
+                    $user_details['middle_name'],
+                    $user_details['last_name'],
                     $user_details['phone_number'],
                     $walkin['date'],
                     $walkin['price']
@@ -171,10 +171,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         $conn->commit();
-        
+
         // Clear the cart after successful transaction
         $Cart->clearCart();
-        
+
         send_json_response(['message' => 'Services availed successfully!']);
 
     } catch (Exception $e) {

@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $response['success'] = true;
-        $response['message'] = 'Gym offer deleted successfully.';
+        
     } catch (PDOException $e) {
         $response['message'] = 'Database error: ' . $e->getMessage();
     }

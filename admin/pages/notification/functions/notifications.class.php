@@ -36,7 +36,7 @@ class Notifications {
                         WHEN w.id IS NOT NULL THEN 'walk-in'
                         ELSE NULL
                     END as transaction_type,
-                    w.name as walk_in_name,
+                    CONCAT(w.first_name, ' ', COALESCE(w.middle_name, ''), ' ', w.last_name) as walk_in_name,
                     w.phone_number as walk_in_phone,
                     w.date as walk_in_date,
                     w.time_in as walk_in_time,

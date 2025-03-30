@@ -492,4 +492,102 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebar.classList.remove('active');
         }
     });
+
+// Open sub-nav that was previously open before reload
+const openSubNav = localStorage.getItem('openSubNav');
+if (openSubNav) {
+    const navItem = document.getElementById(openSubNav);
+    if (navItem) {
+        navItem.classList.add('open');
+        const subNav = navItem.nextElementSibling;
+        if (subNav && subNav.classList.contains('sub-nav')) {
+            subNav.classList.add('open');
+        }
+    }
+}
+
+// Add functionality to all navigation items
+document.querySelectorAll('.nav-item, .sub-nav-item').forEach(item => {
+    item.addEventListener('click', function (e) {
+        const url = this.getAttribute('href');
+
+        // If this is a main nav item with sub-nav
+        if (this.classList.contains('has-subnav')) {
+            e.preventDefault(); // Prevent immediate navigation
+            
+            const isCurrentlyOpen = this.classList.contains('open');
+
+            if (isCurrentlyOpen) {
+                // If already open, close it
+                this.classList.remove('open');
+                const subNav = this.nextElementSibling;
+                if (subNav && subNav.classList.contains('sub-nav')) {
+                    subNav.classList.remove('open');
+                }
+                localStorage.removeItem('openSubNav');
+            } else {
+                // Close any previously open sub-navs
+                document.querySelectorAll('.nav-item.has-subnav.open').forEach(openItem => {
+                    openItem.classList.remove('open');
+                    const openSubNav = openItem.nextElementSibling;
+                    if (openSubNav && openSubNav.classList.contains('sub-nav')) {
+                        openSubNav.classList.remove('open');
+                    }
+                });
+
+                // Open this one immediately
+                this.classList.add('open');
+                const subNav = this.nextElementSibling;
+                if (subNav && subNav.classList.contains('sub-nav')) {
+                    subNav.classList.add('open');
+                }
+
+                // Store the open sub-nav before navigating
+                localStorage.setItem('openSubNav', this.id);
+            }
+
+            // Navigate after a slight delay if opening
+            if (!isCurrentlyOpen) {
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 100);
+            }
+        } else if (this.classList.contains('sub-nav-item')) {
+            // If it's a sub-nav item, keep its parent open
+            const parentNavItems = document.querySelectorAll('.nav-item.has-subnav');
+            parentNavItems.forEach(parent => {
+                // Check if nextElementSibling exists before attempting to access it
+                if (parent.nextElementSibling && parent.nextElementSibling.contains(this)) {
+                    localStorage.setItem('openSubNav', parent.id);
+                }
+            });
+
+            // Navigate immediately
+            localStorage.setItem('activeNavItem', this.id);
+            window.location.href = url;
+        } else {
+            // If it's a regular nav item, clear stored sub-nav
+            localStorage.removeItem('openSubNav');
+
+            // Navigate immediately
+            localStorage.setItem('activeNavItem', this.id);
+            window.location.href = url;
+        }
+    });
+});
+
+// Set active state based on stored value
+const activeNavItem = localStorage.getItem('activeNavItem');
+if (activeNavItem) {
+    const element = document.getElementById(activeNavItem);
+    if (element) {
+        // Remove active class from all items
+        document.querySelectorAll('.nav-item, .sub-nav-item').forEach(navItem => {
+            navItem.classList.remove('active');
+        });
+        // Add active class to the previously active item
+        element.classList.add('active');
+    }
+}
+
 </script>

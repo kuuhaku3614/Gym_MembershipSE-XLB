@@ -73,7 +73,6 @@ body {
 }
 
 .card-header {
-
     color: white;
     padding: 1.5rem;
     display: flex;
@@ -249,37 +248,35 @@ body {
                     <h5 class="card-title mb-0">Make Announcements</h5>
                 </div>
                 <div class="card-body">
-                    <form id="announcementForm">
-                        <div class="mb-3">
-                            <textarea class="form-control" id="messageInput" rows="4" 
-                                placeholder="Enter your announcement message here..." required></textarea>
+                    <div class="mb-3">
+                        <textarea class="form-control" id="messageInput" name="message" rows="4" 
+                            placeholder="Enter your announcement message here..." required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="dateInput" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="dateInput" name="date" required>
                         </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="dateInput" class="form-label">Date</label>
-                                <input type="date" class="form-control" id="dateInput" >
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="time" class="form-label">Time</label>
-                                <input type="time" class="form-control" id="time" name="time" >
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="type" class="form-label">Announcement Type</label>
-                                <select class="form-select" id="type" name="type" required>
-                                    <option value="">Select Announcement Type</option>
-                                    <option value="administrative">Administrative</option>
-                                    <option value="activity">Activity</option>
-                                </select>
-                            </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="time" class="form-label">Time</label>
+                            <input type="time" class="form-control" id="time" name="time" required>
                         </div>
-                        <div class="row">
-                            <div class="col-12 d-flex justify-content-end">
-                                <button type="submit" class="btn bg-primary text-white">
-                                    <i class="fas fa-paper-plane me-2"></i>Send Announcement
-                                </button>
-                            </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="type" class="form-label">Announcement Type</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="">Select Announcement Type</option>
+                                <option value="administrative">Administrative</option>
+                                <option value="activity">Activity</option>
+                            </select>
                         </div>
-                    </form>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="submit" class="btn bg-primary text-white">
+                                <i class="fas fa-paper-plane me-2"></i>Send Announcement
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -311,7 +308,7 @@ body {
                         <td><?= ucfirst(htmlspecialchars($announcement['announcement_type'])) ?></td>
                         <td><?= htmlspecialchars($announcement['message']) ?></td>
                         <td>
-                            <button class='btn btn-danger btn-sm remove-btn' data-id='<?= $announcement["id"] ?>'>
+                            <button class='btn btn-danger btn-sm remove-btn' data-id='<?= htmlspecialchars($announcement["id"], ENT_QUOTES) ?>'>
                                 <i class="fas fa-trash-alt me-1"></i>Remove
                             </button>
                         </td>
@@ -389,9 +386,24 @@ $(document).ready(function() {
         const time = $('#time').val();
         const type = $('#type').val();
 
-        // Client-side validation
-        if (!message || !date || !time || !type) {
-            alert('Please fill in all fields');
+        // Enhanced client-side validation
+        if (!message) {
+            alert('Please enter an announcement message');
+            return;
+        }
+        
+        if (!date) {
+            alert('Please select a date');
+            return;
+        }
+        
+        if (!time) {
+            alert('Please select a time');
+            return;
+        }
+        
+        if (!type || (type !== 'administrative' && type !== 'activity')) {
+            alert('Please select a valid announcement type');
             return;
         }
 
@@ -404,21 +416,17 @@ $(document).ready(function() {
                 time: time,
                 type: type
             },
+            dataType: 'json', // Explicitly expect JSON response
             success: function(response) {
-                try {
-                    const res = JSON.parse(response);
-                    if (res.status === 'success') {
-                        alert(res.message);
-                        location.reload(); // Refresh page to show new announcement
-                    } else {
-                        alert(res.message);
-                    }
-                } catch (e) {
-                    console.error('Error parsing response:', response);
-                    alert('Unexpected error occurred');
+                if (response.status === 'success') {
+                    alert(response.message);
+                    location.reload(); // Refresh page to show new announcement
+                } else {
+                    alert(response.message);
                 }
             },
-            error: function() {
+            error: function(xhr) {
+                console.error('Error:', xhr.responseText);
                 alert('Error adding announcement. Please try again.');
             }
         });
@@ -485,8 +493,7 @@ $(document).ready(function() {
                         previousTable.row(button.closest('tr')).remove().draw();
                         alert(response.message);
                         
-                        // Optional: Refresh the main table to show the restored announcement
-                        // You can choose to do a full page reload or just update the main table
+                        // Refresh the main table to show the restored announcement
                         location.reload();
                     } else {
                         alert(response.message || 'Error restoring announcement');

@@ -147,13 +147,6 @@ $secondaryHex = strlen($secondaryHex) < 7 ? str_pad(substr($secondaryHex, 1), 6,
                             <div id="secondary_color_preview" style="width: 100%; height: 40px; background-color: <?php echo $secondaryHex; ?>; border-radius: 5px;"></div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <h6>Preview:</h6>
-                        <div class="d-flex flex-column gap-2">
-                            <button type="button" class="btn" style="background-color: <?php echo $primaryHex; ?>; color: white;">Primary Button</button>
-                            <button type="button" class="btn" style="background-color: <?php echo $secondaryHex; ?>; color: white;">Secondary Button</button>
-                        </div>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
