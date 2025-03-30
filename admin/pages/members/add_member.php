@@ -466,11 +466,40 @@ function generateProgramCard($program) {
                 </ul>
 
                 <form id="memberForm" method="POST" enctype="multipart/form-data">
-                    <!-- Phase 1: Personal Details -->
+                   <!-- Phase 1: Personal Details -->
                     <div id="phase1" class="phase">
                         <h4 class="mb-4">Personal Information</h4>
                         <div class="card">
                             <div class="card-body">
+                                <!-- Walk-in Member Selector -->
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <label for="walk_in_selector" class="form-label">Select from Walk-in Records</label>
+                                        <select class="form-select" id="walk_in_selector" name="walk_in_selector">
+                                            <option value="">-- Select Walk-in Member --</option>
+                                            <?php
+                                            // Fetch walk-in records from the database
+                                            $walkInSql = "SELECT id, first_name, middle_name, last_name, phone_number FROM walk_in_records ORDER BY last_name, first_name";
+                                            $walkInStmt = $pdo->prepare($walkInSql);
+                                            $walkInStmt->execute();
+                                            $walkInRecords = $walkInStmt->fetchAll();
+                                            
+                                            foreach ($walkInRecords as $record) {
+                                                $middleName = !empty($record['middle_name']) ? " " . $record['middle_name'] : "";
+                                                $displayName = $record['last_name'] . ", " . $record['first_name'] . $middleName;
+                                                echo '<option value="' . $record['id'] . '" 
+                                                    data-first="' . htmlspecialchars($record['first_name']) . '" 
+                                                    data-middle="' . htmlspecialchars($record['middle_name']) . '" 
+                                                    data-last="' . htmlspecialchars($record['last_name']) . '"
+                                                    data-phone="' . htmlspecialchars($record['phone_number']) . '">
+                                                    ' . htmlspecialchars($displayName) . '
+                                                </option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                
                                 <!-- Personal Information -->
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
@@ -797,6 +826,26 @@ function generateProgramCard($program) {
             
             return date.toISOString().split('T')[0];
         }
+        // Walk-in member selector functionality
+        $(document).ready(function() {
+            $('#walk_in_selector').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                
+                if (selectedOption.val() !== '') {
+                    // Populate the form fields with the selected walk-in member data
+                    $('#first_name').val(selectedOption.data('first'));
+                    $('#middle_name').val(selectedOption.data('middle'));
+                    $('#last_name').val(selectedOption.data('last'));
+                    $('#contact').val(selectedOption.data('phone')); // Add this line to populate phone number
+                } else {
+                    // Clear the form fields if "Select Walk-in Member" is chosen
+                    $('#first_name').val('');
+                    $('#middle_name').val('');
+                    $('#last_name').val('');
+                    $('#contact').val(''); // Clear phone number field
+                }
+            });
+        });
     </script>
     <script src="<?= BASE_URL ?>/admin/pages/members/functions/add_member.js"></script>
 </body>
