@@ -105,13 +105,31 @@ class Coach_class {
             cps.start_time,
             cps.end_time,
             cps.price,
+            cps.duration_rate,
             p.program_name,
             'personal' as schedule_type,
-            cps.duration_rate
+            cpt.id as coach_program_type_id
         FROM coach_personal_schedule cps
         JOIN coach_program_types cpt ON cps.coach_program_type_id = cpt.id
         JOIN programs p ON cpt.program_id = p.id
         WHERE cpt.coach_id = ? AND cpt.status = 'active'";
+
+        // Get booked slots for personal schedules
+        $bookedSlotsSql = "SELECT DISTINCT
+            pss.day,
+            TIME_FORMAT(pss.start_time, '%H:%i') as start_time,
+            TIME_FORMAT(pss.end_time, '%H:%i') as end_time,
+            cps.duration_rate,
+            CONCAT(pd.first_name, ' ', pd.last_name) as member_name
+        FROM program_subscription_schedule pss
+        JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+        JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
+        JOIN users u ON ps.user_id = u.id
+        JOIN personal_details pd ON u.id = pd.user_id
+        WHERE ps.status IN ('active', 'pending')
+        AND cps.coach_program_type_id IN (
+            SELECT id FROM coach_program_types WHERE coach_id = ?
+        )";
 
         // Get group schedules
         $groupSql = "SELECT 
@@ -134,6 +152,31 @@ class Coach_class {
 
         $events = array();
 
+        // Get booked slots
+        $stmt = $this->db->prepare($bookedSlotsSql);
+        $stmt->execute([$coachId]);
+        $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Create a map of booked slots by day and time
+        $bookedSlotsMap = [];
+        foreach ($bookedSlots as $slot) {
+            $day = $slot['day'];
+            
+            // Use a reference date to compare times
+            $startTime = strtotime("2000-01-01 " . $slot['start_time']);
+            $endTime = strtotime("2000-01-01 " . $slot['end_time']);
+            
+            if (!isset($bookedSlotsMap[$day])) {
+                $bookedSlotsMap[$day] = [];
+            }
+            
+            $bookedSlotsMap[$day][] = [
+                'start' => $startTime,
+                'end' => $endTime,
+                'member_name' => $slot['member_name']
+            ];
+        }
+
         // Get personal schedule events
         $stmt = $this->db->prepare($personalSql);
         $stmt->execute([$coachId]);
@@ -146,30 +189,73 @@ class Coach_class {
             
             while ($currentDate <= $endDate) {
                 if ($currentDate->format('l') === $row['day']) {
-                    $eventStart = clone $currentDate;
-                    $eventEnd = clone $currentDate;
+                    // Use the same reference date for comparison
+                    $startTime = strtotime("2000-01-01 " . $row['start_time']);
+                    $endTime = strtotime("2000-01-01 " . $row['end_time']);
+                    $duration = $row['duration_rate']; // in minutes
                     
-                    $startTime = new DateTime($row['start_time']);
-                    $endTime = new DateTime($row['end_time']);
+                    // Calculate number of slots
+                    $totalMinutes = ($endTime - $startTime) / 60;
+                    $numSlots = floor($totalMinutes / $duration);
                     
-                    $eventStart->setTime(
-                        (int)$startTime->format('H'),
-                        (int)$startTime->format('i')
-                    );
-                    $eventEnd->setTime(
-                        (int)$endTime->format('H'),
-                        (int)$endTime->format('i')
-                    );
-                    
-                    $events[] = array(
-                        'id' => 'personal_' . $row['id'],
-                        'title' => $row['program_name'] . ' (Personal) - ₱' . number_format($row['price'], 2) . ' - ' . $row['duration_rate'] . ' mins',
-                        'start' => $eventStart->format('Y-m-d H:i:s'),
-                        'end' => $eventEnd->format('Y-m-d H:i:s'),
-                        'backgroundColor' => '#28a745',
-                        'borderColor' => '#28a745',
-                        'textColor' => '#ffffff'
-                    );
+                    // Create slots
+                    for ($i = 0; $i < $numSlots; $i++) {
+                        $slotStart = $startTime + ($i * $duration * 60);
+                        $slotEnd = $slotStart + ($duration * 60);
+                        
+                        // Check if this time slot is booked
+                        $bookedMember = null;
+                        if (isset($bookedSlotsMap[$row['day']])) {
+                            foreach ($bookedSlotsMap[$row['day']] as $bookedSlot) {
+                                if ($slotStart === $bookedSlot['start'] && $slotEnd === $bookedSlot['end']) {
+                                    $bookedMember = $bookedSlot['member_name'];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        $eventStart = clone $currentDate;
+                        $eventEnd = clone $currentDate;
+                        
+                        $eventStart->setTime(
+                            (int)date('H', $slotStart),
+                            (int)date('i', $slotStart)
+                        );
+                        $eventEnd->setTime(
+                            (int)date('H', $slotEnd),
+                            (int)date('i', $slotEnd)
+                        );
+                        
+                        // Format title based on view type (will be used in JavaScript)
+                        $title = $bookedMember ? $bookedMember : "Available";
+                        
+                        if ($bookedMember) {
+                            $bgColor = '#FF6B6B'; // Coral red for booked personal slots
+                            $borderColor = '#FF5252';
+                        } else {
+                            $bgColor = '#4CAF50'; // Green for available personal slots
+                            $borderColor = '#45A049';
+                        }
+                        
+                        $events[] = array(
+                            'id' => 'personal_' . $row['id'] . '_slot_' . $i,
+                            'title' => $title,
+                            'start' => $eventStart->format('Y-m-d H:i:s'),
+                            'end' => $eventEnd->format('Y-m-d H:i:s'),
+                            'backgroundColor' => $bgColor,
+                            'borderColor' => $borderColor,
+                            'textColor' => '#ffffff',
+                            'extendedProps' => [
+                                'scheduleId' => $row['id'],
+                                'coachProgramTypeId' => $row['coach_program_type_id'],
+                                'isBooked' => !is_null($bookedMember),
+                                'price' => $row['price'],
+                                'programName' => $row['program_name'],
+                                'type' => 'personal',
+                                'display' => !is_null($bookedMember) ? 'auto' : null // Only show if booked
+                            ]
+                        );
+                    }
                 }
                 $currentDate->modify('+1 day');
             }
@@ -179,6 +265,31 @@ class Coach_class {
         $stmt = $this->db->prepare($groupSql);
         $stmt->execute([$coachId]);
         $groupSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get group program members
+        $groupMembersSql = "SELECT 
+            cgs.id as schedule_id,
+            GROUP_CONCAT(DISTINCT CONCAT(pd.first_name, ' ', pd.last_name) SEPARATOR ', ') as member_names
+        FROM coach_group_schedule cgs
+        JOIN program_subscription_schedule pss ON pss.coach_group_schedule_id = cgs.id
+        JOIN program_subscriptions ps ON ps.id = pss.program_subscription_id
+        JOIN users u ON ps.user_id = u.id
+        JOIN personal_details pd ON u.id = pd.user_id
+        WHERE ps.status = 'active'
+        AND cgs.coach_program_type_id IN (
+            SELECT id FROM coach_program_types WHERE coach_id = ?
+        )
+        GROUP BY cgs.id";
+        
+        $stmt = $this->db->prepare($groupMembersSql);
+        $stmt->execute([$coachId]);
+        $groupMembers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Create a map of group members by schedule ID
+        $groupMembersMap = [];
+        foreach ($groupMembers as $members) {
+            $groupMembersMap[$members['schedule_id']] = $members['member_names'];
+        }
         
         foreach ($groupSchedules as $row) {
             // Get the next 4 weeks of events for this schedule
@@ -190,32 +301,41 @@ class Coach_class {
                     $eventStart = clone $currentDate;
                     $eventEnd = clone $currentDate;
                     
-                    $startTime = new DateTime($row['start_time']);
-                    $endTime = new DateTime($row['end_time']);
-                    
+                    // Set the time components
                     $eventStart->setTime(
-                        (int)$startTime->format('H'),
-                        (int)$startTime->format('i')
+                        (int)date('H', strtotime($row['start_time'])),
+                        (int)date('i', strtotime($row['start_time']))
                     );
                     $eventEnd->setTime(
-                        (int)$endTime->format('H'),
-                        (int)$endTime->format('i')
+                        (int)date('H', strtotime($row['end_time'])),
+                        (int)date('i', strtotime($row['end_time']))
                     );
                     
+                    $memberNames = isset($groupMembersMap[$row['id']]) ? $groupMembersMap[$row['id']] : '';
+                    
                     $events[] = array(
-                        'id' => 'group_' . $row['id'],
-                        'title' => $row['program_name'] . ' (Group) - ' . $row['current_members'] . '/' . $row['capacity'] . ' - ₱' . number_format($row['price'], 2),
+                        'id' => 'group_' . $row['id'] . '_' . $currentDate->format('Y-m-d'),
+                        'title' => $memberNames ? $memberNames : $row['program_name'],
                         'start' => $eventStart->format('Y-m-d H:i:s'),
                         'end' => $eventEnd->format('Y-m-d H:i:s'),
-                        'backgroundColor' => '#007bff',
-                        'borderColor' => '#007bff',
-                        'textColor' => '#ffffff'
+                        'backgroundColor' => '#2196F3', // Blue for group slots
+                        'borderColor' => '#1976D2',
+                        'textColor' => '#ffffff',
+                        'extendedProps' => [
+                            'scheduleId' => $row['id'],
+                            'currentMembers' => $row['current_members'],
+                            'capacity' => $row['capacity'],
+                            'price' => $row['price'],
+                            'programName' => $row['program_name'],
+                            'type' => 'group',
+                            'memberNames' => $memberNames
+                        ]
                     );
                 }
                 $currentDate->modify('+1 day');
             }
         }
-        
+
         return $events;
     }
     
@@ -270,19 +390,12 @@ class Coach_class {
                        WHERE id = ? AND coach_program_type_id = ?";
                 
                 $stmt = $this->db->prepare($sql);
-                if (!$stmt) {
-                    throw new Exception("Prepare failed: " . $this->db->error);
-                }
-                
                 $stmt->execute([$day, $startTime, $endTime, $capacity, $price, $scheduleId, $programTypeId]);
             } else {
                 // Insert new schedule
                 $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity, price)
                        VALUES (?, ?, ?, ?, ?, ?)";
-                if (!$stmt = $this->db->prepare($sql)) {
-                    throw new Exception("Prepare failed: " . $this->db->error);
-                }
-                
+                $stmt = $this->db->prepare($sql);
                 $stmt->execute([$programTypeId, $day, $startTime, $endTime, $capacity, $price]);
             }
             
@@ -301,19 +414,12 @@ class Coach_class {
                        WHERE id = ? AND coach_program_type_id = ?";
                 
                 $stmt = $this->db->prepare($sql);
-                if (!$stmt) {
-                    throw new Exception("Prepare failed: " . $this->db->error);
-                }
-                
                 $stmt->execute([$day, $startTime, $endTime, $price, $duration, $scheduleId, $programTypeId]);
             } else {
                 // Insert new schedule
                 $sql = "INSERT INTO coach_personal_schedule (coach_program_type_id, day, start_time, end_time, price, duration_rate)
                        VALUES (?, ?, ?, ?, ?, ?)";
-                if (!$stmt = $this->db->prepare($sql)) {
-                    throw new Exception("Prepare failed: " . $this->db->error);
-                }
-                
+                $stmt = $this->db->prepare($sql);
                 $stmt->execute([$programTypeId, $day, $startTime, $endTime, $price, $duration]);
             }
             
@@ -330,10 +436,6 @@ class Coach_class {
                 : "DELETE FROM coach_personal_schedule WHERE id = ?";
             
             $stmt = $this->db->prepare($sql);
-            if (!$stmt) {
-                throw new Exception("Prepare failed: " . $this->db->error);
-            }
-            
             $stmt->execute([$scheduleId]);
             
             return ['success' => true];
