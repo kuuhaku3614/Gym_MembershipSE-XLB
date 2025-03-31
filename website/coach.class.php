@@ -35,10 +35,10 @@ class Coach_class {
 
     public function getProgramMembers($coachId) {
         $sql = "SELECT 
-                    GROUP_CONCAT(ps.id) as subscription_ids,
+                    GROUP_CONCAT(DISTINCT ps.id) as subscription_ids,
                     CONCAT_WS(' ', pd.first_name, NULLIF(pd.middle_name, ''), pd.last_name) as member_name,
                     GROUP_CONCAT(
-                        CONCAT(
+                        DISTINCT CONCAT(
                             p.program_name, 
                             ' (', 
                             cpt.type,
@@ -49,7 +49,27 @@ class Coach_class {
                     ) as programs,
                     pd.phone_number as contact,
                     MAX(ps.status) as subscription_status,
-                    MAX(t.created_at) as latest_subscription_date
+                    MAX(t.created_at) as latest_subscription_date,
+                    u.id as member_id,
+                    (
+                        SELECT COUNT(*)
+                        FROM program_subscription_schedule pss2
+                        WHERE pss2.program_subscription_id IN (
+                            SELECT ps2.id 
+                            FROM program_subscriptions ps2 
+                            WHERE ps2.user_id = u.id
+                        )
+                        AND pss2.is_paid = 1
+                    ) as paid_sessions,
+                    (
+                        SELECT COUNT(*)
+                        FROM program_subscription_schedule pss2
+                        WHERE pss2.program_subscription_id IN (
+                            SELECT ps2.id 
+                            FROM program_subscriptions ps2 
+                            WHERE ps2.user_id = u.id
+                        )
+                    ) as total_sessions
                 FROM program_subscriptions ps
                 INNER JOIN users u ON ps.user_id = u.id
                 INNER JOIN personal_details pd ON u.id = pd.user_id
@@ -351,16 +371,67 @@ class Coach_class {
                     CASE 
                         WHEN cgs.id IS NOT NULL THEN 'Group'
                         WHEN cps.id IS NOT NULL THEN 'Personal'
-                    END as schedule_type
+                    END as schedule_type,
+                    p.program_name
                 FROM program_subscription_schedule pss
                 LEFT JOIN coach_group_schedule cgs ON pss.coach_group_schedule_id = cgs.id
                 LEFT JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
+                INNER JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+                INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                INNER JOIN programs p ON cpt.program_id = p.id
                 WHERE pss.program_subscription_id = ?
                 ORDER BY pss.date, pss.start_time";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$subscriptionId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getUnpaidSchedules($memberId) {
+        $sql = "SELECT 
+                    pss.id as schedule_id,
+                    pss.date,
+                    pss.start_time,
+                    pss.end_time,
+                    pss.amount,
+                    CASE 
+                        WHEN pss.coach_group_schedule_id IS NOT NULL THEN 'Group'
+                        WHEN pss.coach_personal_schedule_id IS NOT NULL THEN 'Personal'
+                    END as schedule_type,
+                    p.program_name,
+                    CONCAT_WS(' ', pd.first_name, NULLIF(pd.middle_name, ''), pd.last_name) as member_name
+                FROM program_subscription_schedule pss
+                INNER JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+                INNER JOIN users u ON ps.user_id = u.id
+                INNER JOIN personal_details pd ON u.id = pd.user_id
+                INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                INNER JOIN programs p ON cpt.program_id = p.id
+                WHERE u.id = ? AND pss.is_paid = 0
+                ORDER BY pss.date ASC, pss.start_time ASC";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$memberId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function processSchedulePayments($scheduleIds) {
+        try {
+            $this->db->beginTransaction();
+
+            // Update the is_paid status for selected schedules
+            $sql = "UPDATE program_subscription_schedule 
+                    SET is_paid = 1 
+                    WHERE id IN (" . str_repeat('?,', count($scheduleIds) - 1) . "?)";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($scheduleIds);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
     }
 }
 ?>
