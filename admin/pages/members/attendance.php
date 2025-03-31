@@ -9,7 +9,7 @@ require_once 'functions/attendance_class.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Today's Member Attendance</h2>
         <div class="mt-2">
-            <a href="../../../website/checkin_page.php" class="me-2">
+            <a href="__DIR__ . /../../../website/checkin_page.php" class="me-2">
                 <button class="btn btn-primary">Attendance Page</button>
             </a>
             <button onclick="openHistoryModal()" class="btn btn-info">
