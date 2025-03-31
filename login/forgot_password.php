@@ -20,7 +20,7 @@ require_once 'functions.php';
         }
         body {
             background-color: #ecebeb;
-            font-family: myFont;
+            font-family: 'Inter', sans-serif;
         }
         .forgot-password-container {
             width: 400px;
