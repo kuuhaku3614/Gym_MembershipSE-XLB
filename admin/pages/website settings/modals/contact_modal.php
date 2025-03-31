@@ -2,6 +2,11 @@
 // Include database connection
 require_once '../config.php';
 
+// Sanitize input function
+function sanitizeInput($input) {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
 // Fetch current contact content
 function getContactContent() {
     global $pdo;
@@ -11,6 +16,7 @@ function getContactContent() {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
+        error_log('Database error: ' . $e->getMessage());
         return false;
     }
 }
@@ -20,10 +26,10 @@ $contactContent = getContactContent();
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate inputs
-    $location = trim($_POST['location'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    // Validate and sanitize inputs
+    $location = sanitizeInput($_POST['location'] ?? '');
+    $phone = sanitizeInput($_POST['phone'] ?? '');
+    $email = sanitizeInput($_POST['email'] ?? '');
     $latitude = isset($_POST['latitude']) ? floatval($_POST['latitude']) : null;
     $longitude = isset($_POST['longitude']) ? floatval($_POST['longitude']) : null;
     
@@ -60,26 +66,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'longitude' => $longitude
             ]);
             
-            if ($result) {
-                $response = [
-                    'success' => true,
-                    'message' => 'Contact information updated successfully!'
-                ];
-            } else {
-                $response = [
-                    'success' => false,
-                    'message' => 'Failed to update contact information.'
-                ];
-            }
+            $response = [
+                'success' => $result,
+                'message' => $result ? 'Contact information updated successfully!' : 'Failed to update contact information.'
+            ];
             
             // Return JSON response for AJAX
             header('Content-Type: application/json');
             echo json_encode($response);
             exit;
         } catch (PDOException $e) {
+            error_log('Database error: ' . $e->getMessage());
             $response = [
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'Database error occurred.'
             ];
             
             header('Content-Type: application/json');
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!-- Contact Modal -->
-<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -109,31 +109,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="errorContainer" class="alert alert-danger" style="display:none;"></div>
                 <form id="contactForm" method="post">
                     <div class="mb-3">
                         <label for="location" class="form-label">Location:</label>
-                        <input type="text" class="form-control" id="location" name="location" value="<?php echo htmlspecialchars($contactContent['location'] ?? ''); ?>">
+                        <input type="text" class="form-control" id="location" name="location" value="<?php echo sanitizeInput($contactContent['location'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="phone" class="form-label">Phone Number:</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($contactContent['phone'] ?? ''); ?>">
+                        <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo sanitizeInput($contactContent['phone'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($contactContent['email'] ?? ''); ?>">
+                        <input type="email" class="form-control" id="email" name="email" value="<?php echo sanitizeInput($contactContent['email'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Select Location on Map:</label>
                         <div id="map" style="height: 400px; width: 100%;"></div>
                         <p class="mt-2 small text-muted">Click on the map to select your location.</p>
-                        <input type="hidden" id="latitude" name="latitude" value="<?php echo htmlspecialchars($contactContent['latitude'] ?? ''); ?>">
-                        <input type="hidden" id="longitude" name="longitude" value="<?php echo htmlspecialchars($contactContent['longitude'] ?? ''); ?>">
+                        <input type="hidden" id="latitude" name="latitude" value="<?php echo sanitizeInput($contactContent['latitude'] ?? ''); ?>">
+                        <input type="hidden" id="longitude" name="longitude" value="<?php echo sanitizeInput($contactContent['longitude'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <p id="selected-location" class="fw-bold">
                             <?php 
                             if (!empty($contactContent['latitude']) && !empty($contactContent['longitude'])) {
-                                echo "Selected Location: " . htmlspecialchars($contactContent['location'] ?? '');
+                                echo "Selected Location: " . sanitizeInput($contactContent['location'] ?? '');
                             } else {
                                 echo "No location selected";
                             }
@@ -216,6 +217,9 @@ $(document).ready(function() {
     $('#saveContactChanges').on('click', function() {
         var formData = $('#contactForm').serialize();
         
+        // Clear previous error messages
+        $('#errorContainer').hide().empty();
+        
         $.ajax({
             type: "POST",
             url: "../admin/pages/website settings/modals/contact_modal.php",
@@ -223,46 +227,18 @@ $(document).ready(function() {
             dataType: "json",
             success: function(response) {
                 if (response.success) {
-                    // Create success message element
-                    var successMessage = $('<div>', {
-                        class: 'alert alert-success',
-                        role: 'alert',
-                        text: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#contactModal .modal-body').prepend(successMessage);
-                    
-                    // Auto-close modal after delay
-                    setTimeout(function() {
-                        $('#contactModal').modal('hide');
-                        // Reload page to reflect changes
-                        location.reload();
-                    }, 500);
+                    // Reload page to reflect changes
+                    location.reload();
                 } else {
-                    // Create error message element
-                    var errorMessage = $('<div>', {
-                        class: 'alert alert-danger',
-                        role: 'alert',
-                        html: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#contactModal .modal-body').prepend(errorMessage);
+                    // Show error messages
+                    $('#errorContainer').html(response.message).show();
                 }
             },
             error: function(xhr, status, error) {
                 console.log("Error details:", xhr, status, error);
                 
-                // Create error message element
-                var errorMessage = $('<div>', {
-                    class: 'alert alert-danger',
-                    role: 'alert',
-                    text: "An error occurred while processing your request."
-                });
-                
-                // Show message in modal body
-                $('#contactModal .modal-body').prepend(errorMessage);
+                // Show generic error message
+                $('#errorContainer').html("An error occurred while processing your request.").show();
             }
         });
     });

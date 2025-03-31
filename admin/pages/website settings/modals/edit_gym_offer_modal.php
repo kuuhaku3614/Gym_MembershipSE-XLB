@@ -2,22 +2,20 @@
 // Include database connection
 require_once '../config.php';
 
+// Function to sanitize HTML output
+function sanitizeOutput($input) {
+    return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+}
+
 // Check if form was submitted for updating
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_gym_offer'])) {
     // Initialize response array
     $response = array('success' => false, 'message' => '');
 
-    // Validate and sanitize input
-    $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
-    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
-
-    // Validate required fields
-    if ($id <= 0 || empty($title) || empty($description)) {
-        $response['message'] = 'All fields are required.';
-        echo json_encode($response);
-        exit;
-    }
+    // Validate and sanitize input with additional filtering
+    $id = isset($_POST['id']) ? filter_var($_POST['id'], FILTER_VALIDATE_INT) : 0;
+    $title = isset($_POST['title']) ? trim(strip_tags($_POST['title'])) : '';
+    $description = isset($_POST['description']) ? trim(strip_tags($_POST['description'])) : '';
 
     try {
         // Fetch existing image path from database
@@ -53,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_gym_offer'])) 
                 mkdir($uploadDir, 0777, true);
             }
 
-            // Generate unique filename
-            $filename = uniqid() . '_' . basename($_FILES['image']['name']);
+            // Generate unique filename with additional sanitization
+            $filename = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '', basename($_FILES['image']['name']));
             $upload_path = $uploadDir . $filename; // Full server path
             $db_path = $db_path_prefix . $filename; // Database path
 
@@ -93,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_gym_offer'])) 
         echo json_encode($response);
         exit;
     } catch (PDOException $e) {
-        $response['message'] = 'Database error: ' . $e->getMessage();
+        $response['message'] = 'Database error: ' . sanitizeOutput($e->getMessage());
         echo json_encode($response);
         exit;
     }
@@ -118,7 +116,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 ?>
 
 <!-- Edit Gym Offer Modal -->
-<div class="modal fade" id="editGymOfferModal" tabindex="-1" aria-labelledby="editGymOfferModalLabel" aria-hidden="true">
+<div class="modal fade" id="editGymOfferModal" tabindex="-1" aria-labelledby="editGymOfferModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -127,19 +125,25 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             </div>
             <div class="modal-body">
                 <form id="editGymOfferForm" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="id" value="<?php echo $offer['id']; ?>">
+                    <input type="hidden" name="id" value="<?php echo sanitizeOutput($offer['id']); ?>">
                     <div class="mb-3">
                         <label for="edit_offer_title" class="form-label">Offer Title:</label>
-                        <input type="text" class="form-control" id="edit_offer_title" name="title" value="<?php echo htmlspecialchars($offer['title']); ?>" required>
+                        <input type="text" class="form-control" id="edit_offer_title" name="title" value="<?php echo sanitizeOutput($offer['title']); ?>" placeholder="optional">
                     </div>
                     <div class="mb-3">
                         <label for="edit_offer_description" class="form-label">Offer Description:</label>
-                        <textarea class="form-control" id="edit_offer_description" name="description" rows="5" required><?php echo htmlspecialchars($offer['description']); ?></textarea>
+                        <textarea class="form-control" id="edit_offer_description" name="description" rows="5" placeholder="optional"><?php echo sanitizeOutput($offer['description']); ?></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Current Image:</label>
                         <div class="mb-2">
-                            <img src="../<?php echo htmlspecialchars($offer['image_path']); ?>" alt="<?php echo htmlspecialchars($offer['title']); ?>" class="img-thumbnail" style="max-height: 200px;">
+                            <img src="../<?php echo sanitizeOutput($offer['image_path']); ?>" alt="<?php echo sanitizeOutput($offer['title']); ?>" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div id="imagePreview" style="max-width: 200px; max-height: 200px; overflow: hidden; display: none;">
+                            <label class="form-label">New Image Preview:</label>
+                            <img id="preview" src="#" alt="Preview" style="width: 100%; height: auto;">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -160,6 +164,18 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 
 <script>
 $(document).ready(function() {
+            // Image preview functionality
+            $('#edit_offer_image').on('change', function() {
+        var file = this.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#preview').attr('src', e.target.result);
+                $('#imagePreview').show();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
     // Handle form submission
     $('#editGymOfferForm').on('submit', function(e) {
         e.preventDefault();
@@ -175,16 +191,17 @@ $(document).ready(function() {
             dataType: "json",
             success: function(response) {
                 if (response.success) {
-                    alert("Gym offer updated successfully!");
                     $('#editGymOfferModal').modal('hide');
+                    // Optionally, you might want to use a non-blocking notification here
                     location.reload();
                 } else {
-                    alert("Error: " + response.message);
+                    // Use a more user-friendly error display
+                    $('#errorMessage').text(response.message).show();
                 }
             },
             error: function(xhr, status, error) {
-                console.log("Error details:", xhr, status, error);
-                alert("Error updating gym offer.");
+                console.error("Error details:", xhr, status, error);
+                $('#errorMessage').text("Error updating gym offer.").show();
             }
         });
     });

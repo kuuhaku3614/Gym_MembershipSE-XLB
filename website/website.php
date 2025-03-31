@@ -684,64 +684,11 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     });
 </script>
   <script>
-// document.addEventListener('DOMContentLoaded', function() {
-//     const carousel = document.querySelector('.carousel-wrapper');
-//     const slides = document.querySelectorAll('.carousel-slide');
-//     const dots = document.querySelectorAll('.carousel-dot');
-//     const prevButton = document.querySelector('.carousel-prev');
-//     const nextButton = document.querySelector('.carousel-next');
-
-//     // Check if elements exist before proceeding
-//     if (!slides.length || !dots.length || !prevButton || !nextButton) {
-//         console.warn('Carousel elements not found');
-//         return;
-//     }
-
-//     let currentSlide = 0;
-
-//     function showSlide(index) {
-//         // Safely handle slide and dot updates
-//         slides.forEach((slide, i) => {
-//             slide.classList.toggle('active', i === index);
-//         });
-
-//         dots.forEach((dot, i) => {
-//             dot.classList.toggle('active', i === index);
-//         });
-
-//         currentSlide = (index + slides.length) % slides.length;
-//     }
-
-//     // Next slide
-//     nextButton.addEventListener('click', () => {
-//         showSlide(currentSlide + 1);
-//     });
-
-//     // Previous slide
-//     prevButton.addEventListener('click', () => {
-//         showSlide(currentSlide - 1);
-//     });
-
-//     // Dot navigation
-//     dots.forEach(dot => {
-//         dot.addEventListener('click', () => {
-//             const slideIndex = parseInt(dot.getAttribute('data-slide'));
-//             showSlide(slideIndex);
-//         });
-//     });
-
-//     // Optional: Auto-advance slides every 5 seconds
-//     setInterval(() => {
-//         showSlide(currentSlide + 1);
-//     }, 5000);
-
-//     // Initialize first slide
-//     showSlide(0);
-// });
 window.addEventListener("scroll", function(){
     var header = document.querySelector(".home-navbar");
     header.classList.toggle("sticky", window.scrollY > window.innerHeight);
 })
   </script>
+  <script src="js/carousel.js"></script>
 </body>
 </html>

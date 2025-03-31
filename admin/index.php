@@ -51,7 +51,7 @@ class StatusManager {
                 SET 
                     m.status = 'expired'
                 WHERE 
-                    m.status = 'active'
+                    m.status = 'expiring'
                     AND m.end_date < CURDATE()";
         
         $expiredStmt = $this->pdo->query($expiredQuery);
@@ -83,7 +83,7 @@ class StatusManager {
                 SET 
                     rs.status = 'expired'
                 WHERE 
-                    rs.status = 'active'
+                    rs.status = 'expiring'
                     AND rs.end_date < CURDATE()";
         
         $expiredStmt = $this->pdo->query($expiredQuery);

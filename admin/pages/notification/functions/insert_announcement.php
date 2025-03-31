@@ -2,11 +2,22 @@
 require_once '../../../../config.php';
 
 function insertAnnouncement($pdo, $message, $date, $time, $type) {
-    // Validate inputs
-    if (empty($message) || empty($date) || empty($time) || empty($type)) {
-        return ["status" => "error", "message" => "All fields are required."];
+    // Enhanced validation
+    $message = trim(strip_tags($message));
+    if (empty($message)) {
+        return ["status" => "error", "message" => "Announcement message is required."];
     }
-
+    
+    // Validate date format (YYYY-MM-DD)
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return ["status" => "error", "message" => "Invalid date format."];
+    }
+    
+    // Validate time format (HH:MM)
+    if (!preg_match('/^\d{2}:\d{2}$/', $time)) {
+        return ["status" => "error", "message" => "Invalid time format."];
+    }
+    
     // Validate announcement type
     $validTypes = ['administrative', 'activity'];
     if (!in_array($type, $validTypes)) {
@@ -30,18 +41,34 @@ function insertAnnouncement($pdo, $message, $date, $time, $type) {
             return ["status" => "error", "message" => "Failed to add announcement."];
         }
     } catch (PDOException $e) {
-        return ["status" => "error", "message" => "Database error: " . $e->getMessage()];
+        error_log("Database error in insertAnnouncement: " . $e->getMessage());
+        return ["status" => "error", "message" => "Database error occurred."];
     }
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $message = trim($_POST['message'] ?? '');
-    $date = $_POST['date'] ?? '';
-    $time = $_POST['time'] ?? '';
-    $type = $_POST['type'] ?? '';
-
-    $response = insertAnnouncement($pdo, $message, $date, $time, $type);
-    echo json_encode($response);
+// Verify request method
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    header('HTTP/1.1 405 Method Not Allowed');
+    header('Content-Type: application/json');
+    echo json_encode(["status" => "error", "message" => "Method not allowed"]);
     exit();
 }
-?>
+
+// Ensure proper content type for JSON response
+header('Content-Type: application/json');
+
+// Apply sanitization to all inputs - using filter_input for additional security
+$message = filter_input(INPUT_POST, 'message', FILTER_SANITIZE_STRING);
+$date = filter_input(INPUT_POST, 'date', FILTER_SANITIZE_STRING);
+$time = filter_input(INPUT_POST, 'time', FILTER_SANITIZE_STRING);
+$type = filter_input(INPUT_POST, 'type', FILTER_SANITIZE_STRING);
+
+// Check if required fields are present
+if (!$message || !$date || !$time || !$type) {
+    echo json_encode(["status" => "error", "message" => "All fields are required"]);
+    exit();
+}
+
+$response = insertAnnouncement($pdo, $message, $date, $time, $type);
+echo json_encode($response);
+exit();

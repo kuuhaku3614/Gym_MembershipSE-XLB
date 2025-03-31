@@ -342,14 +342,7 @@ color: #f8f8f8;
                 <p class="mt-3"><strong>Secondary Color</strong><br><?php echo strtoupper($secondaryColor); ?></p>
             </div>
         </div>
-        <div class="mt-4">
-            <h5>Preview:</h5>
-            <div class="d-flex gap-3 mt-3">
-                <button class="btn" style="background-color: <?php echo $primaryColor; ?>; color: white;">Primary Button</button>
-                <button class="btn" style="background-color: <?php echo $secondaryColor; ?>; color: white;">Secondary Button</button>
-            </div>
         </div>
-    </div>
 </div>
 
 <!-- Welcome Section Update -->
@@ -560,7 +553,100 @@ color: #f8f8f8;
 
 </div>
 <script>
-    $(document).ready(function() {
+   $(document).ready(function() {
+    // Preserve scroll position across page reloads
+    function preserveScrollPosition() {
+    // Save scroll position before page reload
+    $(window).on('beforeunload', function() {
+        localStorage.setItem('scrollPosition', window.scrollY);
+    });
+
+    // Restore scroll position after page load
+    const savedScrollPosition = localStorage.getItem('scrollPosition');
+    if (savedScrollPosition) {
+        // Use scrollTo with instant behavior for immediate positioning
+        window.scrollTo({
+            top: parseInt(savedScrollPosition),
+            behavior: 'instant'
+        });
+        localStorage.removeItem('scrollPosition');
+    }
+}
+    preserveScrollPosition();
+
+    function showConfirmModal(message, confirmCallback) {
+    // Create confirmation modal HTML without the close (X) button
+    const modalHtml = `
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Action</h5>
+                </div>
+                <div class="modal-body">
+                    ${message}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmAction">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    // Remove any existing confirmation modal
+    $('#confirmModal').remove();
+    
+    // Append modal to body
+    $('body').append(modalHtml);
+    
+    // Show modal
+    $('#confirmModal').modal('show');
+    
+    // Handle confirm button click
+    $('#confirmAction').on('click', function() {
+        $('#confirmModal').modal('hide');
+        confirmCallback();
+    });
+
+    // Handle cancel button click to close modal
+    $('.btn-secondary[data-dismiss="modal"]').on('click', function() {
+        $('#confirmModal').modal('hide');
+    });
+}
+
+    // Function to show toast notification
+    function showToast(message, type = 'success') {
+        // Remove any existing toasts
+        $('.toast-notification').remove();
+        
+        const toastHtml = `
+        <div class="toast-notification position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        
+        // Append toast to body
+        $('body').append(toastHtml);
+        
+        // Show and auto-hide toast
+        const toastEl = $('.toast-notification .toast');
+        toastEl.toast({ autohide: true, delay: 3000 });
+        toastEl.toast('show');
+        
+        // Remove toast after animation
+        toastEl.on('hidden.bs.toast', function() {
+            $('.toast-notification').remove();
+        });
+    }
+    
     // Welcome Section
     $('.update-welcome-btn').on('click', function() {
         $.ajax({
@@ -634,7 +720,7 @@ color: #f8f8f8;
     // Delete Gym Offer
     $('.delete-offer-btn').on('click', function() {
         var offerId = $(this).data('id');
-        if(confirm("Are you sure you want to delete this offer?")) {
+        showConfirmModal("Are you sure you want to delete this offer?", function() {
             $.ajax({
                 type: "POST",
                 url: "pages/website settings/modals/delete_gym_offer.php",
@@ -642,18 +728,18 @@ color: #f8f8f8;
                 dataType: "json",
                 success: function(response) {
                     if(response.success) {
-                        alert("Offer deleted successfully!");
+                        showToast("Offer deleted successfully!");
                         location.reload();
                     } else {
-                        alert("Error: " + response.message);
+                        showToast("Error: " + response.message, 'danger');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.log("Error details:", xhr, status, error);
-                    alert("Error deleting the offer.");
+                    showToast("Error deleting the offer.", 'danger');
                 }
             });
-        }
+        });
     });
 
     // About Us Section
@@ -729,7 +815,7 @@ color: #f8f8f8;
     // Delete Product
     $('.delete-product-btn').on('click', function() {
         var productId = $(this).data('id');
-        if(confirm("Are you sure you want to delete this product?")) {
+        showConfirmModal("Are you sure you want to delete this product?", function() {
             $.ajax({
                 type: "POST",
                 url: "pages/website settings/modals/delete_product.php",
@@ -737,18 +823,18 @@ color: #f8f8f8;
                 dataType: "json",
                 success: function(response) {
                     if(response.success) {
-                        alert("Product deleted successfully!");
+                        showToast("Product deleted successfully!");
                         location.reload();
                     } else {
-                        alert("Error: " + response.message);
+                        showToast("Error: " + response.message, 'danger');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.log("Error details:", xhr, status, error);
-                    alert("Error deleting the product.");
+                    showToast("Error deleting the product.", 'danger');
                 }
             });
-        }
+        });
     });
 
     // Staff Management
@@ -790,7 +876,7 @@ color: #f8f8f8;
     // Delete Staff Member
     $('.delete-staff-btn').on('click', function() {
         var staffId = $(this).data('id');
-        if(confirm("Are you sure you want to delete this staff member?")) {
+        showConfirmModal("Are you sure you want to delete this staff member?", function() {
             $.ajax({
                 type: "POST",
                 url: "pages/website settings/modals/delete_staff.php",
@@ -798,18 +884,18 @@ color: #f8f8f8;
                 dataType: "json",
                 success: function(response) {
                     if(response.success) {
-                        alert("Staff member deleted successfully!");
+                        showToast("Staff member deleted successfully!");
                         location.reload();
                     } else {
-                        alert("Error: " + response.message);
+                        showToast("Error: " + response.message, 'danger');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.log("Error details:", xhr, status, error);
-                    alert("Error deleting the staff member.");
+                    showToast("Error deleting the staff member.", 'danger');
                 }
             });
-        }
+        });
     });
 
     // Gallery Management
@@ -832,7 +918,7 @@ color: #f8f8f8;
     // Delete Gallery Image
     $('.delete-gallery-btn').on('click', function() {
         var imageId = $(this).data('id');
-        if(confirm("Are you sure you want to delete this image?")) {
+        showConfirmModal("Are you sure you want to delete this image?", function() {
             $.ajax({
                 type: "POST",
                 url: "pages/website settings/modals/delete_gallery.php",
@@ -840,18 +926,18 @@ color: #f8f8f8;
                 dataType: "json",
                 success: function(response) {
                     if(response.success) {
-                        alert("Image deleted successfully!");
+                        showToast("Image deleted successfully!");
                         location.reload();
                     } else {
-                        alert("Error: " + response.message);
+                        showToast("Error: " + response.message, 'danger');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.log("Error details:", xhr, status, error);
-                    alert("Error deleting the image.");
+                    showToast("Error deleting the image.", 'danger');
                 }
             });
-        }
+        });
     });
 
     // Logo Management

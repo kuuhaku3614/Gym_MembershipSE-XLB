@@ -11,8 +11,9 @@ $error = '';
 $username = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
+    // Sanitize all input data
+    $username = sanitizeInput($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';  // Don't sanitize password before verification
     
     if (empty($username) || empty($password)) {
         $error = "Please fill in all fields.";
@@ -35,20 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
-function executeQuery($query, $params = []) {
-    global $pdo;
-    try {
-        $stmt = $pdo->prepare($query);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log('Database query error: ' . $e->getMessage());
-        return [];
-    }
-}
-// Fetch specific content for sections
-$welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
-$logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
+
+// Fetch specific content for sections - using prepared statements from executeQuery function
+$welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = ?", ['welcome'])[0] ?? [];
+$logo = executeQuery("SELECT * FROM website_content WHERE section = ?", ['logo'])[0] ?? [];
 ?>
 
 <!DOCTYPE html>
@@ -69,27 +60,27 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
     <div class="text-center d-flex justify-content-center mb-2 gap-2">
         <div class="logo-placeholder">
             <img src="../<?php 
-                echo htmlspecialchars($logo['location']); 
+                echo sanitizeOutput($logo['location'] ?? ''); 
             ?>" alt="Gym Logo" class="logo-image">
         </div>
         <h1 class="d-flex align-items-center justify-content-center m-0"><?php 
-                echo htmlspecialchars($welcomeContent['company_name'] ?? 'Company Name'); 
-            ?></p></h1>
+                echo sanitizeOutput($welcomeContent['company_name'] ?? 'Company Name'); 
+            ?></h1>
     </div>
-    <div class=" mb-4">
+    <div class="mb-4">
         <h2>Log In</h2>
         <p class="text-muted">Or sign up to create a new account</p>
     </div>
             <?php if(!empty($error)): ?>
                 <div class="alert alert-danger" role="alert">
-                    <?php echo htmlspecialchars($error); ?>
+                    <?php echo sanitizeOutput($error); ?>
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
+            <form method="POST" action="<?php echo sanitizeOutput($_SERVER['PHP_SELF']); ?>">
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="username" name="username" 
-                           value="<?php echo htmlspecialchars($username); ?>" placeholder=" ">
+                           value="<?php echo sanitizeOutput($username); ?>" placeholder=" ">
                     <label for="username">Username</label>
                 </div>
                 <div class="form-floating mb-3 position-relative">
@@ -130,25 +121,25 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
     <script>
         function saveRememberMe(element) {
             if (element.checked) {
-                document.cookie = "remember_me=1; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/";
+                document.cookie = "remember_me=1; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/; SameSite=Strict; Secure";
             } else {
-                document.cookie = "remember_me=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+                document.cookie = "remember_me=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Strict; Secure";
             }
         }
 
         function togglePassword(inputId) {
-        const passwordInput = document.getElementById(inputId);
-        const icon = event.currentTarget.querySelector('.togglePW');
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            passwordInput.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
+            const passwordInput = document.getElementById(inputId);
+            const icon = event.currentTarget.querySelector('.togglePW');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
         }
-    }
     </script>
 </body>
 </html>

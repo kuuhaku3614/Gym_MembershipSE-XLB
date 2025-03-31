@@ -281,12 +281,15 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function() {
-    const table = $("#staffManagementTable").DataTable({
-        pageLength: 10,
-        ordering: false,
-        responsive: true,
-        dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
-    });
+    // Check if table is already initialized before initializing
+    if (!$.fn.DataTable.isDataTable("#staffManagementTable")) {
+        const table = $("#staffManagementTable").DataTable({
+            pageLength: 10,
+            ordering: false,
+            responsive: true,
+            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+        });
+    }
 
     // Initialize Bootstrap modal
     const addStaffModal = new bootstrap.Modal(document.getElementById('addStaffModal'));
@@ -427,12 +430,15 @@ $(document).ready(function() {
         $('#editStaffForm')[0].reset();
     });
 
-    $('#activityLogTable').DataTable({
-        pageLength: 10,
-        ordering: true,
-        order: [[3, 'desc']], // Sort by timestamp by default
-        responsive: true,
-        dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
-    });
+    // Check if activity log table is already initialized before initializing
+    if (!$.fn.DataTable.isDataTable("#activityLogTable")) {
+        $('#activityLogTable').DataTable({
+            pageLength: 10,
+            ordering: true,
+            order: [[3, 'desc']], // Sort by timestamp by default
+            responsive: true,
+            dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+        });
+    }
 });
 </script>

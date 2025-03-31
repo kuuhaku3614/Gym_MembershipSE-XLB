@@ -476,124 +476,112 @@ function generatePDF($data, $start_date, $end_date, $selected_sections) {
  * Generate HTML specifically formatted for PDF output
  */
 function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
-    // PDF-optimized CSS with more compact styling
+    // PDF-optimized CSS with more formal styling
     $styles = '
 <style>
     body {
-        font-family: Arial, sans-serif;
-        font-size: 10px;
-        line-height: 1.2;
-        color: #333;
+        font-family: "DejaVu Sans", "Helvetica", sans-serif;
+        font-size: 9pt;
+        line-height: 1.3;
+        color: #000000;
         margin: 0;
-        padding: 10px;
+        padding: 15px;
     }
     .report-header {
         text-align: center;
-        margin-bottom: 15px;
+        border-bottom: 1px solid #000000;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .report-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        text-align: center;
+        font-size: 8pt;
+        color: #666;
+        border-top: 1px solid #000000;
+        padding-top: 5px;
+    }
+    .page-number:after {
+        content: counter(page);
     }
     h1, h2, h3, h4, h5, h6 {
         margin-top: 0;
-        margin-bottom: 6px;
-        font-weight: 600;
-        color: #000;
+        margin-bottom: 8px;
+        font-weight: bold;
     }
-    .text-center {
+    h2 {
+        font-size: 14pt;
+    }
+    h5 {
+        font-size: 10pt;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .summary-section {
+        margin-bottom: 20px;
+    }
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    .summary-table td {
+        padding: 5px;
+        border: 1px solid #000000;
+    }
+    .summary-table .header {
+        background-color: #f2f2f2;
+        font-weight: bold;
         text-align: center;
     }
-    .text-right {
-        text-align: right;
+    .summary-table .value {
+        text-align: center;
+        font-weight: bold;
+        font-size: 12pt;
     }
-    .mb-1 {
-        margin-bottom: 3px;
+    .section {
+        margin-bottom: 20px;
+        page-break-inside: avoid;
     }
-    .mb-2 {
-        margin-bottom: 6px;
+    .section-header {
+        background-color: #f2f2f2;
+        padding: 5px;
+        font-weight: bold;
+        border: 1px solid #000000;
+        border-bottom: none;
     }
-    .mb-3 {
-        margin-bottom: 10px;
-    }
-    .mb-4 {
-        margin-bottom: 15px;
-    }
-    .text-muted {
-        color: #6c757d;
-    }
-    .text-primary {
-        color: #007bff;
-    }
-    .text-success {
-        color: #28a745;
-    }
-    .text-info {
-        color: #17a2b8;
-    }
-.stats-row {
-    width: 100%;
-    margin-bottom: 15px;
-    display: table;
-    table-layout: fixed;
-}
-.stats-box {
-    width: 33.33%;
-    padding: 5px;
-    text-align: center;
-    border: 1px solid rgba(0,0,0,.125);
-    background-color: #fff;
-    display: table-cell;
-    border-radius: 4px;
-}
-    .card {
-        position: relative;
-        background-color: #fff;
-        border: 1px solid rgba(0,0,0,.125);
-        border-radius: 4px;
-        margin-bottom: 15px;
-    }
-    .card-header {
-        padding: 5px 8px;
-        margin-bottom: 0;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid rgba(0,0,0,.125);
-    }
-    .card-body {
-        padding: 8px;
-    }
-    .bg-light {
-        background-color: #f8f9fa !important;
+    .section-content {
+        border: 1px solid #000000;
+        padding: 0;
     }
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 10px;
-        font-size: 9px;
-    }
-    .table {
-        width: 100%;
-        margin-bottom: 10px;
-        color: #212529;
-    }
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(0,0,0,.05);
+        font-size: 8pt;
     }
     th, td {
-        padding: 4px 6px;
-        vertical-align: top;
-        border-top: 1px solid #dee2e6;
-        text-align: left;
+        padding: 4px;
+        border: 1px solid #000000;
     }
     th {
+        background-color: #f2f2f2;
         font-weight: bold;
+        text-align: left;
     }
-    .watermark {
-        position: fixed;
-        bottom: 5px;
-        right: 5px;
-        font-size: 8px;
-        color: #6c757d;
-        opacity: 0.5;
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
     }
     .page-break {
         page-break-before: always;
+    }
+    .report-meta {
+        font-size: 8pt;
+        color: #666;
+        margin-bottom: 10px;
     }
 </style>';
 
@@ -608,35 +596,33 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
     </head>
     <body>
         <div class="report-header">
-            <h2 class="mb-1">Analytics Report</h2>
-            <div class="text-muted">Report Period: '.date('F d, Y', strtotime($start_date)).' - '.date('F d, Y', strtotime($end_date)).'</div>
-            <div class="text-muted">Generated on: '.date('F d, Y H:i:s').'</div>
+            <h2>FITNESS CLUB ANALYTICS REPORT</h2>
+            <div>Reporting Period: '.date('F d, Y', strtotime($start_date)).' - '.date('F d, Y', strtotime($end_date)).'</div>
+            <div class="report-meta">Report ID: '.uniqid('RPT-').' | Generated: '.date('F d, Y H:i:s').'</div>
         </div>
         
-        <div class="stats-row">
-            <div class="stats-box">
-                <div class="text-muted mb-1">Total Members</div>
-                <div class="text-primary" style="font-size: 14px; font-weight: bold;">'.number_format($data['total_members']).'</div>
-            </div>
-            <div class="stats-box">
-                <div class="text-muted mb-1">Total Revenue</div>
-                <div class="text-success" style="font-size: 14px; font-weight: bold;">Php'.number_format($data['total_revenue'], 2).'</div>
-            </div>
-            <div class="stats-box">
-                <div class="text-muted mb-1">Average Check-ins</div>
-                <div class="text-info" style="font-size: 14px; font-weight: bold;">'.number_format($data['avg_checkins'], 1).'</div>
-            </div>
+        <div class="summary-section">
+            <table class="summary-table">
+                <tr>
+                    <td class="header">TOTAL MEMBERS</td>
+                    <td class="header">TOTAL REVENUE</td>
+                    <td class="header">AVG. CHECK-INS</td>
+                </tr>
+                <tr>
+                    <td class="value">'.number_format($data['total_members']).'</td>
+                    <td class="value">₱'.number_format($data['total_revenue'], 2).'</td>
+                    <td class="value">'.number_format($data['avg_checkins'], 1).'</td>
+                </tr>
+            </table>
         </div>';
     
-    // Add selected sections without page breaks in between
+    // Add selected sections
     if (empty($selected_sections) || in_array('attendance', $selected_sections)) {
         $html .= '
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">Member Attendance Analysis</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
+        <div class="section">
+            <div class="section-header">MEMBER ATTENDANCE ANALYSIS</div>
+            <div class="section-content">
+                <table>
                     <thead>
                         <tr>
                             <th>Username</th>
@@ -657,9 +643,9 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
                 <tr>
                     <td>'.htmlspecialchars($row['username']).'</td>
                     <td>'.htmlspecialchars($row['first_name']).' '.htmlspecialchars($row['last_name']).'</td>
-                    <td>'.number_format($row['total_check_ins']).'</td>
-                    <td>'.number_format($row['total_missed']).'</td>
-                    <td>'.number_format($attendance_rate, 1).'%</td>
+                    <td class="text-right">'.number_format($row['total_check_ins']).'</td>
+                    <td class="text-right">'.number_format($row['total_missed']).'</td>
+                    <td class="text-right">'.number_format($attendance_rate, 1).'%</td>
                 </tr>';
         }
         
@@ -672,18 +658,16 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
     
     // Add earnings section
     if (empty($selected_sections) || in_array('earnings', $selected_sections)) {
-        // Only add page break if necessary (if we're running out of space)
+        // Add page break if necessary
         if (count($data['earnings']) > 5) {
             $html .= '<div class="page-break"></div>';
         }
         
         $html .= '
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">Monthly Earnings</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
+        <div class="section">
+            <div class="section-header">MONTHLY EARNINGS</div>
+            <div class="section-content">
+                <table>
                     <thead>
                         <tr>
                             <th>Month</th>
@@ -699,8 +683,8 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
                 <tr>
                     <td>'.date('F', mktime(0, 0, 0, $row['month'], 10)).'</td>
                     <td>'.$row['year'].'</td>
-                    <td>'.number_format($row['total_memberships']).'</td>
-                    <td>Php'.number_format($row['total_amount'], 2).'</td>
+                    <td class="text-right">'.number_format($row['total_memberships']).'</td>
+                    <td class="text-right">₱'.number_format($row['total_amount'], 2).'</td>
                 </tr>';
         }
         
@@ -711,20 +695,20 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
         </div>';
     }
     
+    // Continue with the other sections following the same pattern...
+    // ...
+    
     // Member Service Utilization
     if (empty($selected_sections) || in_array('utilization', $selected_sections)) {
-        // Only add page break if absolutely necessary
         if (count($data['utilization']) > 8) {
             $html .= '<div class="page-break"></div>';
         }
         
         $html .= '
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">Member Service Utilization</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
+        <div class="section">
+            <div class="section-header">MEMBER SERVICE UTILIZATION</div>
+            <div class="section-content">
+                <table>
                     <thead>
                         <tr>
                             <th>Username</th>
@@ -741,9 +725,9 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
                 <tr>
                     <td>'.htmlspecialchars($row['username']).'</td>
                     <td>'.htmlspecialchars($row['first_name']).' '.htmlspecialchars($row['last_name']).'</td>
-                    <td>'.number_format($row['membership_count']).'</td>
-                    <td>'.number_format($row['program_subscriptions']).'</td>
-                    <td>'.number_format($row['rental_subscriptions']).'</td>
+                    <td class="text-right">'.number_format($row['membership_count']).'</td>
+                    <td class="text-right">'.number_format($row['program_subscriptions']).'</td>
+                    <td class="text-right">'.number_format($row['rental_subscriptions']).'</td>
                 </tr>';
         }
         
@@ -756,18 +740,15 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
     
     // Program Subscriptions
     if (empty($selected_sections) || in_array('programs', $selected_sections)) {
-        // Add page break only if we have many sections and data
         if ((count($data['programs']) > 5) && (count($selected_sections) > 3)) {
             $html .= '<div class="page-break"></div>';
         }
         
         $html .= '
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">Program Subscriptions</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
+        <div class="section">
+            <div class="section-header">PROGRAM SUBSCRIPTIONS</div>
+            <div class="section-content">
+                <table>
                     <thead>
                         <tr>
                             <th>Month</th>
@@ -783,8 +764,8 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
                 <tr>
                     <td>'.date('F', mktime(0, 0, 0, $row['month'], 10)).'</td>
                     <td>'.$row['year'].'</td>
-                    <td>'.number_format($row['total_subscriptions']).'</td>
-                    <td>Php'.number_format($row['total_amount'], 2).'</td>
+                    <td class="text-right">'.number_format($row['total_subscriptions']).'</td>
+                    <td class="text-right">₱'.number_format($row['total_amount'], 2).'</td>
                 </tr>';
         }
         
@@ -797,18 +778,15 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
     
     // Rental Subscriptions
     if (empty($selected_sections) || in_array('rentals', $selected_sections)) {
-        // Add page break only if we have many sections and data
         if ((count($data['rentals']) > 5) && (count($selected_sections) > 3)) {
             $html .= '<div class="page-break"></div>';
         }
         
         $html .= '
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">Rental Subscriptions</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
+        <div class="section">
+            <div class="section-header">RENTAL SUBSCRIPTIONS</div>
+            <div class="section-content">
+                <table>
                     <thead>
                         <tr>
                             <th>Month</th>
@@ -824,8 +802,8 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
                 <tr>
                     <td>'.date('F', mktime(0, 0, 0, $row['month'], 10)).'</td>
                     <td>'.$row['year'].'</td>
-                    <td>'.number_format($row['total_rentals']).'</td>
-                    <td>Php'.number_format($row['total_amount'], 2).'</td>
+                    <td class="text-right">'.number_format($row['total_rentals']).'</td>
+                    <td class="text-right">₱'.number_format($row['total_amount'], 2).'</td>
                 </tr>';
         }
         
@@ -836,14 +814,13 @@ function generatePDFHTML($data, $start_date, $end_date, $selected_sections) {
         </div>';
     }
     
-    // Add watermark and close HTML
+    // Add footer with page numbers
     $html .= '
-        <div class="watermark">
-            Generated by Fitness Club Management System
+        <div class="report-footer">
+            Fitness Club Management System | CONFIDENTIAL | Page <span class="page-number"></span>
         </div>
     </body>
     </html>';
     
     return $html;
 }
-?>

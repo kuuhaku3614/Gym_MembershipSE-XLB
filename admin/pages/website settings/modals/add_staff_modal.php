@@ -4,9 +4,9 @@ require_once '../config.php';
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate inputs
-    $name = trim($_POST['name'] ?? '');
-    $status = trim($_POST['status'] ?? '');
+    // Sanitize inputs using htmlspecialchars()
+    $name = htmlspecialchars(trim($_POST['name'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $status = htmlspecialchars(trim($_POST['status'] ?? ''), ENT_QUOTES, 'UTF-8');
     
     $errors = [];
     
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $imagePath = '';
     
     if (!file_exists($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+        mkdir($uploadDir, 0755, true);
     }
     
     if (isset($_FILES['staff_image']) && $_FILES['staff_image']['error'] == 0) {
@@ -38,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $targetFile = $uploadDir . $fileName;
             
             if (move_uploaded_file($_FILES['staff_image']['tmp_name'], $targetFile)) {
+                chmod($targetFile, 0644);
                 $imagePath = 'cms_img/staff/' . $fileName;
             } else {
                 $errors[] = "Failed to upload image.";
@@ -58,26 +59,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'image_path' => $imagePath
             ]);
             
-            if ($result) {
-                $response = [
-                    'success' => true,
-                    'message' => 'Staff member added successfully!'
-                ];
-            } else {
-                $response = [
-                    'success' => false,
-                    'message' => 'Failed to add staff member.'
-                ];
-            }
+            $response = [
+                'success' => true,
+                'message' => 'Staff member added successfully.'
+            ];
             
             // Return JSON response for AJAX
             header('Content-Type: application/json');
             echo json_encode($response);
             exit;
         } catch (PDOException $e) {
+            // Log error securely without exposing details
+            error_log('Database error: ' . $e->getMessage());
+            
             $response = [
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'An error occurred while processing the staff member.'
             ];
             
             header('Content-Type: application/json');
@@ -88,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Return errors as JSON
         $response = [
             'success' => false,
-            'message' => implode('<br>', $errors)
+            'message' => htmlspecialchars(implode('<br>', $errors), ENT_QUOTES, 'UTF-8')
         ];
         
         header('Content-Type: application/json');
@@ -99,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!-- Add Staff Modal -->
-<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -156,6 +153,9 @@ $(document).ready(function() {
     $('#saveStaff').on('click', function() {
         var formData = new FormData($('#addStaffForm')[0]);
         
+        // Remove any existing error messages
+        $('.alert-danger').remove();
+        
         $.ajax({
             type: "POST",
             url: "../admin/pages/website settings/modals/add_staff_modal.php",
@@ -165,24 +165,10 @@ $(document).ready(function() {
             processData: false,
             success: function(response) {
                 if (response.success) {
-                    // Create success message element
-                    var successMessage = $('<div>', {
-                        class: 'alert alert-success',
-                        role: 'alert',
-                        text: response.message
-                    });
-                    
-                    // Show message in modal body
-                    $('#addStaffModal .modal-body').prepend(successMessage);
-                    
-                    // Auto-close modal after delay
-                    setTimeout(function() {
-                        $('#addStaffModal').modal('hide');
-                        // Reload page to reflect changes
-                        location.reload();
-                    }, 1000);
+                    // Redirect or reload without displaying success message
+                    location.reload();
                 } else {
-                    // Create error message element
+                    // Create error message element with HTML entity encoding
                     var errorMessage = $('<div>', {
                         class: 'alert alert-danger',
                         role: 'alert',
@@ -209,9 +195,11 @@ $(document).ready(function() {
         });
     });
     
-    // Remove modal from DOM when hidden
+    // Clear form and remove error messages when modal is closed
     $('#addStaffModal').on('hidden.bs.modal', function () {
-        $(this).remove();
+        $('#addStaffForm')[0].reset();
+        $('#imagePreview').hide();
+        $('.alert-danger').remove();
     });
 });
 </script>

@@ -2,6 +2,11 @@
 // Include database connection
 require_once '../config.php';
 
+// Function to sanitize HTML output
+function sanitizeOutput($input) {
+    return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+}
+
 // Function to fetch staff member details
 function getStaffDetails($id) {
     global $pdo;
@@ -16,7 +21,7 @@ function getStaffDetails($id) {
 }
 
 // Get staff ID from GET request
-$staffId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$staffId = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : 0;
 $staffDetails = [];
 
 if ($staffId > 0) {
@@ -32,10 +37,10 @@ if ($staffId > 0) {
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate inputs
-    $id = isset($_POST['staff_id']) ? (int)$_POST['staff_id'] : 0;
-    $name = trim($_POST['name'] ?? '');
-    $status = trim($_POST['status'] ?? '');
+    // Validate inputs with additional sanitization
+    $id = filter_var($_POST['staff_id'] ?? 0, FILTER_VALIDATE_INT);
+    $name = trim(strip_tags($_POST['name'] ?? ''));
+    $status = trim(strip_tags($_POST['status'] ?? ''));
     
     $errors = [];
     
@@ -62,13 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($fileType, $allowedTypes)) {
             $errors[] = "Only JPG, JPEG, and PNG files are allowed.";
         } else {
-            // Generate unique filename
-            $fileName = uniqid() . '_' . basename($_FILES['staff_image']['name']);
+            // Generate unique filename with sanitization
+            $fileName = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '', basename($_FILES['staff_image']['name']));
             $targetFile = $uploadDir . $fileName;
             
             if (move_uploaded_file($_FILES['staff_image']['tmp_name'], $targetFile)) {
                 // Delete old image if it exists
-                if (!empty($imagePath) && file_exists($uploadDir . basename($imagePath))) {
+                if (!empty($imagePath) && file_exists($uploadDir . basename($imagePath)) && $imagePath !== 'cms_img/staff/default.jpg') {
                     @unlink($uploadDir . basename($imagePath));
                 }
                 
@@ -110,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             $response = [
                 'success' => false,
-                'message' => 'Database error: ' . $e->getMessage()
+                'message' => 'Database error: ' . sanitizeOutput($e->getMessage())
             ];
             
             header('Content-Type: application/json');
@@ -132,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!-- Edit Staff Modal -->
-<div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
+<div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -141,28 +146,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="modal-body">
                 <form id="editStaffForm" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="staff_id" value="<?php echo $staffDetails['id'] ?? 0; ?>">
-                    <input type="hidden" name="current_image_path" value="<?php echo $staffDetails['image_path'] ?? ''; ?>">
+                    <input type="hidden" name="staff_id" value="<?php echo sanitizeOutput($staffDetails['id'] ?? 0); ?>">
+                    <input type="hidden" name="current_image_path" value="<?php echo sanitizeOutput($staffDetails['image_path'] ?? ''); ?>">
                     
                     <div class="mb-3">
                         <label for="name" class="form-label">Name:</label>
-                        <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($staffDetails['name'] ?? ''); ?>" required>
+                        <input type="text" class="form-control" id="name" name="name" value="<?php echo sanitizeOutput($staffDetails['name'] ?? ''); ?>" required>
                     </div>
                     <div class="mb-3">
                         <label for="status" class="form-label">Status/Role:</label>
-                        <input type="text" class="form-control" id="status" name="status" value="<?php echo htmlspecialchars($staffDetails['status'] ?? ''); ?>" required>
+                        <input type="text" class="form-control" id="status" name="status" value="<?php echo sanitizeOutput($staffDetails['status'] ?? ''); ?>" required>
                         <small class="form-text text-muted">E.g., Gym Owner, Staff, Coach, Trainer, etc.</small>
                     </div>
-                    <div class="mb-3">
-                        <label for="staff_image" class="form-label">Staff Image:</label>
-                        <input type="file" class="form-control" id="staff_image" name="staff_image" accept="image/jpeg, image/png, image/jpg">
-                        <small class="form-text text-muted">Leave empty to keep current image. Recommended size: Square image (e.g., 500x500px)</small>
-                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Current Image:</label>
                         <div id="currentImage" style="max-width: 200px; max-height: 200px; overflow: hidden;">
                             <?php if (!empty($staffDetails['image_path'])): ?>
-                                <img src="../<?php echo htmlspecialchars($staffDetails['image_path']); ?>" alt="Current Image" style="width: 100%; height: auto;">
+                                <img src="../<?php echo sanitizeOutput($staffDetails['image_path']); ?>" alt="Current Image" style="width: 100%; height: auto;">
                             <?php else: ?>
                                 <p>No image available</p>
                             <?php endif; ?>
@@ -173,6 +174,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="form-label">New Image Preview:</label>
                             <img id="preview" src="#" alt="Preview" style="width: 100%; height: auto;">
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="staff_image" class="form-label">Staff Image:</label>
+                        <input type="file" class="form-control" id="staff_image" name="staff_image" accept="image/jpeg, image/png, image/jpg">
+                        <small class="form-text text-muted">Leave empty to keep current image. Recommended size: Square image (e.g., 500x500px)</small>
                     </div>
                 </form>
             </div>
@@ -201,6 +207,9 @@ $(document).ready(function() {
     
     // Submit form via AJAX
     $('#updateStaff').on('click', function() {
+        // Remove any existing alerts
+        $('#editStaffModal .alert').remove();
+        
         var formData = new FormData($('#editStaffForm')[0]);
         
         $.ajax({
@@ -241,7 +250,10 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                console.log("Error details:", xhr, status, error);
+                // Remove any existing alerts
+                $('#editStaffModal .alert').remove();
+                
+                console.error("Error details:", xhr, status, error);
                 
                 // Create error message element
                 var errorMessage = $('<div>', {

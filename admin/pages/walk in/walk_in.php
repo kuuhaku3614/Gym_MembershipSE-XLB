@@ -9,15 +9,19 @@
     
     if (isset($_POST['action'])) {
         if ($_POST['action'] === 'add_walkin') {
-            $name = $_POST['name'] ?? '';
+            $first_name = $_POST['first_name'] ?? '';
+            $middle_name = $_POST['middle_name'] ?? '';
+            $last_name = $_POST['last_name'] ?? '';
             $phone_number = $_POST['phone_number'] ?? '';
 
-            if (empty($name) || empty($phone_number)) {
-                echo json_encode(['status' => 'error', 'message' => 'Name and phone number are required']);
+            // Validate required fields
+            if (empty($first_name) || empty($last_name) || empty($phone_number)) {
+                echo json_encode(['status' => 'error', 'message' => 'First name, last name, and phone number are required']);
                 exit;
             }
 
-            $result = $Obj->addWalkInRecord($name, $phone_number);
+            // Add walk-in record with name fields directly
+            $result = $Obj->addWalkInRecord($first_name, $middle_name, $last_name, $phone_number);
 
             if ($result) {
                 echo json_encode(['status' => 'success', 'message' => 'Walk-in record added successfully']);
@@ -78,10 +82,8 @@
   $current_price = $Obj->getWalkInPrice();
 ?>
 
-
 <div class="container mt-4">
-
-<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Walk-In</h2>
         <div class="mt-2">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWalkInModal">
@@ -99,7 +101,7 @@
               <thead>
                   <tr>
                       <th>No.</th>
-                      <th>Name</th>
+                      <th>Full Name</th>
                       <th>Phone Number</th>
                       <th>Date</th>
                       <th>Time in</th>
@@ -113,10 +115,16 @@
                 if(!empty($array)){
                     $count = 1;
                     foreach($array as $row){
-                ?>
+              ?>
                     <tr class="text-center">
                         <td><?php echo $count++; ?></td>
-                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                        <td><?php 
+                            // Build full name from individual fields
+                            $full_name = $row['first_name'] . 
+                                       (!empty($row['middle_name']) ? ' ' . $row['middle_name'] : '') . 
+                                       ' ' . $row['last_name'];
+                            echo htmlspecialchars($full_name); 
+                        ?></td>
                         <td><?php echo htmlspecialchars($row['phone_number']); ?></td>
                         <td><?php 
                             $date = new DateTime($row['date']);
@@ -152,7 +160,7 @@
                         <td>
                             <?php if (strtolower($row['status']) === 'pending'): ?>
                                 <button class="btn btn-success btn-sm" onclick="processWalkIn(<?php echo $row['id']; ?>)">
-                                    Walk-in
+                                    Mark
                                 </button>
                                 <button class="btn btn-danger btn-sm ms-1" onclick="removeWalkIn(<?php echo $row['id']; ?>)">
                                     Remove
@@ -167,62 +175,75 @@
               </tbody>
           </table>
         </div>
-</div>
+    </div>
 
-<!-- Add Walk-in Modal -->
-<div class="modal fade" id="addWalkInModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addWalkInModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="addWalkInModalLabel">Add New Walk-in</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Add Walk-in Modal -->
+    <div class="modal fade" id="addWalkInModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addWalkInModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addWalkInModalLabel">Add New Walk-in</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addWalkInForm">
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Personal Details Fields -->
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="first_name">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="middle_name">Middle Name</label>
+                                    <input type="text" class="form-control" id="middle_name" name="middle_name">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="last_name">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="phone_number">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="amount-display">
+                            <span class="amount-label">Amount:</span>
+                            <span class="amount-value">₱<?php echo number_format($current_price, 2); ?></span>
+                        </div>
+                        <input type="hidden" name="action" value="add_walkin">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
             </div>
-            <form id="addWalkInForm">
-                <div class="modal-body">
-                    <div class="row">
-                        <!-- Left Column -->
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="name">Name</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
-                            </div>
-                        </div>
-                        <!-- Right Column -->
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="phone_number">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="amount-display">
-                        <span class="amount-label">Amount:</span>
-                        <span class="amount-value">₱<?php echo number_format($current_price, 2); ?></span>
-                    </div>
-                    <input type="hidden" name="action" value="add_walkin">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
         </div>
     </div>
-</div>
 
-<!-- Update Price Modal -->
-<div class="modal fade" id="updatePriceModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updatePriceModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="updatePriceModalLabel">Update Walk-in Price</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-info mb-4">
-                    <h6 class="alert-heading">Current Walk-in Rate</h6>
-                    <h4 class="mb-0">₱<?php echo number_format($current_price, 2); ?></h4>
+    <!-- Update Price Modal (Unchanged) -->
+    <div class="modal fade" id="updatePriceModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="updatePriceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="updatePriceModalLabel">Update Walk-in Price</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body">
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading">Current Walk-in Rate</h6>
+                        <h4 class="mb-0">₱<?php echo number_format($current_price, 2); ?></h4>
+                    </div>
                     <form id="updatePriceForm">
                         <div class="mb-3">
                             <label for="newPrice" class="form-label">New Walk-in Price</label>
@@ -237,235 +258,197 @@
                             <button type="submit" class="btn btn-primary">Save</button>
                         </div>
                     </form>
-            </div>
-            <div class="modal-footer">
-                
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#walk_inTable').DataTable({
+            "responsive": true,
+            "order": [[3, 'desc'], [4, 'desc']] // Order by date descending, then time
+        });
+        
+        // Handle form submission
+        $('#addWalkInForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: '../admin/pages/walk in/walk_in.php',
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message,
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            // Close modal after user acknowledges the success message
+                            $('#addWalkInModal').modal('hide');
+                            // Reload page to show new record
+                            location.reload();
+                        });
+                        
+                    } else {
+                        // Show error message
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while processing your request'
+                    });
+                }
+            });
+        });
+
+        // Handle update price form submission
+        $('#updatePriceForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: '../admin/pages/walk in/walk_in.php',
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.message,
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            $('#updatePriceModal').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while processing your request'
+                    });
+                }
+            });
+        });
+    });
+
+    function processWalkIn(id) {
+        Swal.fire({
+            title: 'Process Walk-in',
+            text: 'Are you sure you want to mark as paid this walk-in record?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '../admin/pages/walk in/walk_in.php',
+                    type: 'POST',
+                    data: {
+                        action: 'process_walkin',
+                        id: id
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: response.message
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Failed to process walk-in'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred while processing the request'
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function removeWalkIn(id) {
+        Swal.fire({
+            title: 'Remove Walk-in',
+            text: 'Are you sure you want to remove this walk-in record?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, remove it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '../admin/pages/walk in/walk_in.php',
+                    type: 'POST',
+                    data: {
+                        action: 'remove_walkin',
+                        id: id
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: response.message
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Failed to remove walk-in record'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred while processing the request'
+                        });
+                    }
+                });
+            }
+        });
+    }
+    </script>
 </div>
-
-<style>
-    .amount-display {
-        border: 1px solid lightgrey;
-        color: red;
-        border-radius: 4px;
-        padding: 8px 15px;
-        margin: 10px 0;
-        display: inline-block;
-        width: 100%;
-        text-align: right;
-    }
-
-    .amount-label {
-        font-size: 0.9rem;
-        margin-right: 8px;
-    }
-
-    .amount-value {
-        font-size: 1.1rem;
-        font-weight: 600;
-    }
-
-    .badge {
-        font-weight: 500;
-        padding: 6px 12px;
-        border-radius: 4px;
-    }
-
-    .table td {
-        vertical-align: middle;
-    }
-
-    /* Modal styling updates */
-    .modal-content {
-        border: none;
-        border-radius: 10px;
-    }
-
-    .modal-header {
-        background-color: var(--danger-color);
-        color: white;
-        border-radius: 10px 10px 0 0;
-        padding: 15px 20px;
-    }
-
-    .modal-title {
-        font-weight: 600;
-    }
-
-    .form-group label {
-        color: var(--gray-700);
-        font-weight: 500;
-        margin-bottom: 8px;
-    }
-
-    .form-control {
-        border-radius: 4px;
-        border: 1px solid var(--gray-300);
-    }
-
-    .form-control:focus {
-        border-color: var(--danger-color);
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-    }
-</style>
-
-<script>
-$(document).ready(function() {
-    // Handle form submission
-    $('#addWalkInForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        $.ajax({
-            url: '../admin/pages/walk in/walk_in.php',
-            type: 'POST',
-            data: $(this).serialize(),
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    // Show success message
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success',
-                        text: response.message,
-                        confirmButtonColor: '#3085d6',
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        // Close modal after user acknowledges the success message
-                        $('#addWalkInModal').modal('hide');
-                        // Reload page to show new record
-                        location.reload();
-                    });
-                    
-                } else {
-                    // Show error message
-                    alert(response.message);
-                }
-            },
-            error: function() {
-                alert('An error occurred while processing your request');
-            }
-        });
-    });
-    // Initialize DataTable
-    $('#walk_inTable').DataTable({
-        responsive: true,
-        order: [[3, 'desc']], // Sort by check-in time by default
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip', // Custom layout
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search members...",
-            emptyTable: "No records found"
-        },
-        columnDefs: [
-            { orderable: false, targets: [0, 7] } // Disable sorting for number and action columns
-        ],
-        drawCallback: function() {
-            // Check if there are no records and modify the table structure if needed
-            if ($('#walk_inTable tbody tr.no-records-row').length > 0) {
-                // Remove the action column header if showing "no records" row
-                if ($('#walk_inTable thead th').length === 8) {
-                    $('#walk_inTable thead th:last-child').hide();
-                }
-            } else {
-                // Make sure the action column header is visible when records exist
-                $('#walk_inTable thead th:last-child').show();
-            }
-        }
-    });
-
-        // Handle price update form submission
-    $('#updatePriceForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        var price = $('#newPrice').val();
-        
-        if (!price || price <= 0) {
-            alert('Please enter a valid price');
-            return;
-        }
-
-        $.ajax({
-            url: '../admin/pages/walk in/walk_in.php',
-            type: 'POST',
-            data: $(this).serialize(),
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    Swal.fire({
-                        text: response.message,
-                        color: '#ffffff',
-                        background: '#28a745',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        position: 'top'
-                    }).then(() => {
-                        $('#updatePriceModal').modal('hide');
-                        location.reload();
-                    });
-                } else {
-                    alert(response.message);
-                }
-            },
-            error: function() {
-                alert('An error occurred while processing your request');
-            }
-        });
-    });
-});
-
-function processWalkIn(id) {
-    if (!confirm('Process this walk-in record?')) {
-        return;
-    }
-
-    $.ajax({
-        url: '../admin/pages/walk in/walk_in.php',
-        type: 'POST',
-        data: {
-            action: 'process_walkin',
-            id: id
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                alert('Walk-in processed successfully!');
-                location.reload();
-            } else {
-                alert(response.message || 'Failed to process walk-in');
-            }
-        },
-        error: function() {
-            alert('An error occurred while processing the request');
-        }
-    });
-}
-
-function removeWalkIn(id) {
-    if (!confirm('Are you sure you want to remove this walk-in record?')) {
-        return;
-    }
-
-    $.ajax({
-        url: '../admin/pages/walk in/walk_in.php',
-        type: 'POST',
-        data: {
-            action: 'remove_walkin',
-            id: id
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                alert('Walk-in record removed successfully!');
-                location.reload();
-            } else {
-                alert(response.message || 'Failed to remove walk-in record');
-            }
-        },
-        error: function() {
-            alert('An error occurred while processing the request');
-        }
-    });
-}
-</script>
