@@ -5,7 +5,7 @@
 
 body {
   background-color: #ecebeb;
-  font-family: myFont;
+  font-family: "Inter", sans-serif;
 }
 .login-container {
   width: 600px;
@@ -42,6 +42,7 @@ body {
   margin-bottom: 12px;
   padding: 10px 0;
   font-size: 1rem;
+  font-weight: 600;
 }
 .btn-login:hover {
   background-color: rgb(39, 75, 238);
@@ -53,15 +54,20 @@ body {
   border: 1px solid #6c757d;
   padding: 10px 0;
   font-size: 1rem;
+  font-weight: 600;
 }
 .btn-register:hover {
   background-color: #6c757d;
   color: white;
 }
 h1 {
+  font-family: myFont;
   font-size: 2.5rem;
   line-height: 1.4;
   align-items: center;
+}
+h2 {
+  font-weight: bold;
 }
 .form-floating {
   position: relative;

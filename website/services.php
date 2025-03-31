@@ -88,7 +88,10 @@
     border-radius: 8px;
     transition: all 0.3s ease;
 }
-
+.scroll-btn {
+    font-family: "Inter", sans-serif!important;
+    font-weight: 600;
+}
 .button-shortcuts .scroll-btn:hover {
     opacity: 0.9;
     transform: translateY(-2px);
@@ -223,7 +226,7 @@
                                 position: relative;">
                         <!-- Add an overlay to ensure text is readable -->
                         <div class="overlay-header">
-                            <h2 class="fw-bold mb-0"><?= $arr['plan_name'] ?></h2>
+                            <h2 class="fw-bold mb-0 service-name"><?= $arr['plan_name'] ?></h2>
                         </div>
                         <!-- Dark overlay to make text readable on any image -->
                         <div class="overlay-darker"></div>
@@ -266,7 +269,7 @@
                         <!-- Add an overlay to ensure text is readable -->
 
                         <div class="overlay-header">
-                        <h2 class="fw-bold mb-0"><?= $arr['plan_name'] ?></h2>
+                        <h2 class="fw-bold mb-0 service-name"><?= $arr['plan_name'] ?></h2>
                         </div>
                         <div class="overlay-darker"></div>
                     </div>
@@ -307,7 +310,7 @@
                                 position: relative;">
                         
                                     <div class="overlay-header">
-                                    <h2 class="fw-bold mb-0">Walk-in</h2>
+                                    <h2 class="fw-bold mb-0 service-name">Walk-in</h2>
                                     </div>
                                     <div class="overlay-darker"></div>
                                 </div>
@@ -350,7 +353,7 @@
                                 background-position: center;
                                 position: relative;">
                                 <div class="overlay-header">
-                                    <h2 class="fw-bold mb-0"><?= $rental['service_name'] ?></h2>
+                                    <h2 class="fw-bold mb-0 service-name"><?= $rental['service_name'] ?></h2>
                                 </div>
                                 <div class="overlay-darker"></div>
                                 </div>

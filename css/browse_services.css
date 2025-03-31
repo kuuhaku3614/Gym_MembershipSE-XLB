@@ -8,7 +8,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  font-family: myFont;
+  font-family: "Inter", sans-serif;
 }
 
 .home-navbar {
@@ -31,6 +31,10 @@
   background-position: center;
   background-repeat: no-repeat;
   animation: fadeIn 1.5s ease-in;
+  font-family: myFont !important;
+}
+.services-header p {
+  font-family: myFont;
 }
 
 @keyframes fadeIn {
@@ -430,6 +434,10 @@
 .section-heading {
   margin-bottom: 1.5rem;
   font-weight: bold;
+}
+.section-heading,
+.service-name {
+  font-family: myFont;
 }
 
 .card {
