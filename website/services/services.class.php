@@ -66,6 +66,24 @@ class Services_class{
         return $stmt->fetchAll();
     }
 
+    public function displayProgramServices() {
+        $conn = $this->db->connect();
+        $sql = "SELECT DISTINCT 
+                p.id as program_id,
+                p.program_name,
+                p.description,
+                p.image,
+                GROUP_CONCAT(DISTINCT cpt.type) as available_types
+                FROM programs p
+                LEFT JOIN coach_program_types cpt ON p.id = cpt.program_id
+                WHERE p.status = 'active'
+                GROUP BY p.id, p.program_name, p.description, p.image
+                ORDER BY p.program_name";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function displayRentalServices(){
         $conn = $this->db->connect();
         $sql = "SELECT rs.id as rental_id, rs.service_name, rs.price,
@@ -218,4 +236,6 @@ class Services_class{
             throw new Exception('Error checking user role: ' . $e->getMessage());
         }
     }
+
+    
 }
