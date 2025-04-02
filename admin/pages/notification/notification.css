@@ -1,0 +1,282 @@
+/* notification.css - Styling for the expiry notifications system */
+
+/* Container for all notifications */
+.notification-container {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Base notification card styling */
+.notification-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    border-left: 4px solid transparent;
+}
+
+.notification-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Status-specific styles */
+.notification-expired {
+    border-left-color: #dc3545; /* Red for expired */
+}
+
+.notification-expiring {
+    border-left-color: #ffc107; /* Yellow for expiring */
+}
+
+/* Unread notification styles */
+.notification-unread {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.unread-dot {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 10px;
+    height: 10px;
+    background-color: #0d6efd;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+}
+
+/* Notification header section */
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.notification-title {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 600;
+    color: #212529;
+    display: flex;
+    align-items: center;
+}
+
+.notification-time {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Notification body */
+.notification-body {
+    color: #495057;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-right: 10px;
+    letter-spacing: 0.5px;
+}
+
+.expired-indicator {
+    background-color: #dc3545;
+    color: white;
+}
+
+.expiring-indicator {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+/* Notification counts summary */
+.notification-counts {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.count-box {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    flex: 1;
+    min-width: 150px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.count-box strong {
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.count-box span:not(.unread-badge) {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.count-expired {
+    border-left: 4px solid #dc3545;
+}
+
+.count-expiring {
+    border-left: 4px solid #ffc107;
+}
+
+.unread-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal styling for expiry details */
+.section-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    position: relative;
+}
+
+.section-title {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #212529;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 8px;
+}
+
+.section-card p {
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.section-card p strong {
+    color: #495057;
+}
+
+/* Mark All as Read button */
+#markAllReadBtn {
+    transition: all 0.2s ease;
+}
+
+#markAllReadBtn:hover:not(:disabled) {
+    background-color: #0d6efd;
+    color: white;
+}
+
+#markAllReadBtn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .notification-counts {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .count-box {
+        width: 100%;
+    }
+    
+    .notification-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .notification-time {
+        margin-top: 5px;
+    }
+}
+
+/* Custom scrollbar for notification container */
+.notification-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notification-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.notification-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.notification-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Empty state */
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+    background-color: rgba(13, 202, 240, 0.1);
+}
+
+/* Animation for new notifications */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-card.new-notification {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Filter controls - for future use */
+.notification-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.filter-btn {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    background: none;
+    border: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover, .filter-btn.active {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.filter-btn.active {
+    background-color: rgba(13, 110, 253, 0.1);
+}

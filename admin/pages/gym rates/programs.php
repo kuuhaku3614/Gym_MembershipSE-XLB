@@ -66,29 +66,29 @@ $programs = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     // Check if the image exists using the correct absolute path
                     if (!empty($program['image']) && file_exists(__DIR__ . "/../../../cms_img/programs/" . $program['image'])) {
                         // Use a path relative to the web root for the src attribute
-                        echo "<img src='../../../cms_img/programs/" . htmlspecialchars($program['image']) . "' alt='Programs Image' class='img-thumbnail' width='80'>";
+                        echo "<img src='../../../cms_img/programs/" . htmlspecialchars($program['image'], ENT_QUOTES, 'UTF-8') . "' alt='Programs Image' class='img-thumbnail' width='80'>";
                     } else {
                         echo "No Image";
                     }
                     echo "</td>";
                     echo "<td>" . $count++ . "</td>";
-                    echo "<td>" . htmlspecialchars($program['program_name']) . "</td>";
-                    echo "<td>";
+                    echo "<td>" . htmlspecialchars($program['program_name'], ENT_QUOTES, 'UTF-8') . "</td>";
+                    echo "<td class='description-cell'>";
                     $description = $program['description'] ?: 'N/A';
                     echo strlen($description) > 20 ? 
-                        htmlspecialchars(substr($description, 0, 20) . '...') : 
-                        htmlspecialchars($description);
+                        htmlspecialchars(substr($description, 0, 20), ENT_QUOTES, 'UTF-8') . '...' : 
+                        htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
                     echo "</td>";
-                    echo "<td>" . htmlspecialchars($program['status']) . "</td>";
+                    echo "<td>" . htmlspecialchars($program['status'], ENT_QUOTES, 'UTF-8') . "</td>";
                     echo "<td>";
                     echo "<div class='d-grid gap-2'>";
                     if ($program['status'] === 'active') {
-                        echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='inactive'>Deactivate</button>";
+                        echo "<button class='btn btn-warning btn-sm toggle-status-btn' data-id='" . htmlspecialchars($program['id'], ENT_QUOTES, 'UTF-8') . "' data-new-status='inactive'>Deactivate</button>";
                     } else {
-                        echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . $program['id'] . "' data-new-status='active'>Activate</button>";
+                        echo "<button class='btn btn-success btn-sm toggle-status-btn' data-id='" . htmlspecialchars($program['id'], ENT_QUOTES, 'UTF-8') . "' data-new-status='active'>Activate</button>";
                     }
-                    echo "<button class='btn btn-primary btn-sm edit-btn' data-id='" . $program['id'] . "'>Edit</button>";
-                    echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . $program['id'] . "'>Remove</button>";
+                    echo "<button class='btn btn-primary btn-sm edit-btn' data-id='" . htmlspecialchars($program['id'], ENT_QUOTES, 'UTF-8') . "'>Edit</button>";
+                    echo "<button class='btn btn-danger btn-sm remove-btn' data-id='" . htmlspecialchars($program['id'], ENT_QUOTES, 'UTF-8') . "'>Remove</button>";
                     echo "</div>";
                     echo "</td>";
                     echo "</tr>";
@@ -313,6 +313,28 @@ $(document).ready(function() {
         ]
     });
 
+    // Display sanitized error function
+    function displaySanitizedError(errorMessage) {
+        // Create a text node to avoid XSS
+        const errorText = document.createTextNode(errorMessage);
+        // Create a div for the error
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger';
+        errorDiv.appendChild(errorText);
+        // Display in a fixed position container
+        const errorContainer = document.createElement('div');
+        errorContainer.style.position = 'fixed';
+        errorContainer.style.top = '20px';
+        errorContainer.style.right = '20px';
+        errorContainer.style.zIndex = '9999';
+        errorContainer.appendChild(errorDiv);
+        document.body.appendChild(errorContainer);
+        // Remove after 5 seconds
+        setTimeout(() => {
+            errorContainer.remove();
+        }, 5000);
+    }
+
     // Refresh button
     $('#refreshBtn').on('click', function() {
         location.reload();
@@ -340,11 +362,11 @@ $(document).ready(function() {
                     location.reload();
                 }, 2000);
                 } else {
-                    alert('Error: ' + response.message);
+                    displaySanitizedError(response.message || 'An unknown error occurred');
                 }
             },
             error: function(xhr, status, error) {
-                alert('An error occurred: ' + error);
+                displaySanitizedError('An error occurred: ' + error);
             }
         });
     });
@@ -372,11 +394,11 @@ $(document).ready(function() {
                     // Show modal
                     $('#editProgramModal').modal('show');
                 } else {
-                    alert('Error: ' + response.message);
+                    displaySanitizedError(response.message || 'An unknown error occurred');
                 }
             },
             error: function(xhr, status, error) {
-                alert('An error occurred: ' + error);
+                displaySanitizedError('An error occurred: ' + error);
             }
         });
     });
@@ -400,11 +422,11 @@ $(document).ready(function() {
                         location.reload();
                     });
                 } else {
-                    alert('Error: ' + response.message);
+                    displaySanitizedError(response.message || 'An unknown error occurred');
                 }
             },
             error: function(xhr, status, error) {
-                alert('An error occurred: ' + error);
+                displaySanitizedError('An error occurred: ' + error);
             }
         });
     });
@@ -413,6 +435,7 @@ $(document).ready(function() {
     $('.remove-btn').on('click', function() {
         const programId = $(this).data('id');
         $('#deleteModal').data('id', programId).modal('show');
+    });
 
     // Confirm Delete
     $('#confirmDelete').on('click', function() {
@@ -431,16 +454,14 @@ $(document).ready(function() {
                     $('#deleteModal').modal('hide');
                     location.reload();
                 } else {
-                    alert('Error: ' + response.message);
+                    displaySanitizedError(response.message || 'An unknown error occurred');
                 }
             },
             error: function(xhr, status, error) {
-                alert('An error occurred: ' + error);
+                displaySanitizedError('An error occurred: ' + error);
             }
         });
     });
-
-});
 
     // Handle Status Toggle Buttons
     $('.toggle-status-btn').on('click', function() {
@@ -454,8 +475,6 @@ $(document).ready(function() {
             $('#deactivateModal').data('id', programId).modal('show');
         }
     });
-
-    
 
     // Confirm Activate
     $('#confirmActivate').on('click', function() {
@@ -486,11 +505,11 @@ $(document).ready(function() {
                     $('#deactivateModal').modal('hide');
                     location.reload();
                 } else {
-                    alert('Error: ' + response.message);
+                    displaySanitizedError(response.message || 'An unknown error occurred');
                 }
             },
             error: function(xhr, status, error) {
-                alert('An error occurred: ' + error);
+                displaySanitizedError('An error occurred: ' + error);
             }
         });
     }

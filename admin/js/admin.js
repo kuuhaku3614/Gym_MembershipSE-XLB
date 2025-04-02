@@ -56,6 +56,8 @@ $(document).ready(function () {
     // Sub nav items for Notification
     "announcement-link": () =>
       loadContent("pages/notification/announcements.php"),
+    "transactions-link": () =>
+      loadContent("pages/notification/transactions.php"),
   };
 
   // Attach click handlers to all navigation items
@@ -99,6 +101,7 @@ $(document).ready(function () {
     payment_records: "payment_records-link",
     notification: "notification-link",
     announcement: "announcement-link",
+    transactions: "transactions-link",
     accounts: "accounts-link",
     website_settings: "website_settings-link",
     report: "report-link",

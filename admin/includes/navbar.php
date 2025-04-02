@@ -1,4 +1,5 @@
 <?php
+require_once 'pages/notification/functions/expiry-notifications.class.php';
 // Ensure session is started only once
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -78,17 +79,18 @@ if ($isLoggedIn && !isset($_SESSION['personal_details'])) {
     $_SESSION['personal_details'] = $userDetails;
 }
 
-// Get notification counts
+// Get notification counts - UPDATED to use ExpiryNotifications class
 function getNotificationCounts() {
+    $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+    
     $counts = [
         'pending_transactions' => 0,
-        'expiring_memberships' => 0,
-        'expired_memberships' => 0,
-        'expiring_rentals' => 0,
-        'expired_rentals' => 0,
+        'expiring' => 0,
+        'expired' => 0,
         'total' => 0
     ];
     
+    // Get counts from database for pending transactions
     $conn = new mysqli('localhost', 'root', '', 'gym_managementdb');
     if ($conn->connect_error) {
         return $counts;
@@ -101,89 +103,35 @@ function getNotificationCounts() {
         WHERE status = 'pending'
     ";
     
-    // Expiring Memberships Query
-    $expiring_memberships_sql = "
-        SELECT COUNT(*) AS expiring_count
-        FROM memberships m 
-        JOIN transactions t ON m.transaction_id = t.id 
-        JOIN users u ON t.user_id = u.id 
-        JOIN personal_details p ON u.id = p.user_id 
-        JOIN membership_plans mp ON m.membership_plan_id = mp.id 
-        WHERE m.status = 'expiring'
-    ";
-    
-    // Expired Memberships Query
-    $expired_memberships_sql = "
-        SELECT COUNT(*) AS expired_count
-        FROM memberships m 
-        JOIN transactions t ON m.transaction_id = t.id 
-        JOIN users u ON t.user_id = u.id 
-        JOIN personal_details p ON u.id = p.user_id 
-        JOIN membership_plans mp ON m.membership_plan_id = mp.id 
-        WHERE m.status = 'expired'
-    ";
-    
-    // Expiring Rentals Query
-    $expiring_rentals_sql = "
-        SELECT COUNT(*) AS expiring_count
-        FROM rental_subscriptions rs 
-        JOIN transactions t ON rs.transaction_id = t.id 
-        JOIN users u ON t.user_id = u.id 
-        JOIN personal_details p ON u.id = p.user_id 
-        JOIN rental_services s ON rs.rental_service_id = s.id 
-        WHERE rs.status = 'expiring'
-    ";
-    
-    // Expired Rentals Query
-    $expired_rentals_sql = "
-        SELECT COUNT(*) AS expired_count
-        FROM rental_subscriptions rs 
-        JOIN transactions t ON rs.transaction_id = t.id 
-        JOIN users u ON t.user_id = u.id 
-        JOIN personal_details p ON u.id = p.user_id 
-        JOIN rental_services s ON rs.rental_service_id = s.id 
-        WHERE rs.status = 'expired'
-    ";
-    
-    // Execute all queries and get counts
     $result = $conn->query($pending_transactions_sql);
     if ($result && $row = $result->fetch_assoc()) {
         $counts['pending_transactions'] = (int)$row['pending_transactions'];
     }
     
-    $result = $conn->query($expiring_memberships_sql);
-    if ($result && $row = $result->fetch_assoc()) {
-        $counts['expiring_memberships'] = (int)$row['expiring_count'];
-    }
-    
-    $result = $conn->query($expired_memberships_sql);
-    if ($result && $row = $result->fetch_assoc()) {
-        $counts['expired_memberships'] = (int)$row['expired_count'];
-    }
-    
-    $result = $conn->query($expiring_rentals_sql);
-    if ($result && $row = $result->fetch_assoc()) {
-        $counts['expiring_rentals'] = (int)$row['expiring_count'];
-    }
-    
-    $result = $conn->query($expired_rentals_sql);
-    if ($result && $row = $result->fetch_assoc()) {
-        $counts['expired_rentals'] = (int)$row['expired_count'];
-    }
-    
-    // Calculate total notifications
-    $counts['total'] = $counts['pending_transactions'] + 
-                       $counts['expiring_memberships'] + 
-                       $counts['expired_memberships'] + 
-                       $counts['expiring_rentals'] + 
-                       $counts['expired_rentals'];
-    
     $conn->close();
+    
+    // Use ExpiryNotifications class to get unread notifications counts
+    if ($userId > 0) {
+        try {
+            $expiryNotificationsObj = new ExpiryNotifications();
+            $unreadCounts = $expiryNotificationsObj->countUnreadNotifications($userId);
+            
+            $counts['expiring'] = $unreadCounts['expiring'];
+            $counts['expired'] = $unreadCounts['expired'];
+            $counts['total'] = $counts['pending_transactions'] + $unreadCounts['total'];
+            
+        } catch (Exception $e) {
+            // Log error but continue
+            error_log('Error getting notification counts: ' . $e->getMessage());
+        }
+    }
+    
     return $counts;
 }
 
 // Get notification counts
 $notificationCounts = getNotificationCounts();
+
 // Centralized function for querying the database
 function executeQuery($query, $params = []) {
     global $pdo;
@@ -369,11 +317,25 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
                 <div class="dropdown-icon-container">
                     <i class="fas fa-chevron-down dropdown-icon"></i>
                     <?php if ($notificationCounts['total'] > 0): ?>
-                    <span class="badge-count"><?php echo $notificationCounts['total']; ?></span>
+                    <span class="badge-count" id="total-notifications-badge"><?php echo $notificationCounts['total']; ?></span>
                     <?php endif; ?>
                 </div>
             </a>
             <div class="sub-nav">
+                <a href="transactions" id="transactions-link" class="sub-nav-item">
+                    <i class="fas fa-exchange-alt "></i>
+                    Transaction Requests
+                    <?php if ($notificationCounts['pending_transactions'] > 0): ?>
+                    <span class="badge bg-danger sub-nav-badge"><?php echo $notificationCounts['pending_transactions']; ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="expiry-notifications" id="expiry-notifications-link" class="sub-nav-item">
+                    <i class="fas fa-clock"></i>
+                    Expiry Alerts
+                    <?php if (($notificationCounts['expiring'] + $notificationCounts['expired']) > 0): ?>
+                    <span class="badge bg-danger sub-nav-badge" id="expiry-badge"><?php echo $notificationCounts['expiring'] + $notificationCounts['expired']; ?></span>
+                    <?php endif; ?>
+                </a>
                 <a href="announcement" id="announcement-link" class="sub-nav-item">
                     <i class="fas fa-bullhorn"></i>
                     Announcements
@@ -466,6 +428,59 @@ document.addEventListener('DOMContentLoaded', function() {
         // The dropdown functionality is already handled by the existing code,
         // but we can add additional notification-specific behavior here if needed
     });
+    
+    // Function to update notification badges after marking as read
+    window.updateNotificationBadges = function() {
+        // Make an AJAX call to get updated notification counts
+        fetch('functions/get-notification-counts.php', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update total notifications badge
+            const totalBadge = document.getElementById('total-notifications-badge');
+            if (data.total > 0) {
+                if (totalBadge) {
+                    totalBadge.textContent = data.total;
+                } else {
+                    // Create badge if it doesn't exist
+                    const badgeContainer = document.querySelector('.dropdown-icon-container');
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'badge-count';
+                    newBadge.id = 'total-notifications-badge';
+                    newBadge.textContent = data.total;
+                    badgeContainer.appendChild(newBadge);
+                }
+            } else if (totalBadge) {
+                totalBadge.remove();
+            }
+            
+            // Update expiry badge
+            const expiryBadge = document.getElementById('expiry-badge');
+            const expiryTotal = data.expiring + data.expired;
+            if (expiryTotal > 0) {
+                if (expiryBadge) {
+                    expiryBadge.textContent = expiryTotal;
+                } else {
+                    // Create badge if it doesn't exist
+                    const expiryLink = document.getElementById('expiry-notifications-link');
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'badge bg-danger sub-nav-badge';
+                    newBadge.id = 'expiry-badge';
+                    newBadge.textContent = expiryTotal;
+                    expiryLink.appendChild(newBadge);
+                }
+            } else if (expiryBadge) {
+                expiryBadge.remove();
+            }
+        })
+        .catch(error => {
+            console.error('Error updating notification badges:', error);
+        });
+    };
 });
 
     // Mobile sidebar toggle
@@ -492,102 +507,5 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebar.classList.remove('active');
         }
     });
-
-// Open sub-nav that was previously open before reload
-const openSubNav = localStorage.getItem('openSubNav');
-if (openSubNav) {
-    const navItem = document.getElementById(openSubNav);
-    if (navItem) {
-        navItem.classList.add('open');
-        const subNav = navItem.nextElementSibling;
-        if (subNav && subNav.classList.contains('sub-nav')) {
-            subNav.classList.add('open');
-        }
-    }
-}
-
-// Add functionality to all navigation items
-document.querySelectorAll('.nav-item, .sub-nav-item').forEach(item => {
-    item.addEventListener('click', function (e) {
-        const url = this.getAttribute('href');
-
-        // If this is a main nav item with sub-nav
-        if (this.classList.contains('has-subnav')) {
-            e.preventDefault(); // Prevent immediate navigation
-            
-            const isCurrentlyOpen = this.classList.contains('open');
-
-            if (isCurrentlyOpen) {
-                // If already open, close it
-                this.classList.remove('open');
-                const subNav = this.nextElementSibling;
-                if (subNav && subNav.classList.contains('sub-nav')) {
-                    subNav.classList.remove('open');
-                }
-                localStorage.removeItem('openSubNav');
-            } else {
-                // Close any previously open sub-navs
-                document.querySelectorAll('.nav-item.has-subnav.open').forEach(openItem => {
-                    openItem.classList.remove('open');
-                    const openSubNav = openItem.nextElementSibling;
-                    if (openSubNav && openSubNav.classList.contains('sub-nav')) {
-                        openSubNav.classList.remove('open');
-                    }
-                });
-
-                // Open this one immediately
-                this.classList.add('open');
-                const subNav = this.nextElementSibling;
-                if (subNav && subNav.classList.contains('sub-nav')) {
-                    subNav.classList.add('open');
-                }
-
-                // Store the open sub-nav before navigating
-                localStorage.setItem('openSubNav', this.id);
-            }
-
-            // Navigate after a slight delay if opening
-            if (!isCurrentlyOpen) {
-                setTimeout(() => {
-                    window.location.href = url;
-                }, 100);
-            }
-        } else if (this.classList.contains('sub-nav-item')) {
-            // If it's a sub-nav item, keep its parent open
-            const parentNavItems = document.querySelectorAll('.nav-item.has-subnav');
-            parentNavItems.forEach(parent => {
-                // Check if nextElementSibling exists before attempting to access it
-                if (parent.nextElementSibling && parent.nextElementSibling.contains(this)) {
-                    localStorage.setItem('openSubNav', parent.id);
-                }
-            });
-
-            // Navigate immediately
-            localStorage.setItem('activeNavItem', this.id);
-            window.location.href = url;
-        } else {
-            // If it's a regular nav item, clear stored sub-nav
-            localStorage.removeItem('openSubNav');
-
-            // Navigate immediately
-            localStorage.setItem('activeNavItem', this.id);
-            window.location.href = url;
-        }
-    });
-});
-
-// Set active state based on stored value
-const activeNavItem = localStorage.getItem('activeNavItem');
-if (activeNavItem) {
-    const element = document.getElementById(activeNavItem);
-    if (element) {
-        // Remove active class from all items
-        document.querySelectorAll('.nav-item, .sub-nav-item').forEach(navItem => {
-            navItem.classList.remove('active');
-        });
-        // Add active class to the previously active item
-        element.classList.add('active');
-    }
-}
 
 </script>
