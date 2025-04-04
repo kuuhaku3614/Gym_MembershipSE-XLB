@@ -8,6 +8,7 @@
     $special_plans = $Obj->displaySpecialPlans();
     $rental_services = $Obj->displayRentalServices();
     $walkin = $Obj->displayWalkinServices();
+    $program_services = $Obj->displayProgramServices();
     
 ?>
 <link rel="stylesheet" href="../css/browse_services.css">
@@ -327,6 +328,50 @@
             <br id="Programs">
             <hr class="my-4" style="border: 2px solid #000;">
             <h2 class="section-heading">PROGRAMS</h2>
+            <div class="row g-4 mb-4">
+                <?php foreach ($program_services as $program) { 
+                    // Default image path
+                    $defaultImage = '../cms_img/default/program.jpeg';
+
+                    // Get the image path
+                    $imagePath = $defaultImage; // Set default first
+                    if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
+                        $imagePath = '../cms_img/program/' . $program['image'];
+                    }
+                    
+                    // Format available types
+                    $types = $program['available_types'] ? explode(',', $program['available_types']) : [];
+                    $typeLabels = array_map(function($type) {
+                        return ucfirst($type) . ' Training';
+                    }, $types);
+                    ?>
+                    <div class="col-sm-6 col-md-6 col-lg-3">
+                        <a href="services/avail_program.php?id=<?= $program['program_id'] ?>" class="program-link">
+                            <div class="card h-100">
+                                <div class="card-header text-white text-center"
+                                    style="background-image: url('<?= $imagePath ?>'); 
+                                    background-size: cover; 
+                                    background-position: center;
+                                    height: 200px;
+                                    position: relative;">
+                                    <div class="overlay-header">
+                                        <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($program['program_name']) ?></h2>
+                                    </div>
+                                    <div class="overlay-darker"></div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text mb-1">Program Type:</p>
+                                    <?php if (!empty($typeLabels)): ?>
+                                        <p class="card-text mb-1">
+                                            <?= implode(',<br>', array_map('htmlspecialchars', $typeLabels)) ?>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <?php } ?>
+            </div>
             
             <br id="Optional-Services">
             <hr class="my-4" style="border: 2px solid #000;">
