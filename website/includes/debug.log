@@ -417,3 +417,9 @@
     [action] => update_photo
 )
 
+2025-04-04 09:26:14 - Request received
+2025-04-04 09:26:14 - POST data: Array
+(
+    [action] => update_photo
+)
+
