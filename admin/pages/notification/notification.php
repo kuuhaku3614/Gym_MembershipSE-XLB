@@ -258,6 +258,11 @@
                         
                         // Update notification counters
                         updateNotificationCounters();
+                        
+                        // Update navbar badges if the updateNotificationBadges function exists
+                        if (typeof window.updateNotificationBadges === 'function') {
+                            window.updateNotificationBadges();
+                        }
                     }
                 }
             })
@@ -340,6 +345,11 @@
                     
                     // Reset button state
                     $btn.html(originalHtml).prop('disabled', true);
+                    
+                    // Update navbar badges if the updateNotificationBadges function exists
+                    if (typeof window.updateNotificationBadges === 'function') {
+                        window.updateNotificationBadges();
+                    }
                 }
             },
             error: function(xhr, status, error) {

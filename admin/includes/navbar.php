@@ -323,17 +323,10 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
             </a>
             <div class="sub-nav">
                 <a href="transactions" id="transactions-link" class="sub-nav-item">
-                    <i class="fas fa-exchange-alt "></i>
-                    Transaction Requests
+                    <i class="fas fa-exchange-alt"></i>
+                    Requests
                     <?php if ($notificationCounts['pending_transactions'] > 0): ?>
                     <span class="badge bg-danger sub-nav-badge"><?php echo $notificationCounts['pending_transactions']; ?></span>
-                    <?php endif; ?>
-                </a>
-                <a href="expiry-notifications" id="expiry-notifications-link" class="sub-nav-item">
-                    <i class="fas fa-clock"></i>
-                    Expiry Alerts
-                    <?php if (($notificationCounts['expiring'] + $notificationCounts['expired']) > 0): ?>
-                    <span class="badge bg-danger sub-nav-badge" id="expiry-badge"><?php echo $notificationCounts['expiring'] + $notificationCounts['expired']; ?></span>
                     <?php endif; ?>
                 </a>
                 <a href="announcement" id="announcement-link" class="sub-nav-item">
@@ -432,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update notification badges after marking as read
     window.updateNotificationBadges = function() {
         // Make an AJAX call to get updated notification counts
-        fetch('functions/get-notification-counts.php', {
+        fetch('/admin/pages/notification/functions/get-notification-counts.php', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -448,11 +441,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     // Create badge if it doesn't exist
                     const badgeContainer = document.querySelector('.dropdown-icon-container');
-                    const newBadge = document.createElement('span');
-                    newBadge.className = 'badge-count';
-                    newBadge.id = 'total-notifications-badge';
-                    newBadge.textContent = data.total;
-                    badgeContainer.appendChild(newBadge);
+                    if (badgeContainer) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge-count';
+                        newBadge.id = 'total-notifications-badge';
+                        newBadge.textContent = data.total;
+                        badgeContainer.appendChild(newBadge);
+                    }
                 }
             } else if (totalBadge) {
                 totalBadge.remove();
@@ -467,11 +462,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     // Create badge if it doesn't exist
                     const expiryLink = document.getElementById('expiry-notifications-link');
-                    const newBadge = document.createElement('span');
-                    newBadge.className = 'badge bg-danger sub-nav-badge';
-                    newBadge.id = 'expiry-badge';
-                    newBadge.textContent = expiryTotal;
-                    expiryLink.appendChild(newBadge);
+                    if (expiryLink) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge bg-danger sub-nav-badge';
+                        newBadge.id = 'expiry-badge';
+                        newBadge.textContent = expiryTotal;
+                        expiryLink.appendChild(newBadge);
+                    }
                 }
             } else if (expiryBadge) {
                 expiryBadge.remove();

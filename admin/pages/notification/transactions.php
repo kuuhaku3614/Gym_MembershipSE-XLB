@@ -322,7 +322,7 @@
             data.userId = userId;
         }
 
-        fetch('../admin/pages/notification/notification.php', {
+        fetch('../admin/pages/notification/transactions.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -361,7 +361,7 @@
             return;
         }
 
-        fetch('../admin/pages/notification/notification.php', {
+        fetch('../admin/pages/notification/transactions.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
