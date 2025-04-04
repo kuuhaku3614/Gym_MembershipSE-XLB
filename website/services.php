@@ -346,7 +346,7 @@
                     }, $types);
                     ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">
-                        <a href="services/view_program.php?id=<?= $program['program_id'] ?>" class="program-link">
+                        <a href="services/avail_program.php?id=<?= $program['program_id'] ?>" class="program-link">
                             <div class="card h-100">
                                 <div class="card-header text-white text-center"
                                     style="background-image: url('<?= $imagePath ?>'); 
