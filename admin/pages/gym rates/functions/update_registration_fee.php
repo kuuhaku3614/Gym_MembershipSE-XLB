@@ -9,11 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "Error: Registration fee is required";
         exit;
     }
-
-    $newRegistrationFee = $_POST['newRegistrationFee'];
-
-    // Validate numeric value and positive amount
-    if (!is_numeric($newRegistrationFee) || $newRegistrationFee <= 0) {
+    
+    // Use filter_var for proper numeric validation
+    $newRegistrationFee = filter_var($_POST['newRegistrationFee'], FILTER_VALIDATE_FLOAT);
+    if ($newRegistrationFee === false || $newRegistrationFee <= 0) {
         echo "Error: Please enter a valid positive number for the registration fee";
         exit;
     }
