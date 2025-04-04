@@ -152,12 +152,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-$(document).ready(function() {
-    // Initialize the map
-    var map = L.map('map').setView([
-        <?php echo !empty($contactContent['latitude']) ? $contactContent['latitude'] : '6.913'; ?>, 
-        <?php echo !empty($contactContent['longitude']) ? $contactContent['longitude'] : '122.073'; ?>
-    ], 15);
+var map, marker;
+
+// Initialize the map function
+function initMap() {
+    if (map) {
+        // If map already exists, invalidate size to refresh it properly
+        map.invalidateSize();
+        return;
+    }
+    
+    // Get default coordinates
+    var defaultLat = <?php echo !empty($contactContent['latitude']) ? $contactContent['latitude'] : '6.913'; ?>;
+    var defaultLng = <?php echo !empty($contactContent['longitude']) ? $contactContent['longitude'] : '122.073'; ?>;
+    
+    // Create map
+    map = L.map('map').setView([defaultLat, defaultLng], 15);
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -165,54 +175,57 @@ $(document).ready(function() {
     }).addTo(map);
 
     // Add marker if coordinates exist
-    var marker;
     if (<?php echo !empty($contactContent['latitude']) && !empty($contactContent['longitude']) ? 'true' : 'false'; ?>) {
-        marker = L.marker([
-            <?php echo $contactContent['latitude'] ?? '6.913'; ?>,
-            <?php echo $contactContent['longitude'] ?? '122.073'; ?>
-        ]).addTo(map);
-    }
-
-    // Function to handle map clicks
-    function onMapClick(e) {
-        // Remove existing marker if there is one
-        if (marker) {
-            map.removeLayer(marker);
-        }
-        
-        // Add a new marker at the clicked location
-        marker = L.marker(e.latlng).addTo(map);
-        
-        // Update the hidden inputs with the new coordinates
-        $('#latitude').val(e.latlng.lat);
-        $('#longitude').val(e.latlng.lng);
-        
-        // Use reverse geocoding to get address
-        reverseGeocode(e.latlng.lat, e.latlng.lng);
-    }
-
-    // Function to perform reverse geocoding
-    function reverseGeocode(lat, lng) {
-        // Using Nominatim API for reverse geocoding
-        $.ajax({
-            url: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-            type: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                if (data && data.display_name) {
-                    $('#location').val(data.display_name);
-                    $('#selected-location').text('Selected Location: ' + data.display_name);
-                }
-            },
-            error: function() {
-                alert('Error performing reverse geocoding');
-            }
-        });
+        marker = L.marker([defaultLat, defaultLng]).addTo(map);
     }
 
     // Add click event to the map
     map.on('click', onMapClick);
+}
 
+// Function to handle map clicks
+function onMapClick(e) {
+    // Remove existing marker if there is one
+    if (marker) {
+        map.removeLayer(marker);
+    }
+    
+    // Add a new marker at the clicked location
+    marker = L.marker(e.latlng).addTo(map);
+    
+    // Update the hidden inputs with the new coordinates
+    $('#latitude').val(e.latlng.lat);
+    $('#longitude').val(e.latlng.lng);
+    
+    // Use reverse geocoding to get address
+    reverseGeocode(e.latlng.lat, e.latlng.lng);
+}
+
+// Function to perform reverse geocoding
+function reverseGeocode(lat, lng) {
+    // Using Nominatim API for reverse geocoding
+    $.ajax({
+        url: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            if (data && data.display_name) {
+                $('#location').val(data.display_name);
+                $('#selected-location').text('Selected Location: ' + data.display_name);
+            }
+        },
+        error: function() {
+            alert('Error performing reverse geocoding');
+        }
+    });
+}
+
+$(document).ready(function() {
+    // Initialize map when modal is fully shown
+    $('#contactModal').on('shown.bs.modal', function() {
+        setTimeout(initMap, 100); // Short delay to ensure DOM is ready
+    });
+    
     // Submit form via AJAX
     $('#saveContactChanges').on('click', function() {
         var formData = $('#contactForm').serialize();
@@ -243,9 +256,13 @@ $(document).ready(function() {
         });
     });
     
-    // Remove modal from DOM when hidden
+    // Handle modal closing
     $('#contactModal').on('hidden.bs.modal', function () {
-        $(this).remove();
+        // Clean up map instance when modal is closed
+        if (map) {
+            map.remove();
+            map = null;
+        }
     });
 });
 </script>

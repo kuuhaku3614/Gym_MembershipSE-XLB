@@ -60,7 +60,7 @@
 <link rel="stylesheet" href="/admin/pages/notification/notification.css">
 <div class="container mt-4">
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Notifications</h2>
+    <h2>Transaction Requests</h2>
     <div>
     <span class="badge bg-danger me-2">
         <?php 
