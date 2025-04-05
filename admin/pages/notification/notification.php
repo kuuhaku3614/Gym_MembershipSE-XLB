@@ -91,13 +91,6 @@
                     <span class="unread-badge"><?php echo $unreadExpiring; ?></span>
                 <?php endif; ?>
             </div>
-            <div class="count-box">
-                <strong>Total:</strong>
-                <span><?php echo $totalCount; ?></span>
-                <?php if ($unreadTotal > 0): ?>
-                    <span class="unread-badge"><?php echo $unreadTotal; ?></span>
-                <?php endif; ?>
-            </div>
         </div>
 
         <!-- Combined notifications list -->
