@@ -47,6 +47,7 @@ $products = executeQuery("SELECT * FROM products LIMIT 6");
 $galleryImages = executeQuery("SELECT * FROM gallery_images LIMIT 4");
 $staffMembers = executeQuery("SELECT * FROM staff");
 require_once('includes/header.php');
+require_once('includes/loadingScreen.php');
 ?>
   <style>
    .offer-button {
