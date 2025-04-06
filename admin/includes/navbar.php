@@ -423,6 +423,23 @@ document.addEventListener('DOMContentLoaded', function() {
         // but we can add additional notification-specific behavior here if needed
     });
     
+    // Get all navigation items without sub-navs
+    const mainNavLinks = document.querySelectorAll('.nav-item:not(.has-subnav)');
+    
+    // Add click event listener to each main nav link without sub-nav
+    mainNavLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            // Get the href attribute
+            const href = this.getAttribute('href');
+            
+            // If it's a valid page, reload to that page
+            if (href && href !== '#') {
+                e.preventDefault();
+                window.location.href = href;
+            }
+        });
+    });
+    
     // Function to update notification badges after marking as read
     window.updateNotificationBadges = function() {
         // Make an AJAX call to get updated notification counts
@@ -479,7 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error updating notification badges:', error);
         });
     };
-});
 
     // Mobile sidebar toggle
     document.getElementById('sidebarToggle').addEventListener('click', function() {
@@ -505,5 +521,5 @@ document.addEventListener('DOMContentLoaded', function() {
             sidebar.classList.remove('active');
         }
     });
-
+});
 </script>

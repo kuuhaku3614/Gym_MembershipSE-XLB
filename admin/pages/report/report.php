@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once '../../../config.php';
 $database = new Database();
 $pdo = $database->connect();
 
@@ -125,108 +125,323 @@ $rentals_stmt = $pdo->prepare($rentals_sql);
 $rentals_stmt->execute();
 $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+function getIncomeExtremes($pdo) {
+    $sql = "
+    WITH monthly_revenue AS (
+        SELECT 
+            CONCAT(MONTH(created_at), '-', YEAR(created_at)) as month_key,
+            DATE_FORMAT(created_at, '%M %Y') as month_name,
+            SUM(amount) as total_amount
+        FROM (
+            SELECT created_at, amount FROM memberships
+            UNION ALL
+            SELECT created_at, amount FROM program_subscription_schedule
+            UNION ALL
+            SELECT created_at, amount FROM rental_subscriptions
+        ) as all_revenue
+        GROUP BY month_key, month_name
+    )
+    SELECT * FROM (
+        (SELECT month_name, total_amount, 'highest' as type
+        FROM monthly_revenue
+        ORDER BY total_amount DESC
+        LIMIT 1)
+        UNION ALL
+        (SELECT month_name, total_amount, 'lowest' as type
+        FROM monthly_revenue
+        WHERE total_amount > 0
+        ORDER BY total_amount ASC
+        LIMIT 1)
+    ) as results
+    ORDER BY type";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getServiceExtremes($pdo) {
+    $sql = "
+    WITH monthly_services AS (
+        SELECT 
+            CONCAT(MONTH(created_at), '-', YEAR(created_at)) as month_key,
+            DATE_FORMAT(created_at, '%M %Y') as month_name,
+            COUNT(*) as total_services
+        FROM (
+            SELECT created_at FROM program_subscription_schedule
+            UNION ALL
+            SELECT created_at FROM rental_subscriptions
+        ) as all_services
+        GROUP BY month_key, month_name
+    )
+    SELECT * FROM (
+        (SELECT month_name, total_services, 'highest' as type
+        FROM monthly_services
+        ORDER BY total_services DESC
+        LIMIT 1)
+        UNION ALL
+        (SELECT month_name, total_services, 'lowest' as type
+        FROM monthly_services
+        WHERE total_services > 0
+        ORDER BY total_services ASC
+        LIMIT 1)
+    ) as results
+    ORDER BY type";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getMembershipExtremes($pdo) {
+    $sql = "
+    WITH monthly_memberships AS (
+        SELECT 
+            CONCAT(MONTH(created_at), '-', YEAR(created_at)) as month_key,
+            DATE_FORMAT(created_at, '%M %Y') as month_name,
+            COUNT(*) as total_memberships
+        FROM memberships
+        GROUP BY month_key, month_name
+    )
+    SELECT * FROM (
+        (SELECT month_name, total_memberships, 'highest' as type
+        FROM monthly_memberships
+        ORDER BY total_memberships DESC
+        LIMIT 1)
+        UNION ALL
+        (SELECT month_name, total_memberships, 'lowest' as type
+        FROM monthly_memberships
+        WHERE total_memberships > 0
+        ORDER BY total_memberships ASC
+        LIMIT 1)
+    ) as results
+    ORDER BY type";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Run the queries to get the extreme values
+$income_extremes = getIncomeExtremes($pdo);
+$service_extremes = getServiceExtremes($pdo);
+$membership_extremes = getMembershipExtremes($pdo);
+
+// Format the results for display
+function formatExtremes($extremes) {
+    $result = [
+        'highest' => ['month' => 'N/A', 'value' => 0],
+        'lowest' => ['month' => 'N/A', 'value' => 0]
+    ];
+    
+    foreach ($extremes as $row) {
+        if ($row['type'] == 'highest') {
+            $result['highest']['month'] = $row['month_name'];
+            $result['highest']['value'] = isset($row['total_amount']) ? $row['total_amount'] : 
+                                        (isset($row['total_services']) ? $row['total_services'] : 
+                                        $row['total_memberships']);
+        } else {
+            $result['lowest']['month'] = $row['month_name'];
+            $result['lowest']['value'] = isset($row['total_amount']) ? $row['total_amount'] : 
+                                       (isset($row['total_services']) ? $row['total_services'] : 
+                                       $row['total_memberships']);
+        }
+    }
+    
+    return $result;
+}
+
+$income_data = formatExtremes($income_extremes);
+$service_data = formatExtremes($service_extremes);
+$membership_data = formatExtremes($membership_extremes);
+
+// Gender distribution of memberships
+$gender_distribution_sql = "
+    SELECT 
+        pd.sex,
+        COUNT(DISTINCT m.id) as total_memberships,
+        COUNT(DISTINCT u.id) as unique_members
+    FROM memberships m
+    JOIN transactions t ON m.transaction_id = t.id
+    JOIN users u ON t.user_id = u.id
+    JOIN personal_details pd ON u.id = pd.user_id
+    GROUP BY pd.sex
+    ORDER BY total_memberships DESC";
+$gender_stmt = $pdo->prepare($gender_distribution_sql);
+$gender_stmt->execute();
+$gender_distribution = $gender_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Monthly gender distribution of memberships
+$monthly_gender_sql = "
+    SELECT 
+        MONTH(m.created_at) as month,
+        YEAR(m.created_at) as year,
+        DATE_FORMAT(m.created_at, '%M %Y') as month_name,
+        pd.sex,
+        COUNT(m.id) as total_memberships
+    FROM memberships m
+    JOIN transactions t ON m.transaction_id = t.id
+    JOIN users u ON t.user_id = u.id
+    JOIN personal_details pd ON u.id = pd.user_id
+    GROUP BY year, month, month_name, pd.sex
+    ORDER BY year, month, pd.sex";
+$monthly_gender_stmt = $pdo->prepare($monthly_gender_sql);
+$monthly_gender_stmt->execute();
+$monthly_gender_distribution = $monthly_gender_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Age demographics of memberships
+$age_distribution_sql = "
+    SELECT 
+        CASE
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) < 18 THEN 'Under 18'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 18 AND 24 THEN '18-24'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 25 AND 34 THEN '25-34'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 35 AND 44 THEN '35-44'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 45 AND 54 THEN '45-54'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 55 AND 64 THEN '55-64'
+            ELSE '65+'
+        END as age_group,
+        COUNT(DISTINCT m.id) as total_memberships,
+        COUNT(DISTINCT u.id) as unique_members
+    FROM memberships m
+    JOIN transactions t ON m.transaction_id = t.id
+    JOIN users u ON t.user_id = u.id
+    JOIN personal_details pd ON u.id = pd.user_id
+    GROUP BY age_group
+    ORDER BY 
+        CASE age_group
+            WHEN 'Under 18' THEN 1
+            WHEN '18-24' THEN 2
+            WHEN '25-34' THEN 3
+            WHEN '35-44' THEN 4
+            WHEN '45-54' THEN 5
+            WHEN '55-64' THEN 6
+            WHEN '65+' THEN 7
+        END";
+$age_stmt = $pdo->prepare($age_distribution_sql);
+$age_stmt->execute();
+$age_distribution = $age_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Monthly age demographics of memberships
+$monthly_age_sql = "
+    SELECT 
+        MONTH(m.created_at) as month,
+        YEAR(m.created_at) as year,
+        DATE_FORMAT(m.created_at, '%M %Y') as month_name,
+        CASE
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) < 18 THEN 'Under 18'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 18 AND 24 THEN '18-24'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 25 AND 34 THEN '25-34'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 35 AND 44 THEN '35-44'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 45 AND 54 THEN '45-54'
+            WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 55 AND 64 THEN '55-64'
+            ELSE '65+'
+        END as age_group,
+        COUNT(m.id) as total_memberships
+    FROM memberships m
+    JOIN transactions t ON m.transaction_id = t.id
+    JOIN users u ON t.user_id = u.id
+    JOIN personal_details pd ON u.id = pd.user_id
+    GROUP BY year, month, month_name, age_group
+    ORDER BY year, month, 
+        CASE age_group
+            WHEN 'Under 18' THEN 1
+            WHEN '18-24' THEN 2
+            WHEN '25-34' THEN 3
+            WHEN '35-44' THEN 4
+            WHEN '45-54' THEN 5
+            WHEN '55-64' THEN 6
+            WHEN '65+' THEN 7
+        END";
+$monthly_age_stmt = $pdo->prepare($monthly_age_sql);
+$monthly_age_stmt->execute();
+$monthly_age_distribution = $monthly_age_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Function to get peak months by gender
+function getPeakMonthsByGender($pdo) {
+    $sql = "
+    WITH gender_monthly AS (
+        SELECT 
+            pd.sex,
+            DATE_FORMAT(m.created_at, '%M %Y') as month_name,
+            COUNT(m.id) as membership_count,
+            RANK() OVER (PARTITION BY pd.sex ORDER BY COUNT(m.id) DESC) as rnk
+        FROM memberships m
+        JOIN transactions t ON m.transaction_id = t.id
+        JOIN users u ON t.user_id = u.id
+        JOIN personal_details pd ON u.id = pd.user_id
+        GROUP BY pd.sex, month_name
+    )
+    SELECT sex, month_name, membership_count
+    FROM gender_monthly
+    WHERE rnk = 1
+    ORDER BY sex";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Function to get peak months by age group
+function getPeakMonthsByAge($pdo) {
+    $sql = "
+    WITH age_monthly AS (
+        SELECT 
+            CASE
+                WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) < 18 THEN 'Under 18'
+                WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 18 AND 24 THEN '18-24'
+                WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 25 AND 34 THEN '25-34'
+                WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 35 AND 44 THEN '35-44'
+                WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 45 AND 54 THEN '45-54'
+                WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 55 AND 64 THEN '55-64'
+                ELSE '65+'
+            END as age_group,
+            DATE_FORMAT(m.created_at, '%M %Y') as month_name,
+            COUNT(m.id) as membership_count,
+            RANK() OVER (PARTITION BY 
+                CASE
+                    WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) < 18 THEN 'Under 18'
+                    WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 18 AND 24 THEN '18-24'
+                    WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 25 AND 34 THEN '25-34'
+                    WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 35 AND 44 THEN '35-44'
+                    WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 45 AND 54 THEN '45-54'
+                    WHEN TIMESTAMPDIFF(YEAR, pd.birthdate, CURDATE()) BETWEEN 55 AND 64 THEN '55-64'
+                    ELSE '65+'
+                END
+                ORDER BY COUNT(m.id) DESC) as rnk
+        FROM memberships m
+        JOIN transactions t ON m.transaction_id = t.id
+        JOIN users u ON t.user_id = u.id
+        JOIN personal_details pd ON u.id = pd.user_id
+        GROUP BY age_group, month_name
+    )
+    SELECT age_group, month_name, membership_count
+    FROM age_monthly
+    WHERE rnk = 1
+    ORDER BY 
+        CASE age_group
+            WHEN 'Under 18' THEN 1
+            WHEN '18-24' THEN 2
+            WHEN '25-34' THEN 3
+            WHEN '35-44' THEN 4
+            WHEN '45-54' THEN 5
+            WHEN '55-64' THEN 6
+            WHEN '65+' THEN 7
+        END";
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Get the peak months data
+$peak_months_gender = getPeakMonthsByGender($pdo);
+$peak_months_age = getPeakMonthsByAge($pdo);
+
 date_default_timezone_set('Asia/Manila');
 ?>
-    
-    <style>
-        .report-section {
-            margin-bottom: 2rem;
-            break-inside: avoid;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            background-color: white;
-            border-bottom: 2px solid #f8f9fa;
-            padding: 1.5rem;
-        }
-        .stats-card h2{
-            color: green;
-        }
-        .export-btn {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-        @media print {
-            .export-btn {
-                display: none;
-            }
-            .card {
-                break-inside: avoid;
-            }
-        }
-       /* Add these styles to your existing CSS */
-@media print {
-    /* Hide the entire dashboard container */
-    .container-fluid {
-        display: none !important;
-    }
-    
-    /* Hide specific sections */
-    .report-section {
-        display: none !important;
-    }
-    
-    /* Hide all cards */
-    .card {
-        display: none !important;
-    }
-    
-    /* Hide all buttons */
-    .btn, 
-    button {
-        display: none !important;
-    }
-    
-    /* Hide the canvas element (chart) */
-    canvas {
-        display: none !important;
-    }
-    
-    /* Hide table responsive wrappers */
-    .table-responsive {
-        display: none !important;
-    }
-    
-    /* Hide all rows */
-    .row {
-        display: none !important;
-    }
-    
-    /* Hide specific elements */
-    .stats-card,
-    .card-header,
-    .card-body {
-        display: none !important;
-    }
-    
-    /* Ensure the print-only template is visible */
-    .print-only {
-        display: block !important;
-    }
-    
-    /* Reset any conflicting styles */
-    body {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    /* Ensure proper page breaks */
-    .page-break {
-        page-break-before: always;
-    }
-}
-    </style>
+<link rel="stylesheet" href="css/report.css">
 <body class="bg-light">
-    <button class="btn btn-primary export-btn">
-        <i class="fas fa-download me-2"></i>Export Report
-    </button>
-
     <div class="container-fluid py-4">
         <div class="row mb-4">
             <div class="col-12">
@@ -261,6 +476,87 @@ date_default_timezone_set('Asia/Manila');
                     <div class="card-body">
                         <h5 class="card-title">Average Check-ins</h5>
                         <h2 class="mb-0"><?= number_format($avg_checkins, 1) ?></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New section for performance extremes -->
+     <div class="report-section">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Performance Highlights</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Income Extremes -->
+                        <div class="col-md-4">
+                            <div class="card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="h5 mb-0 font-weight-bold text-primary mb-3">Income</div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="text-success font-weight-bold">Highest: <?= $income_data['highest']['month'] ?></div>
+                                                <div class="h4">₱<?= number_format($income_data['highest']['value'], 2) ?></div>
+                                            </div>
+                                            
+                                            <div>
+                                                <div class="text-danger font-weight-bold">Lowest: <?= $income_data['lowest']['month'] ?></div>
+                                                <div class="h4">₱<?= number_format($income_data['lowest']['value'], 2) ?></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Services Extremes -->
+                        <div class="col-md-4">
+                            <div class="card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="h5 mb-0 font-weight-bold text-primary mb-3">Services Availed</div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="text-success font-weight-bold">Most: <?= $service_data['highest']['month'] ?></div>
+                                                <div class="h4"><?= number_format($service_data['highest']['value']) ?> services</div>
+                                            </div>
+                                            
+                                            <div>
+                                                <div class="text-danger font-weight-bold">Least: <?= $service_data['lowest']['month'] ?></div>
+                                                <div class="h4"><?= number_format($service_data['lowest']['value']) ?> services</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Memberships Extremes -->
+                        <div class="col-md-4">
+                            <div class="card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="h5 mb-0 font-weight-bold text-primary mb-3">Memberships</div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="text-success font-weight-bold">Most: <?= $membership_data['highest']['month'] ?></div>
+                                                <div class="h4"><?= number_format($membership_data['highest']['value']) ?> memberships</div>
+                                            </div>
+                                            
+                                            <div>
+                                                <div class="text-danger font-weight-bold">Least: <?= $membership_data['lowest']['month'] ?></div>
+                                                <div class="h4"><?= number_format($membership_data['lowest']['value']) ?> memberships</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -338,6 +634,134 @@ date_default_timezone_set('Asia/Manila');
             </div>
         </div>
     </div>
+
+     <!-- Gender Demographics -->
+<div class="report-section">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Membership by Gender</h4>
+            <button class="btn btn-sm btn-outline-primary" onclick="exportTableToCSV('genderTable', 'gender_memberships.csv')">
+                Export Data
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <canvas id="genderChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="mb-3">Peak Months by Gender</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="peakGenderTable">
+                            <thead>
+                                <tr>
+                                    <th>Gender</th>
+                                    <th>Peak Month</th>
+                                    <th>Memberships</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($peak_months_gender as $row): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($row['sex']) ?></td>
+                                    <td><?= htmlspecialchars($row['month_name']) ?></td>
+                                    <td><?= number_format($row['membership_count']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped" id="genderTable">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Year</th>
+                            <th>Gender</th>
+                            <th>Total Memberships</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($monthly_gender_distribution as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['month_name']) ?></td>
+                            <td><?= $row['year'] ?></td>
+                            <td><?= htmlspecialchars($row['sex']) ?></td>
+                            <td><?= number_format($row['total_memberships']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Age Demographics -->
+<div class="report-section">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Membership by Age Demographics</h4>
+            <button class="btn btn-sm btn-outline-primary" onclick="exportTableToCSV('ageTable', 'age_memberships.csv')">
+                Export Data
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <canvas id="ageChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="mb-3">Peak Months by Age Group</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="peakAgeTable">
+                            <thead>
+                                <tr>
+                                    <th>Age Group</th>
+                                    <th>Peak Month</th>
+                                    <th>Memberships</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($peak_months_age as $row): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($row['age_group']) ?></td>
+                                    <td><?= htmlspecialchars($row['month_name']) ?></td>
+                                    <td><?= number_format($row['membership_count']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped" id="ageTable">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Year</th>
+                            <th>Age Group</th>
+                            <th>Total Memberships</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($monthly_age_distribution as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['month_name']) ?></td>
+                            <td><?= $row['year'] ?></td>
+                            <td><?= htmlspecialchars($row['age_group']) ?></td>
+                            <td><?= number_format($row['total_memberships']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
     
     <div class="report-section">
             <div class="card">
@@ -449,140 +873,92 @@ date_default_timezone_set('Asia/Manila');
         </div>
     </div>
 
-    <!-- Add this modal right before the closing body tag in your report.php file -->
-<div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exportReportModalLabel">Export Analytics Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" action="" id="reportForm">
-                <div class="modal-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" value="<?= date('Y-m-d', strtotime('-30 days')) ?>" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required>
-                        </div>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6>Select Report Sections</h6>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="select_all" checked>
-                                <label class="form-check-label" for="select_all">Select All</label>
-                            </div>
-                            <hr>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input section-checkbox" type="checkbox" id="attendance_section" name="report_sections[]" value="attendance" checked>
-                                        <label class="form-check-label" for="attendance_section">Member Attendance Analysis</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input section-checkbox" type="checkbox" id="earnings_section" name="report_sections[]" value="earnings" checked>
-                                        <label class="form-check-label" for="earnings_section">Monthly Earnings</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input section-checkbox" type="checkbox" id="utilization_section" name="report_sections[]" value="utilization" checked>
-                                        <label class="form-check-label" for="utilization_section">Member Service Utilization</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input section-checkbox" type="checkbox" id="programs_section" name="report_sections[]" value="programs" checked>
-                                        <label class="form-check-label" for="programs_section">Program Subscriptions</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input section-checkbox" type="checkbox" id="rentals_section" name="report_sections[]" value="rentals" checked>
-                                        <label class="form-check-label" for="rentals_section">Rental Subscriptions</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i> Click "Preview Report" to see how your report will look before exporting to PDF.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" name="generate_report" id="preview_report">Preview</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Report Preview Modal -->
-<div class="modal fade" id="previewReportModal" tabindex="-1" aria-labelledby="previewReportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
-        <div class="modal-content">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title" id="previewReportModalLabel">Report Preview</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0">
-                <div class="report-preview-container p-3" style="max-height: 70vh; overflow-y: auto;">
-                    <div id="reportPreviewContent">
-                        <!-- Preview content will be loaded here via AJAX -->
-                        <div class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2">Generating preview...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" id="export_pdf_btn">
-                    <i class="fas fa-file-pdf me-2"></i>Export
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
     <script>
-    $(document).ready(function() {
-        // Initialize DataTables
-        $('.table').DataTable({
+$(document).ready(function() {
+    // Initialize DataTables with proper configuration
+    // Use try-catch to handle errors gracefully
+    try {
+        // Initialize tables individually with specific configurations
+        $('#attendanceTable').DataTable({
             pageLength: 25,
-            order: [[3, 'desc']]
+            order: [[3, 'desc']] // Sort by check-ins column
         });
+        
+        $('#earningsTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc'], [1, 'desc']] // Sort by month and year
+        });
+        
+        $('#utilizationTable').DataTable({
+            pageLength: 25,
+            order: [[3, 'desc']] // Sort by membership count
+        });
+        
+        $('#programsTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc'], [1, 'desc']] // Sort by month and year
+        });
+        
+        $('#rentalsTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc'], [1, 'desc']] // Sort by month and year
+        });
+        
+        // Gender and age tables
+        $('#genderTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc'], [1, 'desc']] // Sort by month and year
+        });
+        
+        $('#ageTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc'], [1, 'desc']] // Sort by month and year
+        });
+        
+        // Small tables without pagination
+        $('#peakGenderTable').DataTable({
+            paging: false,
+            searching: false,
+            info: false,
+            ordering: true
+        });
+        
+        $('#peakAgeTable').DataTable({
+            paging: false,
+            searching: false,
+            info: false,
+            ordering: true
+        });
+    } catch(e) {
+        console.error("DataTables initialization error:", e);
+    }
 
-        // Export function
-        window.exportTableToCSV = function(tableId, filename) {
-            const table = document.getElementById(tableId);
-            const rows = table.getElementsByTagName('tr');
-            let csv = [];
+    // Export function
+    window.exportTableToCSV = function(tableId, filename) {
+        const table = document.getElementById(tableId);
+        const rows = table.getElementsByTagName('tr');
+        let csv = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
             
-            for (let i = 0; i < rows.length; i++) {
-                const row = [], cols = rows[i].querySelectorAll('td, th');
-                
-                for (let j = 0; j < cols.length; j++) 
-                    row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
-                
-                csv.push(row.join(','));        
-            }
+            for (let j = 0; j < cols.length; j++) 
+                row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+            
+            csv.push(row.join(','));        
+        }
 
-            const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
-            const downloadLink = document.createElement('a');
-            downloadLink.download = filename;
-            downloadLink.href = window.URL.createObjectURL(csvFile);
-            downloadLink.style.display = 'none';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-        };
+        const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
+        const downloadLink = document.createElement('a');
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    };
 
-        // Initialize Revenue Chart
+    // Initialize Revenue Chart
+    try {
         const chartData = <?= json_encode($formatted_earnings) ?>;
         const ctx = document.getElementById('revenueChart');
         
@@ -616,141 +992,103 @@ date_default_timezone_set('Asia/Manila');
                 }
             }
         });
-    });
-
-     $('.export-btn').off('click').on('click', function(e) {
-        e.preventDefault();
-        $('#exportReportModal').modal('show');
-    });
-    
-    // Handle Select All checkbox
-    $('#select_all').on('change', function() {
-        $('.section-checkbox').prop('checked', $(this).prop('checked'));
-    });
-    
-    // Update Select All when individual checkboxes change
-    $('.section-checkbox').on('change', function() {
-        if ($('.section-checkbox:checked').length === $('.section-checkbox').length) {
-            $('#select_all').prop('checked', true);
-        } else {
-            $('#select_all').prop('checked', false);
+        
+        // Initialize gender chart
+        try {
+            const genderData = <?= json_encode($gender_distribution) ?>;
+            const genderCtx = document.getElementById('genderChart');
+            
+            // Check if the data has the expected structure and properties
+            const labels = [];
+            const values = [];
+            
+            // Handle different possible property names for gender
+            genderData.forEach(item => {
+                // Use the property that actually exists (sex or gender)
+                const genderLabel = item.gender || item.sex || "Unknown";
+                labels.push(genderLabel);
+                values.push(item.total_memberships);
+            });
+            
+            new Chart(genderCtx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',  // Male (blue)
+                            'rgba(255, 99, 132, 0.7)',  // Female (pink)
+                            'rgba(75, 192, 192, 0.7)'   // Other or Unknown (teal)
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Membership Distribution by Gender'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch(e) {
+            console.error("Gender chart initialization error:", e);
+            console.log("Gender data:", genderData);
         }
-    });
-    
-    // Form submission for preview
-    $('#reportForm').on('submit', function(e) {
-        e.preventDefault();
         
-        // Close the export options modal
-        $('#exportReportModal').modal('hide');
+        // Initialize age chart
+        const ageData = <?= json_encode($age_distribution) ?>;
+        const ageCtx = document.getElementById('ageChart');
         
-        // Show the preview modal
-        $('#previewReportModal').modal('show');
-        
-        // Get form data
-        const formData = new FormData(this);
-        formData.append('preview_report', 'true');
-        
-        // AJAX request to get report preview
-        $.ajax({
-            url: './pages/report/report_preview.php',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                $('#reportPreviewContent').html(response);
+        new Chart(ageCtx, {
+            type: 'bar',
+            data: {
+                labels: ageData.map(item => item.age_group),
+                datasets: [{
+                    label: 'Memberships by Age Group',
+                    data: ageData.map(item => item.total_memberships),
+                    backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
             },
-            error: function() {
-                $('#reportPreviewContent').html('<div class="alert alert-danger">Error generating report preview. Please try again.</div>');
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Membership Distribution by Age Group'
+                    }
+                }
             }
         });
-    });
-    
-    // Export as PDF button handler
-    $('#export_pdf_btn').on('click', function() {
-    // Get form data from the original report form
-    const reportForm = document.getElementById('reportForm');
-    
-    // Create a temporary form element for PDF export
-    const pdfForm = document.createElement('form');
-    pdfForm.method = 'POST';
-    pdfForm.action = './pages/report/report_preview.php'; // Point to the report_preview.php file
-    pdfForm.style.display = 'none';
-    
-    // Add export_pdf flag
-    const exportFlag = document.createElement('input');
-    exportFlag.type = 'hidden';
-    exportFlag.name = 'export_pdf';
-    exportFlag.value = 'true';
-    pdfForm.appendChild(exportFlag);
-    
-    // Copy all form fields from the original form
-    const formData = new FormData(reportForm);
-    for (const [key, value] of formData.entries()) {
-        // Handle array values (like report_sections[])
-        if (key.includes('report_sections')) {
-            // For checkboxes that might have multiple values
-            const checkboxes = reportForm.querySelectorAll(`input[name="${key}"]:checked`);
-            checkboxes.forEach(checkbox => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = checkbox.value;
-                pdfForm.appendChild(input);
-            });
-        } else {
-            // Regular form fields
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = value;
-            pdfForm.appendChild(input);
-        }
+    } catch(e) {
+        console.error("Chart initialization error:", e);
     }
-    
-    // Close the preview modal if it's open
-    if ($('#previewReportModal').length) {
-        $('#previewReportModal').modal('hide');
-    }
-    
-    // Append the form to the body, submit it, then remove it
-    document.body.appendChild(pdfForm);
-    pdfForm.submit();
-    document.body.removeChild(pdfForm);
 });
-    
-    // Validate date range
-    $('#end_date').on('change', function() {
-        const startDate = new Date($('#start_date').val());
-        const endDate = new Date($(this).val());
-        const currentDate = new Date();
-        
-        if (endDate > currentDate) {
-            alert('End date cannot be in the future.');
-            $(this).val(formatDate(currentDate));
-        }
-        if (endDate < startDate) {
-            alert('End date cannot be before start date.');
-            $(this).val($('#start_date').val());
-        }
-    });
-    
-    $('#start_date').on('change', function() {
-        const startDate = new Date($(this).val());
-        const endDate = new Date($('#end_date').val());
-        
-        if (startDate > endDate) {
-            alert('Start date cannot be after end date.');
-            $(this).val($('#end_date').val());
-        }
-    });
-    
-    // Helper function to format date as YYYY-MM-DD
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
     </script>

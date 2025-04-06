@@ -57,7 +57,7 @@
     // Get current user ID from session (assuming it's stored in $_SESSION['user_id'])
     $currentUserId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
 ?>
-<link rel="stylesheet" href="/admin/pages/notification/notification.css">
+<link rel="stylesheet" href="css/notification.css">
 <div class="container mt-4">
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Transaction Requests</h2>

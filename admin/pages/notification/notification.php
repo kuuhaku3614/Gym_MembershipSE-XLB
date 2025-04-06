@@ -231,7 +231,7 @@
             formData.append('notification_type', notificationType);
             
             // Send AJAX request to mark as read
-            fetch('/admin/pages/notification/mark-notification-read.php', {
+            fetch('pages/notification/mark-notification-read.php', {
                 method: 'POST',
                 body: formData
             })
@@ -322,7 +322,7 @@
         
         // Send AJAX request to mark all as read
         $.ajax({
-            url: '/admin/pages/notification/mark-all-notifications-read.php',
+            url: 'pages/notification/mark-all-notifications-read.php',
             type: 'POST',
             dataType: 'json',
             success: function(data) {
