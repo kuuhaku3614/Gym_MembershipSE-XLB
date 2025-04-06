@@ -58,8 +58,9 @@ h1.nav-title {
 }
 
 h2 {
-  font-family: myFont;
-  font-size: 50px !important;
+  font-family: "Inter", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 40px !important;
 }
 
 /* REPORT */
@@ -155,75 +156,75 @@ h5 {
 
 /* Responsive Table Styles */
 @media (max-width: 991px) {
-    .table-responsive {
-        margin: 0;
-        padding: 10px;
-    }
+  .table-responsive {
+    margin: 0;
+    padding: 10px;
+  }
 
-    .search-controls {
-        flex-direction: column;
-        gap: 8px;
-    }
+  .search-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
 
-    .search-controls input[type="text"],
-    .date-filter {
-        width: 100%;
-    }
+  .search-controls input[type="text"],
+  .date-filter {
+    width: 100%;
+  }
 
-    .headerSection {
-        max-width: 100%;
-    }
+  .headerSection {
+    max-width: 100%;
+  }
 
-    .needs-validation {
-        height: auto;
-        min-height: 50vh;
-    }
+  .needs-validation {
+    height: auto;
+    min-height: 50vh;
+  }
 }
 
 @media (max-width: 576px) {
-    .card {
-        margin-bottom: 15px;
-    }
+  .card {
+    margin-bottom: 15px;
+  }
 
-    .table-responsive {
-        padding: 5px;
-    }
+  .table-responsive {
+    padding: 5px;
+  }
 
-    h2 {
-        font-size: 35px !important;
-    }
+  h2 {
+    font-size: 35px !important;
+  }
 
-    .mt-3 {
-        padding: 10px;
-    }
+  .mt-3 {
+    padding: 10px;
+  }
 
-    .btn {
-        width: 100%;
-        margin-bottom: 5px;
-    }
+  .btn {
+    width: 100%;
+    margin-bottom: 5px;
+  }
 }
 
 /* Responsive Grid Layout */
 .row {
-    margin-right: -10px;
-    margin-left: -10px;
+  margin-right: -10px;
+  margin-left: -10px;
 }
 
 @media (max-width: 991px) {
-    .row > [class^="col-"] {
-        padding-right: 10px;
-        padding-left: 10px;
-    }
+  .row > [class^="col-"] {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
 }
 
 /* Responsive Cards and Graphs */
 @media (max-width: 768px) {
-    .graph-container,
-    .table-container {
-        margin-bottom: 15px;
-    }
+  .graph-container,
+  .table-container {
+    margin-bottom: 15px;
+  }
 
-    .card-body {
-        padding: 15px;
-    }
+  .card-body {
+    padding: 15px;
+  }
 }
