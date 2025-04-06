@@ -152,7 +152,8 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
 
 <?php
         require_once 'header.php';
-    ?>
+        require_once('loadingScreen.php');
+?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 
