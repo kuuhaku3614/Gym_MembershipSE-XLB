@@ -14,6 +14,7 @@ function executeQuery($query, $params = []) {
 // Fetch specific content for sections
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
 $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
+require_once '../website/includes/loadingScreen.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -276,14 +277,124 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
             let isValid = true;
             if (!file) {
                 isValid = false;
-                alert('Please upload a profile photo.');
+                // Create and show custom alert
+                const alertHtml = `
+                    <div class="custom-alert" style="
+                        position: fixed;
+                        top: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: #ff4444;
+                        color: white;
+                        padding: 15px 30px;
+                        border-radius: 5px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 9999;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    ">Please upload a profile photo</div>`;
+                
+                $('body').append(alertHtml);
+                $('.custom-alert').css('opacity', '1');
+                
+                // Highlight the upload area
+                $('.profile-photo-container').addClass('error-shake');
+                $('.profile-photo-placeholder').addClass('error');
+                
+                // Scroll to photo placeholder
+                $('html, body').animate({
+                    scrollTop: $('.profile-photo-container').offset().top - 100
+                }, 500);
+                
+                // Remove shake after 500ms
+                setTimeout(() => {
+                    $('.profile-photo-container').removeClass('error-shake');
+                }, 500);
+                
+                // Remove alert and error state after 3 seconds
+                setTimeout(() => {
+                    $('.custom-alert').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    $('.profile-photo-placeholder').removeClass('error');
+                }, 3000);
             } else if (!allowedTypes.includes(file.type)) {
                 isValid = false;
-                alert('Please upload a valid image (JPEG or PNG)');
+                const alertHtml = `
+                    <div class="custom-alert" style="
+                        position: fixed;
+                        top: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: #ff4444;
+                        color: white;
+                        padding: 15px 30px;
+                        border-radius: 5px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 9999;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    ">Please upload a valid image (JPEG or PNG)</div>`;
+                
+                $('body').append(alertHtml);
+                $('.custom-alert').css('opacity', '1');
+                
+                $('.profile-photo-container').addClass('error-shake');
+                $('.profile-photo-placeholder').addClass('error');
+                
+                $('html, body').animate({
+                    scrollTop: $('.profile-photo-container').offset().top - 100
+                }, 500);
+                
+                setTimeout(() => {
+                    $('.profile-photo-container').removeClass('error-shake');
+                }, 500);
+                
+                setTimeout(() => {
+                    $('.custom-alert').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    $('.profile-photo-placeholder').removeClass('error');
+                }, 3000);
                 resetFileInput();
             } else if (file.size > maxSize) {
                 isValid = false;
-                alert('File size exceeds 5MB limit');
+                const alertHtml = `
+                    <div class="custom-alert" style="
+                        position: fixed;
+                        top: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background-color: #ff4444;
+                        color: white;
+                        padding: 15px 30px;
+                        border-radius: 5px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 9999;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    ">File size exceeds 5MB limit</div>`;
+
+                $('body').append(alertHtml);
+                $('.custom-alert').css('opacity', '1');
+
+                $('.profile-photo-container').addClass('error-shake');
+                $('.profile-photo-placeholder').addClass('error');
+
+                $('html, body').animate({
+                    scrollTop: $('.profile-photo-container').offset().top - 100
+                }, 500);
+
+                setTimeout(() => {
+                    $('.profile-photo-container').removeClass('error-shake');
+                }, 500);
+
+                setTimeout(() => {
+                    $('.custom-alert').fadeOut(function() {
+                        $(this).remove();
+                    });
+                    $('.profile-photo-placeholder').removeClass('error');
+                }, 3000);
                 resetFileInput();
             }
 
@@ -523,16 +634,16 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
         `);
     }
 
-    function validateProfilePhoto() {
-        const fileInput = $('#profile_photo')[0];
-        const file = fileInput.files[0];
+    // function validateProfilePhoto() {
+    //     const fileInput = $('#profile_photo')[0];
+    //     const file = fileInput.files[0];
         
-        if (!file) {
-            alert('Please upload a profile photo.');
-            return false;
-        }
-        return true;
-    }
+    //     if (!file) {
+    //         alert('Please upload a profile photo.');
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
     function maskPhoneNumber(phone) {
         if (phone.length <= 5) return phone;

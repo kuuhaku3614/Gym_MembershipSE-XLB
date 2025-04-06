@@ -139,7 +139,7 @@ function executeQuery($query, $params = []) {
     .notification-unread::before {
         content: "NEW";
         position: absolute;
-        top: 10px;
+        top: 30px;
         right: 10px;
         background-color: #0d6efd;
         color: white;
@@ -197,7 +197,7 @@ function executeQuery($query, $params = []) {
     <div class="container mt-4">
         <div class="row mb-4">
             <div class="col-md-8">
-                <h2>Notifications</h2>
+                <h2 class="fw-bolder">Notifications</h2>
             </div>
             <div class="col-md-4 text-end">
                 <button id="markAllRead" class="btn btn-outline-secondary">Mark all as read</button>
@@ -264,7 +264,7 @@ function executeQuery($query, $params = []) {
 
 <!-- Modal -->
 <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog justify-content-center">
+    <div class="modal-dialog modal-dialog-centered justify-content-center">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="notificationModalLabel"></h5>

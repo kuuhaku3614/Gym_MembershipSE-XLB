@@ -7,6 +7,8 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && isset($_SESSION['
     redirectBasedOnRole($_SESSION['role']);
 }
 
+require_once '../website/includes/loadingScreen.php';
+
 $error = '';
 $username = '';
 
@@ -117,7 +119,7 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = ?", ['logo']
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    
+
     <script>
         function saveRememberMe(element) {
             if (element.checked) {

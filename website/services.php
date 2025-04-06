@@ -2,6 +2,7 @@
     session_start();
     require_once '../config.php';
     include('includes/header.php');
+    require_once 'includes/loadingScreen.php';
     require_once 'services/services.class.php';
     $Obj = new Services_Class();
     $standard_plans = $Obj->displayStandardPlans();
