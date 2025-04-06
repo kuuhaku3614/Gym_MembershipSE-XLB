@@ -5,14 +5,14 @@ header('Content-Type: application/json');
 // Handle toggle status
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_status') {
     try {
-        $programId = isset($_POST['id']) ? intval($_POST['id']) : 0;
-        $newStatus = isset($_POST['new_status']) ? $_POST['new_status'] : '';
-        
+        $programId = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+        $newStatus = filter_input(INPUT_POST, 'new_status', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
         // Validate input
-        if (empty($programId)) {
-            throw new Exception('Program ID is required');
+        if (empty($programId) || !is_numeric($programId)) {
+            throw new Exception('Program ID is required and must be numeric');
         }
-        
+
         if (!in_array($newStatus, ['active', 'inactive'])) {
             throw new Exception('Invalid status value');
         }
@@ -59,13 +59,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
                 mkdir($upload_dir, 0755, true);
             }
             
-            $file_extension = pathinfo($_FILES['programImage']['name'], PATHINFO_EXTENSION);
-            $filename = 'program_' . time() . '.' . $file_extension;
+            // Sanitize filename
+            $original_filename = basename($_FILES['programImage']['name']);
+            $filename = 'program_' . time() . '_' . preg_replace('/[^a-zA-Z0-9\.]/', '_', $original_filename);
             $target_file = $upload_dir . $filename;
             
-            // Check file type
+            // Check file MIME type
+            $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($fileInfo, $_FILES['programImage']['tmp_name']);
+            finfo_close($fileInfo);
+            
+            $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!in_array($mimeType, $allowedMimeTypes)) {
+                throw new Exception('Only JPG, JPEG, PNG & GIF files are allowed');
+            }
+            
+            // Also check file extension
+            $file_extension = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
             $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
-            if (!in_array(strtolower($file_extension), $allowed_types)) {
+            if (!in_array($file_extension, $allowed_types)) {
                 throw new Exception('Only JPG, JPEG, PNG & GIF files are allowed');
             }
             

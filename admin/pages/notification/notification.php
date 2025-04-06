@@ -1,904 +1,376 @@
 <?php
     require_once(__DIR__ . '/../../../config.php');
-    require_once(__DIR__ . '/functions/notifications.class.php');
-    require_once(__DIR__ . '/functions/expiry-notifications.class.php');
+    require_once(__DIR__ . '/functions/expiry-notifications.class.php'); // Include the expiry notifications class
+    
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     $current_user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0; 
-    $notificationsObj = new Notifications();
-    $expiryNotificationsObj = new ExpiryNotifications();
+    $expiryNotificationsObj = new ExpiryNotifications(); // Create an instance of ExpiryNotifications
     
-    // Handle AJAX requests
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        header('Content-Type: application/json');
-        
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (!$data || !isset($data['action'])) {
-                throw new Exception('Invalid request');
+    // Get all expiry notifications with read status
+    $allExpiryNotifications = $expiryNotificationsObj->getExpiryNotifications($current_user_id);
+    
+    // Split notifications by type
+    $expiringNotifications = [];
+    $expiredNotifications = [];
+    
+    // Count for unread notifications
+    $unreadExpiring = 0;
+    $unreadExpired = 0;
+    
+    // Separate notifications by type (expired or expiring)
+    foreach ($allExpiryNotifications as $notification) {
+        if (strpos($notification['type'], 'expiring') !== false) {
+            // Fix messages with "-0 days" or "0 days" to say "today" instead
+            if (strpos($notification['message'], 'expires in -0 days') !== false) {
+                $notification['message'] = str_replace('expires in -0 days', 'expires today', $notification['message']);
+            } else if (strpos($notification['message'], 'expires in 0 days') !== false) {
+                $notification['message'] = str_replace('expires in 0 days', 'expires today', $notification['message']);
             }
+            $expiringNotifications[] = $notification;
             
-            switch ($data['action']) {
-                case 'confirm':
-                    if (empty($data['transactionId'])) {
-                        throw new Exception('Invalid transaction');
-                    }
-                    
-                    $userId = isset($data['userId']) ? $data['userId'] : null;
-                    if ($notificationsObj->confirmTransaction($data['transactionId'], $userId)) {
-                        echo json_encode(['success' => true]);
-                        exit;
-                    }
-                    throw new Exception('Failed to process');
-                    
-                case 'cancel':
-                    if (empty($data['transactionId'])) {
-                        throw new Exception('Invalid transaction');
-                    }
-                    
-                    if ($notificationsObj->cancelTransaction($data['transactionId'])) {
-                        echo json_encode(['success' => true]);
-                        exit;
-                    }
-                    throw new Exception('Failed to process');
-                
-                case 'markAsRead':
-                    if (empty($data['userId']) || empty($data['type']) || empty($data['notificationId'])) {
-                        throw new Exception('Invalid notification data');
-                    }
-                    
-                    if ($expiryNotificationsObj->markAsRead($data['userId'], $data['type'], $data['notificationId'])) {
-                        echo json_encode(['success' => true]);
-                        exit;
-                    }
-                    throw new Exception('Failed to mark notification as read');
-
-                case 'markAllAsRead':
-                    if (empty($data['userId']) || empty($data['notifications']) || !is_array($data['notifications'])) {
-                        throw new Exception('Invalid notification data');
-                    }
-                    
-                    if ($expiryNotificationsObj->markAllAsRead($data['userId'], $data['notifications'])) {
-                        echo json_encode(['success' => true]);
-                        exit;
-                    }
-                    throw new Exception('Failed to mark notifications as read');
-
-                default:
-                    throw new Exception('Invalid request');
+            // Count unread
+            if (!$notification['is_read']) {
+                $unreadExpiring++;
             }
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-            exit;
-        }
-    }
-
-    $transactionNotifications = $notificationsObj->getAllNotifications();
-    $expiryNotifications = $expiryNotificationsObj->getExpiryNotifications();
-    
-    // Get current user ID from session (assuming it's stored in $_SESSION['user_id'])
-    $currentUserId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
-?>
-
-<div class="container mt-4">
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Notifications</h2>
-    <div>
-    <span class="badge bg-danger me-2">
-        <?php 
-            // Count only unread notifications
-            $unreadCount = 0;
-            
-            // Count unread transaction notifications
-            $unreadCount += count($transactionNotifications);
-            
-            // Count unread expiry notifications
-            foreach ($expiryNotifications as $notification) {
-                if (!$expiryNotificationsObj->isNotificationRead($currentUserId, $notification['type'], $notification['id'])) {
-                    $unreadCount++;
-                }
-            }
-            
-            echo $unreadCount; 
-        ?> Unread
-    </span>
-        <button type="button" class="btn btn-primary" id="markReadBtn" onclick="markRead()">
-            <i class="fas fa-check me-1"></i>Mark All as Read
-        </button>
-    </div>
-</div>
-
-    
-        <!-- Transaction Notifications Tab -->
-        <div class="tab-pane fade show active" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
-            <div class="notification-container">
-                <?php if (empty($transactionNotifications)): ?>
-                    <div class="alert alert-info">No new transaction requests</div>
-                <?php else: ?>
-                    <?php foreach ($transactionNotifications as $notification): ?>
-                        <div class="notification-card" onclick="showNotificationDetails(<?php echo htmlspecialchars(json_encode($notification['details'])); ?>)">
-                            <div class="notification-header">
-                                <h5 class="notification-title">
-                                    <span class="new-badge">New</span>
-                                    <?php echo htmlspecialchars($notification['title']); ?>
-                                </h5>
-                                <span class="notification-time"><?php echo htmlspecialchars($notification['timestamp']); ?></span>
-                            </div>
-                            <div class="notification-body">
-                                <?php echo htmlspecialchars($notification['message']); ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
-
-            <div class="notification-container">
-                <?php if (empty($expiryNotifications)): ?>
-                    <div class="alert alert-info">No expiry notifications</div>
-                <?php else: ?>
-                    <?php foreach ($expiryNotifications as $notification): ?>
-                        <?php 
-                            $isRead = $expiryNotificationsObj->isNotificationRead($currentUserId, $notification['type'], $notification['id']);
-                            $cardClass = $isRead ? 'notification-card read' : 'notification-card unread';
-                        ?>
-                        <div class="<?php echo $cardClass; ?>" 
-                            onclick="showExpiryDetails(<?php echo htmlspecialchars(json_encode($notification)); ?>, <?php echo $currentUserId; ?>)"
-                            data-notification-id="<?php echo $notification['id']; ?>"
-                            data-notification-type="<?php echo $notification['type']; ?>">
-                            <div class="notification-header">
-                                <h5 class="notification-title">
-                                    <?php if (!$isRead): ?>
-                                    <span class="new-badge">New</span>
-                                    <?php endif; ?>
-                                    <?php echo htmlspecialchars($notification['title']); ?>
-                                </h5>
-                                <span class="notification-time"><?php echo htmlspecialchars($notification['timestamp']); ?></span>
-                            </div>
-                            <div class="notification-body">
-                                <?php echo htmlspecialchars($notification['message']); ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-
-</div>
-
-<!-- Transaction Details Modal -->
-<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="notificationModalLabel">Transaction Request Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Hidden fields for IDs -->
-                <input type="hidden" id="transactionId" name="transactionId">
-                <input type="hidden" id="userId" name="userId">
-
-                <!-- Member Information -->
-                <div class="section-card mb-4" id="memberInfoSection">
-                    <h6 class="section-title">Member Information</h6>
-                    <div class="row">
-                        <div class="col-md-3 text-center">
-                            <img id="memberProfilePic" src="" alt="Profile Picture" class="img-fluid rounded-circle profile-pic mb-3" style="width: 150px; height: 150px; object-fit: cover;">
-                        </div>
-                        <div class="col-md-9">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>Name:</strong> <span id="memberName"></span></p>
-                                    <p><strong>Phone:</strong> <span id="phoneNumber"></span></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Sex:</strong> <span id="sex"></span></p>
-                                    <p><strong>Age:</strong> <span id="age"></span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Walk-in Information -->
-                <div class="section-card mb-4" id="walkInInfoSection">
-                    <h6 class="section-title">Walk-in Information</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Name:</strong> <span id="walkInName"></span></p>
-                            <p><strong>Phone:</strong> <span id="walkInPhone"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Date:</strong> <span id="walkInDate"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="walkInAmount"></span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Membership Details -->
-                <div id="membershipSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Membership Plan</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Plan:</strong> <span id="planName"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="membershipAmount"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Start Date:</strong> <span id="membershipStart"></span></p>
-                            <p><strong>End Date:</strong> <span id="membershipEnd"></span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Rental Details -->
-                <div id="rentalSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Rental Details</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Service:</strong> <span id="serviceName"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="rentalAmount"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Start Date:</strong> <span id="rentalStart"></span></p>
-                            <p><strong>End Date:</strong> <span id="rentalEnd"></span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Registration Fee -->
-                <div id="registrationSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Registration</h6>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <p><strong>Registration Fee:</strong> ₱ <span id="registrationFee">0.00</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Total Amount -->
-                <div class="section-card mb-4">
-                    <h6 class="section-title">Total Amount</h6>
-                    <div class="row">
-                        <div class="col-12">
-                            <h4>₱ <span id="totalAmount">0.00</span></h4>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-muted mt-3"><small>Request received: <span id="requestDate"></span></small></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-danger" onclick="cancelTransaction()">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmTransaction()">Confirm</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Improved Expiry Details Modal -->
-<div class="modal fade" id="expiryModal" tabindex="-1" aria-labelledby="expiryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="expiryModalLabel">
-                    <i class="fas fa-bell me-2"></i>Expiry Notification
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Hidden fields for IDs -->
-                <input type="hidden" id="notificationId" name="notificationId">
-                <input type="hidden" id="notificationType" name="notificationType">
-                <input type="hidden" id="currentUserId" name="currentUserId">
-                <input type="hidden" id="recordId" name="recordId">
-                
-                <div class="notification-card mb-4">
-                    <div class="notification-header">
-                        <h6 class="notification-title mb-1" id="expiryTitle"></h6>
-                        <span class="notification-badge" id="expiryBadge"></span>
-                    </div>
-                    <p class="notification-message" id="expiryMessage"></p>
-                    <div class="notification-details" id="expiryDetails">
-                        <!-- Details will be filled by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i>Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
-<script>
-    function showNotificationDetails(details) {
-        // Reset sections visibility
-        document.getElementById('memberInfoSection').style.display = 'none';
-        document.getElementById('walkInInfoSection').style.display = 'none';
-        document.getElementById('membershipSection').style.display = 'none';
-        document.getElementById('rentalSection').style.display = 'none';
-        document.getElementById('registrationSection').style.display = 'none';
-
-        // Initialize total amount
-        let totalAmount = 0;
-    
-        // Store transaction and user IDs
-        document.getElementById('transactionId').value = details.transaction_id;
-        if (details.user_id) {
-            document.getElementById('userId').value = details.user_id;
-        }
-
-        // Handle button states based on transaction status
-        const confirmBtn = document.querySelector('.modal-footer .btn-danger');
-        const cancelBtn = document.querySelector('.modal-footer .btn-outline-danger');
-        
-        if (details.transaction_status === 'confirmed' || details.transaction_status === 'cancelled') {
-            confirmBtn.disabled = true;
-            cancelBtn.disabled = true;
         } else {
-            confirmBtn.disabled = false;
-            cancelBtn.disabled = false;
+            $expiredNotifications[] = $notification;
+            
+            // Count unread
+            if (!$notification['is_read']) {
+                $unreadExpired++;
+            }
         }
+    }
     
-        // Show relevant sections based on transaction type
-        if (details.transaction_type === 'membership') {
-            document.getElementById('memberInfoSection').style.display = 'block';
+    // Count notifications by type
+    $expiringCount = count($expiringNotifications);
+    $expiredCount = count($expiredNotifications);
+    $totalCount = $expiringCount + $expiredCount;
+    $unreadTotal = $unreadExpiring + $unreadExpired;
+    
+    // Combine lists with expired notifications first
+    $combinedNotifications = array_merge($expiredNotifications, $expiringNotifications);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expiry Notifications</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/admin/pages/notification/notification.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>Expiry Notifications</h2>
+            <button id="markAllReadBtn" class="btn btn-outline-primary" <?php echo ($unreadTotal > 0) ? '' : 'disabled'; ?>>
+                <i class="fas fa-check-double"></i> Mark All as Read
+            </button>
+        </div>
+
+        <!-- Notification counts summary -->
+        <div class="notification-counts">
+            <div class="count-box count-expired">
+                <strong>Expired:</strong>
+                <span><?php echo $expiredCount; ?></span>
+                <?php if ($unreadExpired > 0): ?>
+                    <span class="unread-badge"><?php echo $unreadExpired; ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="count-box count-expiring">
+                <strong>Expiring Soon:</strong>
+                <span><?php echo $expiringCount; ?></span>
+                <?php if ($unreadExpiring > 0): ?>
+                    <span class="unread-badge"><?php echo $unreadExpiring; ?></span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Combined notifications list -->
+        <div class="notification-container">
+            <?php if (empty($combinedNotifications)): ?>
+                <div class="alert alert-info">No notifications found</div>
+            <?php else: ?>
+                <?php foreach ($combinedNotifications as $notification): ?>
+                    <?php 
+                        $isExpired = strpos($notification['type'], 'expired') !== false;
+                        $statusClass = $isExpired ? 'notification-expired' : 'notification-expiring';
+                        $statusLabel = $isExpired ? 'Expired' : 'Expiring Soon';
+                        $statusIndicatorClass = $isExpired ? 'expired-indicator' : 'expiring-indicator';
+                        $unreadClass = !$notification['is_read'] ? 'notification-unread' : '';
+                        
+                        // For animation, add new notification class if needed
+                        $newNotificationClass = '';
+                        // Check if notification is very recent (within 5 minutes)
+                        // This is just a placeholder - you would need to implement the logic
+                        // based on your timestamp format and current time
+                    ?>
+                    <div class="notification-card <?php echo $statusClass; ?> <?php echo $unreadClass; ?> <?php echo $newNotificationClass; ?>"
+                         data-id="<?php echo htmlspecialchars($notification['id']); ?>"
+                         data-type="<?php echo htmlspecialchars($notification['type']); ?>"
+                         onclick="showExpiryDetails(<?php echo htmlspecialchars(json_encode($notification['details'])); ?>, 
+                                   '<?php echo htmlspecialchars($notification['id']); ?>', 
+                                   '<?php echo htmlspecialchars($notification['type']); ?>')">
+                        <?php if (!$notification['is_read']): ?>
+                            <span class="unread-dot" title="Unread notification"></span>
+                        <?php endif; ?>
+                        <div class="notification-header">
+                            <h5 class="notification-title">
+                                <span class="status-indicator <?php echo $statusIndicatorClass; ?>"><?php echo $statusLabel; ?></span>
+                                <?php echo htmlspecialchars($notification['title']); ?>
+                            </h5>
+                            <span class="notification-time"><?php echo htmlspecialchars($notification['timestamp']); ?></span>
+                        </div>
+                        <div class="notification-body">
+                            <?php echo htmlspecialchars($notification['message']); ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Expiry Details Modal -->
+    <div class="modal fade" id="expiryModal" tabindex="-1" aria-labelledby="expiryModalLabel" >
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="expiryModalLabel">Expiry Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Hidden fields for notification data -->
+                    <input type="hidden" id="notificationId" name="notificationId">
+                    <input type="hidden" id="notificationType" name="notificationType">
+                    
+                    <!-- Member Information -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title">Member Information</h6>
+                        <p><strong>Name:</strong> <span id="expiryMemberName"></span></p>
+                        <p><strong>Username:</strong> <span id="expiryUsername"></span></p>
+                    </div>
+                    
+                    <!-- Membership/Rental Information -->
+                    <div class="section-card mb-4">
+                        <h6 class="section-title" id="expiryTypeTitle">Subscription Information</h6>
+                        <p><strong>Type:</strong> <span id="expiryPlanName"></span></p>
+                        <p><strong>Start Date:</strong> <span id="expiryStartDate"></span></p>
+                        <p><strong>End Date:</strong> <span id="expiryEndDate"></span></p>
+                        <p><strong>Amount:</strong> ₱ <span id="expiryAmount"></span></p>
+                        <p id="expiryRemainingRow"><strong>Days Remaining:</strong> <span id="expiryDaysRemaining"></span></p>
+                        <p id="expirySinceRow"><strong>Days Since Expiry:</strong> <span id="expiryDaysSince"></span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show expiry details function
+        function showExpiryDetails(details, notificationId, notificationType) {
+            // Store notification data in hidden fields
+            document.getElementById('notificationId').value = notificationId;
+            document.getElementById('notificationType').value = notificationType;
+            
             // Set member information
-            document.getElementById('memberProfilePic').src = '/../' + details.profile_picture || '/Gym_MembershipSE-XLB/assets/images/default-profile.png';
-            document.getElementById('memberName').textContent = details.member_name;
-            document.getElementById('phoneNumber').textContent = details.phone_number;
-            document.getElementById('sex').textContent = details.sex;
-            document.getElementById('age').textContent = details.age;
-
-            // Only show registration fee section for new members
-            if (details.registration_fee && !details.is_member) {
-                document.getElementById('registrationSection').style.display = 'block';
-                document.getElementById('registrationFee').textContent = details.registration_fee;
-                totalAmount += parseFloat(details.registration_fee.replace(/,/g, '')) || 0;
-            }
-        } else if (details.transaction_type === 'walk-in') {
-            document.getElementById('walkInInfoSection').style.display = 'block';
-            // Set walk-in information
-            document.getElementById('walkInName').textContent = details.walk_in_name;
-            document.getElementById('walkInPhone').textContent = details.walk_in_phone;
-            document.getElementById('walkInDate').textContent = details.walk_in_date;
-            document.getElementById('walkInAmount').textContent = details.walk_in_amount;
-            // Add walk-in amount to total
-            totalAmount += parseFloat(details.walk_in_amount.replace(/,/g, '')) || 0;
-        }
-    
-        // Show membership details if present
-        if (details.membership) {
-            document.getElementById('membershipSection').style.display = 'block';
-            document.getElementById('planName').textContent = details.membership.plan_name;
-            document.getElementById('membershipAmount').textContent = details.membership.amount;
-            document.getElementById('membershipStart').textContent = details.membership.start_date;
-            document.getElementById('membershipEnd').textContent = details.membership.end_date;
-            // Add membership amount to total
-            totalAmount += parseFloat(details.membership.amount.replace(/,/g, '')) || 0;
-        }
-    
-        // Show rental details if present
-        if (details.rental) {
-            document.getElementById('rentalSection').style.display = 'block';
-            document.getElementById('serviceName').textContent = details.rental.service_name;
-            document.getElementById('rentalAmount').textContent = details.rental.amount;
-            document.getElementById('rentalStart').textContent = details.rental.start_date;
-            document.getElementById('rentalEnd').textContent = details.rental.end_date;
-            // Add rental amount to total
-            totalAmount += parseFloat(details.rental.amount.replace(/,/g, '')) || 0;
-        }
-
-        // Update total amount display
-        document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
-    
-        // Show the modal
-        const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
-        modal.show();
-    }
-
-    function showExpiryDetails(notification, userId) {
-    // Store notification IDs and user ID
-    document.getElementById('notificationId').value = notification.id;
-    document.getElementById('notificationType').value = notification.type;
-    document.getElementById('currentUserId').value = userId;
-    document.getElementById('recordId').value = notification.type.includes('membership') ? 
-        notification.details.membership_id : notification.details.rental_id;
-    
-    // Set title and message
-    document.getElementById('expiryTitle').textContent = notification.title;
-    document.getElementById('expiryMessage').textContent = notification.message;
-    
-    // Set appropriate badge
-    const badgeElement = document.getElementById('expiryBadge');
-    if (notification.type.includes('expiring')) {
-        badgeElement.className = 'notification-badge warning';
-        badgeElement.textContent = 'Expiring Soon';
-    } else {
-        badgeElement.className = 'notification-badge danger';
-        badgeElement.textContent = 'Expired';
-    }
-    
-    const detailsContainer = document.getElementById('expiryDetails');
-    
-    // Clear previous content
-    detailsContainer.innerHTML = '';
-        
-    // Create formatted details based on notification type
-    if (notification.type === 'expiring_membership' || notification.type === 'expired_membership') {
-        // Add membership details
-        const detailsHtml = `
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-user me-2"></i>Member:</span>
-                <span class="details-value">${notification.details.member_name}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-id-card me-2"></i>Plan:</span>
-                <span class="details-value">${notification.details.plan_name}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-calendar-day me-2"></i>Start Date:</span>
-                <span class="details-value">${notification.details.start_date}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-calendar-times me-2"></i>End Date:</span>
-                <span class="details-value">${notification.details.end_date}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-tags me-2"></i>Amount:</span>
-                <span class="details-value">₱${notification.details.amount}</span>
-            </div>
-        `;
-        detailsContainer.innerHTML = detailsHtml;
-    } else if (notification.type === 'expiring_rental' || notification.type === 'expired_rental') {
-        // Add rental details
-        const detailsHtml = `
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-user me-2"></i>Member:</span>
-                <span class="details-value">${notification.details.member_name}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-concierge-bell me-2"></i>Service:</span>
-                <span class="details-value">${notification.details.service_name}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-calendar-day me-2"></i>Start Date:</span>
-                <span class="details-value">${notification.details.start_date}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-calendar-times me-2"></i>End Date:</span>
-                <span class="details-value">${notification.details.end_date}</span>
-            </div>
-            <div class="details-item">
-                <span class="details-label"><i class="fas fa-tags me-2"></i>Amount:</span>
-                <span class="details-value">₱${notification.details.amount}</span>
-            </div>
-        `;
-        detailsContainer.innerHTML = detailsHtml;
-    }
-    
-    const expiryModalElement = document.getElementById('expiryModal');
-    if (expiryModalElement) {
-        const modal = new bootstrap.Modal(expiryModalElement);
-        modal.show();
-    }
-        
-    // Mark this notification as read when opened
-    // Check if notification is unread before sending request
-    const notificationCard = document.querySelector(`.notification-card.unread[data-notification-id="${notification.id}"][data-notification-type="${notification.type}"]`);
-    if (notificationCard) {
-        markSingleAsRead();
-    }
-}
-
-    function confirmTransaction() {
-        if (!confirm('Confirm this transaction?')) {
-            return;
-        }
-
-        const transactionId = document.getElementById('transactionId').value;
-        const userId = document.getElementById('userId').value;
-
-        if (!transactionId) {
-            alert('Transaction details not found.');
-            return;
-        }
-
-        const data = {
-            action: 'confirm',
-            transactionId: transactionId
-        };
-
-        if (userId) {
-            data.userId = userId;
-        }
-
-        fetch('../admin/pages/notification/notification.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => Promise.reject(err));
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert('Transaction confirmed successfully!');
-                location.reload();
+            document.getElementById('expiryMemberName').textContent = details.member_name;
+            document.getElementById('expiryUsername').textContent = details.username;
+            
+            // Set plan/service information
+            if (notificationType.includes('membership')) {
+                document.getElementById('expiryTypeTitle').textContent = 'Membership Information';
+                document.getElementById('expiryPlanName').textContent = details.plan_name;
             } else {
-                throw new Error(data.message || 'Failed to confirm transaction');
+                document.getElementById('expiryTypeTitle').textContent = 'Rental Information';
+                document.getElementById('expiryPlanName').textContent = details.service_name;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message || 'An error occurred while processing the transaction');
-        });
-    }
-
-    function cancelTransaction() {
-        if (!confirm('This request will be cancelled')) {
-            return;
-        }
-
-        const transactionId = document.getElementById('transactionId').value;
-
-        if (!transactionId) {
-            alert('Transaction details not found.');
-            return;
-        }
-
-        fetch('../admin/pages/notification/notification.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'cancel',
-                transactionId: transactionId
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => Promise.reject(err));
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert('Transaction cancelled successfully!');
-                location.reload();
+            
+            document.getElementById('expiryStartDate').textContent = details.start_date;
+            document.getElementById('expiryEndDate').textContent = details.end_date;
+            document.getElementById('expiryAmount').textContent = details.amount;
+            // Show days remaining or days since based on notification type
+            if (notificationType.includes('expiring')) {
+                document.getElementById('expiryRemainingRow').style.display = '';
+                document.getElementById('expirySinceRow').style.display = 'none';
+                // Update the display for 0 days remaining
+                if (details.days_remaining == 0) {
+                    document.getElementById('expiryDaysRemaining').textContent = 'Today';
+                } else {
+                    document.getElementById('expiryDaysRemaining').textContent = details.days_remaining;
+                }
             } else {
-                throw new Error(data.message || 'Failed to cancel transaction');
+                document.getElementById('expiryRemainingRow').style.display = 'none';
+                document.getElementById('expirySinceRow').style.display = '';
+                document.getElementById('expiryDaysSince').textContent = details.days_since;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message || 'An error occurred while processing the transaction');
-        });
-    }
-    
-    function markAsRead(userId, type, notificationId) {
-        // Mark notification as read via AJAX
-        fetch('../admin/pages/notification/notification.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'markAsRead',
-                userId: userId,
-                type: type,
-                notificationId: notificationId
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('expiryModal'));
+            modal.show();
+            
+            // Mark notification as read
+            markNotificationAsRead(notificationId, notificationType);
+        }
+        
+        // Function to mark a notification as read
+        function markNotificationAsRead(notificationId, notificationType) {
+            // Don't proceed if we don't have valid ID or type
+            if (!notificationId || !notificationType) return;
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('notification_id', notificationId);
+            formData.append('notification_type', notificationType);
+            
+            // Send AJAX request to mark as read
+            fetch('/admin/pages/notification/mark-notification-read.php', {
+                method: 'POST',
+                body: formData
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update UI to show notification as read
-                const notificationCards = document.querySelectorAll(`.notification-card[data-notification-id="${notificationId}"][data-notification-type="${type}"]`);
-                notificationCards.forEach(card => {
-                    card.classList.remove('unread');
-                    card.classList.add('read');
-                    
-                    // Remove the "New" badge if present
-                    const badge = card.querySelector('.new-badge');
-                    if (badge) {
-                        badge.remove();
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update UI to show the notification as read
+                    const notificationCard = document.querySelector(`.notification-card[data-id="${notificationId}"][data-type="${notificationType}"]`);
+                    if (notificationCard) {
+                        notificationCard.classList.remove('notification-unread');
+                        const unreadDot = notificationCard.querySelector('.unread-dot');
+                        if (unreadDot) {
+                            unreadDot.remove();
+                        }
+                        
+                        // Update notification counters
+                        updateNotificationCounters();
+                        
+                        // Update navbar badges if the updateNotificationBadges function exists
+                        if (typeof window.updateNotificationBadges === 'function') {
+                            window.updateNotificationBadges();
+                        }
                     }
-                    
-                    // Update notification counter
-                    updateNotificationCount();
-                });
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+            });
+        }
+        
+        // Function to update notification counters
+        function updateNotificationCounters() {
+            // Count unread notifications
+            const unreadNotifications = document.querySelectorAll('.notification-unread');
+            const unreadExpiring = document.querySelectorAll('.notification-unread.notification-expiring').length;
+            const unreadExpired = document.querySelectorAll('.notification-unread.notification-expired').length;
+            const totalUnread = unreadExpiring + unreadExpired;
+            
+            // Update the unread badges
+            const expiringBadge = document.querySelector('.count-box.count-expiring .unread-badge');
+            const expiredBadge = document.querySelector('.count-box.count-expired .unread-badge');
+            const totalBadge = document.querySelector('.count-box:not(.count-expired):not(.count-expiring) .unread-badge');
+            
+            // Update or remove badges based on counts
+            updateBadge(expiringBadge, unreadExpiring, '.count-box.count-expiring');
+            updateBadge(expiredBadge, unreadExpired, '.count-box.count-expired');
+            updateBadge(totalBadge, totalUnread, '.count-box:not(.count-expired):not(.count-expiring)');
+            
+            // Update Mark All as Read button state
+            const markAllReadBtn = document.getElementById('markAllReadBtn');
+            if (markAllReadBtn) {
+                markAllReadBtn.disabled = totalUnread === 0;
             }
-        })
-        .catch(error => console.error('Error marking notification as read:', error));
-    }
-    // Updated markRead function to correctly get the user ID
-function markRead() {
-    // Get all unread notifications
-    const unreadNotifications = document.querySelectorAll('.notification-card.unread');
+        }
+        
+        // Helper function to update or create badge
+        function updateBadge(badge, count, containerSelector) {
+            if (count > 0) {
+                if (badge) {
+                    badge.textContent = count;
+                } else {
+                    const container = document.querySelector(containerSelector);
+                    if (container) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'unread-badge';
+                        newBadge.textContent = count;
+                        container.appendChild(newBadge);
+                    }
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+        
+        $(document).ready(function() {
+    // Initialize tooltips if needed
+    $('[data-bs-toggle="tooltip"]').tooltip();
     
-    if (unreadNotifications.length === 0) {
-        // No unread notifications
-        alert("No unread notifications to mark.");
-        return;
-    }
-    
-    // Get current user ID from session
-    // First try to get it from a hidden input if available in the expiry modal
-    let userId = document.getElementById('currentUserId') ? 
-                 document.getElementById('currentUserId').value : null;
-    
-    // If that's not available, try to get it from the session PHP variable
-    if (!userId || userId == 0) {
-        // This will be replaced by the actual PHP session value
-        userId = <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0; ?>;
-    }
-    
-    if (!userId || userId == 0) {
-        console.error('User ID not found');
-        alert('User ID not found. Please reload the page and try again.');
-        return;
-    }
-    
-    // Make the AJAX request with the correct path and data
-    $.ajax({
-        url: '../admin/pages/notification/mark_all_notification_read.php',  // Use relative path to the current directory
-        type: 'POST',
-        data: {
-            user_id: userId
-        },
-        success: function(response) {
-            try {   
-                const result = JSON.parse(response);
-                if (result.success) {
+    // Add event listener to the "Mark All as Read" button
+    $('#markAllReadBtn').on('click', function(e) {
+        e.preventDefault();
+        console.log("Mark All Read button clicked"); // Debug
+        
+        // Add loading state to button
+        var $btn = $(this);
+        var originalHtml = $btn.html();
+        $btn.html('<i class="fas fa-spinner fa-spin"></i> Processing...').prop('disabled', true);
+        
+        // Send AJAX request to mark all as read
+        $.ajax({
+            url: '/admin/pages/notification/mark-all-notifications-read.php',
+            type: 'POST',
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
                     // Update UI to show all notifications as read
-                    unreadNotifications.forEach(card => {
-                        card.classList.remove('unread');
-                        card.classList.add('read');
-                        // Remove "New" badge
-                        const newBadge = card.querySelector('.new-badge');
-                        if (newBadge) {
-                            newBadge.remove();
-                        }
-                    });
+                    $('.notification-unread').removeClass('notification-unread')
+                        .find('.unread-dot').remove();
                     
-                    // Update notification counter
-                    updateNotificationCount();
+                    // Remove all unread badges
+                    $('.unread-badge').remove();
                     
-                    // Show success message
-                    alert('All notifications marked as read successfully!');
-                } else {
-                    alert('Error: ' + (result.error || 'Unknown error occurred'));
+                    // Reset button state
+                    $btn.html(originalHtml).prop('disabled', true);
+                    
+                    // Update navbar badges if the updateNotificationBadges function exists
+                    if (typeof window.updateNotificationBadges === 'function') {
+                        window.updateNotificationBadges();
+                    }
                 }
-            } catch (e) {
-                console.error("Error parsing response:", e, "Raw response:", response);
-                alert('Error processing response. Please try again later.');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error marking all notifications as read:', error);
+                // Reset button state
+                $btn.html(originalHtml).prop('disabled', false);
             }
-        },
-        error: function(xhr, status, error) {
-            console.error("AJAX Error:", error, "Status:", status, "Response:", xhr.responseText);
-            alert('Error marking notifications as read. Please try again later.');
-        }
+        });
     });
-}
-
-// Updated markSingleAsRead function with better error handling and path correction
-function markSingleAsRead() {
-    const notificationId = document.getElementById('notificationId').value;
-    const notificationType = document.getElementById('notificationType').value;
-    const userId = document.getElementById('currentUserId').value;
-    
-    if (!notificationId || !notificationType) {
-        console.error('Required notification data missing');
-        return;
-    }
-    
-    // Use the markNotificationAsRead function via AJAX with the correct path
-    $.ajax({
-        url: '../admin/pages/notification/mark_notification_read.php',  // Use relative path to the current directory
-        type: 'POST',
-        data: {
-            type: notificationType,
-            id: notificationId
-        },
-        success: function(response) {
-            try {
-                console.log("Response received:", response);
-                const result = JSON.parse(response);
-                if (result.success) {
-                    // Find the notification card in the DOM and update its appearance
-                    const notificationCards = document.querySelectorAll(`.notification-card.unread`);
-                    
-                    notificationCards.forEach(card => {
-                        // Check if the card's onclick attribute contains this notification ID
-                        if (card.getAttribute('onclick') && 
-                            card.getAttribute('onclick').includes(`"id":${notificationId}`) && 
-                            card.getAttribute('onclick').includes(`"type":"${notificationType}"`)) {
-                            
-                            card.classList.remove('unread');
-                            card.classList.add('read');
-                                                        // Remove the "New" badge if present
-                                                        const newBadge = card.querySelector('.new-badge');
-                            if (newBadge) {
-                                newBadge.remove();
-                            }
-                        }
-                    });
-                    
-                    // Update notification counter
-                    updateNotificationCount();
-                } else {
-                    console.error('Error marking notification as read:', result.error);
-                }
-            } catch (e) {
-                console.error("Error parsing response:", e, "Raw response:", response);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error("AJAX Error:", error, "Status:", status, "Response:", xhr.responseText);
-        }
-    });
-}
-
-function updateNotificationCount() {
-    // Count only unread notifications
-    const unreadCount = document.querySelectorAll('.notification-card.unread').length;
-    
-    // Update the badge count
-    const badgeElement = document.querySelector('.badge.bg-danger');
-    if (badgeElement) {
-        badgeElement.textContent = unreadCount + ' Unread';
-    }
-    
-    // Disable the "Mark All as Read" button if no unread notifications
-    const markReadBtn = document.getElementById('markReadBtn');
-    if (markReadBtn) {
-        markReadBtn.disabled = (unreadCount === 0);
-    }
-}
-
-// Initialize tooltips and other UI elements
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
-    // Initialize notification counter
-    updateNotificationCount();
 });
-</script>
-<style>
-.notification-container {
-    max-height: 600px;
-    overflow-y: auto;
-}
-
-.notification-card {
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    padding: 15px;
-    margin-bottom: 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.notification-card:hover {
-    background-color: #e9ecef;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.notification-card.read {
-    border-left-color: #28a745;
-    opacity: 0.8;
-}
-
-.notification-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-}
-
-.notification-title {
-    font-weight: 600;
-    margin: 0;
-    display: flex;
-    align-items: center;
-}
-
-.notification-time {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-
-.notification-body {
-    color: #495057;
-}
-
-.new-badge {
-    background-color: #dc3545;
-    color: white;
-    font-size: 0.7rem;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-right: 8px;
-}
-
-.section-card {
-    background-color: #f8f9fa;
-    border-radius: 6px;
-    padding: 15px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    padding-bottom: 8px;
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 15px;
-    color: #495057;
-}
-
-.profile-pic {
-    border: 3px solid #dee2e6;
-}
-
-.notification-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.notification-badge.warning {
-    background-color: #ffc107;
-    color: #212529;
-}
-
-.notification-badge.danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.details-item {
-    display: flex;
-    margin-bottom: 8px;
-    padding: 8px;
-    background-color: #e9ecef;
-    border-radius: 4px;
-}
-
-.details-label {
-    width: 120px;
-    font-weight: 600;
-    color: #495057;
-}
-
-.details-value {
-    flex: 1;
-}
-
-.notification-message {
-    background-color: #e9ecef;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-}
-</style>
+        
+        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Add event listener to the "Mark All as Read" button
+        const markAllReadBtn = document.getElementById('markAllReadBtn');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function(event) {
+                event.preventDefault(); // Prevent any default action
+                console.log("Mark All Read button clicked"); // Debug line
+                markAllAsRead();
+            });
+        }
+    });
+    </script>
+</body>
+</html>

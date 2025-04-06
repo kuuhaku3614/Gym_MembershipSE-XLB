@@ -12,9 +12,10 @@ class ExpiryNotifications {
     
     /**
      * Get all expiring and expired memberships and rentals
+     * @param int $user_id Current user ID to check read status
      * @return array Array of notifications
      */
-    public function getExpiryNotifications() {
+    public function getExpiryNotifications($user_id = 0) {
         $notifications = array_merge(
             $this->getExpiringMemberships(),
             $this->getExpiredMemberships(),
@@ -27,153 +28,120 @@ class ExpiryNotifications {
             return strtotime($b['timestamp']) - strtotime($a['timestamp']);
         });
         
+        // Check read status for each notification if user is logged in
+        if ($user_id > 0) {
+            foreach ($notifications as &$notification) {
+                $notification['is_read'] = $this->isNotificationRead($user_id, $notification['id'], $notification['type']);
+            }
+        }
+        
         return $notifications;
     }
     
     /**
-     * Check if a notification has been read by the user
-     * @param int $userId User ID
-     * @param string $type Notification type
-     * @param int $notificationId Notification ID
+     * Check if a notification has been read by a user
+     * @param int $user_id User ID
+     * @param int $notification_id Notification ID
+     * @param string $notification_type Notification type
      * @return bool True if notification has been read
      */
-    public function isNotificationRead($userId, $type, $notificationId) {
-        // First check session
-        if (isset($_SESSION['read_notifications'][$type]) && 
-            in_array($notificationId, $_SESSION['read_notifications'][$type])) {
-            return true;
-        }
+    public function isNotificationRead($user_id, $notification_id, $notification_type) {
+        $query = "SELECT id FROM notification_reads 
+                  WHERE user_id = :user_id 
+                  AND notification_id = :notification_id 
+                  AND notification_type = :notification_type 
+                  LIMIT 1";
+                  
+        $stmt = $this->pdo->prepare($query);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':notification_id', $notification_id, PDO::PARAM_INT);
+        $stmt->bindParam(':notification_type', $notification_type, PDO::PARAM_STR);
+        $stmt->execute();
         
-        // Otherwise check database
-        $stmt = $this->pdo->prepare("SELECT id FROM notification_reads 
-                                    WHERE user_id = ? AND notification_type = ? AND notification_id = ?");
-        $stmt->execute([$userId, $type, $notificationId]);
         return $stmt->rowCount() > 0;
     }
     
     /**
-     * Mark a notification as read
-     * @param int $userId User ID
-     * @param string $type Notification type
-     * @param int $notificationId Notification ID
-     * @return bool True if successful
+     * Count unread notifications for a user
+     * @param int $user_id User ID
+     * @return array Count of unread notifications by type and total
      */
-    public function markAsRead($userId, $type, $notificationId) {
-        // Validate inputs
-        $userId = (int)$userId;
-        $notificationId = (int)$notificationId;
-        $type = filter_var($type, FILTER_SANITIZE_STRING);
+    public function countUnreadNotifications($user_id) {
+        $allNotifications = $this->getExpiryNotifications($user_id);
         
-        if (!$userId || !$notificationId || empty($type)) {
-            return false;
+        $counts = [
+            'expiring' => 0,
+            'expired' => 0,
+            'total' => 0
+        ];
+        
+        foreach ($allNotifications as $notification) {
+            if (!$notification['is_read']) {
+                $counts['total']++;
+                
+                if (strpos($notification['type'], 'expiring') !== false) {
+                    $counts['expiring']++;
+                } else {
+                    $counts['expired']++;
+                }
+            }
         }
         
-        // Check if already read
-        if ($this->isNotificationRead($userId, $type, $notificationId)) {
-            return true;
-        }
-        
-        try {
-            // Insert a new record
-            $stmt = $this->pdo->prepare("INSERT INTO notification_reads 
-                                        (user_id, notification_type, notification_id, read_at) 
-                                        VALUES (?, ?, ?, NOW())");
-            $success = $stmt->execute([$userId, $type, $notificationId]);
-            
-            // Also update the session
-            if (!isset($_SESSION['read_notifications'])) {
-                $_SESSION['read_notifications'] = [
-                    'transactions' => [],
-                    'memberships' => [],
-                    'announcements' => [],
-                    'expiring_membership' => [],
-                    'expired_membership' => [],
-                    'expiring_rental' => [],
-                    'expired_rental' => []
-                ];
-            }
-            
-            // Store the notification ID in the session
-            // Make sure the key exists in the session array
-            if (!isset($_SESSION['read_notifications'][$type])) {
-                $_SESSION['read_notifications'][$type] = [];
-            }
-
-            // Then check if the notification is already in the array
-            if (!in_array($notificationId, $_SESSION['read_notifications'][$type])) {
-                $_SESSION['read_notifications'][$type][] = $notificationId;
-            }
-            
-            return $success;
-        } catch (Exception $e) {
-            error_log("Error marking notification as read: " . $e->getMessage());
-            return false;
-        }
+        return $counts;
     }
     
     /**
-     * Mark all notifications as read for a specific user
-     * 
-     * @param int $userId The ID of the user
-     * @param array $notificationData Array of notification data to mark as read
-     * @return bool True on success, false on failure
+     * Mark a notification as read
+     * @param int $user_id User ID
+     * @param int $notification_id Notification ID
+     * @param string $notification_type Notification type
+     * @return bool True if successful
      */
-    public function markAllAsRead($userId, $notificationData) {
-        try {
-            // Start transaction for multiple inserts
-            $this->pdo->beginTransaction();
-            
-            // Prepare the statement
-            $stmt = $this->pdo->prepare("INSERT IGNORE INTO notification_reads 
-                                  (user_id, notification_type, notification_id, read_at) 
-                                  VALUES (?, ?, ?, NOW())");
-            
-            // For each notification, insert a record
-            foreach ($notificationData as $notification) {
-                // Check if the notification is already marked as read
-                if (!$this->isNotificationRead($userId, $notification['type'], $notification['id'])) {
-                    $stmt->execute([
-                        $userId, 
-                        $notification['type'], // e.g., 'expiring_membership', 'expired_rental', etc.
-                        $notification['id']
-                    ]);
-                    
-                    // Also update session
-                    if (!isset($_SESSION['read_notifications'])) {
-                        $_SESSION['read_notifications'] = [
-                            'transactions' => [],
-                            'memberships' => [],
-                            'announcements' => [],
-                            'expiring_membership' => [],
-                            'expired_membership' => [],
-                            'expiring_rental' => [],
-                            'expired_rental' => []
-                        ];
-                    }
-                    
-                    // Store the notification ID in the session
-                    // Make sure the key exists in the session array
-                    if (!isset($_SESSION['read_notifications'][$notification['type']])) {
-                        $_SESSION['read_notifications'][$notification['type']] = [];
-                    }
-
-                    // Then check if the notification is already in the array
-                    if (!in_array($notification['id'], $_SESSION['read_notifications'][$notification['type']])) {
-                        $_SESSION['read_notifications'][$notification['type']][] = $notification['id'];
-                    }
+    public function markNotificationAsRead($user_id, $notification_id, $notification_type) {
+        // Check if already marked as read
+        if ($this->isNotificationRead($user_id, $notification_id, $notification_type)) {
+            return true; // Already marked as read, consider it a success
+        }
+        
+        $query = "INSERT INTO notification_reads 
+                 (user_id, notification_id, notification_type) 
+                 VALUES (:user_id, :notification_id, :notification_type)
+                 ON DUPLICATE KEY UPDATE read_at = CURRENT_TIMESTAMP";
+                 
+        $stmt = $this->pdo->prepare($query);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':notification_id', $notification_id, PDO::PARAM_INT);
+        $stmt->bindParam(':notification_type', $notification_type, PDO::PARAM_STR);
+        
+        return $stmt->execute();
+    }
+    /**
+     * Mark all notifications as read for a user
+     * @param int $user_id User ID
+     * @return bool True if successful
+     */
+    public function markAllNotificationsAsRead($user_id) {
+        // Get all unread notifications
+        $allNotifications = $this->getExpiryNotifications($user_id);
+        $success = true;
+        
+        foreach ($allNotifications as $notification) {
+            if (!$notification['is_read']) {
+                // Mark each unread notification as read
+                $result = $this->markNotificationAsRead(
+                    $user_id, 
+                    $notification['id'], 
+                    $notification['type']
+                );
+                
+                // If any operation fails, set success to false
+                if (!$result) {
+                    $success = false;
                 }
             }
-            
-            // Commit the transaction
-            $this->pdo->commit();
-            
-            return true;
-        } catch (Exception $e) {
-            // Roll back the transaction in case of error
-            $this->pdo->rollBack();
-            error_log("Error marking all notifications as read: " . $e->getMessage());
-            return false;
         }
+        
+        return $success;
     }
     
     /**
@@ -215,7 +183,6 @@ class ExpiryNotifications {
                 $daysRemaining = ceil($daysRemaining);
                 
                 // Set the timestamp to when the membership became "expiring" status
-                // For 7-day expiring memberships, this would typically be 7 days before end_date
                 $timestamp = date('F d, Y, h:i a', strtotime($row['end_date'] . ' -7 days'));
                 
                 $notifications[] = [
@@ -224,6 +191,7 @@ class ExpiryNotifications {
                     'title' => 'Membership Expiring Soon',
                     'message' => $row['first_name'] . ' ' . $row['last_name'] . '\'s ' . $row['plan_name'] . ' membership expires in ' . $daysRemaining . ' days',
                     'timestamp' => $timestamp,
+                    'is_read' => false, // Default value, will be updated later if needed
                     'details' => [
                         'membership_id' => $row['membership_id'],
                         'transaction_id' => $row['transaction_id'],
@@ -290,6 +258,7 @@ class ExpiryNotifications {
                     'title' => 'Membership Expired',
                     'message' => $row['first_name'] . ' ' . $row['last_name'] . '\'s ' . $row['plan_name'] . ' membership expired ' . $daysSince . ' days ago',
                     'timestamp' => $timestamp,
+                    'is_read' => false, // Default value, will be updated later if needed
                     'details' => [
                         'membership_id' => $row['membership_id'],
                         'transaction_id' => $row['transaction_id'],
@@ -348,7 +317,6 @@ class ExpiryNotifications {
                 $daysRemaining = ceil($daysRemaining);
                 
                 // Set the timestamp to when the rental became "expiring" status
-                // For 7-day expiring rentals, this would typically be 7 days before end_date
                 $timestamp = date('F d, Y, h:i a', strtotime($row['end_date'] . ' -7 days'));
                 
                 $notifications[] = [
@@ -357,6 +325,7 @@ class ExpiryNotifications {
                     'title' => 'Rental Subscription Expiring Soon',
                     'message' => $row['first_name'] . ' ' . $row['last_name'] . '\'s ' . $row['service_name'] . ' rental expires in ' . $daysRemaining . ' days',
                     'timestamp' => $timestamp,
+                    'is_read' => false, // Default value, will be updated later if needed
                     'details' => [
                         'rental_id' => $row['rental_subscription_id'],
                         'transaction_id' => $row['transaction_id'],
@@ -423,6 +392,7 @@ class ExpiryNotifications {
                     'title' => 'Rental Subscription Expired',
                     'message' => $row['first_name'] . ' ' . $row['last_name'] . '\'s ' . $row['service_name'] . ' rental expired ' . $daysSince . ' days ago',
                     'timestamp' => $timestamp,
+                    'is_read' => false, // Default value, will be updated later if needed
                     'details' => [
                         'rental_id' => $row['rental_subscription_id'],
                         'transaction_id' => $row['transaction_id'],

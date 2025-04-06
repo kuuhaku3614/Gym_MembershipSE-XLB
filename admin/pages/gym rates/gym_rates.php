@@ -581,7 +581,7 @@ $('#saveRegistrationFeeBtn').click(function() {
     }
 
     // Send AJAX request
-        $.ajax({
+    $.ajax({
         url: '../admin/pages/gym rates/functions/update_registration_fee.php',
         type: 'POST',
         data: {
@@ -589,17 +589,21 @@ $('#saveRegistrationFeeBtn').click(function() {
         },
         success: function(response) {
             if (response.trim() === 'success') {
-               Swal.fire({
-                        text: response.message,
-                        color: '#ffffff',
-                        background: '#28a745',
+                // First hide the modal
+                $('#updateRegistrationModal').modal('hide');
+                
+                // Then show the success message after modal is hidden
+                setTimeout(function() {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Registration fee updated successfully',
+                        icon: 'success',
                         timer: 1500,
-                        showConfirmButton: false,
-                        position: 'top'
-                    }).then(() => {
-                        $('#updateRegistrationModal').modal('hide');
+                        showConfirmButton: false
+                    }).then(function() {
                         location.reload();
                     });
+                }, 500); // Small delay to ensure modal is fully hidden
             } else {
                 alert(response);
             }

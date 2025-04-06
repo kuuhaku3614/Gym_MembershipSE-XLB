@@ -9,7 +9,11 @@ $uploadDir = __DIR__ . '/../../../../cms_img/programs/';
 // Function to fetch program details
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     try {
-        $programId = intval($_GET['id']);
+        $programId = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+        
+        if (empty($programId) || !is_numeric($programId)) {
+            throw new Exception('Invalid program ID');
+        }
 
         $sql = "SELECT * FROM programs WHERE id = :program_id AND is_removed = 0";
 
@@ -80,21 +84,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $newImage = $existingImage; // Default to existing image
         if (!empty($_FILES['editProgramImage']['name'])) {
             $fileName = basename($_FILES['editProgramImage']['name']);
-            $newImage = time() . "_" . $fileName; 
+            $newImage = time() . "_" . preg_replace('/[^a-zA-Z0-9\.]/', '_', $fileName); 
             $targetFilePath = $uploadDir . $newImage;
-
+        
             // Validate file type
+            $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($fileInfo, $_FILES['editProgramImage']['tmp_name']);
+            finfo_close($fileInfo);
+            
+            $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!in_array($mimeType, $allowedMimeTypes)) {
+                throw new Exception('Only JPG, JPEG, PNG, and GIF files are allowed');
+            }
+            
+            // Additional validation of file extension
             $imageFileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
             $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
             if (!in_array($imageFileType, $allowedTypes)) {
                 throw new Exception('Only JPG, JPEG, PNG, and GIF files are allowed');
             }
-
+        
             // Create directory if it doesn't exist
             if (!file_exists($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-
+        
             // Upload new image
             if (move_uploaded_file($_FILES['editProgramImage']['tmp_name'], $targetFilePath)) {
                 // Delete old image if a new one is uploaded

@@ -219,6 +219,7 @@
   font-family: Helvetica, sans-serif;
   color: #404040;
   margin-bottom: 0.5rem !important;
+  text-align: start;
 }
 
 /* Add a subtle animation to the gradient */

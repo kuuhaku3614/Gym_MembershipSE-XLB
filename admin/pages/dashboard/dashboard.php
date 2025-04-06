@@ -1,8 +1,69 @@
 <?php
 require_once '../../../config.php';
-require_once(__DIR__ . '/expiry-notifications.class.php');
+require_once('../notification/functions/expiry-notifications.class.php');
 
-// Initialize the ExpiryNotifications class
+// Initialize session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Get user ID from session
+$current_user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+
+// Function to get notification counts - similar to the navbar
+function getNotificationCounts() {
+    $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+    
+    $counts = [
+        'pending_transactions' => 0,
+        'expiring' => 0,
+        'expired' => 0,
+        'total' => 0
+    ];
+    
+    // Get counts from database for pending transactions
+    $conn = new mysqli('localhost', 'root', '', 'gym_managementdb');
+    if ($conn->connect_error) {
+        return $counts;
+    }
+    
+    // Pending Transactions Query
+    $pending_transactions_sql = "
+        SELECT COALESCE(COUNT(*), 0) AS pending_transactions 
+        FROM transactions 
+        WHERE status = 'pending'
+    ";
+    
+    $result = $conn->query($pending_transactions_sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $counts['pending_transactions'] = (int)$row['pending_transactions'];
+    }
+    
+    $conn->close();
+    
+    // Use ExpiryNotifications class to get unread notifications counts
+    if ($userId > 0) {
+        try {
+            $expiryNotificationsObj = new ExpiryNotifications();
+            $unreadCounts = $expiryNotificationsObj->countUnreadNotifications($userId);
+            
+            $counts['expiring'] = $unreadCounts['expiring'];
+            $counts['expired'] = $unreadCounts['expired'];
+            $counts['total'] = $counts['pending_transactions'] + $unreadCounts['total'];
+            
+        } catch (Exception $e) {
+            // Log error but continue
+            error_log('Error getting notification counts: ' . $e->getMessage());
+        }
+    }
+    
+    return $counts;
+}
+
+// Get notification counts
+$notificationCounts = getNotificationCounts();
+
+// Initialize the ExpiryNotifications class to get actual notifications
 $expiryNotifications = new ExpiryNotifications();
 $notifications = $expiryNotifications->getExpiryNotifications();
 
@@ -343,35 +404,22 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-        <?php
-        // Pending Transactions
-        $pending_transactions_sql = "
-        SELECT COALESCE(COUNT(*), 0) AS pending_transactions 
-        FROM transactions
-        WHERE status = 'pending'
-        ";
-        $pending_transactions_stmt = $pdo->prepare($pending_transactions_sql);
-        $pending_transactions_stmt->execute();
-        $pending_transactions = $pending_transactions_stmt->fetch(PDO::FETCH_ASSOC);
-        
-        // Total notification count: pending transactions + expiry notifications
-        $total_notifications = $pending_transactions['pending_transactions'] + count($notifications);
-        ?>
+        <!-- Notification Card using the notification counts from getNotificationCounts function -->
         <div class="card notification-card stats-card" id="notificationCard">
-            <div class="notification-badge"><?= $total_notifications ?: '0' ?></div>
+            <div class="notification-badge" id="total-notifications-badge"><?= $notificationCounts['total'] ?: '0' ?></div>
             <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
             
             <!-- Notifications dropdown -->
             <div class="notification-dropdown" id="notificationDropdown">
                 <div class="table-header">Notifications</div>
                 
-                <?php if ($total_notifications == 0): ?>
+                <?php if ($notificationCounts['total'] == 0): ?>
                     <div class="empty-state">No notifications available</div>
                 <?php else: ?>
-                    <?php if ($pending_transactions['pending_transactions'] > 0): ?>
+                    <?php if ($notificationCounts['pending_transactions'] > 0): ?>
                         <div class="notification-item pending">
                             <div class="notification-title">Pending Transactions</div>
-                            <div class="notification-message">You have <?= $pending_transactions['pending_transactions'] ?> pending transaction(s) that need approval</div>
+                            <div class="notification-message">You have <?= $notificationCounts['pending_transactions'] ?> pending transaction(s) that need approval</div>
                             <div class="notification-time">View in Transactions section</div>
                         </div>
                     <?php endif; ?>
@@ -504,41 +552,21 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-            <?php
-            // Count expiring memberships (within 7 days)
-            $expiring_memberships_sql = "
-            SELECT COALESCE(COUNT(*), 0) AS expiring_memberships 
-            FROM memberships 
-            WHERE status = 'expiring'
-            ";
-            $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
-            $expiring_memberships_stmt->execute();
-            $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-                        
-            // Count expired memberships
-            $expired_memberships_sql = "
-            SELECT COALESCE(COUNT(*), 0) AS expired_memberships 
-            FROM memberships 
-            WHERE status = 'expired'
-            ";
-            $expired_memberships_stmt = $pdo->prepare($expired_memberships_sql);
-            $expired_memberships_stmt->execute();
-            $expired_memberships = $expired_memberships_stmt->fetch(PDO::FETCH_ASSOC);
-            ?>
+            <!-- Display expiring and expired memberships from notification counts -->
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Expiring Memberships</div>
                 </div>
-                <div class="stats-value <?= $expiring_memberships['expiring_memberships'] == 0 ? 'empty' : '' ?>">
-                    <?= $expiring_memberships['expiring_memberships'] ?: '0' ?>
+                <div class="stats-value <?= $notificationCounts['expiring'] == 0 ? 'empty' : '' ?>">
+                    <?= $notificationCounts['expiring'] ?: '0' ?>
                 </div>
             </div>
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Expired Memberships</div>
                 </div>
-                <div class="stats-value <?= $expired_memberships['expired_memberships'] == 0 ? 'empty' : '' ?>">
-                    <?= $expired_memberships['expired_memberships'] ?: '0' ?>
+                <div class="stats-value <?= $notificationCounts['expired'] == 0 ? 'empty' : '' ?>">
+                    <?= $notificationCounts['expired'] ?: '0' ?>
                 </div>
             </div>
         </div>
@@ -600,3 +628,89 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event to notification card to toggle dropdown
+    const notificationCard = document.getElementById('notificationCard');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    
+    notificationCard.addEventListener('click', function(e) {
+        e.stopPropagation();
+        notificationDropdown.classList.toggle('notification-show');
+    });
+    
+    // Close notification dropdown when clicking elsewhere
+    document.addEventListener('click', function(e) {
+        if (!notificationCard.contains(e.target)) {
+            notificationDropdown.classList.remove('notification-show');
+        }
+    });
+    
+    // Notification items click event (for marking as read)
+    document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const notificationId = this.getAttribute('data-id');
+            const notificationType = this.getAttribute('data-type');
+            
+            if (notificationId && (notificationType.includes('expiring') || notificationType.includes('expired'))) {
+                // Mark notification as read via AJAX
+                fetch('/admin/pages/notification/functions/mark-notification-read.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `notification_id=${notificationId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove this notification from the list
+                        this.remove();
+                        
+                        // Update notification counts
+                        updateNotificationBadges();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                });
+            } else if (notificationType === 'pending') {
+                // Redirect to transactions page
+                window.location.href = '/admin/pages/transactions';
+            }
+        });
+    });
+    
+    // Function to update notification badges
+    window.updateNotificationBadges = function() {
+        // Make an AJAX call to get updated notification counts
+        fetch('/admin/pages/notification/functions/get-notification-counts.php', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update total notifications badge
+            const totalBadge = document.getElementById('total-notifications-badge');
+            if (data.total > 0) {
+                if (totalBadge) {
+                    totalBadge.textContent = data.total;
+                }
+            } else if (totalBadge) {
+                totalBadge.textContent = '0';
+            }   
+            
+            // If all notifications are read, show empty state
+            if (data.total === 0) {
+                const dropdownContent = document.getElementById('notificationDropdown');
+                dropdownContent.innerHTML = '<div class="table-header">Notifications</div><div class="empty-state">No notifications available</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error updating notification badges:', error);
+        });
+    };
+});
+</script>

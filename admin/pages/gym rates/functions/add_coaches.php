@@ -9,10 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 try {
     // Get form data
-    $coachId = $_POST['coach_id'];
-    $programId = $_POST['program_id'];
-    $price = $_POST['price'];
-    $description = $_POST['description'];
+    $coachId = filter_input(INPUT_POST, 'coach_id', FILTER_SANITIZE_NUMBER_INT);
+    $programId = filter_input(INPUT_POST, 'program_id', FILTER_SANITIZE_NUMBER_INT);
+    $price = filter_input(INPUT_POST, 'price', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+    $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
     // Validate required fields
     if (empty($coachId) || empty($programId) || empty($price)) {
