@@ -1,0 +1,92 @@
+.report-section {
+    margin-bottom: 2rem;
+    break-inside: avoid;
+}
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+.card-header {
+    background-color: white;
+    border-bottom: 2px solid #f8f9fa;
+    padding: 1.5rem;
+}
+.stats-card h2{
+    color: green;
+}
+.export-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+}
+@media print {
+    .export-btn {
+        display: none;
+    }
+    .card {
+        break-inside: avoid;
+    }
+}
+/* Add these styles to your existing CSS */
+@media print {
+/* Hide the entire dashboard container */
+.container-fluid {
+display: none !important;
+}
+
+/* Hide specific sections */
+.report-section {
+display: none !important;
+}
+
+/* Hide all cards */
+.card {
+display: none !important;
+}
+
+/* Hide all buttons */
+.btn, 
+button {
+display: none !important;
+}
+
+/* Hide the canvas element (chart) */
+canvas {
+display: none !important;
+}
+
+/* Hide table responsive wrappers */
+.table-responsive {
+display: none !important;
+}
+
+/* Hide all rows */
+.row {
+display: none !important;
+}
+
+/* Hide specific elements */
+.stats-card,
+.card-header,
+.card-body {
+display: none !important;
+}
+
+/* Ensure the print-only template is visible */
+.print-only {
+display: block !important;
+}
+
+/* Reset any conflicting styles */
+body {
+padding: 0 !important;
+margin: 0 !important;
+}
+
+/* Ensure proper page breaks */
+.page-break {
+page-break-before: always;
+}
+}

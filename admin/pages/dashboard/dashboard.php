@@ -161,41 +161,6 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="card notification-card stats-card" id="notificationCard">
             <div class="notification-badge" id="total-notifications-badge"><?= $notificationCounts['total'] ?: '0' ?></div>
             <i class="fas fa-bell fa-2x" style="color: var(--secondary-color)"></i>
-            
-            <!-- Notifications dropdown -->
-            <div class="notification-dropdown" id="notificationDropdown">
-                <div class="table-header">Notifications</div>
-                
-                <?php if ($notificationCounts['total'] == 0): ?>
-                    <div class="empty-state">No notifications available</div>
-                <?php else: ?>
-                    <?php if ($notificationCounts['pending_transactions'] > 0): ?>
-                        <div class="notification-item pending">
-                            <div class="notification-title">Pending Transactions</div>
-                            <div class="notification-message">You have <?= $notificationCounts['pending_transactions'] ?> pending transaction(s) that need approval</div>
-                            <div class="notification-time">View in Transactions section</div>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php foreach ($notifications as $notification): ?>
-                        <?php 
-                        $notificationClass = '';
-                        if (strpos($notification['type'], 'expiring') !== false) {
-                            $notificationClass = 'expiring';
-                        } elseif (strpos($notification['type'], 'expired') !== false) {
-                            $notificationClass = 'expired';
-                        }
-                        ?>
-                        <div class="notification-item <?= $notificationClass ?>" 
-                             data-id="<?= $notification['id'] ?>"
-                             data-type="<?= $notification['type'] ?>">
-                            <div class="notification-title"><?= htmlspecialchars($notification['title']) ?></div>
-                            <div class="notification-message"><?= htmlspecialchars($notification['message']) ?></div>
-                            <div class="notification-time">Now</div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
         </div>
 
         <?php
@@ -306,21 +271,43 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
 
-            <!-- Display expiring and expired memberships from notification counts -->
+            <!-- Display expiring and expired memberships using direct database queries -->
+            <?php
+            // Query to get count of expiring memberships
+            $expiring_memberships_sql = "
+                SELECT COALESCE(COUNT(*), 0) AS expiring_count 
+                FROM memberships 
+                WHERE status = 'expiring'
+            ";
+            $expiring_memberships_stmt = $pdo->prepare($expiring_memberships_sql);
+            $expiring_memberships_stmt->execute();
+            $expiring_memberships = $expiring_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Query to get count of expired memberships
+            $expired_memberships_sql = "
+                SELECT COALESCE(COUNT(*), 0) AS expired_count 
+                FROM memberships 
+                WHERE status = 'expired'
+            ";
+            $expired_memberships_stmt = $pdo->prepare($expired_memberships_sql);
+            $expired_memberships_stmt->execute();
+            $expired_memberships = $expired_memberships_stmt->fetch(PDO::FETCH_ASSOC);
+            ?>
+
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Expiring Memberships</div>
                 </div>
-                <div class="stats-value <?= $notificationCounts['expiring'] == 0 ? 'empty' : '' ?>">
-                    <?= $notificationCounts['expiring'] ?: '0' ?>
+                <div class="stats-value <?= $expiring_memberships['expiring_count'] == 0 ? 'empty' : '' ?>">
+                    <?= $expiring_memberships['expiring_count'] ?: '0' ?>
                 </div>
             </div>
             <div class="card stats-card">
                 <div>
                     <div class="stats-title">Expired Memberships</div>
                 </div>
-                <div class="stats-value <?= $notificationCounts['expired'] == 0 ? 'empty' : '' ?>">
-                    <?= $notificationCounts['expired'] ?: '0' ?>
+                <div class="stats-value <?= $expired_memberships['expired_count'] == 0 ? 'empty' : '' ?>">
+                    <?= $expired_memberships['expired_count'] ?: '0' ?>
                 </div>
             </div>
         </div>
