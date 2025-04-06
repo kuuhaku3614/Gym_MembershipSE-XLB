@@ -393,7 +393,7 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] 
         <div class="user-info d-flex align-items-center justify-content-center flex-column" style="padding:15px 25px">
         <a href="#" class="logout-item d-flex align-items-center justify-content-between w-100" id="logoutLink" style="padding: 15px;">
 
-            <span class="user-name"><?php echo getFullName(); ?></span>
+            <span class="user-name d-flex align-items-center"><?php echo getFullName(); ?></span>
                 <i class="fas fa-sign-out-alt"></i>
 
         </a>

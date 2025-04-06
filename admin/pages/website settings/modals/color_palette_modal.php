@@ -108,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
 // Convert stored decimal values back to hex colors for display
 $primaryHex = $colorContent ? '#'.dechex(abs(floor($colorContent['latitude'] * 16777215))) : '#4CAF50';
 $secondaryHex = $colorContent ? '#'.dechex(abs(floor($colorContent['longitude'] * 16777215))) : '#2196F3';
@@ -116,7 +117,11 @@ $secondaryHex = $colorContent ? '#'.dechex(abs(floor($colorContent['longitude'] 
 $primaryHex = strlen($primaryHex) < 7 ? str_pad(substr($primaryHex, 1), 6, '0', STR_PAD_LEFT) : $primaryHex;
 $secondaryHex = strlen($secondaryHex) < 7 ? str_pad(substr($secondaryHex, 1), 6, '0', STR_PAD_LEFT) : $secondaryHex;
 ?>
-
+<style>
+    #saveColorChanges {
+        background-color: #0d6efd!important;
+    }
+</style>
 <!-- Color Palette Modal -->
 <div class="modal fade" id="colorPaletteModal" tabindex="-1" aria-labelledby="colorPaletteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -134,7 +139,7 @@ $secondaryHex = strlen($secondaryHex) < 7 ? str_pad(substr($secondaryHex, 1), 6,
                             <input type="text" class="form-control" id="primary_color_hex" value="<?php echo strtoupper($primaryHex); ?>" pattern="^#[0-9A-Fa-f]{6}$" title="Please enter a valid hex color (e.g., #FF0000)">
                         </div>
                         <div class="mt-2">
-                            <div id="primary_color_preview" style="width: 100%; height: 40px; background-color: <?php echo $primaryHex; ?>; border-radius: 5px;"></div>
+                            <div id="primary_color_preview" style="width: 100%; border:1px solid light grey; height: 40px; background-color: <?php echo $primaryHex; ?>; border-radius: 5px;"></div>
                         </div>
                     </div>
                     <div class="mb-4">
@@ -144,7 +149,7 @@ $secondaryHex = strlen($secondaryHex) < 7 ? str_pad(substr($secondaryHex, 1), 6,
                             <input type="text" class="form-control" id="secondary_color_hex" value="<?php echo strtoupper($secondaryHex); ?>" pattern="^#[0-9A-Fa-f]{6}$" title="Please enter a valid hex color (e.g., #FF0000)">
                         </div>
                         <div class="mt-2">
-                            <div id="secondary_color_preview" style="width: 100%; height: 40px; background-color: <?php echo $secondaryHex; ?>; border-radius: 5px;"></div>
+                            <div id="secondary_color_preview" style="width: 100%; border:1px solid light grey; height: 40px; background-color: <?php echo $secondaryHex; ?>; border-radius: 5px;"></div>
                         </div>
                     </div>
                 </form>
