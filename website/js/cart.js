@@ -102,19 +102,13 @@ function updateCartDisplay(cart) {
                     <div class="item-details">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <p class="mb-1">${program.name}</p>
+                                <p class="mb-1">${program.program_name}</p>
                                 <p class="price mb-1">₱${parseFloat(
                                   program.price
                                 ).toFixed(2)}</p>
-                                <p class="text-muted mb-0">Coach: ${
-                                  program.coach_name
-                                }</p>
-                                <p class="text-muted mb-0">Start: ${formatDate(
-                                  program.start_date
-                                )}</p>
-                                <p class="text-muted mb-0">End: ${formatDate(
-                                  program.end_date
-                                )}</p>
+                                <p class="text-muted mb-0">Coach: ${program.coach_name}</p>
+                                <p class="text-muted mb-0">Day: ${program.day}</p>
+                                <p class="text-muted mb-0">Time: ${program.start_time} - ${program.end_time}</p>
                             </div>
                             <button class="remove-item" 
                                     onclick="removeFromCart('program', ${index})">
@@ -530,29 +524,6 @@ function proceedWithAvailing() {
         });
     });
 }
-
-// function proceedWithAvailing() {
-//   if (confirm("Are you sure you want to avail these services?")) {
-//     fetch("services/checkout_handler.php", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/x-www-form-urlencoded",
-//       },
-//     })
-//       .then((response) => response.json())
-//       .then((data) => {
-//         if (data.success) {
-//           window.location.href = "../website/profile.php";
-//         } else {
-//           alert(data.data.message || "An error occurred during checkout.");
-//         }
-//       })
-//       .catch((error) => {
-//         console.error("Error:", error);
-//         alert("An error occurred while processing your request.");
-//       });
-//   }
-// }
 
 function formatDate(dateString) {
   if (!dateString) return "N/A";

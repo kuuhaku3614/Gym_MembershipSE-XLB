@@ -85,26 +85,6 @@ class Cart_Class {
         }
     }
 
-    public function addProgram($item) {
-        try {
-            $_SESSION['cart']['programs'][] = [
-                'id' => clean_input($item['id']),
-                'name' => clean_input($item['name']),
-                'price' => floatval(clean_input($item['price'])),
-                'validity' => clean_input($item['validity']),
-                'type' => 'program',
-                'coach_id' => clean_input($item['coach_id']),
-                'coach_name' => clean_input($item['coach_name']),
-                'start_date' => clean_input($item['start_date']),
-                'end_date' => clean_input($item['end_date'])
-            ];
-            $this->updateTotal();
-            return true;
-        } catch (Exception $e) {
-            throw new Exception("Failed to add program to cart");
-        }
-    }
-
     public function addRental($item) {
         try {
             // Check available slots
@@ -404,5 +384,58 @@ class Cart_Class {
         }
 
         return $total;
+    }
+
+    public function addProgramSchedule($item) {
+        try {
+            // Initialize cart if not set
+            if (!isset($_SESSION['cart'])) {
+                $this->initializeCart();
+            }
+
+            // Initialize programs array if not set
+            if (!isset($_SESSION['cart']['programs'])) {
+                $_SESSION['cart']['programs'] = [];
+            }
+
+            // Check if schedule already exists in cart
+            foreach ($_SESSION['cart']['programs'] as $program) {
+                if ($program['schedule_id'] === $item['schedule_id']) {
+                    throw new Exception("This schedule is already in your cart");
+                }
+            }
+
+            // Add program schedule to cart
+            $_SESSION['cart']['programs'][] = [
+                'schedule_id' => clean_input($item['schedule_id']),
+                'program_name' => clean_input($item['program_name']),
+                'coach_name' => clean_input($item['coach_name']),
+                'day' => clean_input($item['day']),
+                'start_time' => clean_input($item['start_time']),
+                'end_time' => clean_input($item['end_time']),
+                'price' => floatval(clean_input($item['price']))
+            ];
+
+            $this->updateTotal();
+            return true;
+        } catch (Exception $e) {
+            error_log("Failed to add program schedule to cart: " . $e->getMessage());
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function removeProgram($index) {
+        try {
+            if (isset($_SESSION['cart']['programs'][$index])) {
+                unset($_SESSION['cart']['programs'][$index]);
+                $_SESSION['cart']['programs'] = array_values($_SESSION['cart']['programs']);
+                $this->updateTotal();
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            error_log("Failed to remove program from cart: " . $e->getMessage());
+            return false;
+        }
     }
 } 

@@ -14,6 +14,14 @@ $type = $_GET['type'];
 $Services = new Services_Class();
 
 try {
+    // First get the program and coach info
+    $programInfo = $Services->getCoachProgramType($coachProgramTypeId);
+    if (!$programInfo) {
+        echo json_encode(['error' => 'Program information not found']);
+        exit;
+    }
+
+    // Get schedules based on type
     if ($type === 'personal') {
         $schedules = $Services->getCoachPersonalSchedule($coachProgramTypeId);
     } else if ($type === 'group') {
@@ -21,6 +29,14 @@ try {
     } else {
         echo json_encode(['error' => 'Invalid training type']);
         exit;
+    }
+
+    // Add program and coach info to each schedule
+    if (is_array($schedules) && !isset($schedules['error']) && !isset($schedules['message'])) {
+        foreach ($schedules as &$schedule) {
+            $schedule['program_name'] = $programInfo['program_name'];
+            $schedule['coach_name'] = $programInfo['coach_name'];
+        }
     }
 
     if (isset($schedules['error'])) {

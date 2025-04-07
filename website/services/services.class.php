@@ -384,41 +384,132 @@ class Services_class{
     public function getCoachPersonalSchedule($coachProgramTypeId) {
         $conn = $this->db->connect();
         try {
-            $sql = "SELECT cps.*, 
-                    CASE 
-                        WHEN EXISTS (
-                            SELECT 1 FROM program_subscription_schedule pss
-                            JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
-                            WHERE pss.coach_personal_schedule_id = cps.id
-                            AND ps.status = 'active'
-                        ) THEN 'booked'
-                        ELSE 'available'
-                    END as availability_status
-                    FROM coach_personal_schedule cps
-                    WHERE cps.coach_program_type_id = :id
-                    ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
-                    cps.start_time";
+            // First, get all booked time slots with their durations
+            $bookedSlotsQuery = "
+                SELECT DISTINCT
+                    pss.coach_personal_schedule_id,
+                    pss.day,
+                    TIME_FORMAT(pss.start_time, '%H:%i') as start_time,
+                    TIME_FORMAT(pss.end_time, '%H:%i') as end_time,
+                    cps.duration_rate
+                FROM program_subscription_schedule pss
+                JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+                JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
+                WHERE ps.status IN ('active', 'pending')
+                AND cps.coach_program_type_id = :coach_program_type_id
+                AND pss.day = cps.day";
+
+            $stmt = $conn->prepare($bookedSlotsQuery);
+            $stmt->bindParam(':coach_program_type_id', $coachProgramTypeId);
+            $stmt->execute();
+            $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Create a map of booked slots by day and time range
+            $bookedSlotsMap = [];
+            foreach ($bookedSlots as $slot) {
+                $day = $slot['day'];
+                
+                // Use a reference date (2000-01-01) to ensure we only compare times
+                $startTime = strtotime("2000-01-01 " . $slot['start_time']);
+                $endTime = strtotime("2000-01-01 " . $slot['end_time']);
+                
+                if (!isset($bookedSlotsMap[$day])) {
+                    $bookedSlotsMap[$day] = [];
+                }
+                
+                // Store the time range and day
+                $bookedSlotsMap[$day][] = [
+                    'start' => $startTime,
+                    'end' => $endTime,
+                    'day' => $day  // Store the day for comparison
+                ];
+            }
+
+            // Get available schedules
+            $sql = "SELECT 
+                    cps.id,
+                    cps.day,
+                    TIME_FORMAT(cps.start_time, '%h:%i %p') as start_time,
+                    TIME_FORMAT(cps.end_time, '%h:%i %p') as end_time,
+                    cps.duration_rate,
+                    cps.price
+                FROM coach_personal_schedule cps
+                WHERE cps.coach_program_type_id = :coach_program_type_id
+                ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
             
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':id', $coachProgramTypeId);
+            $stmt->bindParam(':coach_program_type_id', $coachProgramTypeId);
             $stmt->execute();
-            $schedules = $stmt->fetchAll();
+            $rawSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            if (empty($schedules)) {
+            if (empty($rawSchedules)) {
                 return ['message' => 'No personal training schedules available for this coach'];
             }
+
+            // Process schedules to create time slots based on duration
+            $processedSchedules = [];
+            foreach ($rawSchedules as $schedule) {
+                // Use the same reference date for comparison
+                $startTime = strtotime("2000-01-01 " . $schedule['start_time']);
+                $endTime = strtotime("2000-01-01 " . $schedule['end_time']);
+                $duration = $schedule['duration_rate']; // in minutes
+                
+                // Calculate number of slots
+                $totalMinutes = ($endTime - $startTime) / 60;
+                $numSlots = floor($totalMinutes / $duration);
+                
+                // Create slots
+                for ($i = 0; $i < $numSlots; $i++) {
+                    $slotStart = $startTime + ($i * $duration * 60);
+                    $slotEnd = $slotStart + ($duration * 60);
+                    
+                    // Check if this time slot overlaps with any booked slot
+                    $isBooked = false;
+                    if (isset($bookedSlotsMap[$schedule['day']])) {
+                        foreach ($bookedSlotsMap[$schedule['day']] as $bookedSlot) {
+                            // Check for overlap on the same day
+                            if ($schedule['day'] === $bookedSlot['day'] && 
+                                $slotStart < $bookedSlot['end'] && 
+                                $slotEnd > $bookedSlot['start']) {
+                                $isBooked = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Only add the slot if it's not booked
+                    if (!$isBooked) {
+                        $processedSchedules[] = [
+                            'id' => $schedule['id'],
+                            'day' => $schedule['day'],
+                            'start_time' => date('h:i A', $slotStart),
+                            'end_time' => date('h:i A', $slotEnd),
+                            'duration_rate' => $schedule['duration_rate'],
+                            'price' => $schedule['price'],
+                            'availability_status' => 'available'
+                        ];
+                    }
+                }
+            }
             
-            return $schedules;
+            return $processedSchedules;
         } catch (Exception $e) {
             error_log("Error in getCoachPersonalSchedule: " . $e->getMessage());
             return ['error' => 'Failed to fetch personal training schedules'];
         }
+        
     }
 
     public function getCoachGroupSchedule($coachProgramTypeId) {
         $conn = $this->db->connect();
         try {
-            $sql = "SELECT cgs.*,
+            $sql = "SELECT 
+                    cgs.id,
+                    cgs.day,
+                    TIME_FORMAT(cgs.start_time, '%h:%i %p') as start_time,
+                    TIME_FORMAT(cgs.end_time, '%h:%i %p') as end_time,
+                    cgs.capacity,
+                    cgs.price,
                     (
                         SELECT COUNT(DISTINCT ps.id)
                         FROM program_subscription_schedule pss
@@ -444,7 +535,7 @@ class Services_class{
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':id', $coachProgramTypeId);
             $stmt->execute();
-            $schedules = $stmt->fetchAll();
+            $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             if (empty($schedules)) {
                 return ['message' => 'No group training schedules available for this coach'];

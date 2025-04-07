@@ -49,8 +49,15 @@ try {
     $input = file_get_contents('php://input');
     $action = '';
     
-    if (isset($_POST['action'])) {
-        $action = clean_input($_POST['action']);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (isset($_POST['action'])) {
+            $action = clean_input($_POST['action']);
+        } else {
+            $data = json_decode($input, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $action = clean_input($data['action'] ?? '');
+            }
+        }
     } else if (strpos($input, 'action=get') !== false) {
         $action = 'get';
     }
@@ -90,21 +97,58 @@ try {
             break;
             
         case 'remove':
-            try {
-                $type = isset($_POST['type']) ? clean_input($_POST['type']) : '';
-                $id = isset($_POST['id']) ? clean_input($_POST['id']) : '';
-                
-                if ($type && $id !== '') {
-                    if ($Cart->removeItem($type, $id)) {
-                        send_json_response(['cart' => $Cart->getCart()]);
-                    } else {
-                        handle_error('Failed to remove item');
-                    }
-                } else {
-                    handle_error('Invalid parameters');
-                }
-            } catch (Exception $e) {
-                handle_error($e->getMessage());
+            if (!isset($_POST['type'], $_POST['index'])) {
+                handle_error('Missing type or index');
+            }
+
+            $type = clean_input($_POST['type']);
+            $index = clean_input($_POST['index']);
+
+            switch ($type) {
+                case 'membership':
+                    $success = $Cart->removeMembership($index);
+                    break;
+                case 'rental':
+                    $success = $Cart->removeRental($index);
+                    break;
+                case 'program':
+                    $success = $Cart->removeProgram($index);
+                    break;
+                case 'walkin':
+                    $success = $Cart->removeWalkin($index);
+                    break;
+                default:
+                    handle_error('Invalid item type');
+            }
+
+            if ($success) {
+                send_json_response(['success' => true]);
+            } else {
+                handle_error('Failed to remove item');
+            }
+            break;
+
+        case 'add_program_schedule':
+            if (!isset($data['schedule_id'], $data['day'], $data['start_time'], 
+                      $data['end_time'], $data['price'], $data['program_name'], $data['coach_name'])) {
+                handle_error('Missing required schedule data');
+            }
+
+            // Add to cart
+            $item = [
+                'schedule_id' => $data['schedule_id'],
+                'program_name' => $data['program_name'],
+                'coach_name' => $data['coach_name'],
+                'day' => $data['day'],
+                'start_time' => $data['start_time'],
+                'end_time' => $data['end_time'],
+                'price' => $data['price']
+            ];
+
+            if ($Cart->addProgramSchedule($item)) {
+                send_json_response(['success' => true, 'message' => 'Schedule added to cart']);
+            } else {
+                handle_error('Failed to add schedule to cart');
             }
             break;
 

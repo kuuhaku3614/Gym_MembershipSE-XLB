@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         
         // Combine coaches from all program types
         $program_name = $programs[0]['program_name'];
+        $program_description = $programs[0]['program_description'];
         $coaches = [];
         foreach ($programs as $program) {
             $coaches = array_merge($coaches, $program['coaches']);
@@ -121,10 +122,10 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                 </div>
                 <div class="card-body">
 
-                    <div class="container main-container py-5">
+                    <div class="container main-container py-2">
                         <div class="row mb-4">
                             <div class="col">
-                                <h2 class="text-custom-red"><?php echo htmlspecialchars($program_name); ?></h2>
+                                <p class="text-custom-red"><?php echo htmlspecialchars($program_description); ?></p>
                             </div>
                         </div>
 
@@ -217,48 +218,129 @@ function loadSchedules(coachProgramTypeId, type) {
                 return;
             }
 
-            // Create schedule table
-            let tableHtml = `
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="bg-custom-red text-white">
-                            <tr>
-                                <th>Day</th>
-                                <th>Time</th>
-                                ${type === 'group' ? '<th>Capacity</th>' : '<th>Duration</th>'}
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+            // For group training, use the regular table format
+            if (type === 'group') {
+                let tableHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="bg-custom-red text-white">
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Time</th>
+                                    <th>Capacity</th>
+                                    <th>Price</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
 
-            data.forEach(schedule => {
-                const time = `${schedule.start_time} - ${schedule.end_time}`;
-                const status = schedule.availability_status === 'available' 
-                    ? '<span class="badge bg-success">Available</span>'
-                    : schedule.availability_status === 'full'
-                        ? '<span class="badge bg-danger">Full</span>'
-                        : '<span class="badge bg-warning text-dark">Booked</span>';
+                data.forEach(schedule => {
+                    const time = `${schedule.start_time} - ${schedule.end_time}`;
+                    tableHtml += `
+                        <tr>
+                            <td>${schedule.day}</td>
+                            <td>${time}</td>
+                            <td>${schedule.current_members}/${schedule.capacity}</td>
+                            <td>₱${schedule.price}</td>
+                            <td><button class="btn btn-sm btn-primary" onclick="addToCart(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, '${schedule.program_name}', '${schedule.coach_name}')" data-schedule-id="${schedule.id}">Add to Cart</button></td>
+                        </tr>`;
+                });
 
-                tableHtml += `
-                    <tr>
-                        <td>${schedule.day}</td>
-                        <td>${time}</td>
-                        <td>${type === 'group' ? `${schedule.current_members}/${schedule.capacity}` : schedule.duration + ' mins'}</td>
-                        <td>${status}</td>
-                    </tr>`;
-            });
+                tableHtml += `</tbody></table></div>`;
+                scheduleList.innerHTML = tableHtml;
+            } else {
+                // For personal training, group by day with time slots
+                let schedulesByDay = {};
+                data.forEach(schedule => {
+                    if (!schedulesByDay[schedule.day]) {
+                        schedulesByDay[schedule.day] = [];
+                    }
+                    schedulesByDay[schedule.day].push(schedule);
+                });
 
-            tableHtml += `
-                        </tbody>
-                    </table>
-                </div>`;
+                let scheduleHtml = '<div class="schedule-container">';
 
-            scheduleList.innerHTML = tableHtml;
+                // Sort days in order
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                days.forEach(day => {
+                    if (schedulesByDay[day]) {
+                        // Sort time slots chronologically
+                        schedulesByDay[day].sort((a, b) => {
+                            return new Date('2000/01/01 ' + a.start_time) - new Date('2000/01/01 ' + b.start_time);
+                        });
+
+                        scheduleHtml += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-custom-red text-white">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">${day}</h5>
+                                        <div>Duration: ${schedulesByDay[day][0].duration_rate} mins | Price: ₱${schedulesByDay[day][0].price}</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2">`;
+
+                        schedulesByDay[day].forEach((schedule, index) => {
+                            scheduleHtml += `
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-primary w-100" onclick="addToCart(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, '${schedule.program_name}', '${schedule.coach_name}')" data-schedule-id="${schedule.id}" data-slot-order="${index + 1}">
+                                        ${schedule.start_time} - ${schedule.end_time}
+                                    </button>
+                                </div>`;
+                        });
+
+                        scheduleHtml += `
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                });
+
+                scheduleHtml += '</div>';
+                scheduleList.innerHTML = scheduleHtml;
+
+            }
         })
         .catch(error => {
             console.error('Error:', error);
             scheduleList.innerHTML = '<div class="alert alert-danger">Failed to load schedules. Please try again later.</div>';
         });
+}
+
+function addToCart(scheduleId, day, startTime, endTime, price, programName, coachName) {
+    const scheduleData = {
+        schedule_id: scheduleId,
+        day: day,
+        start_time: startTime,
+        end_time: endTime,
+        price: price,
+        program_name: programName,
+        coach_name: coachName
+    };
+
+    fetch('cart_handler.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            action: 'add_program_schedule',
+            ...scheduleData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Schedule added to cart successfully!');
+            window.location.href = '../services.php';
+        } else {
+            alert(data.message || 'Failed to add schedule to cart. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+    });
 }
 </script>
 </body>

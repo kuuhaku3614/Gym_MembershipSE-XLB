@@ -85,35 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Create program subscriptions
-        if (!empty($cart['programs'])) {
-            foreach ($cart['programs'] as $program) {
-                // Get program price from coach_program_types
-                $sql = "SELECT price FROM coach_program_types 
-                        WHERE program_id = ? AND coach_id = ?";
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([$program['id'], $program['coach_id']]);
-                $program_price = $stmt->fetchColumn();
 
-                if ($program_price === false) {
-                    throw new Exception('Could not find price for the selected program and coach');
-                }
-
-                $sql = "INSERT INTO program_subscriptions (transaction_id, program_id, 
-                        coach_id, start_date, end_date, status, is_paid, amount) 
-                        VALUES (?, ?, ?, ?, ?, 'active', 0, ?)";
-                
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([
-                    $transaction_id,
-                    $program['id'],
-                    $program['coach_id'],
-                    $program['start_date'],
-                    $program['end_date'],
-                    $program_price
-                ]);
-            }
-        }
-
+        
         // Create rental subscriptions
         if (!empty($cart['rentals'])) {
             foreach ($cart['rentals'] as $rental) {

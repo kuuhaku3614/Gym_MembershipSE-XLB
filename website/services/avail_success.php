@@ -167,20 +167,7 @@ foreach ($rentals as $rental) {
                         <?php endif; ?>
 
                         <!-- Program Subscriptions -->
-                        <?php if (!empty($programs)): ?>
-                            <div class="text-start mb-4">
-                                <h6 class="fw-bold">Programs:</h6>
-                                <?php foreach ($programs as $program): ?>
-                                    <div class="mb-3">
-                                        <p class="mb-1">Program: <?= htmlspecialchars($program['program_name']) ?></p>
-                                        <p class="mb-1">Coach: <?= htmlspecialchars($program['coach_name']) ?></p>
-                                        <p class="mb-1">Start Date: <?= date('m/d/Y', strtotime($program['start_date'])) ?></p>
-                                        <p class="mb-1">End Date: <?= date('m/d/Y', strtotime($program['end_date'])) ?></p>
-                                        <p class="mb-1">Amount: ₱<?= number_format($program['price'], 2) ?></p>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                        
 
                         <!-- Rental Subscriptions -->
                         <?php if (!empty($rentals)): ?>
