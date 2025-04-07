@@ -273,13 +273,13 @@ class Cart_Class {
             }
 
             $services = new Services_Class();
-            $hasMembership = $services->checkActiveMembership($_SESSION['user_id']);
+            $activeMembership = $services->checkActiveMembership($_SESSION['user_id']);
             $hasPrograms = !empty($_SESSION['cart']['programs']);
             $hasRentals = !empty($_SESSION['cart']['rentals']);
             $hasMembershipInCart = $this->hasMembershipInCart();
 
             // If cart has programs or rentals but no active membership and no membership in cart
-            if (($hasPrograms || $hasRentals) && !$hasMembership && !$hasMembershipInCart) {
+            if (($hasPrograms || $hasRentals) && !$activeMembership && !$hasMembershipInCart) {
                 throw new Exception('You need to have an active membership or include a membership plan in your cart to avail programs or rentals.');
             }
 
@@ -386,41 +386,89 @@ class Cart_Class {
         return $total;
     }
 
+    private function calculateProgramDates($day, $membership_start_date, $membership_end_date) {
+        // Convert day name to number (0 = Sunday, 1 = Monday, etc.)
+        $dayMap = array(
+            'Sunday' => 0, 'Monday' => 1, 'Tuesday' => 2, 'Wednesday' => 3,
+            'Thursday' => 4, 'Friday' => 5, 'Saturday' => 6
+        );
+        
+        $targetDay = $dayMap[$day];
+        $startDateTime = new DateTime($membership_start_date);
+        $endDateTime = new DateTime($membership_end_date);
+        $currentDayOfWeek = (int)$startDateTime->format('w');
+        
+        // Calculate days to add to reach first occurrence
+        $daysToAdd = ($targetDay - $currentDayOfWeek + 7) % 7;
+        if ($daysToAdd === 0 && $startDateTime->format('Y-m-d') < date('Y-m-d')) {
+            $daysToAdd = 7;
+        }
+        
+        // Move to first occurrence
+        $startDateTime->modify("+{$daysToAdd} days");
+        
+        // Store all dates
+        $dates = [];
+        while ($startDateTime <= $endDateTime) {
+            $dates[] = $startDateTime->format('Y-m-d');
+            $startDateTime->modify('+7 days');
+        }
+        
+        return $dates;
+    }
+
     public function addProgramSchedule($item) {
         try {
-            // Initialize cart if not set
-            if (!isset($_SESSION['cart'])) {
-                $this->initializeCart();
-            }
-
-            // Initialize programs array if not set
-            if (!isset($_SESSION['cart']['programs'])) {
-                $_SESSION['cart']['programs'] = [];
-            }
-
-            // Check if schedule already exists in cart
-            foreach ($_SESSION['cart']['programs'] as $program) {
-                if ($program['schedule_id'] === $item['schedule_id']) {
-                    throw new Exception("This schedule is already in your cart");
+            // Get membership start and end dates
+            $membership_start_date = null;
+            $membership_end_date = null;
+            
+            if (!empty($_SESSION['cart']['memberships'])) {
+                $membership_start_date = $_SESSION['cart']['memberships'][0]['start_date'];
+                $membership_end_date = $_SESSION['cart']['memberships'][0]['end_date'];
+            } else {
+                // Check for active membership
+                $services = new Services_Class();
+                $membership = $services->checkActiveMembership($_SESSION['user_id']);
+                if ($membership) {
+                    $membership_start_date = $membership['start_date'];
+                    $membership_end_date = $membership['end_date'];
                 }
             }
 
-            // Add program schedule to cart
-            $_SESSION['cart']['programs'][] = [
+            if (!$membership_start_date || !$membership_end_date) {
+                throw new Exception("No membership found to calculate program dates");
+            }
+
+            // Clean input data
+            $cleanItem = [
                 'schedule_id' => clean_input($item['schedule_id']),
                 'program_name' => clean_input($item['program_name']),
                 'coach_name' => clean_input($item['coach_name']),
                 'day' => clean_input($item['day']),
-                'start_time' => clean_input($item['start_time']),
-                'end_time' => clean_input($item['end_time']),
-                'price' => floatval(clean_input($item['price']))
+                'start_time' => date('h:i A', strtotime(clean_input($item['start_time']))),
+                'end_time' => date('h:i A', strtotime(clean_input($item['end_time']))),
+                'price' => floatval(clean_input($item['price'])),
+                'is_personal' => (bool)($item['is_personal'] ?? false)
             ];
+
+            // Calculate all program dates
+            $programDates = $this->calculateProgramDates($cleanItem['day'], $membership_start_date, $membership_end_date);
+
+            // Create a program entry for each date
+            foreach ($programDates as $date) {
+                $programItem = array_merge($cleanItem, ['session_date' => $date]);
+                if (!isset($_SESSION['cart']['programs'])) {
+                    $_SESSION['cart']['programs'] = [];
+                }
+                $_SESSION['cart']['programs'][] = $programItem;
+            }
 
             $this->updateTotal();
             return true;
         } catch (Exception $e) {
-            error_log("Failed to add program schedule to cart: " . $e->getMessage());
-            throw new Exception($e->getMessage());
+            error_log("Error in addProgramSchedule: " . $e->getMessage());
+            return false;
         }
     }
 

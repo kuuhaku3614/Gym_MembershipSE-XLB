@@ -84,24 +84,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'validity' => $membership['validity']
         ]);
         
-        error_log("Adding membership to cart: " . print_r($item, true));
-        
         if ($Cart->addMembership($item)) {
             $_SESSION['success_message'] = "Successfully added item to the list!";
                 
-                // Return a JSON response instead of redirecting immediately
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => true,
-                    'redirect' => '../services.php'
-                ]);
-                exit;
+            // Return a JSON response instead of redirecting immediately
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'redirect' => '../services.php'
+            ]);
+            exit;
         } else {
             throw new Exception("Failed to add membership to cart.");
         }
         
     } catch (Exception $e) {
-        error_log("Error in avail_membership.php: " . $e->getMessage());
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
@@ -363,59 +360,6 @@ function validateForm(event) {
     
     return false;
 }
-// function validateForm(event) {
-//     event.preventDefault();
-
-//     const startDate = document.getElementById('start_date').value;
-//     if (!startDate) {
-//         alert('Please select a start date.');
-//         return false;
-//     }
-    
-//     const form = event.target.closest('form');
-//     const formData = new FormData(form);
-    
-//     // Update hidden fields
-//     document.getElementById('hidden_start_date').value = startDate;
-//     const endDate = calculateEndDate(startDate, <?= $membership['duration'] ?>);
-//     document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
-//     formData.set('end_date', document.getElementById('hidden_end_date').value);
-    
-//     fetch(form.action, {
-//         method: 'POST',
-//         body: formData,
-//         credentials: 'same-origin'
-//     })
-//     .then(response => response.json())
-//     .then(data => {
-//         if (data.success) {
-//             let messageDiv = document.createElement('div');
-//             messageDiv.textContent = data.message;
-//             messageDiv.style.position = 'fixed';
-//             messageDiv.style.top = '20px';
-//             messageDiv.style.right = '20px';
-//             messageDiv.style.backgroundColor = '#28a745';
-//             messageDiv.style.color = 'white';
-//             messageDiv.style.padding = '10px 20px';
-//             messageDiv.style.borderRadius = '5px';
-//             messageDiv.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
-//             document.body.appendChild(messageDiv);
-            
-//             setTimeout(() => {
-//                 messageDiv.remove();
-//                 window.location.href = data.redirect;
-//             }, 3000);
-//         } else {
-//             alert(data.message || 'An error occurred');
-//         }
-//     })
-//     .catch(error => {
-//         console.error('Error:', error);
-//         alert('An error occurred while processing your request');
-//     });
-    
-//     return false;
-// }
 
 function updateEndDate(startDate, duration) {
     const endDate = calculateEndDate(startDate, duration);

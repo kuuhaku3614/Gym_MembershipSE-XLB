@@ -23,17 +23,19 @@ class Services_class{
     public function checkActiveMembership($user_id) {
         $conn = $this->db->connect();
         try {
-            $sql = "SELECT m.* 
+            // Check for current or future active memberships
+            $sql = "SELECT m.*, t.user_id 
                     FROM memberships m
                     JOIN transactions t ON m.transaction_id = t.id
                     WHERE t.user_id = ? 
                     AND m.status = 'active' 
                     AND m.end_date >= CURDATE()
-                    AND m.start_date <= CURDATE()
-                    AND m.is_paid = 1";
+                    AND m.is_paid = 1
+                    ORDER BY m.start_date ASC
+                    LIMIT 1";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$user_id]);
-            return $stmt->fetch() ? true : false;
+            return $stmt->fetch();
         } catch (Exception $e) {
             return false;
         }
@@ -384,44 +386,42 @@ class Services_class{
     public function getCoachPersonalSchedule($coachProgramTypeId) {
         $conn = $this->db->connect();
         try {
-            // First, get all booked time slots with their durations
+            // First, get all booked time slots for personal training
             $bookedSlotsQuery = "
                 SELECT DISTINCT
-                    pss.coach_personal_schedule_id,
                     pss.day,
-                    TIME_FORMAT(pss.start_time, '%H:%i') as start_time,
-                    TIME_FORMAT(pss.end_time, '%H:%i') as end_time,
-                    cps.duration_rate
+                    TIME_FORMAT(pss.start_time, '%h:%i %p') as start_time,
+                    TIME_FORMAT(pss.end_time, '%h:%i %p') as end_time,
+                    TIME_FORMAT(pss.start_time, '%H:%i') as start_time_24,
+                    TIME_FORMAT(pss.end_time, '%H:%i') as end_time_24,
+                    pss.coach_personal_schedule_id
                 FROM program_subscription_schedule pss
                 JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
                 JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
                 WHERE ps.status IN ('active', 'pending')
                 AND cps.coach_program_type_id = :coach_program_type_id
-                AND pss.day = cps.day";
-
+                AND pss.coach_personal_schedule_id IS NOT NULL";
+            
             $stmt = $conn->prepare($bookedSlotsQuery);
             $stmt->bindParam(':coach_program_type_id', $coachProgramTypeId);
             $stmt->execute();
             $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Create a map of booked slots by day and time range
+            // Create a map of booked slots by day and schedule ID
             $bookedSlotsMap = [];
             foreach ($bookedSlots as $slot) {
                 $day = $slot['day'];
+                $scheduleId = $slot['coach_personal_schedule_id'];
                 
-                // Use a reference date (2000-01-01) to ensure we only compare times
-                $startTime = strtotime("2000-01-01 " . $slot['start_time']);
-                $endTime = strtotime("2000-01-01 " . $slot['end_time']);
-                
-                if (!isset($bookedSlotsMap[$day])) {
-                    $bookedSlotsMap[$day] = [];
+                if (!isset($bookedSlotsMap[$scheduleId])) {
+                    $bookedSlotsMap[$scheduleId] = [];
                 }
                 
                 // Store the time range and day
-                $bookedSlotsMap[$day][] = [
-                    'start' => $startTime,
-                    'end' => $endTime,
-                    'day' => $day  // Store the day for comparison
+                $bookedSlotsMap[$scheduleId][] = [
+                    'start' => strtotime($slot['start_time']),
+                    'end' => strtotime($slot['end_time']),
+                    'day' => $day
                 ];
             }
 
@@ -431,11 +431,14 @@ class Services_class{
                     cps.day,
                     TIME_FORMAT(cps.start_time, '%h:%i %p') as start_time,
                     TIME_FORMAT(cps.end_time, '%h:%i %p') as end_time,
+                    TIME_FORMAT(cps.start_time, '%H:%i') as start_time_24,
+                    TIME_FORMAT(cps.end_time, '%H:%i') as end_time_24,
                     cps.duration_rate,
                     cps.price
                 FROM coach_personal_schedule cps
                 WHERE cps.coach_program_type_id = :coach_program_type_id
-                ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
+                ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
+                cps.start_time";
             
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':coach_program_type_id', $coachProgramTypeId);
@@ -449,9 +452,9 @@ class Services_class{
             // Process schedules to create time slots based on duration
             $processedSchedules = [];
             foreach ($rawSchedules as $schedule) {
-                // Use the same reference date for comparison
-                $startTime = strtotime("2000-01-01 " . $schedule['start_time']);
-                $endTime = strtotime("2000-01-01 " . $schedule['end_time']);
+                $scheduleId = $schedule['id'];
+                $startTime = strtotime($schedule['start_time']);
+                $endTime = strtotime($schedule['end_time']);
                 $duration = $schedule['duration_rate']; // in minutes
                 
                 // Calculate number of slots
@@ -465,8 +468,8 @@ class Services_class{
                     
                     // Check if this time slot overlaps with any booked slot
                     $isBooked = false;
-                    if (isset($bookedSlotsMap[$schedule['day']])) {
-                        foreach ($bookedSlotsMap[$schedule['day']] as $bookedSlot) {
+                    if (isset($bookedSlotsMap[$scheduleId])) {
+                        foreach ($bookedSlotsMap[$scheduleId] as $bookedSlot) {
                             // Check for overlap on the same day
                             if ($schedule['day'] === $bookedSlot['day'] && 
                                 $slotStart < $bookedSlot['end'] && 
@@ -480,10 +483,10 @@ class Services_class{
                     // Only add the slot if it's not booked
                     if (!$isBooked) {
                         $processedSchedules[] = [
-                            'id' => $schedule['id'],
+                            'id' => $scheduleId,
                             'day' => $schedule['day'],
-                            'start_time' => date('h:i A', $slotStart),
-                            'end_time' => date('h:i A', $slotEnd),
+                            'start_time' => date('H:i', $slotStart),
+                            'end_time' => date('H:i', $slotEnd),
                             'duration_rate' => $schedule['duration_rate'],
                             'price' => $schedule['price'],
                             'availability_status' => 'available'
@@ -497,7 +500,6 @@ class Services_class{
             error_log("Error in getCoachPersonalSchedule: " . $e->getMessage());
             return ['error' => 'Failed to fetch personal training schedules'];
         }
-        
     }
 
     public function getCoachGroupSchedule($coachProgramTypeId) {
@@ -508,6 +510,8 @@ class Services_class{
                     cgs.day,
                     TIME_FORMAT(cgs.start_time, '%h:%i %p') as start_time,
                     TIME_FORMAT(cgs.end_time, '%h:%i %p') as end_time,
+                    TIME_FORMAT(cgs.start_time, '%H:%i') as start_time_24,
+                    TIME_FORMAT(cgs.end_time, '%H:%i') as end_time_24,
                     cgs.capacity,
                     cgs.price,
                     (
@@ -515,7 +519,7 @@ class Services_class{
                         FROM program_subscription_schedule pss
                         JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
                         WHERE pss.coach_group_schedule_id = cgs.id
-                        AND ps.status = 'active'
+                        AND ps.status IN ('active', 'pending')
                     ) as current_members,
                     CASE 
                         WHEN (
@@ -523,7 +527,7 @@ class Services_class{
                             FROM program_subscription_schedule pss
                             JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
                             WHERE pss.coach_group_schedule_id = cgs.id
-                            AND ps.status = 'active'
+                            AND ps.status IN ('active', 'pending')
                         ) >= cgs.capacity THEN 'full'
                         ELSE 'available'
                     END as availability_status
@@ -545,6 +549,18 @@ class Services_class{
         } catch (Exception $e) {
             error_log("Error in getCoachGroupSchedule: " . $e->getMessage());
             return ['error' => 'Failed to fetch group training schedules'];
+        }
+    }
+
+    public function isPersonalSchedule($scheduleId) {
+        try {
+            $sql = "SELECT id FROM coach_personal_schedule WHERE id = ?";
+            $stmt = $this->db->connect()->prepare($sql);
+            $stmt->execute([$scheduleId]);
+            return $stmt->fetch() !== false;
+        } catch (Exception $e) {
+            error_log("Error checking personal schedule: " . $e->getMessage());
+            return false;
         }
     }
 

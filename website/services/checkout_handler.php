@@ -85,8 +85,73 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Create program subscriptions
+        if (!empty($cart['programs'])) {
+            // Group programs by coach_program_type_id
+            $programsByType = [];
+            foreach ($cart['programs'] as $program) {
+                // Get the coach_program_type_id from the appropriate schedule table
+                if ($program['is_personal']) {
+                    $sql = "SELECT coach_program_type_id FROM coach_personal_schedule WHERE id = ?";
+                } else {
+                    $sql = "SELECT coach_program_type_id FROM coach_group_schedule WHERE id = ?";
+                }
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([$program['schedule_id']]);
+                $coachProgramType = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$coachProgramType) {
+                    throw new Exception("Invalid schedule ID");
+                }
 
-        
+                $typeId = $coachProgramType['coach_program_type_id'];
+
+                if (!isset($programsByType[$typeId])) {
+                    $programsByType[$typeId] = [
+                        'type_id' => $typeId,
+                        'is_personal' => $program['is_personal'],
+                        'sessions' => []
+                    ];
+                }
+                $programsByType[$typeId]['sessions'][] = $program;
+            }
+
+
+            // Create one subscription per coach_program_type_id
+            foreach ($programsByType as $typeData) {
+                // Create the program subscription
+                $sql = "INSERT INTO program_subscriptions (user_id, coach_program_type_id, status, transaction_id) 
+                        VALUES (?, ?, 'pending', ?)";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([
+                    $_SESSION['user_id'],
+                    $typeData['type_id'],
+                    $transaction_id
+                ]);
+                
+                $program_subscription_id = $conn->lastInsertId();
+                
+                // Create schedule entries for all sessions of this type
+                $sql = "INSERT INTO program_subscription_schedule 
+                        (program_subscription_id, coach_group_schedule_id, coach_personal_schedule_id, 
+                         date, day, start_time, end_time, amount, is_paid) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
+                
+                $stmt = $conn->prepare($sql);
+                foreach ($typeData['sessions'] as $session) {
+                    $stmt->execute([
+                        $program_subscription_id,
+                        $typeData['is_personal'] ? null : $session['schedule_id'],
+                        $typeData['is_personal'] ? $session['schedule_id'] : null,
+                        $session['session_date'],
+                        $session['day'],
+                        date('H:i', strtotime($session['start_time'])), // Convert to 24-hour format for database
+                        date('H:i', strtotime($session['end_time'])), // Convert to 24-hour format for database
+                        $session['price']
+                    ]);
+                }
+            }
+        }
+
         // Create rental subscriptions
         if (!empty($cart['rentals'])) {
             foreach ($cart['rentals'] as $rental) {

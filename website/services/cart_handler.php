@@ -131,7 +131,31 @@ try {
         case 'add_program_schedule':
             if (!isset($data['schedule_id'], $data['day'], $data['start_time'], 
                       $data['end_time'], $data['price'], $data['program_name'], $data['coach_name'])) {
-                handle_error('Missing required schedule data');
+                send_json_response(['message' => 'Missing required schedule data'], false);
+            }
+
+            // Check if user is logged in
+            if (!isset($_SESSION['user_id'])) {
+                send_json_response(['message' => 'Please log in to add programs to cart.'], false);
+            }
+
+            // Check for active membership or membership in cart
+            $Services = new Services_Class();
+            $activeMembership = $Services->checkActiveMembership($_SESSION['user_id']);
+            $hasMembershipInCart = $Cart->hasMembershipInCart();
+
+            // Determine if this is a personal schedule by checking the database
+            $isPersonal = $Services->isPersonalSchedule($data['schedule_id']);
+            if (!$activeMembership && !$hasMembershipInCart) {
+                send_json_response(['message' => 'You need to have an active membership or include a membership plan in your cart to avail this program.'], false);
+            }
+
+            // Add membership start date to item for program date calculation
+            if ($activeMembership) {
+                $item['membership_start_date'] = $activeMembership['start_date'];
+            } else if ($hasMembershipInCart) {
+                $cart = $Cart->getCart();
+                $item['membership_start_date'] = $cart['memberships'][0]['start_date'];
             }
 
             // Add to cart
@@ -142,13 +166,19 @@ try {
                 'day' => $data['day'],
                 'start_time' => $data['start_time'],
                 'end_time' => $data['end_time'],
-                'price' => $data['price']
+                'price' => $data['price'],
+                'is_personal' => $isPersonal
             ];
 
-            if ($Cart->addProgramSchedule($item)) {
-                send_json_response(['success' => true, 'message' => 'Schedule added to cart']);
-            } else {
-                handle_error('Failed to add schedule to cart');
+
+            try {
+                if ($Cart->addProgramSchedule($item)) {
+                    send_json_response(['message' => 'Schedule added to cart']);
+                } else {
+                    send_json_response(['message' => 'Failed to add schedule to cart'], false);
+                }
+            } catch (Exception $e) {
+                send_json_response(['message' => $e->getMessage()], false);
             }
             break;
 

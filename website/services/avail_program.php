@@ -315,7 +315,8 @@ function addToCart(scheduleId, day, startTime, endTime, price, programName, coac
         end_time: endTime,
         price: price,
         program_name: programName,
-        coach_name: coachName
+        coach_name: coachName,
+        is_personal: programName.includes('Personal')
     };
 
     fetch('cart_handler.php', {
@@ -334,7 +335,7 @@ function addToCart(scheduleId, day, startTime, endTime, price, programName, coac
             alert('Schedule added to cart successfully!');
             window.location.href = '../services.php';
         } else {
-            alert(data.message || 'Failed to add schedule to cart. Please try again.');
+            alert(data.data.message);
         }
     })
     .catch(error => {

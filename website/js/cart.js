@@ -108,6 +108,7 @@ function updateCartDisplay(cart) {
                                 ).toFixed(2)}</p>
                                 <p class="text-muted mb-0">Coach: ${program.coach_name}</p>
                                 <p class="text-muted mb-0">Day: ${program.day}</p>
+                                <p class="text-muted mb-0">Date: ${formatDate(program.session_date)}</p>
                                 <p class="text-muted mb-0">Time: ${program.start_time} - ${program.end_time}</p>
                             </div>
                             <button class="remove-item" 
