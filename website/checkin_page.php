@@ -145,12 +145,27 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        *{
+            font-family: "Inter", sans-serif;
+        }
+        h2, h3{
+            font-weight: 600;
+        }
+        label{
+            font-weight: 600;
+        }
+        .card-body{
+            gap: 1rem;
+        }
+    </style>
 </head>
 <body>
 
-<div class="container-fluid px-4 py-5">
-    <div class="card shadow">
-        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+<div class="container-fluid vh-100 d-flex flex-column p-0">
+    <div class="card shadow h-100">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center bg-primary text-white">
+
             <h2 class="card-title mb-0">Attendance System</h2>
             <div class="d-flex align-items-center">
                 <?php if ($resetButtonVisible): ?>
@@ -166,22 +181,22 @@ try {
                 </span>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body d-flex flex-column overflow-hidden">
             <!-- Check-in Form -->
-            <div class="row mb-4">
-                <div class="col-md-6 mx-auto">
+            <div class="row flex-grow-1">
+                <div class="col-md-6 mx-auto my-auto">
                     <div class="card">
-                        <div class="card-body">
-                            <form id="checkinForm" method="POST" action="">
-                                <div class="mb-3">
+                        <div class="card-body flex-grow-1" style="min-height: 300px;">
+                            <form id="checkinForm" method="POST" action="" class="h-100 d-flex flex-column justify-content-center">
+                                <div class="mb-4">
                                     <label for="identifier" class="form-label">Username or First Name</label>
-                                    <input type="text" class="form-control" id="identifier" name="identifier" required>
+                                    <input type="text" class="form-control form-control-md" id="identifier" name="identifier" required>
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-4">
                                     <label for="password" class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <input type="password" class="form-control form-control-md" id="password" name="password" required>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100">
+                                <button type="submit" class="btn btn-primary btn-md w-100">
                                     <i class="bi bi-box-arrow-in-right"></i> Time In
                                 </button>
                             </form>
@@ -190,8 +205,12 @@ try {
                 </div>
             </div>
 
+            <hr class="my-4">
+
             <!-- Today's Check-ins Table -->
-            <div class="table-responsive">
+
+            <div class="table-responsive flex-grow-1">
+            <h3 class="text-center">Attendance List</h2>
                 <table id="checkinTable" class="table table-striped table-bordered">
                     <thead>
                         <tr>
@@ -315,17 +334,85 @@ $('#checkinForm').on('submit', function(e) {
                 // Clear form
                 $('#checkinForm')[0].reset();
                 
-                // Show success message
-                alert('Check-in successful!');
+                // Create and show success popup
+                const successDiv = $('<div>')
+                    .css({
+                        'position': 'fixed',
+                        'top': '20px',
+                        'left': '50%',
+                        'transform': 'translateX(-50%)',
+                        'background-color': '#198754', // Green color for success
+                        'color': 'white',
+                        'padding': '15px 25px',
+                        'border-radius': '5px',
+                        'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+                        'z-index': '9999'
+                    })
+                    .text('Check-in successful!');
                 
-                // Reload the page after successful check-in
-                window.location.reload();
+                $('body').append(successDiv);
+                
+                // Remove the success popup after 3 seconds
+                setTimeout(() => {
+                    successDiv.fadeOut(300, function() {
+                        $(this).remove();
+                        // Reload the page after popup fades
+                        window.location.reload();
+                    });
+                }, 3000);
+                
             } else {
-                alert(response.message);
+                // Create and show error popup
+                const errorDiv = $('<div>')
+                    .css({
+                        'position': 'fixed',
+                        'top': '20px',
+                        'left': '50%',
+                        'transform': 'translateX(-50%)',
+                        'background-color': '#dc3545',
+                        'color': 'white',
+                        'padding': '15px 25px',
+                        'border-radius': '5px',
+                        'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+                        'z-index': '9999'
+                    })
+                    .text(response.message);
+                
+                $('body').append(errorDiv);
+                
+                // Remove the error popup after 3 seconds
+                setTimeout(() => {
+                    errorDiv.fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }, 3000);
             }
         },
         error: function() {
-            alert('An error occurred during check-in.');
+            // Create and show error popup for AJAX error
+            const errorDiv = $('<div>')
+                .css({
+                    'position': 'fixed',
+                    'top': '20px',
+                    'left': '50%',
+                    'transform': 'translateX(-50%)',
+                    'background-color': '#dc3545',
+                    'color': 'white',
+                    'padding': '15px 25px',
+                    'border-radius': '5px',
+                    'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+                    'z-index': '9999'
+                })
+                .text('An error occurred during check-in.');
+            
+            $('body').append(errorDiv);
+            
+            // Remove the error popup after 3 seconds
+            setTimeout(() => {
+                errorDiv.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 3000);
         }
     });
 });

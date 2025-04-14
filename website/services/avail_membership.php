@@ -155,6 +155,25 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         background-color: var(--primary-color);
         padding: 1rem;
     }
+    .form-control{
+        font-size: 1rem;
+    }
+    #start_date{
+        transition: all 0.3s ease;
+        }
+        #start_date:required:invalid:not(:focus) {
+        animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+        0% {
+            border-color: #ced4da;
+        }
+        50% {
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+        100% {
+            border-color: #ced4da;
+        }}
  @media screen and (max-width: 480px) {
     /* 1. Hide the services-header */
     .services-header {
@@ -249,68 +268,94 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     <h2 class="h4 fw-bold mb-0 text-center"><?= $membership['plan_type'] ?> Membership</h2>
                 </div>
                 <div class="card-body p-3">
-                    <h3 class="h5 fw-bold text-center mb-4"><?= $membership['plan_name'] ?></h3>
+                    <div class="row">
+                        <!-- Left column for image -->
+                        <div class="col-12 col-md-6 mb-3 mb-md-0">
+                            <div class="text-center">
+                                <?php
+                                // Default image path
+                                $defaultImage = '../../cms_img/default/membership.jpeg';
 
-                <section class="scrollable-section">
-
-                    <div class="row g-3">
-                    <div class="col-12">
-                        <div class="border rounded p-3">
-                        <p class="mb-0">Validity: <?= $membership['validity'] ?></p>
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="border rounded p-3">
-                        <div class="form-group">
-                            <label for="start_date" class="form-label">Start Date:</label>
-                            <input type="date" 
-                                class="form-control form-control-lg" 
-                                id="start_date" 
-                                name="start_date" 
-                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
-                                required
-                                onchange="updateEndDate(this.value, <?= $membership['duration'] ?>)">
-                            <?php if(!empty($start_dateErr)): ?>
-                            <div class="text-danger mt-1"><?= $start_dateErr ?></div>
+                                // Get the image path
+                                $imagePath = $defaultImage; // Set default first
+                                if (!empty($membership['image']) && file_exists(__DIR__ . "/../../cms_img/gym_rates/" . $membership['image'])) {
+                                    $imagePath = '../../cms_img/gym_rates/' . $membership['image'];
+                                }
+                                ?>
+                                <img src="<?= $imagePath ?>" 
+                                     class="img-fluid rounded" 
+                                     alt="<?= htmlspecialchars($membership['plan_name']) ?>">
+                                <h3 class="h5 fw-bold mt-3"><?= $membership['plan_name'] ?></h3>
+                            </div>
+                            <?php if (!empty($membership['description'])): ?>
+                                        <div class="col-12">
+                                            <div class="border rounded p-3">
+                                                <p class="mb-0">Description: 
+                                                    <span style="display: block; max-height: 50px; overflow-y: auto; max-width: 100%; word-break: break-word;">
+                                                        <?= nl2br(htmlspecialchars($membership['description'])) ?>
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
                             <?php endif; ?>
                         </div>
-                        </div>
-                    </div>
 
-                    <div class="col-12">
-                        <div class="border rounded p-3">
-                        <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
-                        </div>
-                    </div>
+                        <!-- Right column for forms -->
+                        <div class="col-12 col-md-6">
+                            <section class="scrollable-section">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <p class="mb-0">Validity: <?= $membership['validity'] ?></p>
+                                        </div>
+                                    </div>
 
-                    <div class="col-12">
-                        <div class="border rounded p-3">
-                        <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
-                        </div>
-                    </div>
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
+                                        </div>
+                                    </div>
 
-                    <?php if (!empty($membership['description'])): ?>
-                    <div class="col-12">
-                        <div class="border rounded p-3">
-                        <p class="mb-0">Description: <?= nl2br(htmlspecialchars($membership['description'])) ?></p>
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <div class="form-group">
+                                                <label for="start_date" class="form-label">Start Date:</label>
+                                                <input type="date" 
+                                                    class="form-control form-control-lg" 
+                                                    id="start_date" 
+                                                    name="start_date" 
+                                                    min="<?= date('Y-m-d', strtotime('today')) ?>" 
+                                                    required
+                                                    onchange="updateEndDate(this.value, <?= $membership['duration'] ?>)">
+                                                <?php if(!empty($start_dateErr)): ?>
+                                                    <div class="text-danger mt-1"><?= $start_dateErr ?></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </section>
                         </div>
-                    </div>
-                    <?php endif; ?>
-                    </div>
-                </section>
-                    <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
-                    <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
-                    <?php if (isset($_SESSION['user_id'])): ?>
-                        <form method="POST" class="flex-fill" onsubmit="return validateForm(event)">
-                        <input type="hidden" name="membership_id" value="<?= $membership_id ?>">
-                        <input type="hidden" name="start_date" id="hidden_start_date">
-                        <input type="hidden" name="end_date" id="hidden_end_date">
-                        <button type="submit" class="btn btn-lg w-100 add-cart" style="height: 48px!;">Add to Cart</button>
-                        </form>
-                    <?php else: ?>
-                        <button  class="btn btn-custom-red btn-lg "><a href="../../login/login.php">Login to Add</a></button>
-                    <?php endif; ?>
+                        <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
+                                <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
+                                <?php if (isset($_SESSION['user_id'])): ?>
+                                    <form method="POST" class="flex-fill" onsubmit="return validateForm(event)">
+                                        <input type="hidden" name="membership_id" value="<?= $membership_id ?>">
+                                        <input type="hidden" name="start_date" id="hidden_start_date">
+                                        <input type="hidden" name="end_date" id="hidden_end_date">
+                                        <button type="submit" class="btn btn-lg w-100 add-cart" style="height: 48px!;">Add to Cart</button>
+                                    </form>
+                                <?php else: ?>
+                                    <button class="btn btn-custom-red btn-lg"><a href="../../login/login.php">Login to Add</a></button>
+                                <?php endif; ?>
+                            </div>
                     </div>
                 </div>
                 </div>

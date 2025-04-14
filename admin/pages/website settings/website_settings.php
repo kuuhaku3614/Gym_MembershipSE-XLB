@@ -33,6 +33,10 @@ $galleryImages = fetchExistingContent('gallery_images');
 ?>
 
 <style>
+    .btn{
+        color: white!important;
+        font-family: "Inter", sans-serif!important;
+    }
         .section {
             background-color: #f4f4f4;
             padding: 20px;
@@ -181,7 +185,6 @@ $galleryImages = fetchExistingContent('gallery_images');
     font-size: 16px; /* Set font size */
     background-color: #4CAF50; /* Green background */
     border-radius: 4px; /* Rounded corners */
-    margin-top: 10px; /* Add some spacing */
 }
 
 .update-logo-btn:hover, 
