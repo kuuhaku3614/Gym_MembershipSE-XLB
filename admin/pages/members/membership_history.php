@@ -60,10 +60,10 @@ $pdo = $database->connect();
     </style>
 </head>
 <body>
-    <?php include '../../includes/navbar.php'; ?>
+    <!-- <?php include '../../includes/navbar.php'; ?>
     
     <div class="main-content">
-        <?php include '../../includes/header.php'; ?>
+        <?php include '../../includes/header.php'; ?> -->
 
         <div class="container-fluid py-4">
             <div class="row">

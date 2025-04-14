@@ -4,8 +4,9 @@ require_once '../../../config.php';
 $database = new Database();
 $pdo = $database->connect();
 
-// Query to get member subscription details matching your table structure
+// Query to get member subscription details - avoiding GROUP_CONCAT
 $query = "SELECT 
+    u.id AS user_id,
     CONCAT(pd.first_name, ' ', pd.last_name) as full_name,
     m.id as membership_id,
     mp.plan_name as membership_plan,
@@ -17,48 +18,15 @@ $query = "SELECT
         ELSE CONCAT(DATEDIFF(m.end_date, CURDATE()), ' days remaining')
     END as days_remaining,
     t.created_at as transaction_date,
-    GROUP_CONCAT(
-        DISTINCT
-        CONCAT(
-            p.program_name, '|',
-            COALESCE(coach.first_name, ''), ' ', COALESCE(coach.last_name, ''), '|',
-            ps.start_date, '|',
-            ps.end_date, '|',
-            CASE 
-                WHEN ps.end_date IS NULL THEN NULL
-                WHEN ps.end_date < CURDATE() THEN 'Expired'
-                ELSE CONCAT(DATEDIFF(ps.end_date, CURDATE()), ' days remaining')
-            END
-        ) SEPARATOR ';'
-    ) as program_details,
-    GROUP_CONCAT(
-        DISTINCT
-        CONCAT(
-            srv.service_name, '|',
-            rs.start_date, '|',
-            rs.end_date, '|',
-            CASE 
-                WHEN rs.end_date IS NULL THEN NULL
-                WHEN rs.end_date < CURDATE() THEN 'Expired'
-                ELSE CONCAT(DATEDIFF(rs.end_date, CURDATE()), ' days remaining')
-            END
-        ) SEPARATOR ';'
-    ) as service_details
+    t.id as transaction_id
 FROM users u
 INNER JOIN personal_details pd ON u.id = pd.user_id
 INNER JOIN transactions t ON u.id = t.user_id AND t.status = 'confirmed'
 INNER JOIN memberships m ON t.id = m.transaction_id
 INNER JOIN membership_plans mp ON m.membership_plan_id = mp.id
-LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
-LEFT JOIN programs p ON ps.program_id = p.id
-LEFT JOIN users coach_user ON ps.coach_id = coach_user.id
-LEFT JOIN personal_details coach ON coach_user.id = coach.user_id
-LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
-LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
 WHERE u.is_active = 1
 AND m.status IN ('active', 'expiring')
 AND m.is_paid = 1
-GROUP BY u.id, pd.first_name, pd.last_name, m.id, mp.plan_name, m.start_date, m.end_date, m.status
 ORDER BY 
     CASE m.status
         WHEN 'expiring' THEN 1
@@ -71,8 +39,63 @@ $stmt = $pdo->prepare($query);
 $stmt->execute();
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Query to get expired memberships
+// Fetch program details separately
+function getProgramDetailsForMember($pdo, $transactionId) {
+    $query = "SELECT 
+        p.program_name,
+        CONCAT(COALESCE(coach.first_name, ''), ' ', COALESCE(coach.last_name, '')) as coach_name,
+        MIN(pss.date) as start_date,
+        MAX(pss.date) as end_date,
+        CASE 
+            WHEN MAX(pss.date) IS NULL THEN NULL
+            WHEN MAX(pss.date) < CURDATE() THEN 'Expired'
+            ELSE CONCAT(DATEDIFF(MAX(pss.date), CURDATE()), ' days remaining')
+        END as status
+    FROM program_subscriptions ps
+    LEFT JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+    LEFT JOIN programs p ON cpt.program_id = p.id
+    LEFT JOIN program_subscription_schedule pss ON ps.id = pss.program_subscription_id
+    LEFT JOIN users coach_user ON ps.coach_id = coach_user.id
+    LEFT JOIN personal_details coach ON coach_user.id = coach.user_id
+    WHERE ps.transaction_id = :transaction_id
+    GROUP BY p.program_name, coach.first_name, coach.last_name";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':transaction_id', $transactionId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Fetch service details separately
+function getServiceDetailsForMember($pdo, $transactionId) {
+    $query = "SELECT 
+        srv.service_name,
+        rs.start_date,
+        rs.end_date,
+        CASE 
+            WHEN rs.end_date IS NULL THEN NULL
+            WHEN rs.end_date < CURDATE() THEN 'Expired'
+            ELSE CONCAT(DATEDIFF(rs.end_date, CURDATE()), ' days remaining')
+        END as status
+    FROM rental_subscriptions rs
+    LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
+    WHERE rs.transaction_id = :transaction_id";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':transaction_id', $transactionId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Enhance the members array with program and service details
+foreach ($members as &$member) {
+    $member['programs'] = getProgramDetailsForMember($pdo, $member['transaction_id']);
+    $member['services'] = getServiceDetailsForMember($pdo, $member['transaction_id']);
+}
+
+// Similar approach for expired memberships
 $historyQuery = "SELECT 
+    u.id AS user_id,
     CONCAT(pd.first_name, ' ', pd.last_name) as full_name,
     m.id as membership_id,
     mp.plan_name as membership_plan,
@@ -81,55 +104,34 @@ $historyQuery = "SELECT
     m.status as membership_status,
     'Expired' as days_remaining,
     t.created_at as transaction_date,
-    GROUP_CONCAT(
-        DISTINCT
-        CONCAT(
-            p.program_name, '|',
-            COALESCE(coach.first_name, ''), ' ', COALESCE(coach.last_name, ''), '|',
-            ps.start_date, '|',
-            ps.end_date, '|',
-            CASE 
-                WHEN ps.end_date IS NULL THEN NULL
-                WHEN ps.end_date < CURDATE() THEN 'Expired'
-                ELSE CONCAT(DATEDIFF(ps.end_date, CURDATE()), ' days remaining')
-            END
-        ) SEPARATOR ';'
-    ) as program_details,
-    GROUP_CONCAT(
-        DISTINCT
-        CONCAT(
-            srv.service_name, '|',
-            rs.start_date, '|',
-            rs.end_date, '|',
-            CASE 
-                WHEN rs.end_date IS NULL THEN NULL
-                WHEN rs.end_date < CURDATE() THEN 'Expired'
-                ELSE CONCAT(DATEDIFF(rs.end_date, CURDATE()), ' days remaining')
-            END
-        ) SEPARATOR ';'
-    ) as service_details
+    t.id as transaction_id
 FROM users u
 INNER JOIN personal_details pd ON u.id = pd.user_id
 INNER JOIN transactions t ON u.id = t.user_id AND t.status = 'confirmed'
 INNER JOIN memberships m ON t.id = m.transaction_id
 INNER JOIN membership_plans mp ON m.membership_plan_id = mp.id
-LEFT JOIN program_subscriptions ps ON t.id = ps.transaction_id
-LEFT JOIN programs p ON ps.program_id = p.id
-LEFT JOIN users coach_user ON ps.coach_id = coach_user.id
-LEFT JOIN personal_details coach ON coach_user.id = coach.user_id
-LEFT JOIN rental_subscriptions rs ON t.id = rs.transaction_id
-LEFT JOIN rental_services srv ON rs.rental_service_id = srv.id
 WHERE u.is_active = 1
 AND m.status = 'expired'
 AND m.is_paid = 1
-GROUP BY u.id, pd.first_name, pd.last_name, m.id, mp.plan_name, m.start_date, m.end_date, m.status
 ORDER BY m.end_date DESC";
 
 $historyStmt = $pdo->prepare($historyQuery);
 $historyStmt->execute();
 $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Enhance the expired memberships array with program and service details
+foreach ($expiredMemberships as &$membership) {
+    $membership['programs'] = getProgramDetailsForMember($pdo, $membership['transaction_id']);
+    $membership['services'] = getServiceDetailsForMember($pdo, $membership['transaction_id']);
+}
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Status</title>
     <style>
         /* Ensure table headers are visible */
         .table thead th {
@@ -182,7 +184,8 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 8px 10px;
         }
     </style>
-
+</head>
+<body>
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Membership Status</h2>
@@ -212,7 +215,7 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php echo htmlspecialchars($row['membership_plan']); ?>
                     <br>
                     <span class="badge <?php 
-                        echo strpos($row['membership_status'], 'Expired') !== false ? 'bg-danger' : 'bg-success'; 
+                        echo $row['membership_status'] === 'expired' ? 'bg-danger' : 'bg-success'; 
                         ?>">
                         <?php echo $row['membership_status']; ?>
                     </span>
@@ -225,16 +228,14 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                     </td>
                     <td>
                     <?php
-                    if ($row['program_details']) {
-                        $programs = explode(';', $row['program_details']);
-                        foreach ($programs as $program) {
-                        $details = explode('|', $program);
-                        echo htmlspecialchars($details[0]); // Program name
-                        echo '<br>';
-                        echo '<span class="badge ' . 
-                            (strpos($details[4], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
-                            '">' . htmlspecialchars($details[4]) . '</span>';
-                        echo '<br><br>';
+                    if (!empty($row['programs'])) {
+                        foreach ($row['programs'] as $program) {
+                            echo htmlspecialchars($program['program_name']);
+                            echo '<br>';
+                            echo '<span class="badge ' . 
+                                (strpos($program['status'], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
+                                '">' . (isset($program['status']) ? htmlspecialchars($program['status']) : 'N/A') . '</span>';
+                            echo '<br><br>';
                         }
                     } else {
                         echo '<span class="text-muted">No program</span>';
@@ -243,16 +244,14 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                     </td>
                     <td>
                     <?php
-                    if ($row['service_details']) {
-                        $services = explode(';', $row['service_details']);
-                        foreach ($services as $service) {
-                        $details = explode('|', $service);
-                        echo htmlspecialchars($details[0]); // Service name
-                        echo '<br>';
-                        echo '<span class="badge ' . 
-                            (strpos($details[3], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
-                            '">' . htmlspecialchars($details[3]) . '</span>';
-                        echo '<br><br>';
+                    if (!empty($row['services'])) {
+                        foreach ($row['services'] as $service) {
+                            echo htmlspecialchars($service['service_name']);
+                            echo '<br>';
+                            echo '<span class="badge ' . 
+                                (strpos($service['status'], 'Expired') !== false ? 'bg-danger' : 'bg-success') . 
+                                '">' . (isset($service['status']) ? htmlspecialchars($service['status']) : 'N/A') . '</span>';
+                            echo '<br><br>';
                         }
                     } else {
                         echo '<span class="text-muted">No service</span>';
@@ -364,7 +363,7 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Handle details button click for main table
             $('.view-details[data-details]').on('click', function() {
-                const data = $(this).data('details');
+                const data = JSON.parse($(this).attr('data-details'));
                 
                 // Populate details modal
                 $('#memberName').text(data.full_name);
@@ -378,18 +377,16 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                 var programContainer = $('#programDetails');
                 programContainer.empty();
                 
-                if (data.program_details) {
+                if (data.programs && data.programs.length > 0) {
                     programContainer.append('<div class="mb-4"><h6 class="fw-bold">Program Details</h6></div>');
-                    var programs = data.program_details.split(';');
-                    programs.forEach(function(program) {
-                        var details = program.split('|');
+                    data.programs.forEach(function(program) {
                         var html = `
                             <div class="mb-3">
-                                <p class="mb-1"><strong>Program:</strong> ${details[0] || 'N/A'}</p>
-                                <p class="mb-1"><strong>Coach:</strong> ${details[1].trim() || 'No Coach Assigned'}</p>
-                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(details[2]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(details[3]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>Status:</strong> ${details[4] || 'N/A'}</p>
+                                <p class="mb-1"><strong>Program:</strong> ${program.program_name || 'N/A'}</p>
+                                <p class="mb-1"><strong>Coach:</strong> ${program.coach_name.trim() || 'No Coach Assigned'}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(program.start_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(program.end_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>Status:</strong> ${program.status || 'N/A'}</p>
                             </div>
                         `;
                         programContainer.append(html);
@@ -400,17 +397,15 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                 var serviceContainer = $('#serviceDetails');
                 serviceContainer.empty();
                 
-                if (data.service_details) {
+                if (data.services && data.services.length > 0) {
                     serviceContainer.append('<div class="mb-4"><h6 class="fw-bold">Service Details</h6></div>');
-                    var services = data.service_details.split(';');
-                    services.forEach(function(service) {
-                        var details = service.split('|');
+                    data.services.forEach(function(service) {
                         var html = `
                             <div class="mb-3">
-                                <p class="mb-1"><strong>Service:</strong> ${details[0] || 'N/A'}</p>
-                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(details[1]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(details[2]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>Status:</strong> ${details[3] || 'N/A'}</p>
+                                <p class="mb-1"><strong>Service:</strong> ${service.service_name || 'N/A'}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(service.start_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(service.end_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>Status:</strong> ${service.status || 'N/A'}</p>
                             </div>
                         `;
                         serviceContainer.append(html);
@@ -420,7 +415,7 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
 
             // Handle details button click for history items
             $('.view-details[data-membership]').on('click', function() {
-                const membership = $(this).data('membership');
+                const membership = JSON.parse($(this).attr('data-membership'));
                 
                 // Populate details modal
                 $('#historyMemberName').text(membership.full_name);
@@ -434,18 +429,16 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                 var programContainer = $('#historyProgramDetails');
                 programContainer.empty();
                 
-                if (membership.program_details) {
+                if (membership.programs && membership.programs.length > 0) {
                     programContainer.append('<div class="mb-4"><h6 class="fw-bold">Program Details</h6></div>');
-                    var programs = membership.program_details.split(';');
-                    programs.forEach(function(program) {
-                        var details = program.split('|');
+                    membership.programs.forEach(function(program) {
                         var html = `
                             <div class="mb-3">
-                                <p class="mb-1"><strong>Program:</strong> ${details[0] || 'N/A'}</p>
-                                <p class="mb-1"><strong>Coach:</strong> ${details[1].trim() || 'No Coach Assigned'}</p>
-                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(details[2]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(details[3]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>Status:</strong> ${details[4] || 'N/A'}</p>
+                                <p class="mb-1"><strong>Program:</strong> ${program.program_name || 'N/A'}</p>
+                                <p class="mb-1"><strong>Coach:</strong> ${program.coach_name.trim() || 'No Coach Assigned'}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(program.start_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(program.end_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>Status:</strong> ${program.status || 'N/A'}</p>
                             </div>
                         `;
                         programContainer.append(html);
@@ -456,17 +449,15 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
                 var serviceContainer = $('#historyServiceDetails');
                 serviceContainer.empty();
                 
-                if (membership.service_details) {
+                if (membership.services && membership.services.length > 0) {
                     serviceContainer.append('<div class="mb-4"><h6 class="fw-bold">Service Details</h6></div>');
-                    var services = membership.service_details.split(';');
-                    services.forEach(function(service) {
-                        var details = service.split('|');
+                    membership.services.forEach(function(service) {
                         var html = `
                             <div class="mb-3">
-                                <p class="mb-1"><strong>Service:</strong> ${details[0] || 'N/A'}</p>
-                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(details[1]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(details[2]) || 'N/A'}</p>
-                                <p class="mb-1"><strong>Status:</strong> ${details[3] || 'N/A'}</p>
+                                <p class="mb-1"><strong>Service:</strong> ${service.service_name || 'N/A'}</p>
+                                <p class="mb-1"><strong>Start Date:</strong> ${formatDate(service.start_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>End Date:</strong> ${formatDate(service.end_date) || 'N/A'}</p>
+                                <p class="mb-1"><strong>Status:</strong> ${service.status || 'N/A'}</p>
                             </div>
                         `;
                         serviceContainer.append(html);
@@ -481,3 +472,5 @@ $expiredMemberships = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
             });
         });
     </script>
+</body>
+</html>
