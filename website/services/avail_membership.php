@@ -31,7 +31,7 @@ $membership['validity'] = $membership['duration'] . ' ' . strtolower($membership
 
 // Initialize error variables
 $start_dateErr = '';
-$start_date = date('Y-m-d'); // Initialize with today's date
+$start_date = ''; // Initialize with today's date
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
@@ -265,13 +265,12 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                         <div class="form-group">
                             <label for="start_date" class="form-label">Start Date:</label>
                             <input type="date" 
-                               class="form-control form-control-lg" 
-                               id="start_date" 
-                               name="start_date" 
-                               min="<?= date('Y-m-d', strtotime('today')) ?>" 
-                               value="<?= $start_date ?>"
-                               required
-                               onchange="updateEndDate(this.value, <?= $membership['duration'] ?>)">
+                                class="form-control form-control-lg" 
+                                id="start_date" 
+                                name="start_date" 
+                                min="<?= date('Y-m-d', strtotime('today')) ?>" 
+                                required
+                                onchange="updateEndDate(this.value, <?= $membership['duration'] ?>)">
                             <?php if(!empty($start_dateErr)): ?>
                             <div class="text-danger mt-1"><?= $start_dateErr ?></div>
                             <?php endif; ?>

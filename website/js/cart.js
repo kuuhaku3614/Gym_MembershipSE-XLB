@@ -209,7 +209,7 @@ function removeFromCart(type, id) {
   const formData = new URLSearchParams();
   formData.append("action", "remove");
   formData.append("type", type);
-  formData.append("id", id.toString());
+  formData.append("index", id.toString());  // Already fixed from your previous change
 
   fetch("services/cart_handler.php", {
     method: "POST",
@@ -227,18 +227,33 @@ function removeFromCart(type, id) {
       return response.json();
     })
     .then((data) => {
+      console.log("Response from removeFromCart:", data);  // Debug logging
+      
+      // Check if we need to load the cart manually regardless of success
       if (data.success) {
-        updateCartDisplay(data.data.cart);
+        // If there's cart data in the response, use it
+        if (data.data && data.data.cart) {
+          updateCartDisplay(data.data.cart);
+        } else {
+          // If successful but no cart data, reload the cart
+          loadCart();
+        }
       } else {
-        const message =
-          data.data && data.data.message
-            ? data.data.message
-            : "Failed to remove item";
-        alert(message);
+        // Even on error, try reloading the cart
+        console.warn("Server reported error but attempting to reload cart anyway");
+        loadCart();
+        
+        // Also show the error
+        const message = data.data && data.data.message 
+          ? data.data.message 
+          : "Failed to remove item";
+        console.error("Server error:", message);
       }
     })
     .catch((error) => {
       console.error("Error removing item:", error);
+      // Even on JavaScript error, try reloading the cart
+      loadCart();
       alert("Failed to remove item from cart");
     });
 }

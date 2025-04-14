@@ -48,6 +48,7 @@ try {
     // Get the action
     $input = file_get_contents('php://input');
     $action = '';
+    $data = [];
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['action'])) {
@@ -97,19 +98,28 @@ try {
             break;
             
         case 'remove':
-            if (!isset($_POST['type'], $_POST['index'])) {
+            // Check for data in both $_POST and JSON input
+            $type = null;
+            $index = null;
+            
+            if (isset($_POST['type'], $_POST['index'])) {
+                $type = clean_input($_POST['type']);
+                $index = clean_input($_POST['index']);
+            } else if (isset($data['type'], $data['index'])) {
+                $type = clean_input($data['type']);
+                $index = clean_input($data['index']);
+            }
+            
+            if ($type === null || $index === null) {
                 handle_error('Missing type or index');
             }
 
-            $type = clean_input($_POST['type']);
-            $index = clean_input($_POST['index']);
-
             switch ($type) {
                 case 'membership':
-                    $success = $Cart->removeMembership($index);
+                    $success = $Cart->removeItem($type, $index);
                     break;
                 case 'rental':
-                    $success = $Cart->removeRental($index);
+                    $success = $Cart->removeItem($type, $index);
                     break;
                 case 'program':
                     $success = $Cart->removeProgram($index);

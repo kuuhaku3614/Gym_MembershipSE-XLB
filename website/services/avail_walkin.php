@@ -41,7 +41,7 @@ try {
 }
 
 // Initialize variables
-$start_date = date('Y-m-d'); // Initialize with today's date
+$start_date = ''; // Initialize with today's date
 
 // Error variables
 $start_dateErr = '';
@@ -234,7 +234,6 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                                             id="start_date" 
                                             name="date" 
                                             min="<?= date('Y-m-d') ?>" 
-                                            value="<?= $start_date ?>"
                                             required
                                             onchange="updateEndDate(this.value)">
                                         <?php if(!empty($start_dateErr)): ?>
