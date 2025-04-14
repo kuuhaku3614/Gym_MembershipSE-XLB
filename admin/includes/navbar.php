@@ -416,14 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
         logoutModal.show();
     });
     
-    // Toggle notification sub-menu when clicking on notification link
-    const notificationLink = document.getElementById('notification-link');
-    notificationLink.addEventListener('click', function(e) {
-        // The dropdown functionality is already handled by the existing code,
-        // but we can add additional notification-specific behavior here if needed
-    });
-    
-    // Get all navigation items without sub-navs
+    // Get all navigation items without sub-navs (existing code)
     const mainNavLinks = document.querySelectorAll('.nav-item:not(.has-subnav)');
     
     // Add click event listener to each main nav link without sub-nav
@@ -435,6 +428,27 @@ document.addEventListener('DOMContentLoaded', function() {
             // If it's a valid page, reload to that page
             if (href && href !== '#') {
                 e.preventDefault();
+                window.location.href = href;
+            }
+        });
+    });
+    
+    // NEW CODE: Handle clicks on main navbar items with dropdowns
+    const mainDropdownNavs = document.querySelectorAll('.nav-item.has-subnav');
+    
+    mainDropdownNavs.forEach(function(link) {
+        // Get the link itself, not the dropdown icon
+        const linkContent = link.querySelector('.nav-item-content');
+        
+        linkContent.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Stop event from bubbling to parent
+            
+            // Get the href attribute from the parent link
+            const href = link.getAttribute('href');
+            
+            // If it's a valid page, reload to that page
+            if (href && href !== '#') {
                 window.location.href = href;
             }
         });
