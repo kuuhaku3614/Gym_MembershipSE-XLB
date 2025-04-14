@@ -403,7 +403,407 @@ function clearCart() {
     });
 }
 
+// Modified function to check walk-in dates against active membership
+function checkWalkInAgainstMembership(walkIns, activeMembership) {
+  // If no active membership or no walk-ins, no conflict exists
+  if (!activeMembership || !walkIns || walkIns.length === 0) {
+    return {
+      conflict: false
+    };
+  }
+  
+  // Convert membership dates to Date objects
+  const membershipStart = new Date(activeMembership.start_date);
+  const membershipEnd = new Date(activeMembership.end_date);
+  
+  // Find any walk-in dates that fall within the active membership period
+  const conflictingDates = walkIns.filter(walkin => {
+    const walkinDate = new Date(walkin.date);
+    return walkinDate >= membershipStart && walkinDate <= membershipEnd;
+  });
+  
+  return {
+    conflict: conflictingDates.length > 0,
+    dates: conflictingDates,
+    membershipStart: activeMembership.start_date,
+    membershipEnd: activeMembership.end_date
+  };
+}
+
+// Function to show membership-walkin conflict warning
+function showMembershipWalkinConflictWarning(conflictData) {
+  // Format the dates for display
+  const formattedDates = conflictData.dates.map(item => formatDate(item.date)).join(", ");
+  const membershipStart = formatDate(conflictData.membershipStart);
+  const membershipEnd = formatDate(conflictData.membershipEnd);
+  
+  // Create the warning modal HTML
+  const warningModalHTML = `
+    <div class="modal fade" id="membershipWalkinConflictModal" tabindex="-1" aria-labelledby="membershipWalkinConflictModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-0">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="membershipWalkinConflictModalLabel">Membership Conflict</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-exclamation-circle-fill text-danger me-3" style="font-size: 2rem;"></i>
+              <div>
+                <p class="mb-1">You cannot avail walk-in services for these dates:</p>
+                <p class="fw-bold mb-3">${formattedDates}</p>
+                <p class="mb-0">These dates fall within your active membership period (${membershipStart} - ${membershipEnd}).</p>
+                <p class="mt-2">Members should use their membership benefits for gym access during this period.</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add the warning modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", warningModalHTML);
+
+  // Show the warning modal
+  const warningModal = new bootstrap.Modal(
+    document.getElementById("membershipWalkinConflictModal")
+  );
+  warningModal.show();
+}
+
 function availServices() {
+  // First check if there are any pending transactions
+  checkPendingTransactions()
+    .then(hasPendingTransactions => {
+      if (hasPendingTransactions) {
+        // If there are pending transactions, show warning and stop
+        showPendingTransactionWarning();
+      } else {
+        // No pending transactions, now check cart content
+        fetch("services/cart_handler.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cache-Control": "no-cache",
+          },
+          body: "action=get",
+          credentials: "same-origin",
+        })
+          .then(response => response.json())
+          .then(cartResponse => {
+            if (cartResponse.success && cartResponse.data.cart) {
+              const cart = cartResponse.data.cart;
+              
+              // Check if the cart contains a membership plan
+              const hasMembershipInCart = cart.memberships && cart.memberships.length > 0;
+              // Check if the cart contains a walk-in service
+              const hasWalkinInCart = cart.walkins && cart.walkins.length > 0;
+              
+              // First check for active membership regardless of what's in the cart
+              checkActiveMembership()
+                .then(activeMembershipData => {
+                  // If there are walk-ins in the cart and the user has an active membership,
+                  // check for conflicts between walk-in dates and membership period
+                  if (hasWalkinInCart && activeMembershipData) {
+                    const conflictResult = checkWalkInAgainstMembership(cart.walkins, activeMembershipData);
+                    
+                    if (conflictResult.conflict) {
+                      // There's a conflict, show warning and stop
+                      showMembershipWalkinConflictWarning(conflictResult);
+                      return;
+                    }
+                  }
+                  
+                  // Continue with existing validation logic
+                  if (hasWalkinInCart) {
+                    // Check if the user already has a walk-in for the dates in cart
+                    checkWalkInRecords(cart.walkins)
+                      .then(walkInCheckResult => {
+                        if (walkInCheckResult.duplicate) {
+                          // User has an existing walk-in for at least one date, show warning
+                          showDuplicateWalkInWarning(walkInCheckResult.dates);
+                        } else if (hasMembershipInCart && activeMembershipData) {
+                          // No duplicate walk-ins, but user is adding new membership while having active one
+                          showActiveMembershipWarning(activeMembershipData);
+                        } else {
+                          // No conflicts, proceed
+                          validateAndProceed();
+                        }
+                      })
+                      .catch(error => {
+                        console.error("Error checking walk-in records:", error);
+                        if (hasMembershipInCart && activeMembershipData) {
+                          showActiveMembershipWarning(activeMembershipData);
+                        } else {
+                          validateAndProceed();
+                        }
+                      });
+                  } else if (hasMembershipInCart && activeMembershipData) {
+                    // No walk-in in cart, but user is adding new membership while having active one
+                    showActiveMembershipWarning(activeMembershipData);
+                  } else {
+                    // No conflicts, proceed directly
+                    validateAndProceed();
+                  }
+                })
+                .catch(error => {
+                  console.error("Error checking active membership:", error);
+                  // Proceed with regular validation if membership check fails
+                  if (hasWalkinInCart) {
+                    checkWalkInRecords(cart.walkins)
+                      .then(walkInCheckResult => {
+                        if (walkInCheckResult.duplicate) {
+                          showDuplicateWalkInWarning(walkInCheckResult.dates);
+                        } else {
+                          validateAndProceed();
+                        }
+                      })
+                      .catch(error => {
+                        console.error("Error checking walk-in records:", error);
+                        validateAndProceed();
+                      });
+                  } else {
+                    validateAndProceed();
+                  }
+                });
+            } else {
+              // Handle error from cart fetch
+              console.error("Failed to get cart data:", cartResponse);
+              validateAndProceed();
+            }
+          })
+          .catch(error => {
+            console.error("Error getting cart:", error);
+            validateAndProceed();
+          });
+      }
+    })
+    .catch(error => {
+      console.error("Error checking pending transactions:", error);
+      validateAndProceed();
+    });
+}
+
+// Function to check for existing walk-in records for dates in cart
+function checkWalkInRecords(walkIns) {
+  // Store all the dates we need to check
+  const dates = walkIns.map(walkin => walkin.date);
+  
+  // If no dates, return immediately
+  if (!dates.length) {
+    return Promise.resolve({ duplicate: false });
+  }
+  
+  // Create an array of promises for each date check
+  const checkPromises = dates.map(date => {
+    const formData = new URLSearchParams();
+    formData.append("date", date);
+    
+    return fetch("services/walkin_check.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+      credentials: "same-origin",
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      return {
+        date: date,
+        hasWalkinForDate: data.data.hasWalkinForDate,
+        walkInRecord: data.data.walkInRecord
+      };
+    });
+  });
+  
+  // Check all dates and return the result
+  return Promise.all(checkPromises)
+    .then(results => {
+      // Find any dates with existing walk-ins
+      const duplicateDates = results.filter(result => result.hasWalkinForDate);
+      
+      return {
+        duplicate: duplicateDates.length > 0,
+        dates: duplicateDates
+      };
+    });
+}
+
+// Function to show duplicate walk-in warning
+function showDuplicateWalkInWarning(duplicateDates) {
+  // Format the dates for display
+  const formattedDates = duplicateDates.map(item => formatDate(item.date)).join(", ");
+  
+  // Create the warning modal HTML
+  const warningModalHTML = `
+    <div class="modal fade" id="duplicateWalkInModal" tabindex="-1" aria-labelledby="duplicateWalkInModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-0">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="duplicateWalkInModalLabel">Duplicate Walk-In Entry</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-exclamation-circle-fill text-danger me-3" style="font-size: 2rem;"></i>
+              <div>
+                <p class="mb-1">You already have a walk-in record for the following date(s):</p>
+                <p class="fw-bold mb-3">${formattedDates}</p>
+                <p class="mb-0">You cannot have multiple walk-in entries for the same date. Please remove the duplicate entries from your cart.</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add the warning modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", warningModalHTML);
+
+  // Show the warning modal
+  const warningModal = new bootstrap.Modal(
+    document.getElementById("duplicateWalkInModal")
+  );
+  warningModal.show();
+}
+
+// Add this function to check for active memberships
+function checkActiveMembership() {
+  return fetch("services/membership_check.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    credentials: "same-origin",
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("Active membership check:", data);
+      return data.data; // Return the membership data if exists
+    });
+}
+
+// Add this function to show the active membership warning
+function showActiveMembershipWarning(membershipData) {
+  // Create the warning modal HTML
+  const warningModalHTML = `
+    <div class="modal fade" id="activeMembershipModal" tabindex="-1" aria-labelledby="activeMembershipModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-0">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title" id="activeMembershipModalLabel">Active Membership Found</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 2rem;"></i>
+              <div>
+                <p class="mb-1">You already have an active membership that expires on ${formatDate(membershipData.end_date)}.</p>
+                <p class="mb-0">Purchasing a new membership now will only be valid after your current membership expires.</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="proceedAnywayBtn">Proceed Anyway</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add the warning modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", warningModalHTML);
+
+  // Show the warning modal
+  const warningModal = new bootstrap.Modal(
+    document.getElementById("activeMembershipModal")
+  );
+  warningModal.show();
+
+  // Add event listener to the "Proceed Anyway" button
+  document
+    .getElementById("proceedAnywayBtn")
+    .addEventListener("click", function () {
+      warningModal.hide();
+      validateAndProceed();
+    });
+}
+
+function checkPendingTransactions() {
+  return fetch("services/transaction_check.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    credentials: "same-origin",
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("Pending transaction check:", data);
+      return data.hasPendingTransactions;
+    });
+}
+
+function showPendingTransactionWarning() {
+  // Create the warning modal HTML
+  const warningModalHTML = `
+    <div class="modal fade" id="pendingTransactionModal" tabindex="-1" aria-labelledby="pendingTransactionModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-0">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title" id="pendingTransactionModalLabel">Pending Transaction</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 2rem;"></i>
+              <p class="mb-0">You have pending transactions awaiting approval from admin/staff.</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add the warning modal HTML to the body
+  document.body.insertAdjacentHTML("beforeend", warningModalHTML);
+
+  // Show the warning modal
+  const warningModal = new bootstrap.Modal(
+    document.getElementById("pendingTransactionModal")
+  );
+  warningModal.show();
+}
+
+function validateAndProceed() {
   fetch("services/cart_handler.php", {
     method: "POST",
     headers: {
