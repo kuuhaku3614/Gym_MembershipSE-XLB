@@ -11,10 +11,10 @@ if (!isset($_SESSION['user_id'])) {
 
 // Initialize variables
 $rental_id = $service_name = $price = $duration = $duration_type = $available_slots = $description = '';
-$start_date = $end_date = '';
 
 // Error variables
 $rental_idErr = $start_dateErr = $end_dateErr = $priceErr = '';
+$selected_dates = []; // Array to store multiple selected dates
 
 $Services = new Services_Class();
 
@@ -47,69 +47,97 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     }
 }
 
+// Handle AJAX request for adding to cart
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $rental_id = clean_input($_POST['rental_id']);
-    $service_name = clean_input($_POST['service_name']);
-    $start_date = clean_input($_POST['start_date']);
-    $end_date = clean_input($_POST['end_date']);
-    $price = clean_input($_POST['price']);
-
-    // Get validity directly from the record
-    $record = $Services->fetchRental($rental_id);
-    if (!$record) {
-        $_SESSION['error'] = 'Invalid rental service';
-        header('location: ../services.php');
-        exit;
-    }
-
-    $validity = $record['duration'] . ' ' . $record['duration_type'];
-
-    // Validate inputs
-    if(empty($start_date)) {
-        $start_dateErr = 'Start date is required';
-    } else {
-        // Validate start date is not in the past
-        $today = new DateTime();
-        $start = new DateTime($start_date);
-        if ($start < $today) {
-            $start_dateErr = 'Start date cannot be in the past';
+    header('Content-Type: application/json');
+    
+    try {
+        if (!isset($_SESSION['user_id'])) {
+            throw new Exception('Please login first');
         }
-    }
 
-    if(empty($rental_id)) {
-        $rental_idErr = 'Rental service is required';
-    }
+        $rental_id = clean_input($_POST['rental_id']);
+        $service_name = clean_input($_POST['service_name']);
+        $price = clean_input($_POST['price']);
+        
+        // Get selected dates as JSON array
+        $dates = isset($_POST['selected_dates']) ? json_decode($_POST['selected_dates'], true) : [];
+        
+        if (empty($dates)) {
+            throw new Exception('Please select at least one date');
+        }
 
-    // Check if service still has available slots
-    if ($record['available_slots'] < 1) {
-        $rental_idErr = 'No available slots for this service';
-    }
+        // Get validity directly from the record
+        $record = $Services->fetchRental($rental_id);
+        if (!$record) {
+            throw new Exception('Invalid rental service');
+        }
 
-    if(empty($start_dateErr) && empty($rental_idErr)) {
+        $validity = $record['duration'] . ' ' . $record['duration_type'];
+
+        // Validate dates
+        $today = date('Y-m-d');
+        foreach ($dates as $date) {
+            if ($date < $today) {
+                throw new Exception('Selected dates cannot be in the past');
+            }
+        }
+
+        // Check if service still has available slots
+        if ($record['available_slots'] < count($dates)) {
+            throw new Exception('Not enough available slots for this service');
+        }
+
         $Cart = new Cart_Class();
-        try {
+        $success = true;
+        
+        // Add each date as a separate rental service to cart
+        foreach ($dates as $date) {
+            // Calculate end date based on start date and duration
+            $start = new DateTime($date);
+            $end = clone $start;
+            
+            if ($record['duration_type'] === 'days') {
+                $end->modify("+{$record['duration']} days");
+            } else if ($record['duration_type'] === 'months') {
+                $end->modify("+{$record['duration']} months");
+            } else if ($record['duration_type'] === 'year') {
+                $end->modify("+{$record['duration']} years");
+            }
+            
+            $end_date = $end->format('Y-m-d');
+            
             $item = [
                 'id' => $rental_id,
                 'name' => $service_name,
                 'price' => $price,
                 'validity' => $validity,
-                'start_date' => $start_date,
+                'start_date' => $date,
                 'end_date' => $end_date
             ];
             
-            if($Cart->addRental($item)) {
-                $_SESSION['success_message'] = "Successfully added item to the list!";
-                header('location: ../services.php');
-                exit;
-            } else {
-                throw new Exception('Failed to add rental to cart');
+            if (!$Cart->addRental($item)) {
+                $success = false;
+                break;
             }
-        } catch (Exception $e) {
-            $_SESSION['error'] = $e->getMessage();
-            header('location: ../services.php');
-            exit;
         }
+        
+        if ($success) {
+            echo json_encode([
+                'success' => true,
+                'message' => count($dates) > 1 ? 'Rental services added to cart successfully' : 'Rental service added to cart successfully',
+                'redirect' => '../services.php'
+            ]);
+        } else {
+            throw new Exception('Failed to add rental service(s) to cart');
+        }
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
     }
+    exit;
 }
 
 // Centralized function for querying the database
@@ -156,6 +184,85 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     .card-header {
         background-color: var(--primary-color);
         padding: 1rem;
+    }
+    
+    /* Styles for date chips */
+    .date-chip {
+        display: inline-block;
+        background-color: var(--primary-color);
+        color: white;
+        padding: 5px 10px;
+        margin: 5px;
+        border-radius: 20px;
+        font-size: 14px;
+    }
+    
+    .date-chip .remove-date {
+        margin-left: 5px;
+        cursor: pointer;
+    }
+    
+    #dates-container {
+        min-height: 50px;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    
+    /* Calendar styles */
+    .calendar-container {
+        margin-top: 15px;
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        text-align: center;
+    }
+    
+    .calendar-weekday {
+        font-weight: bold;
+        padding: 5px;
+    }
+    
+    .calendar-day {
+        padding: 10px 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .calendar-day.disabled {
+        background-color: #f5f5f5;
+        color: #aaa;
+        cursor: not-allowed;
+    }
+    
+    .calendar-day.selected {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .calendar-day:not(.disabled):not(.empty):hover {
+        background-color: rgba(var(--primary-color-rgb), 0.2);
+    }
+    
+    .calendar-day.empty {
+        visibility: hidden;
+    }
+    
+    /* Hide the date input as we'll use the calendar instead */
+    #start_date {
+        display: none;
     }
 
 @media screen and (max-width: 480px) {
@@ -209,19 +316,11 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         padding: 0;
     }
     
-    /* .btn-lg {
-        padding: 5px;
-        font-size: 0.875rem;
-    } */
-    
     .row {
         margin: 0;
         height: 100%;
     }
-/*     
-    .form-control-lg {
-        font-size: 0.875rem;
-    } */
+    
     .d-grid{
         display: flex!important;
         flex-direction: row!important;
@@ -258,41 +357,64 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                         <div class="row g-3">
                             <div class="col-12">
                                 <div class="border rounded p-3">
-                                    <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?></p>
+                                    <p class="mb-0">Validity: <?= $duration . ' ' . $duration_type ?> per rental</p>
                                 </div>
                             </div>
 
                             <div class="col-12">
                                 <div class="border rounded p-3">
                                     <div class="form-group">
-                                        <label for="start_date" class="form-label">Start Date:</label>
+                                        <label class="form-label">Select Multiple Start Dates:</label>
+                                        <!-- Hidden date input -->
                                         <input type="date" 
                                             class="form-control form-control-lg" 
                                             id="start_date" 
-                                            name="start_date" 
                                             min="<?= date('Y-m-d', strtotime('today')) ?>" 
-                                            value="<?= $start_date ?>"
-                                            required
-                                            onchange="updateEndDate(this.value, <?= $duration ?>, '<?= $duration_type ?>')">
+                                            value="" 
+                                            required>
+                                        
+                                        <!-- Calendar widget -->
+                                        <div class="calendar-container">
+                                            <div class="calendar-header">
+                                                <button type="button" class="btn btn-sm" id="prev-month">
+                                                    <i class="bi bi-chevron-left"></i>
+                                                </button>
+                                                <h5 id="calendar-month-year" class="mb-0"></h5>
+                                                <button type="button" class="btn btn-sm" id="next-month">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </button>
+                                            </div>
+                                            <div class="calendar-grid" id="calendar-weekdays">
+                                                <!-- Weekday headers will be inserted here -->
+                                            </div>
+                                            <div class="calendar-grid" id="calendar-days">
+                                                <!-- Calendar days will be inserted here -->
+                                            </div>
+                                        </div>
+                                        
                                         <?php if(!empty($start_dateErr)): ?>
                                             <div class="text-danger mt-1"><?= $start_dateErr ?></div>
                                         <?php endif; ?>
+                                        <div id="dates-container" class="mt-2">
+                                            <p id="no-dates-message">No dates selected</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="col-12">
                                 <div class="border rounded p-3">
-                                    <p class="mb-0">End Date: <span id="end_date">Select start date</span></p>
-                                    <?php if(!empty($end_dateErr)): ?>
-                                        <div class="text-danger mt-1"><?= $end_dateErr ?></div>
-                                    <?php endif; ?>
+                                    <p class="mb-0">End dates will be calculated based on the selected start dates and duration</p>
+                                    <div id="end-dates-info" class="mt-2">
+                                        <!-- End dates information will be displayed here -->
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="col-12">
                                 <div class="border rounded p-3">
-                                    <p class="mb-0">Price: ₱<?= number_format($price, 2) ?></p>
+                                    <p class="mb-0">Price per rental: ₱<?= number_format($price, 2) ?></p>
+                                    <p class="mb-0 mt-2">Total price: ₱<span id="total_price">0.00</span></p>
                                     <?php if(!empty($priceErr)): ?>
                                         <div class="text-danger mt-1"><?= $priceErr ?></div>
                                     <?php endif; ?>
@@ -312,13 +434,11 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
                         <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
                         <?php if (isset($_SESSION['user_id'])): ?>
-                            <form method="POST" class="flex-fill" onsubmit="return validateForm()">
+                            <form method="POST" class="flex-fill" onsubmit="return validateForm(event)">
                                 <input type="hidden" name="rental_id" value="<?= $rental_id ?>">
                                 <input type="hidden" name="service_name" value="<?= $service_name ?>">
                                 <input type="hidden" name="price" value="<?= $price ?>">
-                                <input type="hidden" name="validity" value="<?= $duration . ' ' . $duration_type ?>">
-                                <input type="hidden" name="start_date" id="hidden_start_date">
-                                <input type="hidden" name="end_date" id="hidden_end_date">
+                                <input type="hidden" name="selected_dates" id="hidden_selected_dates">
                                 <button type="submit" name="add_to_cart" class="btn btn-lg w-100 add-cart">Add to Cart</button>
                             </form>
                         <?php else: ?>
@@ -347,30 +467,32 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 <?php endif; ?>
 
 <script>
-function validateForm() {
-    const startDate = document.getElementById('start_date').value;
-   
-    
-    // Update hidden fields before submission
-    document.getElementById('hidden_start_date').value = startDate;
-    const endDate = calculateEndDate(startDate, <?= $duration ?>, '<?= $duration_type ?>');
-    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
-    
-    return true;
+// Array to store selected dates
+let selectedDates = [];
+const price = <?= $price ?>;
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+const duration = <?= $duration ?>;
+const durationType = '<?= $duration_type ?>';
+
+// Dictionary to track all disabled dates (for checking overlaps)
+let disabledDateRanges = {};
+
+// Format date for display
+function formatDisplayDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
 }
 
-function updateEndDate(startDate, duration, durationType) {
-    const endDate = calculateEndDate(startDate, duration, durationType);
-    document.getElementById('end_date').textContent = formatDate(endDate);
-    
-    // Update hidden input for form submission
-    document.getElementById('hidden_start_date').value = startDate;
-    document.getElementById('hidden_end_date').value = endDate.toISOString().split('T')[0];
-}
-
-function calculateEndDate(startDate, duration, durationType) {
+// Calculate end date based on start date and duration
+function calculateEndDate(startDate) {
     const start = new Date(startDate);
-    let end = new Date(start);
+    const end = new Date(start);
     
     if (durationType === 'days') {
         end.setDate(end.getDate() + parseInt(duration));
@@ -383,12 +505,291 @@ function calculateEndDate(startDate, duration, durationType) {
     return end;
 }
 
-function formatDate(date) {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
+// Format date to YYYY-MM-DD
+function formatDateYMD(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
 }
+
+// Check if a date is within any of the disabled ranges
+function isDateDisabled(dateToCheck) {
+    const checkDate = new Date(dateToCheck);
+    
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkDate < today) {
+        return true;
+    }
+    
+    // Check if date is in any of the disabled ranges
+    for (const startDate in disabledDateRanges) {
+        const endDate = disabledDateRanges[startDate];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (checkDate >= start && checkDate <= end) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Generate disabled date ranges for all selected dates
+function updateDisabledDateRanges() {
+    disabledDateRanges = {};
+    
+    selectedDates.forEach(startDate => {
+        const endDate = calculateEndDate(startDate);
+        disabledDateRanges[startDate] = formatDateYMD(endDate);
+        
+        // Disable all dates in between start and end
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const currentDateStr = formatDateYMD(currentDate);
+            if (!disabledDateRanges[currentDateStr]) {
+                disabledDateRanges[currentDateStr] = currentDateStr;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    });
+}
+
+// Add date to the selection
+function addDate(dateStr) {
+    if (!dateStr) {
+        return;
+    }
+    
+    // Check if date is disabled or already selected
+    if (isDateDisabled(dateStr)) {
+        alert('This date is either in the past, already selected, or conflicts with another rental period.');
+        return;
+    }
+    
+    // Add date to array
+    selectedDates.push(dateStr);
+    
+    // Sort dates chronologically
+    selectedDates.sort();
+    
+    // Update disabled date ranges
+    updateDisabledDateRanges();
+    
+    // Update the hidden input with JSON string of selected dates
+    document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    
+    // Update UI
+    updateSelectedDatesUI();
+    
+    // Update calendar to reflect the selection
+    renderCalendar();
+}
+
+// Remove date from selection
+function removeDate(dateToRemove) {
+    selectedDates = selectedDates.filter(date => date !== dateToRemove);
+    
+    // Update disabled date ranges
+    updateDisabledDateRanges();
+    
+    document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    updateSelectedDatesUI();
+    
+    // Update calendar to reflect the removal
+    renderCalendar();
+}
+
+// Update the UI to show selected dates
+function updateSelectedDatesUI() {
+    const container = document.getElementById('dates-container');
+    const noDateMessage = document.getElementById('no-dates-message');
+    const endDatesInfo = document.getElementById('end-dates-info');
+    
+    // Clear containers
+    container.innerHTML = '';
+    endDatesInfo.innerHTML = '';
+    
+    if (selectedDates.length === 0) {
+        container.appendChild(noDateMessage);
+        document.getElementById('total_price').textContent = '0.00';
+        endDatesInfo.innerHTML = '<p class="text-muted">No rental periods selected</p>';
+        return;
+    }
+    
+    // Add date chips for each selected date
+    selectedDates.forEach(date => {
+        const dateChip = document.createElement('div');
+        dateChip.className = 'date-chip';
+        dateChip.innerHTML = `
+            ${formatDisplayDate(date)}
+            <span class="remove-date" onclick="removeDate('${date}')">
+                <i class="bi bi-x-circle"></i>
+            </span>
+        `;
+        container.appendChild(dateChip);
+        
+        // Add end date information
+        const endDate = calculateEndDate(date);
+        const endDateInfo = document.createElement('div');
+        endDateInfo.className = 'mb-2';
+        endDateInfo.innerHTML = `
+            <strong>Rental Period:</strong> ${formatDisplayDate(date)} to ${formatDisplayDate(endDate)}
+        `;
+        endDatesInfo.appendChild(endDateInfo);
+    });
+    
+    // Update total price
+    const totalPrice = (price * selectedDates.length).toFixed(2);
+    document.getElementById('total_price').textContent = new Intl.NumberFormat().format(totalPrice);
+}
+
+function validateForm(event) {
+    event.preventDefault();
+    
+    if (selectedDates.length === 0) {
+        alert('Please select at least one start date for your rental.');
+        return false;
+    }
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert(data.message || 'Failed to add to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+    
+    return false;
+}
+
+// Calendar functions
+function renderCalendarWeekdays() {
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekdaysContainer = document.getElementById('calendar-weekdays');
+    weekdaysContainer.innerHTML = '';
+    
+    weekdays.forEach(day => {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-weekday';
+        dayElement.textContent = day;
+        weekdaysContainer.appendChild(dayElement);
+    });
+}
+
+function formatDateString(year, month, day) {
+    // Ensure month and day are two digits
+    const formattedMonth = (month + 1).toString().padStart(2, '0');
+    const formattedDay = day.toString().padStart(2, '0');
+    return `${year}-${formattedMonth}-${formattedDay}`;
+}
+
+function renderCalendar() {
+    // Update month-year header
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    document.getElementById('calendar-month-year').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+    
+    // Get first day of the month and total days in month
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Clear calendar days container
+    const daysContainer = document.getElementById('calendar-days');
+    daysContainer.innerHTML = '';
+    
+    // Add empty slots for days before the first day of month
+    for (let i = 0; i < firstDay; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day empty';
+        daysContainer.appendChild(emptyDay);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.textContent = day;
+        
+        // Format date string for comparison
+        const dateString = formatDateString(currentYear, currentMonth, day);
+        
+        // Check if this date is selected
+        if (selectedDates.includes(dateString)) {
+            dayElement.classList.add('selected');
+        }
+        
+        // Check if date is disabled (past or in an existing rental period)
+        if (isDateDisabled(dateString)) {
+            dayElement.classList.add('disabled');
+        } else {
+            // Add click event for valid dates
+            dayElement.addEventListener('click', function() {
+                if (!this.classList.contains('disabled')) {
+                    if (this.classList.contains('selected')) {
+                        // If already selected, remove it
+                        removeDate(dateString);
+                    } else {
+                        // If not selected, add it
+                        addDate(dateString);
+                    }
+                }
+            });
+        }
+        
+        daysContainer.appendChild(dayElement);
+    }
+}
+
+function setupCalendarNavigation() {
+    // Previous month
+    document.getElementById('prev-month').addEventListener('click', function() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+    });
+    
+    // Next month
+    document.getElementById('next-month').addEventListener('click', function() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        renderCalendar();
+    });
+}
+
+// Initialize UI on page load
+window.onload = function() {
+    renderCalendarWeekdays();
+    renderCalendar();
+    setupCalendarNavigation();
+    updateSelectedDatesUI();
+    
+    // Set initial hidden dates value
+    document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+};
 </script>
-</body>
-</html>

@@ -206,7 +206,7 @@
             </div>
 
             <!-- Special Plans Section -->
-<h2 class="section-heading">SPECIAL RATES</h2>
+<h2 class="section-heading">SPECIAL GYM RATES</h2>
 <div class="row g-4 mb-4">
     <?php foreach ($special_plans as $arr) { 
         // Default image path
@@ -248,7 +248,7 @@
             <hr class="my-4" style="border: 2px solid #000;">
 
             <!-- Standard Plans Section -->
-<h2 class="section-heading">GYM RATES</h2>
+<h2 class="section-heading">NORMAL GYM RATES</h2>
 <div class="row g-4 mb-4">
     <?php foreach ($standard_plans as $arr) { 
         // Default image path
@@ -290,7 +290,7 @@
             <hr class="my-4" style="border: 2px solid #000;">
 
             <!-- Walk in Section -->
-            <h2 class="section-heading">WALK IN</h2>
+            <h2 class="section-heading">WALK-IN GYM RATES</h2>
             <div class="row g-4 mb-4">
             <?php foreach ($walkin as $arr) { 
                 // Default image path
@@ -328,7 +328,7 @@
 
             <br id="Programs">
             <hr class="my-4" style="border: 2px solid #000;">
-            <h2 class="section-heading">PROGRAMS</h2>
+            <h2 class="section-heading">COACHING PROGRAMS</h2>
             <div class="row g-4 mb-4">
                 <?php foreach ($program_services as $program) { 
                     // Default image path
@@ -378,7 +378,7 @@
             <hr class="my-4" style="border: 2px solid #000;">
 
             <!-- Rental Services Section -->
-            <h2 class="section-heading">OTHERS SERVICES</h2>
+            <h2 class="section-heading">OTHER OFFERED SERVICES</h2>
             <div class="row g-4 mb-4">
                 <?php foreach ($rental_services as $rental){
                      // Default image path
