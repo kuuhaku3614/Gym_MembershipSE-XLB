@@ -540,7 +540,7 @@ function isDateDisabled(dateToCheck) {
 
 // Generate disabled date ranges for all selected dates
 function updateDisabledDateRanges() {
-    disabledDateRanges = {};
+    disabledDateRanges = {}; // Clear existing ranges
     
     selectedDates.forEach(startDate => {
         const endDate = calculateEndDate(startDate);
@@ -558,15 +558,38 @@ function updateDisabledDateRanges() {
     });
 }
 
+// Store selected dates in localStorage to persist across page reloads
+function saveSelectedDatesToStorage() {
+    localStorage.setItem('rentalSelectedDates', JSON.stringify(selectedDates));
+}
+
+// Load selected dates from localStorage when the page loads
+function loadSelectedDatesFromStorage() {
+    const savedDates = localStorage.getItem('rentalSelectedDates');
+    if (savedDates) {
+        selectedDates = JSON.parse(savedDates);
+        // Update disabled date ranges immediately after loading saved dates
+        updateDisabledDateRanges();
+        // Update the hidden input with JSON string of selected dates
+        document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    }
+}
+
 // Add date to the selection
 function addDate(dateStr) {
     if (!dateStr) {
         return;
     }
     
-    // Check if date is disabled or already selected
-    if (isDateDisabled(dateStr)) {
-        alert('This date is either in the past, already selected, or conflicts with another rental period.');
+    // Check if date is disabled (except if it's already selected)
+    if (isDateDisabled(dateStr) && !selectedDates.includes(dateStr)) {
+        alert('This date is either in the past or conflicts with another rental period.');
+        return;
+    }
+    
+    // If already selected, toggle off (remove it)
+    if (selectedDates.includes(dateStr)) {
+        removeDate(dateStr);
         return;
     }
     
@@ -582,6 +605,9 @@ function addDate(dateStr) {
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
     
+    // Save to localStorage
+    saveSelectedDatesToStorage();
+    
     // Update UI
     updateSelectedDatesUI();
     
@@ -591,22 +617,36 @@ function addDate(dateStr) {
 
 // Remove date from selection
 function removeDate(dateToRemove) {
+    // Remove the date from selected dates
     selectedDates = selectedDates.filter(date => date !== dateToRemove);
     
-    // Update disabled date ranges
+    // Update disabled date ranges with new selection set
     updateDisabledDateRanges();
     
+    // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    
+    // Save to localStorage
+    saveSelectedDatesToStorage();
+    
+    // Update UI
     updateSelectedDatesUI();
     
     // Update calendar to reflect the removal
     renderCalendar();
 }
 
+// Format number for display (similar to PHP's number_format)
+function number_format(number, decimals) {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    }).format(number);
+}
+
 // Update the UI to show selected dates
 function updateSelectedDatesUI() {
     const container = document.getElementById('dates-container');
-    const noDateMessage = document.getElementById('no-dates-message');
     const endDatesInfo = document.getElementById('end-dates-info');
     
     // Clear containers
@@ -614,7 +654,11 @@ function updateSelectedDatesUI() {
     endDatesInfo.innerHTML = '';
     
     if (selectedDates.length === 0) {
+        const noDateMessage = document.createElement('p');
+        noDateMessage.id = 'no-dates-message';
+        noDateMessage.textContent = 'No dates selected';
         container.appendChild(noDateMessage);
+        
         document.getElementById('total_price').textContent = '0.00';
         endDatesInfo.innerHTML = '<p class="text-muted">No rental periods selected</p>';
         return;
@@ -644,7 +688,7 @@ function updateSelectedDatesUI() {
     
     // Update total price
     const totalPrice = (price * selectedDates.length).toFixed(2);
-    document.getElementById('total_price').textContent = new Intl.NumberFormat().format(totalPrice);
+    document.getElementById('total_price').textContent = number_format(totalPrice, 2);
 }
 
 function validateForm(event) {
@@ -670,6 +714,8 @@ function validateForm(event) {
     })
     .then(data => {
         if (data.success) {
+            // Clear localStorage on successful submission
+            localStorage.removeItem('rentalSelectedDates');
             window.location.href = data.redirect;
         } else {
             alert(data.message || 'Failed to add to cart');
@@ -739,19 +785,13 @@ function renderCalendar() {
         }
         
         // Check if date is disabled (past or in an existing rental period)
-        if (isDateDisabled(dateString)) {
+        if (isDateDisabled(dateString) && !selectedDates.includes(dateString)) {
             dayElement.classList.add('disabled');
         } else {
             // Add click event for valid dates
             dayElement.addEventListener('click', function() {
-                if (!this.classList.contains('disabled')) {
-                    if (this.classList.contains('selected')) {
-                        // If already selected, remove it
-                        removeDate(dateString);
-                    } else {
-                        // If not selected, add it
-                        addDate(dateString);
-                    }
+                if (!this.classList.contains('disabled') || this.classList.contains('selected')) {
+                    addDate(dateString);
                 }
             });
         }
@@ -784,6 +824,10 @@ function setupCalendarNavigation() {
 
 // Initialize UI on page load
 window.onload = function() {
+    // Load saved dates first
+    loadSelectedDatesFromStorage();
+    
+    // Then initialize the UI components
     renderCalendarWeekdays();
     renderCalendar();
     setupCalendarNavigation();
@@ -792,4 +836,12 @@ window.onload = function() {
     // Set initial hidden dates value
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
 };
+
+// Add window beforeunload handler to preserve selected dates when navigating away
+window.addEventListener('beforeunload', function() {
+    // Only save if there are actually dates selected
+    if (selectedDates.length > 0) {
+        saveSelectedDatesToStorage();
+    }
+});
 </script>
