@@ -388,6 +388,11 @@ let selectedDates = [];
 const price = <?= $price ?>;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
+const duration = <?= $duration ?>;
+const durationType = '<?= strtolower($duration_type) ?>';
+
+// Dictionary to track all disabled dates (for checking overlaps)
+let disabledDateRanges = {};
 
 // Format date for display
 function formatDisplayDate(dateStr) {
@@ -400,30 +405,91 @@ function formatDisplayDate(dateStr) {
     });
 }
 
-// Add date to the selection
-function addDate(dateStr) {
-    if (!dateStr) {
-        const dateInput = document.getElementById('selected_date');
-        dateStr = dateInput.value;
+// Calculate end date based on start date and duration
+function calculateEndDate(startDate) {
+    const start = new Date(startDate);
+    const end = new Date(start);
+    
+    if (durationType === 'day' || durationType === 'days') {
+        // Subtract 1 since the selected date is already counted as 1 day
+        end.setDate(end.getDate() + parseInt(duration) - 1);
+    } else if (durationType === 'month' || durationType === 'months') {
+        end.setMonth(end.getMonth() + parseInt(duration));
+    } else if (durationType === 'year' || durationType === 'years') {
+        end.setFullYear(end.getFullYear() + parseInt(duration));
+    }
+    
+    return end;
+}
+
+// Format date to YYYY-MM-DD
+function formatDateYMD(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+// Check if a date is within any of the disabled ranges
+function isDateDisabled(dateToCheck) {
+    const checkDate = new Date(dateToCheck);
+    
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkDate < today) {
+        return true;
+    }
+    
+    // Check if date is in any of the disabled ranges
+    for (const startDate in disabledDateRanges) {
+        const endDate = disabledDateRanges[startDate];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
         
-        if (!dateStr) {
-            alert('Please select a date.');
-            return;
+        if (checkDate >= start && checkDate <= end) {
+            return true;
         }
     }
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const date = new Date(dateStr);
+    return false;
+}
+
+// Generate disabled date ranges for all selected dates
+function updateDisabledDateRanges() {
+    disabledDateRanges = {}; // Clear existing ranges
     
-    if (date < today) {
-        alert('Date cannot be in the past.');
+    selectedDates.forEach(startDate => {
+        const endDate = calculateEndDate(startDate);
+        disabledDateRanges[startDate] = formatDateYMD(endDate);
+        
+        // Disable all dates in between start and end
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const currentDateStr = formatDateYMD(currentDate);
+            if (!disabledDateRanges[currentDateStr]) {
+                disabledDateRanges[currentDateStr] = currentDateStr;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    });
+}
+
+// Add date to the selection
+function addDate(dateStr) {
+    if (!dateStr) {
         return;
     }
     
-    // Check if date is already selected
+    // Check if date is disabled (except if it's already selected)
+    if (isDateDisabled(dateStr) && !selectedDates.includes(dateStr)) {
+        alert('This date is either in the past or conflicts with another walk-in period.');
+        return;
+    }
+    
+    // If already selected, toggle off (remove it)
     if (selectedDates.includes(dateStr)) {
-        alert('This date is already selected.');
+        removeDate(dateStr);
         return;
     }
     
@@ -432,6 +498,9 @@ function addDate(dateStr) {
     
     // Sort dates chronologically
     selectedDates.sort();
+    
+    // Update disabled date ranges
+    updateDisabledDateRanges();
     
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
@@ -445,8 +514,16 @@ function addDate(dateStr) {
 
 // Remove date from selection
 function removeDate(dateToRemove) {
+    // Remove the date from selected dates
     selectedDates = selectedDates.filter(date => date !== dateToRemove);
+    
+    // Update disabled date ranges with new selection set
+    updateDisabledDateRanges();
+    
+    // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    
+    // Update UI
     updateSelectedDatesUI();
     
     // Update calendar to reflect the removal
@@ -456,13 +533,16 @@ function removeDate(dateToRemove) {
 // Update the UI to show selected dates
 function updateSelectedDatesUI() {
     const container = document.getElementById('dates-container');
-    const noDateMessage = document.getElementById('no-dates-message');
     
     // Clear container
     container.innerHTML = '';
     
     if (selectedDates.length === 0) {
+        const noDateMessage = document.createElement('p');
+        noDateMessage.id = 'no-dates-message';
+        noDateMessage.textContent = 'No dates selected';
         container.appendChild(noDateMessage);
+        
         document.getElementById('total_price').textContent = '0.00';
         return;
     }
@@ -482,9 +562,18 @@ function updateSelectedDatesUI() {
     
     // Update total price
     const totalPrice = (price * selectedDates.length).toFixed(2);
-    document.getElementById('total_price').textContent = new Intl.NumberFormat().format(totalPrice);
+    document.getElementById('total_price').textContent = number_format(totalPrice, 2);
 }
 
+// Format number for display (similar to PHP's number_format)
+function number_format(number, decimals) {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    }).format(number);
+}
+
+// Validate form before submission
 function validateForm(event) {
     event.preventDefault();
     
@@ -496,7 +585,7 @@ function validateForm(event) {
     const form = event.target;
     const formData = new FormData(form);
     
-    fetch(form.action, {
+    fetch(window.location.href, {
         method: 'POST',
         body: formData
     })
@@ -551,10 +640,6 @@ function renderCalendar() {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     
-    // Get today's date for comparing
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
     // Clear calendar days container
     const daysContainer = document.getElementById('calendar-days');
     daysContainer.innerHTML = '';
@@ -574,27 +659,20 @@ function renderCalendar() {
         
         // Format date string for comparison
         const dateString = formatDateString(currentYear, currentMonth, day);
-        const date = new Date(dateString);
         
         // Check if this date is selected
         if (selectedDates.includes(dateString)) {
             dayElement.classList.add('selected');
         }
         
-        // Disable past dates
-        if (date < today) {
+        // Check if date is disabled (past or in an existing walk-in period)
+        if (isDateDisabled(dateString) && !selectedDates.includes(dateString)) {
             dayElement.classList.add('disabled');
         } else {
-            // Add click event for future dates
+            // Add click event for valid dates
             dayElement.addEventListener('click', function() {
-                if (!this.classList.contains('disabled')) {
-                    if (this.classList.contains('selected')) {
-                        // If already selected, remove it
-                        removeDate(dateString);
-                    } else {
-                        // If not selected, add it
-                        addDate(dateString);
-                    }
+                if (!this.classList.contains('disabled') || this.classList.contains('selected')) {
+                    addDate(dateString);
                 }
             });
         }
@@ -627,10 +705,14 @@ function setupCalendarNavigation() {
 
 // Initialize UI on page load
 window.onload = function() {
+    // Initialize the UI components
     renderCalendarWeekdays();
     renderCalendar();
     setupCalendarNavigation();
     updateSelectedDatesUI();
+    
+    // Set initial hidden dates value
+    document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
 };
 </script>
 

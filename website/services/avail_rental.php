@@ -558,23 +558,6 @@ function updateDisabledDateRanges() {
     });
 }
 
-// Store selected dates in localStorage to persist across page reloads
-function saveSelectedDatesToStorage() {
-    localStorage.setItem('rentalSelectedDates', JSON.stringify(selectedDates));
-}
-
-// Load selected dates from localStorage when the page loads
-function loadSelectedDatesFromStorage() {
-    const savedDates = localStorage.getItem('rentalSelectedDates');
-    if (savedDates) {
-        selectedDates = JSON.parse(savedDates);
-        // Update disabled date ranges immediately after loading saved dates
-        updateDisabledDateRanges();
-        // Update the hidden input with JSON string of selected dates
-        document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-    }
-}
-
 // Add date to the selection
 function addDate(dateStr) {
     if (!dateStr) {
@@ -605,9 +588,6 @@ function addDate(dateStr) {
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
     
-    // Save to localStorage
-    saveSelectedDatesToStorage();
-    
     // Update UI
     updateSelectedDatesUI();
     
@@ -625,9 +605,6 @@ function removeDate(dateToRemove) {
     
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-    
-    // Save to localStorage
-    saveSelectedDatesToStorage();
     
     // Update UI
     updateSelectedDatesUI();
@@ -714,8 +691,6 @@ function validateForm(event) {
     })
     .then(data => {
         if (data.success) {
-            // Clear localStorage on successful submission
-            localStorage.removeItem('rentalSelectedDates');
             window.location.href = data.redirect;
         } else {
             alert(data.message || 'Failed to add to cart');
@@ -824,10 +799,7 @@ function setupCalendarNavigation() {
 
 // Initialize UI on page load
 window.onload = function() {
-    // Load saved dates first
-    loadSelectedDatesFromStorage();
-    
-    // Then initialize the UI components
+    // Initialize the UI components
     renderCalendarWeekdays();
     renderCalendar();
     setupCalendarNavigation();
@@ -836,12 +808,4 @@ window.onload = function() {
     // Set initial hidden dates value
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
 };
-
-// Add window beforeunload handler to preserve selected dates when navigating away
-window.addEventListener('beforeunload', function() {
-    // Only save if there are actually dates selected
-    if (selectedDates.length > 0) {
-        saveSelectedDatesToStorage();
-    }
-});
 </script>
