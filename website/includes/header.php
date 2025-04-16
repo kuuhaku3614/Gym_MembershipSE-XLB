@@ -264,6 +264,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
   $isCoachFolder = strpos($_SERVER['PHP_SELF'], '/coach/') !== false;
   $basePath = $isCoachFolder ? '../../' : '../';
   ?>
+  <link rel="icon" href="../cms_img/icon_xlb.png">
   <link rel="stylesheet" href="<?php echo $basePath; ?>css/landing1.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
