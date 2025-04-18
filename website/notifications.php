@@ -49,6 +49,7 @@ $transaction_result = $notifications['transactions'];
 $membership_result = $notifications['memberships'];
 $announcement_result = $notifications['announcements'];
 $program_confirmation_result = function_exists('getProgramConfirmationNotifications') && isset($notifications['program_confirmations']) ? $notifications['program_confirmations'] : [];
+$program_cancellation_result = function_exists('getProgramCancellationNotifications') && isset($notifications['program_cancellations']) ? $notifications['program_cancellations'] : [];
 
 
 // Get coach program requests if user is a coach
@@ -100,10 +101,10 @@ foreach ($program_confirmation_result as $notification) {
     if (isset($notification['coach_id']) && isset($notification['user_id'])) {
         if ($user_id == $notification['coach_id']) {
             $notification['title'] = 'Program Request Confirmed (Coach)';
-            $notification['message'] = 'You have confirmed a program request for <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') for your member.';
+            $notification['message'] = 'You have confirmed the <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ') </strong> program request for <strong>' . htmlspecialchars($notification['member_name']) . '</strong>.';
         } elseif ($user_id == $notification['user_id']) {
             $notification['title'] = 'Program Confirmed';
-            $notification['message'] = 'Your program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') has been <strong>confirmed</strong> by your coach.';
+            $notification['message'] = 'You are now enrolled in the <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') program of <strong>' . htmlspecialchars($notification['coach_name']) . '</strong>.';
         } else {
             $notification['title'] = 'Program Confirmed';
             $notification['message'] = 'A program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') was confirmed.';
@@ -113,6 +114,31 @@ foreach ($program_confirmation_result as $notification) {
         $notification['message'] = 'Your program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') has been <strong>confirmed</strong>.';
     }
     $notification['class'] = 'list-group-item-success';
+    $all_notifications[] = $notification;
+}
+
+// Add program cancellation notifications
+foreach ($program_cancellation_result as $notification) {
+    $notification['type'] = 'program_cancellations';
+    $notification['id'] = $notification['notification_id']; // notification_id is transaction_id
+    $notification['date'] = isset($notification['updated_at']) ? $notification['updated_at'] : $notification['created_at'];
+    // Determine if this user is coach or member for this notification
+    if (isset($notification['coach_id']) && isset($notification['user_id'])) {
+        if ($user_id == $notification['coach_id']) {
+            $notification['title'] = 'Program Request Cancelled (Coach)';
+            $notification['message'] = 'You have cancelled the <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> program request for <strong>' . htmlspecialchars($notification['member_name']) . '</strong>.';
+        } elseif ($user_id == $notification['user_id']) {
+            $notification['title'] = 'Program Cancelled';
+            $notification['message'] = 'Your request to avail the <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> program of <strong>' . htmlspecialchars($notification['coach_name']) . '</strong> has been <strong>declined</strong>.';
+        } else {
+            $notification['title'] = 'Program Cancelled';
+            $notification['message'] = 'A program request, <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> was cancelled.';
+        }
+    } else {
+        $notification['title'] = 'Program Cancelled';
+        $notification['message'] = 'A program request, <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> was cancelled.';
+    }
+    $notification['class'] = 'list-group-item-danger';
     $all_notifications[] = $notification;
 }
 
@@ -391,7 +417,7 @@ function executeQuery($query, $params = []) {
                 <div id="scheduleDetails" class="list-group"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="cancelRequest">Cancel Request</button>
                 <button type="button" class="btn btn-primary" id="confirmRequest">Confirm Request</button>
             </div>
         </div>
@@ -575,7 +601,43 @@ $(document).ready(function() {
         currentSubscriptionId = $(event.relatedTarget).data('subscription-id');
     });
 
-    $('#confirmRequest').on('click', function() {
+    $('#cancelRequest').on('click', function() {
+    var button = $(this);
+    var modal = $('#scheduleModal');
+    if (confirm('Are you sure you want to cancel this program request?')) {
+        // Disable buttons and show loading state
+        modal.find('.modal-footer button').prop('disabled', true);
+        button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cancelling...');
+        // Send AJAX request
+        $.ajax({
+            url: 'coach_requests.php',
+            method: 'POST',
+            data: {
+                action: 'cancel_request',
+                subscription_id: currentSubscriptionId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    modal.modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                    modal.find('.modal-footer button').prop('disabled', false);
+                    button.text('Cancel Request');
+                }
+            },
+            error: function() {
+                alert('An error occurred while cancelling the request');
+                modal.find('.modal-footer button').prop('disabled', false);
+                button.text('Cancel Request');
+            }
+        });
+    }
+});
+
+$('#confirmRequest').on('click', function() {
         var button = $(this);
         var modal = $('#scheduleModal');
 
