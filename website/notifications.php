@@ -408,9 +408,24 @@ function executeQuery($query, $params = []) {
                 </div>
             <?php elseif (!empty($all_notifications)): ?>
                 <?php foreach ($all_notifications as $notification): ?>
-                    <div class="list-group-item <?= $notification['class'] ?> list-group-item-action flex-column align-items-start <?= !$notification['is_read'] ? 'notification-unread' : '' ?>"
-                        data-notification-type="<?= $notification['type'] ?>" 
-                        data-notification-id="<?= htmlspecialchars($notification['id']) ?>">
+    <?php
+        // Add subscription_id for program confirmations/cancellations if missing
+        if ((($notification['type'] === 'program_confirmations' || $notification['type'] === 'program_cancellations')) && empty($notification['subscription_id'])) {
+            if (!empty($notification['subscription_ids'])) {
+                $subs = explode(',', $notification['subscription_ids']);
+                $notification['subscription_id'] = $subs[0];
+            } else {
+                $notification['subscription_id'] = isset($notification['id']) ? $notification['id'] : (isset($notification['notification_id']) ? $notification['notification_id'] : null);
+            }
+        }
+    ?>
+    <div class="list-group-item <?= $notification['class'] ?> list-group-item-action flex-column align-items-start <?= !$notification['is_read'] ? 'notification-unread' : '' ?>"
+        data-notification-type="<?= $notification['type'] ?>" 
+        data-notification-id="<?= htmlspecialchars($notification['id']) ?>"
+        <?php if (!empty($notification['subscription_id'])): ?>
+            data-subscription-id="<?= htmlspecialchars($notification['subscription_id']) ?>"
+        <?php endif; ?>
+    >
                         
                         <div class="notification-header">
                             <h5 class="mb-1 <?= $notification['type'] === 'transactions' ? 'text-success' : ($notification['type'] === 'announcements' ? 'text-primary' : '') ?>"><?= $notification['title'] ?></h5>
@@ -585,6 +600,10 @@ $(document).ready(function() {
     // Individual notification click handler
     $('.list-group-item[data-notification-type]').click(function() {
         const type = $(this).data('notification-type');
+        // Prevent default notification modal for program confirmations/cancellations
+        if (type === 'program_confirmations' || type === 'program_cancellations') {
+            return; // Handled by the dedicated handler
+        }
         const id = $(this).data('notification-id');
         const element = $(this);
         
@@ -741,5 +760,90 @@ $('#confirmRequest').on('click', function() {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Program Confirmation/Cancellation Notification Modal -->
+<div class="modal fade" id="programNotifModal" tabindex="-1" aria-labelledby="programNotifModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="programNotifModalLabel"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="programNotifModalBody">
+  <div id="programNotifMessage"></div>
+  <div id="programNotifScheduleDetails" class="mt-3"></div>
+</div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // ... existing code ...
+    // Add new handler for program confirmations/cancellations
+    $('.list-group-item[data-notification-type="program_confirmations"], .list-group-item[data-notification-type="program_cancellations"]').click(function(e) {
+        e.stopPropagation(); // Prevent double modal opening
+        const title = $(this).find('h5').text();
+        const message = $(this).find('p.mb-1').html();
+        const date = $(this).find('small:first').text();
+        const subscriptionId = $(this).data('subscription-id');
+
+        $('#programNotifModalLabel').text(title);
+        $('#programNotifMessage').html(`<div>${message}</div><small class="text-muted">${date}</small>`);
+        $('#programNotifScheduleDetails').html('<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading schedules...</p></div>');
+        $('#programNotifModal').modal('show');
+
+        // Fetch and display schedules
+        if (subscriptionId) {
+            $.ajax({
+                url: 'get_program_schedules.php',
+                method: 'POST',
+                data: { subscription_id: subscriptionId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response && response.success && response.schedules && response.schedules.length > 0) {
+                        // Group and format schedules like in the request modal
+                        var grouped = {};
+                        response.schedules.forEach(function(sch) {
+                            if (!grouped[sch.program_name]) grouped[sch.program_name] = {};
+                            if (!grouped[sch.program_name][sch.schedule_type]) grouped[sch.program_name][sch.schedule_type] = {};
+                            var key = sch.day + ' at ' + sch.formatted_time;
+                            if (!grouped[sch.program_name][sch.schedule_type][key]) grouped[sch.program_name][sch.schedule_type][key] = [];
+                            grouped[sch.program_name][sch.schedule_type][key].push(sch);
+                        });
+                        var content = '';
+                        for (const program in grouped) {
+                            content += `<div class="mb-3"><strong class="text-primary">${program}</strong>`;
+                            for (const type in grouped[program]) {
+                                for (const scheduleKey in grouped[program][type]) {
+                                    const schedules = grouped[program][type][scheduleKey];
+                                    content += `<div class="border rounded p-2 mb-2">
+                                        <div><strong>Schedule:</strong> ${scheduleKey}</div>
+                                        <div><strong>Type:</strong> ${type}</div>
+                                        <div><strong>Dates:</strong><ul class="mb-1">`;
+                                    schedules.forEach(function(sch) {
+                                        content += `<li>${sch.formatted_date}</li>`;
+                                    });
+                                    content += `</ul></div>`;
+                                    content += `</div>`;
+                                }
+                            }
+                            content += `</div>`;
+                        }
+                        $('#programNotifScheduleDetails').html(content);
+                    } else {
+                        $('#programNotifScheduleDetails').html('<div class="text-center p-3">No schedules available</div>');
+                    }
+                },
+                error: function() {
+                    $('#programNotifScheduleDetails').html('<div class="text-center p-3 text-danger">Error loading schedules</div>');
+                }
+            });
+        } else {
+            $('#programNotifScheduleDetails').html('<div class="text-center p-3 text-danger">No subscription ID found for this notification.</div>');
+        }
+    });
+});
+</script>
+
 </body>
 </html>

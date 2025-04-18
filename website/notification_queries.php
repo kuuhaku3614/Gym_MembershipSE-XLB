@@ -313,7 +313,7 @@ if (!function_exists('getProgramConfirmationNotifications')) {
      */
     function getProgramConfirmationNotifications($database, $user_id) {
         $pdo = $database->connect();
-        $sql = "SELECT MAX(ps.id) as id, ps.transaction_id as notification_id, MAX(ps.status) as status, MAX(ps.created_at) as created_at,
+        $sql = "SELECT GROUP_CONCAT(ps.id) as subscription_ids, ps.transaction_id as notification_id, MAX(ps.status) as status, MAX(ps.created_at) as created_at,
                        GROUP_CONCAT(CONCAT(p.program_name, ' (', cpt.type, ')') SEPARATOR '\n') as programs, MAX(cpt.coach_id) as coach_id, MAX(ps.user_id) as user_id,
                        CONCAT_WS(' ', MAX(pd.first_name), MAX(pd.middle_name), MAX(pd.last_name)) as member_name,
                        CONCAT_WS(' ', MAX(pd_coach.first_name), MAX(pd_coach.middle_name), MAX(pd_coach.last_name)) as coach_name
@@ -340,7 +340,7 @@ if (!function_exists('getProgramCancellationNotifications')) {
      */
     function getProgramCancellationNotifications($database, $user_id) {
     $pdo = $database->connect();
-    $sql = "SELECT MAX(ps.id) as id, ps.transaction_id as notification_id, MAX(ps.status) as status, MAX(ps.created_at) as created_at,
+    $sql = "SELECT GROUP_CONCAT(ps.id) as subscription_ids, ps.transaction_id as notification_id, MAX(ps.status) as status, MAX(ps.created_at) as created_at,
                    GROUP_CONCAT(CONCAT(p.program_name, ' (', cpt.type, ')') SEPARATOR '\n') as programs, MAX(cpt.coach_id) as coach_id, MAX(ps.user_id) as user_id,
                    CONCAT_WS(' ', MAX(pd.first_name), MAX(pd.middle_name), MAX(pd.last_name)) as member_name,
                    CONCAT_WS(' ', MAX(pd_coach.first_name), MAX(pd_coach.middle_name), MAX(pd_coach.last_name)) as coach_name
