@@ -395,15 +395,8 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 
                                     <div class="col-12">
                                         <div class="border rounded p-3">
-                                            <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
-                                            <p class="mb-0 mt-2">Total price: ₱<span id="total_price"><?= number_format($membership['price'], 2) ?></span></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12">
-                                        <div class="border rounded p-3">
                                             <div class="form-group">
-                                                <label for="start_date" class="form-label">Select Multiple Start Dates:</label>
+                                                <label for="start_date" class="form-label">Select Dates:</label>
                                                 <!-- Hidden date input -->
                                                 <input type="date" 
                                                     class="form-control form-control-lg" 
@@ -448,6 +441,13 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                                                 <!-- End dates will be displayed here -->
                                                 <p class="text-muted">Select start dates to see end dates</p>
                                             </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <p class="mb-0">Price: ₱<?= number_format($membership['price'], 2) ?></p>
+                                            <p class="mb-0 mt-2">Total price: ₱<span id="total_price"><?= number_format($membership['price'], 2) ?></span></p>
                                         </div>
                                     </div>
 
