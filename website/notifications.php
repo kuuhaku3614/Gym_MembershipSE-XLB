@@ -266,14 +266,28 @@ function executeQuery($query, $params = []) {
                         <p class="mb-1">
                         <strong><?= htmlspecialchars($request['member_name']) ?></strong> has requested to join your program
                             <strong><?php
-                                $programs = explode("\n", $request['programs']);
-                                if (count($programs) > 1) {
-                                    $lastProgram = array_pop($programs);
-                                    echo implode(', ', $programs) . ' and ' . $lastProgram;
-                                } else {
-                                    echo $programs[0];
-                                }
-                            ?></strong>
+    // Deduplicate by coach_program_type_id if available, else by name+type
+    $unique_programs = [];
+    if (isset($request['programs_details']) && is_array($request['programs_details'])) {
+        foreach ($request['programs_details'] as $prog) {
+            $key = isset($prog['coach_program_type_id']) ? $prog['coach_program_type_id'] : ($prog['program_name'] . '|' . $prog['schedule_type']);
+            $unique_programs[$key] = $prog['program_name'] . ' (' . $prog['schedule_type'] . ')';
+        }
+    } else {
+        // fallback: old logic
+        $programs = explode("\n", $request['programs']);
+        foreach ($programs as $p) {
+            $unique_programs[trim($p)] = trim($p);
+        }
+    }
+    $values = array_values($unique_programs);
+    if (count($values) > 1) {
+        $lastProgram = array_pop($values);
+        echo implode(', ', $values) . ' and ' . $lastProgram;
+    } else {
+        echo $values[0];
+    }
+?></strong>
                         </p>
                     </div>
                 <?php endforeach; ?>
@@ -386,10 +400,10 @@ $(document).ready(function() {
         var modal = $(this);
 
         // Update modal title and show member details
-        const programList = programName.split('\n').map(p => `<li>${p}</li>`).join('');
+        // We'll deduplicate program names by coach_program_type_id after fetching schedules
         $('#memberDetails').html(`
             <p class="mb-3">${memberName} has requested to join your program(s):</p>
-            <ul class="mb-3"><strong>${programList}</strong></ul>
+            <ul class="mb-3" id="programListHolder"></ul>
             <p class="text-muted small mb-4">Contact: ${memberContact}</p>
             <h6 class="mb-3">Schedule:</h6>
         `);
@@ -404,21 +418,53 @@ $(document).ready(function() {
             data: { subscription_id: subscriptionId },
             dataType: 'json',
             success: function(response) {
-                console.log('AJAX Response:', response);
-                if (response && response.success && response.schedules && response.schedules.length > 0) {
-                    var content = '';
-                    var firstSchedule = response.schedules[0];
-                    content = `<div class="list-group-item">${firstSchedule.day}s at ${firstSchedule.formatted_time}</div>`;
-                    content += '<div class="list-group-item">Dates:<ul class="list-unstyled mb-0 ps-2">';
-                    response.schedules.forEach(function(schedule) {
-                        content += `<li>${schedule.formatted_date}</li>`;
+    console.log('AJAX Response:', response);
+    if (response && response.success && response.schedules && response.schedules.length > 0) {
+        // Deduplicate program names by coach_program_type_id for member details
+        var uniquePrograms = {};
+        response.schedules.forEach(function(sch) {
+            // Use a composite key: program_name + schedule_type + coach_program_type_id (if available)
+            // If coach_program_type_id is not present, fallback to program_name + schedule_type
+            var key = (sch.coach_program_type_id ? sch.coach_program_type_id : sch.program_name + '|' + sch.schedule_type);
+            if (!uniquePrograms[key]) {
+                uniquePrograms[key] = sch.program_name + ' (' + sch.schedule_type + ')';
+            }
+        });
+        var programListHtml = Object.values(uniquePrograms).map(p => `<li>${p}</li>`).join('');
+        $('#programListHolder').html('<strong>' + programListHtml + '</strong>');
+        // Group schedules by program_name, then by schedule_type, then by day/time
+        var grouped = {};
+        response.schedules.forEach(function(sch) {
+            if (!grouped[sch.program_name]) grouped[sch.program_name] = {};
+            if (!grouped[sch.program_name][sch.schedule_type]) grouped[sch.program_name][sch.schedule_type] = {};
+            var key = sch.day + ' at ' + sch.formatted_time;
+            if (!grouped[sch.program_name][sch.schedule_type][key]) grouped[sch.program_name][sch.schedule_type][key] = [];
+            grouped[sch.program_name][sch.schedule_type][key].push(sch);
+        });
+        var content = '';
+        for (const program in grouped) {
+            content += `<div class="mb-3"><strong class="text-primary">${program}</strong>`;
+            for (const type in grouped[program]) {
+                for (const scheduleKey in grouped[program][type]) {
+                    const schedules = grouped[program][type][scheduleKey];
+                    content += `<div class="border rounded p-2 mb-2">
+                        <div><strong>Schedule:</strong> ${scheduleKey}</div>
+                        <div><strong>Type:</strong> ${type}</div>
+                        <div><strong>Dates:</strong><ul class="mb-1">`;
+                    schedules.forEach(function(sch) {
+                        content += `<li>${sch.formatted_date}</li>`;
                     });
-                    content += '</ul></div>';
-                    $('#scheduleDetails').html(content);
-                } else {
-                    $('#scheduleDetails').html('<div class="text-center p-3">No schedules available</div>');
+                    content += `</ul></div>`;
+                    content += `</div>`;
                 }
-            },
+            }
+            content += `</div>`;
+        }
+        $('#scheduleDetails').html(content);
+    } else {
+        $('#scheduleDetails').html('<div class="text-center p-3">No schedules available</div>');
+    }
+},
             error: function(xhr, status, error) {
                 console.error('AJAX Error:', status, error);
                 console.error('Response:', xhr.responseText);
