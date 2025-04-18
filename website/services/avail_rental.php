@@ -364,7 +364,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                             <div class="col-12">
                                 <div class="border rounded p-3">
                                     <div class="form-group">
-                                        <label class="form-label">Select Multiple Start Dates:</label>
+                                        <label class="form-label">Select Dates:</label>
                                         <!-- Hidden date input -->
                                         <input type="date" 
                                             class="form-control form-control-lg" 
