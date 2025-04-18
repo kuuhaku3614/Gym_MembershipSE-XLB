@@ -76,7 +76,7 @@ class Coach_class {
                 INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
                 INNER JOIN programs p ON cpt.program_id = p.id
                 LEFT JOIN transactions t ON ps.transaction_id = t.id
-                WHERE cpt.coach_id = ?
+                WHERE cpt.coach_id = ? AND ps.status = 'active'
                 GROUP BY u.id, pd.first_name, pd.middle_name, pd.last_name, pd.phone_number
                 ORDER BY latest_subscription_date DESC";
         

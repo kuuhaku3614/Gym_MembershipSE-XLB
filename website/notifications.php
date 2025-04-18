@@ -100,18 +100,50 @@ foreach ($program_confirmation_result as $notification) {
     // Determine if this user is coach or member for this notification
     if (isset($notification['coach_id']) && isset($notification['user_id'])) {
         if ($user_id == $notification['coach_id']) {
-            $notification['title'] = 'Program Request Confirmed (Coach)';
-            $notification['message'] = 'You have confirmed the <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ') </strong> program request for <strong>' . htmlspecialchars($notification['member_name']) . '</strong>.';
+            $notification['title'] = 'Program Request Confirmed';
+            $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+            $programs_str = '';
+            if (count($programs) > 1) {
+                $last = array_pop($programs);
+                $programs_str = implode(', ', $programs) . ' and ' . $last;
+            } else {
+                $programs_str = $programs[0];
+            }
+            $notification['message'] = 'You have confirmed the <strong>' . htmlspecialchars($programs_str) . '</strong> program request for <strong>' . htmlspecialchars($notification['member_name']) . '</strong>.';
         } elseif ($user_id == $notification['user_id']) {
             $notification['title'] = 'Program Confirmed';
-            $notification['message'] = 'You are now enrolled in the <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') program of <strong>' . htmlspecialchars($notification['coach_name']) . '</strong>.';
+            $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+            $programs_str = '';
+            if (count($programs) > 1) {
+                $last = array_pop($programs);
+                $programs_str = implode(', ', $programs) . ' and ' . $last;
+            } else {
+                $programs_str = $programs[0];
+            }
+            $notification['message'] = 'You are now enrolled in the <strong>' . htmlspecialchars($programs_str) . '</strong> program(s) of <strong>' . htmlspecialchars($notification['coach_name']) . '</strong>.';
         } else {
             $notification['title'] = 'Program Confirmed';
-            $notification['message'] = 'A program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') was confirmed.';
+            $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+            $programs_str = '';
+            if (count($programs) > 1) {
+                $last = array_pop($programs);
+                $programs_str = implode(', ', $programs) . ' and ' . $last;
+            } else {
+                $programs_str = $programs[0];
+            }
+            $notification['message'] = 'A program <strong>' . htmlspecialchars($programs_str) . '</strong> was confirmed.';
         }
     } else {
         $notification['title'] = 'Program Confirmed';
-        $notification['message'] = 'Your program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') has been <strong>confirmed</strong>.';
+        $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+        $programs_str = '';
+        if (count($programs) > 1) {
+            $last = array_pop($programs);
+            $programs_str = implode(', ', $programs) . ' and ' . $last;
+        } else {
+            $programs_str = $programs[0];
+        }
+        $notification['message'] = 'Your program(s) <strong>' . htmlspecialchars($programs_str) . '</strong> has/have been <strong>confirmed</strong>.';
     }
     $notification['class'] = 'list-group-item-success';
     $all_notifications[] = $notification;
@@ -125,14 +157,38 @@ foreach ($program_cancellation_result as $notification) {
     // Determine if this user is coach or member for this notification
     if (isset($notification['coach_id']) && isset($notification['user_id'])) {
         if ($user_id == $notification['coach_id']) {
-            $notification['title'] = 'Program Request Cancelled (Coach)';
-            $notification['message'] = 'You have cancelled the <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> program request for <strong>' . htmlspecialchars($notification['member_name']) . '</strong>.';
+            $notification['title'] = 'Program Request Cancelled';
+            $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+            $programs_str = '';
+            if (count($programs) > 1) {
+                $last = array_pop($programs);
+                $programs_str = implode(', ', $programs) . ' and ' . $last;
+            } else {
+                $programs_str = $programs[0];
+            }
+            $notification['message'] = 'You have cancelled the <strong>' . htmlspecialchars($programs_str) . '</strong> program request for <strong>' . htmlspecialchars($notification['member_name']) . '</strong>.';
         } elseif ($user_id == $notification['user_id']) {
             $notification['title'] = 'Program Cancelled';
-            $notification['message'] = 'Your request to avail the <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> program of <strong>' . htmlspecialchars($notification['coach_name']) . '</strong> has been <strong>declined</strong>.';
+            $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+            $programs_str = '';
+            if (count($programs) > 1) {
+                $last = array_pop($programs);
+                $programs_str = implode(', ', $programs) . ' and ' . $last;
+            } else {
+                $programs_str = $programs[0];
+            }
+            $notification['message'] = 'Your request to avail the <strong>' . htmlspecialchars($programs_str) . '</strong> program(s) of <strong>' . htmlspecialchars($notification['coach_name']) . '</strong> has been <strong>declined</strong>.';
         } else {
             $notification['title'] = 'Program Cancelled';
-            $notification['message'] = 'A program request, <strong>' . htmlspecialchars($notification['program_name']) . ' (' . htmlspecialchars($notification['program_type']) . ')</strong> was cancelled.';
+            $programs = array_unique(array_map('trim', explode("\n", $notification['programs'])));
+            $programs_str = '';
+            if (count($programs) > 1) {
+                $last = array_pop($programs);
+                $programs_str = implode(', ', $programs) . ' and ' . $last;
+            } else {
+                $programs_str = $programs[0];
+            }
+            $notification['message'] = 'A program request, <strong>' . htmlspecialchars($programs_str) . '</strong> was cancelled.';
         }
     } else {
         $notification['title'] = 'Program Cancelled';
