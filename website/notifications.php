@@ -349,6 +349,10 @@ function executeQuery($query, $params = []) {
                 <div id="memberDetails"></div>
                 <div id="scheduleDetails" class="list-group"></div>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmRequest">Confirm Request</button>
+            </div>
         </div>
     </div>
 </div>
@@ -489,6 +493,58 @@ $(document).ready(function() {
     // Mark all as read button handler
     $('#markAllRead').click(function() {
         window.location.href = 'notifications.php?mark_read=1';
+    });
+
+    // Handle confirm button click
+    var currentSubscriptionId = null;
+
+    $('#scheduleModal').on('show.bs.modal', function(event) {
+        currentSubscriptionId = $(event.relatedTarget).data('subscription-id');
+    });
+
+    $('#confirmRequest').on('click', function() {
+        var button = $(this);
+        var modal = $('#scheduleModal');
+
+        if (confirm('Are you sure you want to confirm this program request?')) {
+            // Disable buttons and show loading state
+            modal.find('.modal-footer button').prop('disabled', true);
+            button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Confirming...');
+
+            // Send AJAX request
+            $.ajax({
+                url: 'coach_requests.php',
+                method: 'POST',
+                data: { 
+                    action: 'confirm_request',
+                    subscription_id: currentSubscriptionId
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message
+                        alert(response.message);
+                        // Close the modal
+                        modal.modal('hide');
+                        // Reload the page to update the list
+                        location.reload();
+                    } else {
+                        // Show error message
+                        alert('Error: ' + response.message);
+                        // Reset button states
+                        modal.find('.modal-footer button').prop('disabled', false);
+                        button.text('Confirm Request');
+                    }
+                },
+                error: function() {
+                    // Show error message
+                    alert('An error occurred while confirming the request');
+                    // Reset button states
+                    modal.find('.modal-footer button').prop('disabled', false);
+                    button.text('Confirm Request');
+                }
+            });
+        }
     });
 });
 </script>

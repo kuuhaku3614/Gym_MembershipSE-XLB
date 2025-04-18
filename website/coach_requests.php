@@ -3,6 +3,37 @@ require_once __DIR__ . '/../config.php';
 
 class CoachRequests {
     private $database;
+
+    /**
+     * Confirm a program subscription request
+     * 
+     * @param int $subscription_id The ID of the subscription
+     * @return array Array containing success status and message
+     */
+    public function confirmRequest($subscription_id) {
+        try {
+            $pdo = $this->database->connect();
+            $pdo->beginTransaction();
+
+            $query = "UPDATE program_subscriptions SET status = 'active' WHERE transaction_id = (SELECT transaction_id FROM program_subscriptions WHERE id = ?)";
+            $stmt = $pdo->prepare($query);
+            $success = $stmt->execute([$subscription_id]);
+            
+            if ($success && $stmt->rowCount() > 0) {
+                $pdo->commit();
+                return ['success' => true, 'message' => 'Program request confirmed successfully'];
+            } else {
+                $pdo->rollBack();
+                return ['success' => false, 'message' => 'Failed to confirm program request'];
+            }
+        } catch (PDOException $e) {
+            if (isset($pdo)) {
+                $pdo->rollBack();
+            }
+            error_log('Error in confirmRequest: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
     
     public function __construct($database) {
         $this->database = $database;
@@ -39,8 +70,8 @@ class CoachRequests {
         INNER JOIN programs p ON cpt.program_id = p.id
         LEFT JOIN coach_group_schedule cgs ON pss.coach_group_schedule_id = cgs.id
         LEFT JOIN coach_personal_schedule cps ON pss.coach_personal_schedule_id = cps.id
-        WHERE pss.program_subscription_id = ?
-        ORDER BY pss.date, pss.start_time";
+        WHERE ps.transaction_id = (SELECT transaction_id FROM program_subscriptions WHERE id = ?)
+        ORDER BY p.program_name, pss.date, pss.start_time";
         
         try {
             $pdo = $this->database->connect();
@@ -92,5 +123,16 @@ class CoachRequests {
         $stmt->execute([$coach_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+}
+
+// Handle AJAX requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['subscription_id']) && $_POST['action'] === 'confirm_request') {
+    $database = new Database();
+    $coach_requests = new CoachRequests($database);
+    $result = $coach_requests->confirmRequest($_POST['subscription_id']);
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit;
 }
 ?>
