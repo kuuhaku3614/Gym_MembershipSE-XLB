@@ -20,6 +20,15 @@ class CoachRequests {
             $success = $stmt->execute([$subscription_id]);
             
             if ($success && $stmt->rowCount() > 0) {
+                // Fetch the coach_id, user_id, and transaction_id for the confirmed request
+                $infoQuery = "SELECT ps.user_id, cpt.coach_id, ps.transaction_id
+                              FROM program_subscriptions ps
+                              INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                              WHERE ps.id = ?";
+                $infoStmt = $pdo->prepare($infoQuery);
+                $infoStmt->execute([$subscription_id]);
+                $info = $infoStmt->fetch(PDO::FETCH_ASSOC);
+                // No notification_reads entry should be created here. Only update the program_subscriptions status.
                 $pdo->commit();
                 return ['success' => true, 'message' => 'Program request confirmed successfully'];
             } else {

@@ -48,6 +48,8 @@ $notifications = getNotificationsWithReadStatus($database, $user_id);
 $transaction_result = $notifications['transactions'];
 $membership_result = $notifications['memberships'];
 $announcement_result = $notifications['announcements'];
+$program_confirmation_result = function_exists('getProgramConfirmationNotifications') && isset($notifications['program_confirmations']) ? $notifications['program_confirmations'] : [];
+
 
 // Get coach program requests if user is a coach
 $coach_requests = [];
@@ -86,6 +88,31 @@ foreach ($announcement_result as $notification) {
     $notification['title'] = htmlspecialchars($notification['announcement_type']) . ' Announcement';
     $notification['message'] = nl2br(htmlspecialchars($notification['message']));
     $notification['class'] = 'list-group-item-info';
+    $all_notifications[] = $notification;
+}
+
+// Add program confirmation notifications
+foreach ($program_confirmation_result as $notification) {
+    $notification['type'] = 'program_confirmations';
+    $notification['id'] = $notification['notification_id']; // notification_id is transaction_id
+    $notification['date'] = $notification['created_at'];
+    // Determine if this user is coach or member for this notification
+    if (isset($notification['coach_id']) && isset($notification['user_id'])) {
+        if ($user_id == $notification['coach_id']) {
+            $notification['title'] = 'Program Request Confirmed (Coach)';
+            $notification['message'] = 'You have confirmed a program request for <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') for your member.';
+        } elseif ($user_id == $notification['user_id']) {
+            $notification['title'] = 'Program Confirmed';
+            $notification['message'] = 'Your program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') has been <strong>confirmed</strong> by your coach.';
+        } else {
+            $notification['title'] = 'Program Confirmed';
+            $notification['message'] = 'A program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') was confirmed.';
+        }
+    } else {
+        $notification['title'] = 'Program Confirmed';
+        $notification['message'] = 'Your program <strong>' . htmlspecialchars($notification['program_name']) . '</strong> (' . htmlspecialchars($notification['program_type']) . ') has been <strong>confirmed</strong>.';
+    }
+    $notification['class'] = 'list-group-item-success';
     $all_notifications[] = $notification;
 }
 

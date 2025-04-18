@@ -13,13 +13,15 @@ if (!function_exists('getNotificationsWithReadStatus')) {
         $transactions = getTransactionNotifications($database, $user_id);
         $memberships = getMembershipNotifications($database, $user_id);
         $announcements = getAnnouncementNotifications($database);
+        $program_confirmations = getProgramConfirmationNotifications($database, $user_id);
         
         // Initialize session array for read notifications if not exists
         if (!isset($_SESSION['read_notifications'])) {
             $_SESSION['read_notifications'] = [
                 'transactions' => [],
                 'memberships' => [],
-                'announcements' => []
+                'announcements' => [],
+                'program_confirmations' => []
             ];
         }
         
@@ -38,10 +40,20 @@ if (!function_exists('getNotificationsWithReadStatus')) {
             $announcement['is_read'] = in_array($announcement['id'], $_SESSION['read_notifications']['announcements']);
         }
         
+        // Ensure program_confirmations array is always set
+        if (!isset($_SESSION['read_notifications']['program_confirmations']) || !is_array($_SESSION['read_notifications']['program_confirmations'])) {
+            $_SESSION['read_notifications']['program_confirmations'] = [];
+        }
+        // Mark program confirmations as read/unread based on session
+        foreach ($program_confirmations as &$confirmation) {
+            $confirmation['is_read'] = in_array($confirmation['notification_id'], $_SESSION['read_notifications']['program_confirmations']);
+        }
+        
         return [
             'transactions' => $transactions,
             'memberships' => $memberships,
-            'announcements' => $announcements
+            'announcements' => $announcements,
+            'program_confirmations' => $program_confirmations
         ];
     }
 }
@@ -193,6 +205,20 @@ function markAllNotificationsAsRead($database, $user_id) {
             $stmt->execute();
         }
     }
+    
+    // Mark all program confirmations as read
+    foreach ($notifications['program_confirmations'] as $confirmation) {
+        if (!in_array($confirmation['notification_id'], $_SESSION['read_notifications']['program_confirmations'])) {
+            $_SESSION['read_notifications']['program_confirmations'][] = $confirmation['notification_id'];
+            
+            // Also persist to database
+            $type = 'program_confirmations';
+            $stmt->bindParam(1, $user_id, PDO::PARAM_INT);
+            $stmt->bindParam(2, $type, PDO::PARAM_STR);
+            $stmt->bindParam(3, $confirmation['notification_id'], PDO::PARAM_INT);
+            $stmt->execute();
+        }
+    }
 }
 }
 if (!function_exists('getTransactionNotifications')) {
@@ -247,6 +273,45 @@ if (!function_exists('getMembershipNotifications')) {
         $membership_stmt->execute();
         
         return $membership_stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+if (!function_exists('getProgramConfirmationNotifications')) {
+    /**
+     * Get program confirmation notifications for a user (as member or coach), grouped by transaction_id
+     * @param Database $database
+     * @param int $user_id
+     * @return array
+     */
+    function getProgramConfirmationNotifications($database, $user_id) {
+        $pdo = $database->connect();
+        $sql = "SELECT MAX(ps.id) as id, ps.transaction_id as notification_id, MAX(ps.status) as status, MAX(ps.created_at) as created_at,
+                       MAX(cpt.type) as program_type, MAX(p.program_name) as program_name, MAX(cpt.coach_id) as coach_id, MAX(ps.user_id) as user_id
+                FROM program_subscriptions ps
+                INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                INNER JOIN programs p ON cpt.program_id = p.id
+                WHERE (ps.user_id = ? OR cpt.coach_id = ?) AND ps.status = 'active'
+                GROUP BY ps.transaction_id
+                ORDER BY created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$user_id, $user_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+if (!function_exists('insertProgramConfirmationNotification')) {
+    /**
+     * Insert a program confirmation notification for a user (uses transaction_id as notification_id)
+     * @param Database $database
+     * @param int $user_id
+     * @param int $transaction_id
+     */
+    function insertProgramConfirmationNotification($database, $user_id, $transaction_id) {
+        $pdo = $database->connect();
+        $type = 'program_confirmations';
+        $sql = "INSERT IGNORE INTO notification_reads (user_id, notification_type, notification_id) VALUES (?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$user_id, $type, $transaction_id]);
     }
 }
 

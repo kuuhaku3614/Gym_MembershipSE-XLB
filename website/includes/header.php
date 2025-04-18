@@ -15,31 +15,27 @@ if ($isLoggedIn) {
     if (file_exists($notificationQueriesPath)) {
         require_once $notificationQueriesPath;
         
-        // Initialize notification session if not set
-        if (!isset($_SESSION['read_notifications'])) {
-            $_SESSION['read_notifications'] = [
-                'transactions' => [],
-                'memberships' => [],
-                'announcements' => []
-            ];
-            
-            $pdo = $database->connect();
-            $sql = "SELECT notification_type, notification_id 
-                    FROM notification_reads 
-                    WHERE user_id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindParam(1, $_SESSION['user_id'], PDO::PARAM_INT);
-            $stmt->execute();
-            $db_reads = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Populate session with database reads
-            foreach ($db_reads as $read) {
-                $type = $read['notification_type'];
-                $id = (int)$read['notification_id'];
-                
-                if (isset($_SESSION['read_notifications'][$type])) {
-                    $_SESSION['read_notifications'][$type][] = $id;
-                }
+        // Always refresh notification session from DB on login
+        $_SESSION['read_notifications'] = [
+            'transactions' => [],
+            'memberships' => [],
+            'announcements' => [],
+            'program_confirmations' => []
+        ];
+        $pdo = $database->connect();
+        $sql = "SELECT notification_type, notification_id 
+                FROM notification_reads 
+                WHERE user_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(1, $_SESSION['user_id'], PDO::PARAM_INT);
+        $stmt->execute();
+        $db_reads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Populate session with database reads
+        foreach ($db_reads as $read) {
+            $type = $read['notification_type'];
+            $id = (int)$read['notification_id'];
+            if (isset($_SESSION['read_notifications'][$type])) {
+                $_SESSION['read_notifications'][$type][] = $id;
             }
         }
         
