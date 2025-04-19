@@ -289,7 +289,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                             </div>
                             <?php if (!empty($membership['description'])): ?>
                                         <div class="col-12">
-                                            <div class="border rounded p-3">
+                                            <div>
                                                 <p class="mb-0">Description: 
                                                     <span style="display: block; max-height: 50px; overflow-y: auto; max-width: 100%; word-break: break-word;">
                                                         <?= nl2br(htmlspecialchars($membership['description'])) ?>

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../functions/sanitize.php';
 require_once __DIR__ . '/services.class.php';
 require_once __DIR__ . '/cart.class.php';
 
+
 if (!isset($_SESSION['user_id'])) {
     header('location: ../../login/login.php');
     exit;
@@ -122,6 +123,25 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         background-color: var(--primary-color);
         padding: 1rem;
     }
+    p, label {
+        font-weight: 600;
+    }
+    #start_date{
+        transition: all 0.3s ease;
+        }
+        #start_date:required:invalid:not(:focus) {
+        animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+        0% {
+            border-color: #ced4da;
+        }
+        50% {
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+        100% {
+            border-color: #ced4da;
+        }}
 
     @media screen and (max-width: 480px) {
     /* 1. Hide the services-header */
@@ -217,6 +237,24 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     <h2 class="h4 fw-bold mb-0 text-center">Walk-in Service</h2>
                 </div>
                 <div class="card-body p-3">
+                    <div class="row">
+                        <!-- Left column for image -->
+                        <div class="col-12 col-md-6 mb-3 mb-md-0">
+                            <div class="text-center">
+                                <?php
+                                // Default image path
+                                $defaultImage = '../../cms_img/default/walkIn.jpeg';
+
+                                // Get the image path
+                                $imagePath = $defaultImage; // Set default first
+                                ?>
+                                <img src="<?= $imagePath ?>" 
+                                     class="img-fluid rounded" 
+                                     alt="WalkIn">
+                            </div>
+                        </div>
+                    
+                    <div class="col-12 col-md-6">
                     <section class="scrollable-section">
                         <div class="row g-3">
                             <div class="col-12">
@@ -256,6 +294,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                             </div>
                         </div>
                     </section>
+                    </div>
 
                     <div class="d-grid gap-3 d-md-flex justify-content-md-between mt-4">
                         <a href="../services.php" class="btn return-btn btn-lg flex-fill">Return</a>
@@ -270,6 +309,8 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                         <?php endif; ?>
                     </div>
                 </div>
+                </div>
+
             </div>
         </div>
     </div>

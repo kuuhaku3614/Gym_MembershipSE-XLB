@@ -110,9 +110,8 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>
-            <h1 class="h3 mb-0">Avail Program</h1>
+            <h1 class="mb-0 fs-4 fw-bold">SERVICES</h1>
         </div>
-    </div>
 
     <div class="row flex-grow-1 overflow-auto">
         <div class="col-12 col-lg-10 mx-auto py-3 main-container">
