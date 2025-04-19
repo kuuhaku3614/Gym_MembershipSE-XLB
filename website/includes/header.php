@@ -15,31 +15,28 @@ if ($isLoggedIn) {
     if (file_exists($notificationQueriesPath)) {
         require_once $notificationQueriesPath;
         
-        // Initialize notification session if not set
-        if (!isset($_SESSION['read_notifications'])) {
-            $_SESSION['read_notifications'] = [
-                'transactions' => [],
-                'memberships' => [],
-                'announcements' => []
-            ];
-            
-            $pdo = $database->connect();
-            $sql = "SELECT notification_type, notification_id 
-                    FROM notification_reads 
-                    WHERE user_id = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindParam(1, $_SESSION['user_id'], PDO::PARAM_INT);
-            $stmt->execute();
-            $db_reads = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Populate session with database reads
-            foreach ($db_reads as $read) {
-                $type = $read['notification_type'];
-                $id = (int)$read['notification_id'];
-                
-                if (isset($_SESSION['read_notifications'][$type])) {
-                    $_SESSION['read_notifications'][$type][] = $id;
-                }
+        // Always refresh notification session from DB on login
+        $_SESSION['read_notifications'] = [
+            'transactions' => [],
+            'memberships' => [],
+            'announcements' => [],
+            'program_confirmations' => [],
+            'program_cancellations' => []
+        ];
+        $pdo = $database->connect();
+        $sql = "SELECT notification_type, notification_id 
+                FROM notification_reads 
+                WHERE user_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(1, $_SESSION['user_id'], PDO::PARAM_INT);
+        $stmt->execute();
+        $db_reads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Populate session with database reads
+        foreach ($db_reads as $read) {
+            $type = $read['notification_type'];
+            $id = (int)$read['notification_id'];
+            if (isset($_SESSION['read_notifications'][$type])) {
+                $_SESSION['read_notifications'][$type][] = $id;
             }
         }
         
@@ -264,6 +261,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
   $isCoachFolder = strpos($_SERVER['PHP_SELF'], '/coach/') !== false;
   $basePath = $isCoachFolder ? '../../' : '../';
   ?>
+  <link rel="icon" href="../cms_img/icon_xlb.png">
   <link rel="stylesheet" href="<?php echo $basePath; ?>css/landing1.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -366,7 +364,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     role="menu"     
                     aria-label="User menu options">
                     <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                        <a href="<?php echo $isCoachFolder ? 'programs.php' : './coach/programs.php'; ?>" class="username" role="menuitem"><?php echo getFullName(); ?></a>
+                        <a href="<?php echo $isCoachFolder ? 'programs.php' : './coach/dashboard.php'; ?>" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'admin' || $_SESSION['role'] === 'staff'): ?>
                         <a href="../admin/index.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php else: ?>
