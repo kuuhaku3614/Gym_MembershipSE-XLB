@@ -15,6 +15,7 @@ if (!function_exists('getNotificationsWithReadStatus')) {
         $announcements = getAnnouncementNotifications($database);
         $program_confirmations = getProgramConfirmationNotifications($database, $user_id);
         $program_cancellations = getProgramCancellationNotifications($database, $user_id);
+        $session_notifications = getSessionNotifications($database, $user_id);
         
         // Initialize session array for read notifications if not exists
         if (!isset($_SESSION['read_notifications'])) {
@@ -23,7 +24,9 @@ if (!function_exists('getNotificationsWithReadStatus')) {
                 'memberships' => [],
                 'announcements' => [],
                 'program_confirmations' => [],
-                'program_cancellations' => []
+                'program_cancellations' => [],
+                'cancelled_sessions' => [],
+                'completed_sessions' => []
             ];
         }
         
@@ -49,13 +52,33 @@ if (!function_exists('getNotificationsWithReadStatus')) {
         if (!isset($_SESSION['read_notifications']['program_cancellations']) || !is_array($_SESSION['read_notifications']['program_cancellations'])) {
             $_SESSION['read_notifications']['program_cancellations'] = [];
         }
+        
+        // Ensure cancelled_sessions and completed_sessions arrays are always set
+        if (!isset($_SESSION['read_notifications']['cancelled_sessions']) || !is_array($_SESSION['read_notifications']['cancelled_sessions'])) {
+            $_SESSION['read_notifications']['cancelled_sessions'] = [];
+        }
+        if (!isset($_SESSION['read_notifications']['completed_sessions']) || !is_array($_SESSION['read_notifications']['completed_sessions'])) {
+            $_SESSION['read_notifications']['completed_sessions'] = [];
+        }
+        
         // Mark program confirmations as read/unread based on session
         foreach ($program_confirmations as &$confirmation) {
             $confirmation['is_read'] = in_array($confirmation['notification_id'], $_SESSION['read_notifications']['program_confirmations']);
         }
+        
         // Mark program cancellations as read/unread based on session
         foreach ($program_cancellations as &$cancellation) {
             $cancellation['is_read'] = in_array($cancellation['notification_id'], $_SESSION['read_notifications']['program_cancellations']);
+        }
+        
+        // Mark cancelled sessions as read/unread based on session
+        foreach ($session_notifications['cancelled'] as &$cancelled_session) {
+            $cancelled_session['is_read'] = in_array($cancelled_session['schedule_id'], $_SESSION['read_notifications']['cancelled_sessions']);
+        }
+        
+        // Mark completed sessions as read/unread based on session
+        foreach ($session_notifications['completed'] as &$completed_session) {
+            $completed_session['is_read'] = in_array($completed_session['schedule_id'], $_SESSION['read_notifications']['completed_sessions']);
         }
         
         return [
@@ -63,10 +86,13 @@ if (!function_exists('getNotificationsWithReadStatus')) {
             'memberships' => $memberships,
             'announcements' => $announcements,
             'program_confirmations' => $program_confirmations,
-            'program_cancellations' => $program_cancellations
+            'program_cancellations' => $program_cancellations,
+            'cancelled_sessions' => $session_notifications['cancelled'],
+            'completed_sessions' => $session_notifications['completed']
         ];
     }
 }
+
 if (!function_exists('getUnreadNotificationsCount')) {
     /**
  * Get count of unread notifications for a user using both session and database
@@ -433,6 +459,78 @@ if (!function_exists('getActiveMemberships')) {
         $stmt->execute();
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+if (!function_exists('getSessionNotifications')) {
+    /**
+     * Get session notifications for a user including cancelled and completed sessions
+     * 
+     * @param Database $database Database connection class
+     * @param int $user_id User ID
+     * @return array Session notifications categorized by status
+     */
+    function getSessionNotifications($database, $user_id) {
+        $pdo = $database->connect();
+        $notifications = [
+            'cancelled' => [],
+            'completed' => []
+        ];
+        
+        // Get cancelled sessions
+        $cancelled_query = "
+            SELECT p.id AS schedule_id, 
+                p.program_subscription_id, 
+                p.date, 
+                p.start_time, 
+                p.end_time, 
+                p.cancellation_reason, 
+                p.created_at, 
+                pt.description AS program_type_description, 
+                pt.type AS session_type, 
+                pr.program_name, 
+                cu.username AS coach_username, 
+                0 AS is_read 
+            FROM program_subscription_schedule p 
+            JOIN program_subscriptions ps ON p.program_subscription_id = ps.id 
+            JOIN users u ON ps.user_id = u.id 
+            JOIN coach_program_types pt ON ps.coach_program_type_id = pt.id 
+            JOIN users cu ON pt.coach_id = cu.id 
+            JOIN programs pr ON pt.program_id = pr.id 
+            WHERE p.status = 'cancelled' AND ps.user_id = ? 
+            ORDER BY p.date DESC, p.start_time";
+        
+        $stmt = $pdo->prepare($cancelled_query);
+        $stmt->execute([$user_id]);
+        $notifications['cancelled'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get completed sessions
+        $completed_query = "
+            SELECT p.id AS schedule_id, 
+                p.program_subscription_id, 
+                p.date, 
+                p.start_time, 
+                p.end_time, 
+                p.created_at, 
+                pt.description AS program_type_description, 
+                pt.type AS session_type, 
+                pr.program_name, 
+                cu.username AS coach_username, 
+                0 AS is_read 
+            FROM program_subscription_schedule p 
+            JOIN program_subscriptions ps ON p.program_subscription_id = ps.id 
+            JOIN users u ON ps.user_id = u.id 
+            JOIN coach_program_types pt ON ps.coach_program_type_id = pt.id 
+            JOIN users cu ON pt.coach_id = cu.id 
+            JOIN programs pr ON pt.program_id = pr.id 
+            WHERE p.status = 'completed' AND ps.user_id = ? 
+            ORDER BY p.date DESC, p.start_time";
+        
+        $stmt = $pdo->prepare($completed_query);
+        $stmt->execute([$user_id]);
+        $notifications['completed'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return $notifications;
     }
 }
 ?>

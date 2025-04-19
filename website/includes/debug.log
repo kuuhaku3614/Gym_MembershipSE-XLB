@@ -435,3 +435,232 @@
     [action] => update_photo
 )
 
+2025-04-19 13:49:57 - Request received
+2025-04-19 13:49:57 - POST data: Array
+(
+    [action] => check_username
+    [username] => c
+)
+
+2025-04-19 13:49:58 - Request received
+2025-04-19 13:49:58 - POST data: Array
+(
+    [action] => check_username
+    [username] => cO
+)
+
+2025-04-19 13:50:00 - Request received
+2025-04-19 13:50:00 - POST data: Array
+(
+    [action] => check_username
+    [username] => c
+)
+
+2025-04-19 13:50:01 - Request received
+2025-04-19 13:50:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => co
+)
+
+2025-04-19 13:50:01 - Request received
+2025-04-19 13:50:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => coa
+)
+
+2025-04-19 13:50:01 - Request received
+2025-04-19 13:50:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => coac
+)
+
+2025-04-19 13:50:01 - Request received
+2025-04-19 13:50:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => coach
+)
+
+2025-04-19 13:50:03 - Request received
+2025-04-19 13:50:03 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachj
+)
+
+2025-04-19 13:50:03 - Request received
+2025-04-19 13:50:03 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachja
+)
+
+2025-04-19 13:50:04 - Request received
+2025-04-19 13:50:04 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachjay
+)
+
+2025-04-19 13:50:05 - Request received
+2025-04-19 13:50:05 - POST data: Array
+(
+    [action] => update_username
+    [username] => coachjay
+)
+
+2025-04-19 18:12:09 - Request received
+2025-04-19 18:12:09 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby1
+)
+
+2025-04-19 18:12:09 - Request received
+2025-04-19 18:12:09 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby
+)
+
+2025-04-19 18:12:10 - Request received
+2025-04-19 18:12:10 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby
+)
+
+2025-04-19 18:15:17 - Request received
+2025-04-19 18:15:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachja
+)
+
+2025-04-19 18:15:17 - Request received
+2025-04-19 18:15:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachj
+)
+
+2025-04-19 18:15:18 - Request received
+2025-04-19 18:15:18 - POST data: Array
+(
+    [action] => check_username
+    [username] => coach
+)
+
+2025-04-19 18:15:18 - Request received
+2025-04-19 18:15:18 - POST data: Array
+(
+    [action] => update_username
+    [username] => coach
+)
+
+2025-04-19 18:58:07 - Request received
+2025-04-19 18:58:07 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby1
+)
+
+2025-04-19 18:58:07 - Request received
+2025-04-19 18:58:07 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby12
+)
+
+2025-04-19 18:58:07 - Request received
+2025-04-19 18:58:07 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-19 18:58:08 - Request received
+2025-04-19 18:58:08 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-19 18:58:26 - Request received
+2025-04-19 18:58:26 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-19 18:58:40 - Request received
+2025-04-19 18:58:40 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachJ
+)
+
+2025-04-19 18:58:40 - Request received
+2025-04-19 18:58:40 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachJA
+)
+
+2025-04-19 18:58:41 - Request received
+2025-04-19 18:58:41 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachJAY
+)
+
+2025-04-19 18:58:43 - Request received
+2025-04-19 18:58:43 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachjay
+)
+
+2025-04-19 18:58:43 - Request received
+2025-04-19 18:58:43 - POST data: Array
+(
+    [action] => update_username
+    [username] => coachjay
+)
+
+2025-04-19 19:19:24 - Request received
+2025-04-19 19:19:24 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachja
+)
+
+2025-04-19 19:19:24 - Request received
+2025-04-19 19:19:24 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachj
+)
+
+2025-04-19 19:19:24 - Request received
+2025-04-19 19:19:24 - POST data: Array
+(
+    [action] => check_username
+    [username] => coach
+)
+
+2025-04-19 19:19:25 - Request received
+2025-04-19 19:19:25 - POST data: Array
+(
+    [action] => update_username
+    [username] => coach
+)
+
+2025-04-19 19:19:25 - Request received
+2025-04-19 19:19:25 - POST data: Array
+(
+    [action] => update_photo
+)
+

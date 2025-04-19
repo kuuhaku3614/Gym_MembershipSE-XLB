@@ -43,7 +43,11 @@ if (isset($sessionDetails['error'])) {
 // Process the action
 switch ($action) {
     case 'cancel':
-        $result = $coachingSystem->updateSessionStatus($sessionId, 'cancelled');
+        // Get cancellation reason if provided
+        $cancellationReason = isset($_POST['cancellation_reason']) ? $_POST['cancellation_reason'] : null;
+        
+        // Update status with cancellation reason
+        $result = $coachingSystem->updateSessionStatus($sessionId, 'cancelled', $cancellationReason);
         break;
     
     case 'complete':

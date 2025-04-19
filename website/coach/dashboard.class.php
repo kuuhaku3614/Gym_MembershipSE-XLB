@@ -187,19 +187,38 @@ class CoachingSystem {
     }
 
     // Update session status (cancel or complete)
-    public function updateSessionStatus($sessionId, $status) {
+    public function updateSessionStatus($sessionId, $status, $reason = null) {
         try {
             $conn = $this->db->connect();
-            $stmt = $conn->prepare("
+            
+            // Base SQL statement
+            $sql = "
                 UPDATE program_subscription_schedule 
                 SET status = :status,
-                    updated_at = NOW()
-                WHERE id = :id
-            ");
-            $stmt->execute([
+                    updated_at = NOW()";
+            
+            // Add cancellation_reason to SQL if reason is provided
+            if ($reason !== null) {
+                $sql .= ", cancellation_reason = :reason";
+            }
+            
+            // Complete the SQL statement
+            $sql .= " WHERE id = :id";
+            
+            $stmt = $conn->prepare($sql);
+            
+            // Base parameters
+            $params = [
                 ':status' => $status,
                 ':id' => $sessionId
-            ]);
+            ];
+            
+            // Add reason parameter if provided
+            if ($reason !== null) {
+                $params[':reason'] = $reason;
+            }
+            
+            $stmt->execute($params);
             
             return [
                 'success' => true,

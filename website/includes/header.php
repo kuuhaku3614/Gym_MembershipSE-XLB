@@ -478,7 +478,10 @@ function showLogoutConfirmation(event) {
     // Update cart count on page load
     document.addEventListener("DOMContentLoaded", function() {
         let cartCount = localStorage.getItem("cartTotal") || 0;
-        document.getElementById("cartCount").textContent = cartCount;
+        const cartCountElement = document.getElementById("cartCount");
+            if (cartCountElement) {
+                cartCountElement.textContent = cartCount;
+            }
     });
 
 
