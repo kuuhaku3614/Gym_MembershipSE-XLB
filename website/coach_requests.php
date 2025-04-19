@@ -43,7 +43,54 @@ class CoachRequests {
             return ['success' => false, 'message' => 'Database error occurred'];
         }
     }
-    
+
+    /**
+     * Cancel a program subscription request
+     * 
+     * @param int $subscription_id The ID of the subscription
+     * @return array Array containing success status and message
+     */
+    public function cancelRequest($subscription_id) {
+        try {
+            $pdo = $this->database->connect();
+            $pdo->beginTransaction();
+
+            // Get info for notification and cancellation
+            $infoQuery = "SELECT ps.user_id, cpt.coach_id, ps.transaction_id FROM program_subscriptions ps INNER JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id WHERE ps.id = ?";
+            $infoStmt = $pdo->prepare($infoQuery);
+            $infoStmt->execute([$subscription_id]);
+            $info = $infoStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$info) {
+                $pdo->rollBack();
+                return ['success' => false, 'message' => 'Request not found'];
+            }
+            $member_id = $info['user_id'];
+            $coach_id = $info['coach_id'];
+            $transaction_id = $info['transaction_id'];
+            $cancelled_by = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+
+            // Update status only (no cancelled_by, no updated_at)
+            $query = "UPDATE program_subscriptions SET status = 'cancelled' WHERE transaction_id = ?";
+            $stmt = $pdo->prepare($query);
+            $success = $stmt->execute([$transaction_id]);
+            
+            if ($success && $stmt->rowCount() > 0) {
+
+                $pdo->commit();
+                return ['success' => true, 'message' => 'Program request cancelled successfully'];
+            } else {
+                $pdo->rollBack();
+                return ['success' => false, 'message' => 'Failed to cancel program request'];
+            }
+        } catch (PDOException $e) {
+            if (isset($pdo)) {
+                $pdo->rollBack();
+            }
+            error_log('Error in cancelRequest: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+
     public function __construct($database) {
         $this->database = $database;
     }
@@ -135,11 +182,16 @@ class CoachRequests {
 }
 
 // Handle AJAX requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['subscription_id']) && $_POST['action'] === 'confirm_request') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['subscription_id'])) {
     $database = new Database();
     $coach_requests = new CoachRequests($database);
-    $result = $coach_requests->confirmRequest($_POST['subscription_id']);
-    
+    if ($_POST['action'] === 'confirm_request') {
+        $result = $coach_requests->confirmRequest($_POST['subscription_id']);
+    } elseif ($_POST['action'] === 'cancel_request') {
+        $result = $coach_requests->cancelRequest($_POST['subscription_id']);
+    } else {
+        $result = ['success' => false, 'message' => 'Unknown action'];
+    }
     header('Content-Type: application/json');
     echo json_encode($result);
     exit;
