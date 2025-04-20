@@ -17,6 +17,9 @@ class Services_class{
 
     /**
      * Get all schedules for a coach_program_type (group and personal)
+     *
+     * Used in:
+     *   - teach_program_backend.php (lines 33, 47)
      */
     public function getSchedulesByCoachProgramType($coach_program_type_id, $type) {
         $conn = $this->db->connect();
@@ -54,13 +57,13 @@ class Services_class{
     /**
      * Add a new group schedule for a coach/program
      */
-    public function addCoachGroupSchedule($coach_program_type_id, $day, $start_time, $end_time, $capacity, $price, $description = '') {
+    public function addCoachGroupSchedule($coach_program_type_id, $day, $start_time, $end_time, $capacity, $price) {
         $conn = $this->db->connect();
         try {
-            $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity, price, description)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity, price)
+                    VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$coach_program_type_id, $day, $start_time, $end_time, $capacity, $price, $description]);
+            $stmt->execute([$coach_program_type_id, $day, $start_time, $end_time, $capacity, $price]);
             return true;
         } catch (Exception $e) {
             error_log('Error in addCoachGroupSchedule: ' . $e->getMessage());
@@ -71,13 +74,13 @@ class Services_class{
     /**
      * Add a new personal schedule for a coach/program
      */
-    public function addCoachPersonalSchedule($coach_program_type_id, $day, $start_time, $end_time, $duration_rate, $price, $description = '') {
+    public function addCoachPersonalSchedule($coach_program_type_id, $day, $start_time, $end_time, $duration_rate, $price) {
         $conn = $this->db->connect();
         try {
-            $sql = "INSERT INTO coach_personal_schedule (coach_program_type_id, day, start_time, end_time, duration_rate, price, description)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO coach_personal_schedule (coach_program_type_id, day, start_time, end_time, duration_rate, price)
+                    VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$coach_program_type_id, $day, $start_time, $end_time, $duration_rate, $price, $description]);
+            $stmt->execute([$coach_program_type_id, $day, $start_time, $end_time, $duration_rate, $price]);
             return true;
         } catch (Exception $e) {
             error_log('Error in addCoachPersonalSchedule: ' . $e->getMessage());

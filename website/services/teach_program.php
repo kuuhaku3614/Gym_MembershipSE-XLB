@@ -98,7 +98,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     <label class="form-label">Type</label>
                     <div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="type" id="typeGroup" value="group" required>
+                            <input class="form-check-input" type="radio" name="type" id="typeGroup" value="group" checked required>
                             <label class="form-check-label" for="typeGroup">Group</label>
                         </div>
                         <div class="form-check form-check-inline">
@@ -114,9 +114,11 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     <textarea class="form-control" id="programDescription" name="description" rows="2" placeholder="Add a description for this offering (optional)"></textarea>
                 </div>
             </div>
+
             <div id="existingSchedulesSection" class="mt-4" style="display:none;">
     <h5>Existing Schedules</h5>
-    <ul id="existingSchedulesList" class="list-group mb-3"></ul>
+    <ul id="existingGroupSchedules" class="list-group mb-2"></ul>
+    <ul id="existingPersonalSchedules" class="list-group mb-2"></ul>
 </div>
 <div id="scheduleInputs" class="mt-4" style="display:none;"></div>
             <div class="mt-3">
@@ -137,15 +139,37 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const scheduleInputs = document.getElementById('scheduleInputs');
-const typeRadios = document.querySelectorAll('input[name="type"]');
-typeRadios.forEach(radio => {
-    radio.addEventListener('change', function() {
-        renderScheduleFields();
-        fetchAndRenderExistingSchedules();
+// All DOM references and event listeners are declared only once below
+let groupDescription = '';
+let personalDescription = '';
+
+window.addEventListener('DOMContentLoaded', function() {
+    const scheduleInputs = document.getElementById('scheduleInputs');
+    const typeRadios = document.querySelectorAll('input[name="type"]');
+    const descriptionInput = document.getElementById('programDescription');
+    const addScheduleBtn = document.getElementById('addScheduleBtn');
+    let lastType = document.querySelector('input[name="type"]:checked').value;
+
+    // Stateful description switching for group/personal
+    typeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (lastType === 'group') groupDescription = descriptionInput.value;
+            else if (lastType === 'personal') personalDescription = descriptionInput.value;
+            lastType = this.value;
+            if (lastType === 'group') descriptionInput.value = groupDescription;
+            else if (lastType === 'personal') descriptionInput.value = personalDescription;
+            renderScheduleFields();
+            fetchAndRenderExistingSchedules();
+        });
+    });
+    if (lastType === 'group') descriptionInput.value = groupDescription;
+    else if (lastType === 'personal') descriptionInput.value = personalDescription;
+    fetchAndRenderExistingSchedules();
+    addScheduleBtn.addEventListener('click', function() {
+        if (lastType === 'group') groupDescription = descriptionInput.value;
+        else if (lastType === 'personal') personalDescription = descriptionInput.value;
     });
 });
-window.addEventListener('DOMContentLoaded', fetchAndRenderExistingSchedules);
 function getSelectedType() {
     const checked = document.querySelector('input[name="type"]:checked');
     return checked ? checked.value : '';
@@ -159,6 +183,41 @@ const scheduleCartSection = document.getElementById('scheduleCartSection');
 const scheduleCartList = document.getElementById('scheduleCart');
 const addScheduleBtn = document.getElementById('addScheduleBtn');
 const saveAllSchedulesBtn = document.getElementById('saveAllSchedulesBtn');
+saveAllSchedulesBtn.addEventListener('click', saveAllSchedules);
+
+function saveAllSchedules() {
+    const programId = document.querySelector('input[name="program_id"]').value;
+    if (!scheduleCart.length) return;
+    saveAllSchedulesBtn.disabled = true;
+    fetch('teach_program_backend.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            program_id: programId,
+            schedules: scheduleCart,
+            group_description: groupDescription,
+            personal_description: personalDescription
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Schedules saved successfully!');
+            scheduleCart = [];
+            updateScheduleCartUI();
+            fetchAndRenderExistingSchedules();
+        } else {
+            alert(data.message || 'Failed to save schedules.');
+        }
+    })
+    .catch(() => {
+        alert('An error occurred while saving schedules.');
+    })
+    .finally(() => {
+        saveAllSchedulesBtn.disabled = false;
+    });
+}
+
 addScheduleBtn.addEventListener('click', function() {
     const type = getSelectedType();
     if (!type) return;
@@ -171,6 +230,18 @@ addScheduleBtn.addEventListener('click', function() {
         schedule[inp.name] = inp.value;
     });
     if (!valid) { alert('Please fill all required schedule fields.'); return; }
+
+    // Validation: start_time must be less than end_time
+    if (schedule.start_time && schedule.end_time) {
+        const start = schedule.start_time;
+        const end = schedule.end_time;
+        // Compare as HH:MM
+        if (start >= end) {
+            alert('Start time must be less than end time.');
+            return;
+        }
+    }
+
     scheduleCart.push(schedule);
     updateScheduleCartUI();
     // Reset schedule fields
@@ -200,61 +271,34 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 function fetchAndRenderExistingSchedules() {
     const programId = document.querySelector('input[name="program_id"]').value;
-    const type = getSelectedType();
     const section = document.getElementById('existingSchedulesSection');
-    const list = document.getElementById('existingSchedulesList');
-    if (!type) {
-        // Fetch all schedules for this program (no type param)
-        fetch(`teach_program_schedules.php?program_id=${programId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.schedules && (data.schedules.group.length || data.schedules.personal.length)) {
-                    let html = '';
-                    if (data.schedules.group.length) {
-                        html += '<li class="list-group-item active">Group Schedules</li>';
-                        data.schedules.group.forEach(s => {
-                            html += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Capacity: ${s.capacity}, ₱${s.price}</li>`;
-                        });
-                    }
-                    if (data.schedules.personal.length) {
-                        html += '<li class="list-group-item active">Personal Schedules</li>';
-                        data.schedules.personal.forEach(s => {
-                            html += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Duration: ${s.duration_rate} mins, ₱${s.price}</li>`;
-                        });
-                    }
-                    list.innerHTML = html;
-                    section.style.display = 'block';
-                } else {
-                    list.innerHTML = '<li class="list-group-item text-muted">No existing schedules.</li>';
-                    section.style.display = 'block';
-                }
-            })
-            .catch(() => {
-                section.style.display = 'none';
-            });
-        return;
-    }
-    fetch(`teach_program_schedules.php?program_id=${programId}&type=${type}`)
+    const groupList = document.getElementById('existingGroupSchedules');
+    const personalList = document.getElementById('existingPersonalSchedules');
+    fetch(`teach_program_backend.php?program_id=${programId}`)
         .then(res => res.json())
         .then(data => {
-            const section = document.getElementById('existingSchedulesSection');
-            const list = document.getElementById('existingSchedulesList');
-            if (data.success && data.schedules && data.schedules.length) {
-                list.innerHTML = '';
-                data.schedules.forEach(s => {
-                    let details = '';
-                    if (type === 'group') {
-                        details = `${s.day}, ${s.start_time}-${s.end_time}, Capacity: ${s.capacity}, ₱${s.price}`;
-                    } else {
-                        details = `${s.day}, ${s.start_time}-${s.end_time}, Duration: ${s.duration_rate} mins, ₱${s.price}`;
-                    }
-                    list.innerHTML += `<li class="list-group-item">${details}</li>`;
+            let hasAny = false;
+            // Render group schedules
+            if (data.success && data.schedules && data.schedules.group.length) {
+                groupList.innerHTML = '<li class="list-group-item active">Group Schedules</li>';
+                data.schedules.group.forEach(s => {
+                    groupList.innerHTML += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Capacity: ${s.capacity}, ₱${s.price}</li>`;
                 });
-                section.style.display = 'block';
+                hasAny = true;
             } else {
-                list.innerHTML = '<li class="list-group-item text-muted">No existing schedules.</li>';
-                section.style.display = 'block';
+                groupList.innerHTML = '<li class="list-group-item text-muted">No group schedules.</li>';
             }
+            // Render personal schedules
+            if (data.success && data.schedules && data.schedules.personal.length) {
+                personalList.innerHTML = '<li class="list-group-item active">Personal Schedules</li>';
+                data.schedules.personal.forEach(s => {
+                    personalList.innerHTML += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Duration: ${s.duration_rate} mins, ₱${s.price}</li>`;
+                });
+                hasAny = true;
+            } else {
+                personalList.innerHTML = '<li class="list-group-item text-muted">No personal schedules.</li>';
+            }
+            section.style.display = hasAny ? 'block' : 'block';
         })
         .catch(() => {
             document.getElementById('existingSchedulesSection').style.display = 'none';
