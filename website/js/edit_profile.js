@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const photoInput = document.getElementById('photoInput');
     const profilePhoto = document.getElementById('profilePhoto');
     const usernameInput = document.getElementById('usernameInput');
-    const editUsernameBtn = document.querySelector('.edit-username-btn');
     const saveButton = document.getElementById('saveChanges');
     const cancelButton = document.getElementById('cancelChanges');
     
@@ -13,18 +12,29 @@ document.addEventListener('DOMContentLoaded', function() {
     let photoChanged = false;
     let usernameChanged = false;
     let originalUsername = usernameInput ? usernameInput.value : '';
+    let originalPhotoSrc = profilePhoto ? profilePhoto.src : '';
     let newPhotoFile = null;
+    let isLoading = false;
+
+    // Store original values when modal opens
+    function storeOriginalValues() {
+        if (profilePhoto) {
+            originalPhotoSrc = profilePhoto.src;
+        }
+        if (usernameInput) {
+            originalUsername = usernameInput.value;
+        }
+    }
 
     // Function to determine the correct path for API calls
     function getCorrectPath() {
         const currentUrl = window.location.pathname;
-        console.log('Current page URL:', window.location.href);
         
         // Check if we're in the coach section
         if (currentUrl.includes('/coach/')) {
-            return '../../website/includes/update_profile.php';  // Fixed path when in coach folder
+            return '../../website/includes/update_profile.php';
         } else {
-            return 'includes/update_profile.php';  // Path for normal pages
+            return 'includes/update_profile.php';
         }
     }
     
@@ -32,7 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editProfileLink) {
         editProfileLink.addEventListener('click', function(e) {
             e.preventDefault();
+            storeOriginalValues();
             profileModal.style.display = 'block';
+            document.body.classList.add('modal-open');
         });
     }
     
@@ -40,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeModalButton) {
         closeModalButton.addEventListener('click', function() {
             profileModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
             resetChanges();
         });
     }
@@ -48,79 +61,33 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', function(e) {
         if (e.target === profileModal) {
             profileModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
             resetChanges();
         }
     });
     
-    // Toggle username input readonly state
-    if (editUsernameBtn) {
-        editUsernameBtn.addEventListener('click', function() {
-            if (usernameInput.readOnly) {
-                usernameInput.readOnly = false;
-                usernameInput.focus();
-                editUsernameBtn.innerHTML = '<i class="fas fa-check"></i>';
-            } else {
-                // Validate and save the new username
-                validateUsername();
-            }
-        });
-    }
-    
     // Handle username input changes
     if (usernameInput) {
         usernameInput.addEventListener('input', function() {
-            if (usernameInput.value !== originalUsername) {
-                usernameChanged = true;
-            } else {
-                usernameChanged = false;
-            }
+            usernameChanged = usernameInput.value !== originalUsername;
             updateSaveButtonState();
         });
         
         // Validate username when Enter key is pressed
         usernameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !usernameInput.readOnly) {
+            if (e.key === 'Enter') {
                 e.preventDefault();
-                validateUsername();
+                if (saveButton && !saveButton.disabled && !isLoading) {
+                    saveButton.click();
+                }
             }
         });
     }
     
-    // Validate username
-    async function validateUsername() {
-        const newUsername = usernameInput.value.trim();
-        
-        if (newUsername === '') {
-            showError('Username cannot be empty');
-            return;
-        }
-        
-        if (newUsername === originalUsername) {
-            usernameInput.readOnly = true;
-            editUsernameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
-            return;
-        }
-        
-        try {
-            const valid = await checkUsername(newUsername);
-            if (valid) {
-                usernameInput.readOnly = true;
-                editUsernameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
-                usernameChanged = true;
-                updateSaveButtonState();
-            }
-        } catch (error) {
-            showError('Error validating username');
-            console.error('Error validating username:', error);
-        }
-    }
-    
     // Check if username is available
     async function checkUsername(username) {
-        const apiUrl = getCorrectPath();
-        console.log('Attempting to fetch from:', apiUrl);
-        
         try {
+            const apiUrl = getCorrectPath();
             const formData = new FormData();
             formData.append('action', 'check_username');
             formData.append('username', username);
@@ -130,25 +97,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
             
-            console.log('Response status:', response.status);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            
-            if (data.available) {
-                return true;
-            } else {
-                showError('Username already taken');
-                return false;
-            }
+            return !data.exists;
         } catch (error) {
-            console.log('Detailed error checking username:', error);
-            console.log('Error stack:', error.stack);
-            // Don't block the user if it's just a server error
-            return true;
+            console.error('Error checking username:', error);
+            return true; // Don't block the user if it's just a server error
         }
     }
     
@@ -160,14 +117,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Check file size (max 5MB)
                 if (file.size > 5 * 1024 * 1024) {
-                    showError('Image file size must be less than 5MB');
+                    showNotification('error', 'Image file size must be less than 5MB');
                     photoInput.value = '';
                     return;
                 }
                 
                 // Check file type
                 if (!file.type.match('image.*')) {
-                    showError('Only image files are allowed');
+                    showNotification('error', 'Only image files are allowed');
                     photoInput.value = '';
                     return;
                 }
@@ -189,60 +146,98 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveButton) {
         saveButton.addEventListener('click', async function() {
             if (!photoChanged && !usernameChanged) {
-                showError('No changes to save');
+                showNotification('error', 'No changes to save');
                 return;
             }
             
+            if (isLoading) return;
+            
+            // Validate username if changed
+            if (usernameChanged) {
+                const username = usernameInput.value.trim();
+                
+                if (username === '') {
+                    showNotification('error', 'Username cannot be empty');
+                    return;
+                }
+                
+                const isAvailable = await checkUsername(username);
+                if (!isAvailable) {
+                    showNotification('error', 'Username already taken');
+                    return;
+                }
+            }
+            
+            // Start loading animation
+            setLoading(true);
+            
             try {
                 const apiUrl = getCorrectPath();
-                
                 const formData = new FormData();
-                formData.append('action', 'update_profile');
                 
                 if (photoChanged && newPhotoFile) {
+                    formData.append('action', 'update_photo');
                     formData.append('photo', newPhotoFile);
+                    
+                    const photoResponse = await fetch(apiUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!photoResponse.ok) {
+                        throw new Error(`HTTP error! status: ${photoResponse.status}`);
+                    }
+                    
+                    const photoData = await photoResponse.json();
+                    
+                    if (photoData.status !== 'success') {
+                        throw new Error(photoData.message || 'Failed to update photo');
+                    }
                 }
                 
                 if (usernameChanged) {
-                    formData.append('username', usernameInput.value.trim());
-                }
-                
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showSuccess('Profile updated successfully');
+                    const usernameFormData = new FormData();
+                    usernameFormData.append('action', 'update_username');
+                    usernameFormData.append('username', usernameInput.value.trim());
                     
-                    // If username was changed, update it in the UI
-                    if (usernameChanged) {
-                        originalUsername = usernameInput.value;
+                    const usernameResponse = await fetch(apiUrl, {
+                        method: 'POST',
+                        body: usernameFormData
+                    });
+                    
+                    if (!usernameResponse.ok) {
+                        throw new Error(`HTTP error! status: ${usernameResponse.status}`);
                     }
                     
-                    // Reset change flags
-                    photoChanged = false;
-                    usernameChanged = false;
-                    updateSaveButtonState();
+                    const usernameData = await usernameResponse.json();
                     
-                    // Close the modal after a delay
-                    setTimeout(() => {
-                        profileModal.style.display = 'none';
-                        // Reload page to reflect changes
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    showError(data.message || 'Failed to update profile');
+                    if (usernameData.status !== 'success') {
+                        throw new Error(usernameData.message || 'Failed to update username');
+                    }
                 }
+                
+                // Success - all updates completed
+                showNotification('success', 'Profile updated successfully');
+                
+                // Reset change flags
+                photoChanged = false;
+                usernameChanged = false;
+                originalUsername = usernameInput.value;
+                updateSaveButtonState();
+                
+                // Close the modal after a delay
+                setTimeout(() => {
+                    profileModal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                    // Reload page to reflect changes
+                    window.location.reload();
+                }, 1500);
+                
             } catch (error) {
                 console.error('Error saving profile changes:', error);
-                showError('Error updating profile. Please try again later.');
+                showNotification('error', 'Error updating profile. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         });
     }
@@ -252,30 +247,27 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelButton.addEventListener('click', function() {
             resetChanges();
             profileModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
         });
     }
     
     // Reset any changes
     function resetChanges() {
-        if (photoChanged) {
+        if (photoChanged && profilePhoto) {
             // Restore original photo
-            const originalPhotoSrc = profilePhoto.getAttribute('data-original') || profilePhoto.src;
             profilePhoto.src = originalPhotoSrc;
             photoChanged = false;
+            
+            // Reset file input
+            if (photoInput) {
+                photoInput.value = '';
+            }
         }
         
-        if (usernameChanged) {
+        if (usernameChanged && usernameInput) {
             // Restore original username
             usernameInput.value = originalUsername;
             usernameChanged = false;
-        }
-        
-        if (usernameInput) {
-            usernameInput.readOnly = true;
-        }
-        
-        if (editUsernameBtn) {
-            editUsernameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
         }
         
         updateSaveButtonState();
@@ -284,54 +276,54 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update save button state
     function updateSaveButtonState() {
         if (saveButton) {
-            if (photoChanged || usernameChanged) {
+            const hasChanges = photoChanged || usernameChanged;
+            saveButton.disabled = !hasChanges || isLoading;
+            
+            if (hasChanges && !isLoading) {
                 saveButton.classList.add('active');
-                saveButton.disabled = false;
             } else {
                 saveButton.classList.remove('active');
-                saveButton.disabled = true;
             }
         }
     }
     
-    // Show error message
-    function showError(message) {
-        // Create error element if it doesn't exist
-        let errorElement = document.querySelector('.profile-error-message');
-        if (!errorElement) {
-            errorElement = document.createElement('div');
-            errorElement.className = 'profile-error-message';
+    // Show notification message
+    function showNotification(type, message) {
+        const containerClass = type === 'error' ? 'profile-error-message' : 'profile-success-message';
+        
+        // Create notification element if it doesn't exist
+        let notificationElement = document.querySelector('.' + containerClass);
+        if (!notificationElement) {
+            notificationElement = document.createElement('div');
+            notificationElement.className = containerClass;
             const modalContent = document.querySelector('.profile-edit-container');
-            modalContent.insertBefore(errorElement, modalContent.firstChild);
+            modalContent.insertBefore(notificationElement, modalContent.firstChild);
         }
         
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
+        notificationElement.textContent = message;
+        notificationElement.style.display = 'block';
         
         // Hide after 3 seconds
         setTimeout(() => {
-            errorElement.style.display = 'none';
+            notificationElement.style.display = 'none';
         }, 3000);
     }
     
-    // Show success message
-    function showSuccess(message) {
-        // Create success element if it doesn't exist
-        let successElement = document.querySelector('.profile-success-message');
-        if (!successElement) {
-            successElement = document.createElement('div');
-            successElement.className = 'profile-success-message';
-            const modalContent = document.querySelector('.profile-edit-container');
-            modalContent.insertBefore(successElement, modalContent.firstChild);
+    // Handle loading state for the save button
+    function setLoading(loading) {
+        isLoading = loading;
+        
+        if (saveButton) {
+            if (loading) {
+                saveButton.classList.add('loading');
+                saveButton.innerHTML = '<span class="spinner"></span> Saving...';
+            } else {
+                saveButton.classList.remove('loading');
+                saveButton.innerHTML = 'Save Changes';
+            }
+            
+            updateSaveButtonState();
         }
-        
-        successElement.textContent = message;
-        successElement.style.display = 'block';
-        
-        // Hide after 3 seconds
-        setTimeout(() => {
-            successElement.style.display = 'none';
-        }, 3000);
     }
     
     // Initialize save button state

@@ -823,3 +823,212 @@
     [username] => coachjays
 )
 
+2025-04-21 17:15:12 - Request received
+2025-04-21 17:15:12 - POST data: Array
+(
+    [action] => check_username
+    [username] => administrators
+)
+
+2025-04-21 17:15:26 - Request received
+2025-04-21 17:15:26 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratordqwdq
+)
+
+2025-04-21 17:31:20 - Request received
+2025-04-21 17:31:20 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratordwqd
+)
+
+2025-04-21 17:31:34 - Request received
+2025-04-21 17:31:34 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratordwqd
+)
+
+2025-04-21 17:38:57 - Request received
+2025-04-21 17:38:57 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratoreqw
+)
+
+2025-04-21 17:39:34 - Request received
+2025-04-21 17:39:34 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123r23r23
+)
+
+2025-04-21 17:43:09 - Request received
+2025-04-21 17:43:09 - POST data: Array
+(
+    [username] => administratordqwdqwdqwdwq
+)
+
+2025-04-21 17:44:15 - Request received
+2025-04-21 17:44:15 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:16 - Request received
+2025-04-21 17:44:16 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:17 - Request received
+2025-04-21 17:44:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:17 - Request received
+2025-04-21 17:44:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:17 - Request received
+2025-04-21 17:44:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:17 - Request received
+2025-04-21 17:44:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:17 - Request received
+2025-04-21 17:44:17 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:18 - Request received
+2025-04-21 17:44:18 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:19 - Request received
+2025-04-21 17:44:19 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:44:27 - Request received
+2025-04-21 17:44:27 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratord23d2323eqweeqweqwewqeqwdwq
+)
+
+2025-04-21 17:54:13 - Request received
+2025-04-21 17:54:13 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratordwq
+)
+
+2025-04-21 18:03:40 - Request received
+2025-04-21 18:03:40 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratorw
+)
+
+2025-04-21 18:03:40 - Request received
+2025-04-21 18:03:40 - POST data: Array
+(
+    [action] => update_username
+    [username] => administratorw
+)
+
+2025-04-21 18:03:48 - Request received
+2025-04-21 18:03:48 - POST data: Array
+(
+    [action] => check_username
+    [username] => administrators
+)
+
+2025-04-21 18:03:48 - Request received
+2025-04-21 18:03:48 - POST data: Array
+(
+    [action] => update_username
+    [username] => administrators
+)
+
+2025-04-21 18:03:59 - Request received
+2025-04-21 18:03:59 - POST data: Array
+(
+    [action] => check_username
+    [username] => administratorss
+)
+
+2025-04-21 18:03:59 - Request received
+2025-04-21 18:03:59 - POST data: Array
+(
+    [action] => update_username
+    [username] => administratorss
+)
+
+2025-04-21 18:04:10 - Request received
+2025-04-21 18:04:10 - POST data: Array
+(
+    [action] => check_username
+    [username] => administrator
+)
+
+2025-04-21 18:04:10 - Request received
+2025-04-21 18:04:10 - POST data: Array
+(
+    [action] => update_username
+    [username] => administrator
+)
+
+2025-04-21 18:17:45 - Request received
+2025-04-21 18:17:45 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby1234
+)
+
+2025-04-21 18:17:45 - Request received
+2025-04-21 18:17:45 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby1234
+)
+
+2025-04-21 18:23:01 - Request received
+2025-04-21 18:23:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-21 18:23:01 - Request received
+2025-04-21 18:23:01 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
