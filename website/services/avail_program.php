@@ -46,12 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 $color = executeQuery("SELECT * FROM website_content WHERE section = 'color'")[0] ?? [];
 
 function decimalToHex($decimal) {
-    $rgb = [];
-    for ($i = 0; $i < 3; $i++) {
-        $rgb[] = str_pad(dechex(min(255, max(0, intval($decimal)))), 2, '0', STR_PAD_LEFT);
-        $decimal = ($decimal - intval($decimal)) * 256;
-    }
-    return '#' . implode('', $rgb);
+    $hex = dechex(abs(floor($decimal * 16777215)));
+    // Ensure hex values are properly formatted with leading zeros
+    return '#' . str_pad($hex, 6, '0', STR_PAD_LEFT);
 }
 
 $primaryHex = isset($color['latitude']) ? decimalToHex($color['latitude']) : '#000000';

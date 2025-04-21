@@ -1,317 +1,339 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('profileEditModal');
-    const closeBtn = document.querySelector('.close-modal');
-    const editProfileLink = document.querySelector('a[href=""]');
+    const editProfileLink = document.querySelector('.edit-profile-link');
+    const profileModal = document.getElementById('profileEditModal');
+    const closeModalButton = document.querySelector('.close-modal');
+    const photoInput = document.getElementById('photoInput');
+    const profilePhoto = document.getElementById('profilePhoto');
     const usernameInput = document.getElementById('usernameInput');
     const editUsernameBtn = document.querySelector('.edit-username-btn');
-    const photoInput = document.getElementById('photoInput');
-    const saveActions = document.querySelector('.save-actions');
-    const saveBtn = document.getElementById('saveChanges');
-    const cancelBtn = document.getElementById('cancelChanges');
-    const inputWrapper = document.querySelector('.input-wrapper');
+    const saveButton = document.getElementById('saveChanges');
+    const cancelButton = document.getElementById('cancelChanges');
     
-    let originalUsername = usernameInput.value;
-    let originalPhoto = document.getElementById('profilePhoto').src;
-    let hasChanges = false;
+    // Track if changes were made
+    let photoChanged = false;
+    let usernameChanged = false;
+    let originalUsername = usernameInput ? usernameInput.value : '';
     let newPhotoFile = null;
-    let isEditing = false;
 
-    // Show modal with animation
-    editProfileLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        modal.style.display = 'flex';
-        // Trigger reflow
-        modal.offsetHeight;
-        modal.style.opacity = '1';
-    });
-
-    // Close modal with animation
-    function closeModal() {
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            modal.style.display = 'none';
-            resetChanges();
-        }, 300);
-    }
-
-    closeBtn.addEventListener('click', closeModal);
-    window.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
-
-    // Handle username editing with visual feedback
-    editUsernameBtn.addEventListener('click', function() {
-        isEditing = true;
-        usernameInput.readOnly = false;
-        usernameInput.focus();
-        inputWrapper.classList.add('editing');
-        checkForChanges();
-    });
-
-    usernameInput.addEventListener('blur', function() {
-        if (!hasChanges) {
-            isEditing = false;
-            inputWrapper.classList.remove('editing');
-        }
-    });
-
-    usernameInput.addEventListener('input', function() {
-        checkForChanges();
-        checkUsername(this.value);
-    });
-
-    // Handle photo upload with preview
-    photoInput.addEventListener('change', function(e) { 
-        if (e.target.files && e.target.files[0]) {
-            newPhotoFile = e.target.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                document.getElementById('profilePhoto').src = e.target.result;
-                checkForChanges();
-            };
-            
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    });
-
-    // Check for changes and toggle save actions
-    function checkForChanges() {
-        const usernameChanged = usernameInput.value !== originalUsername;
-        const photoChanged = newPhotoFile !== null;
-        hasChanges = usernameChanged || photoChanged;
-
-        if (hasChanges) {
-            saveActions.classList.add('visible');
+    // Function to determine the correct path for API calls
+    function getCorrectPath() {
+        const currentUrl = window.location.pathname;
+        console.log('Current page URL:', window.location.href);
+        
+        // Check if we're in the coach section
+        if (currentUrl.includes('/coach/')) {
+            return '../../website/includes/update_profile.php';  // Fixed path when in coach folder
         } else {
-            saveActions.classList.remove('visible');
+            return 'includes/update_profile.php';  // Path for normal pages
         }
     }
-
-    // Save changes with success message and reload
-    saveBtn.addEventListener('click', async function() {
-        if (!hasChanges) return;
-
-        const originalContent = saveBtn.innerHTML;
+    
+    // Open modal when Edit Profile is clicked
+    if (editProfileLink) {
+        editProfileLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            profileModal.style.display = 'block';
+        });
+    }
+    
+    // Close modal when X is clicked
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', function() {
+            profileModal.style.display = 'none';
+            resetChanges();
+        });
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === profileModal) {
+            profileModal.style.display = 'none';
+            resetChanges();
+        }
+    });
+    
+    // Toggle username input readonly state
+    if (editUsernameBtn) {
+        editUsernameBtn.addEventListener('click', function() {
+            if (usernameInput.readOnly) {
+                usernameInput.readOnly = false;
+                usernameInput.focus();
+                editUsernameBtn.innerHTML = '<i class="fas fa-check"></i>';
+            } else {
+                // Validate and save the new username
+                validateUsername();
+            }
+        });
+    }
+    
+    // Handle username input changes
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            if (usernameInput.value !== originalUsername) {
+                usernameChanged = true;
+            } else {
+                usernameChanged = false;
+            }
+            updateSaveButtonState();
+        });
+        
+        // Validate username when Enter key is pressed
+        usernameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !usernameInput.readOnly) {
+                e.preventDefault();
+                validateUsername();
+            }
+        });
+    }
+    
+    // Validate username
+    async function validateUsername() {
+        const newUsername = usernameInput.value.trim();
+        
+        if (newUsername === '') {
+            showError('Username cannot be empty');
+            return;
+        }
+        
+        if (newUsername === originalUsername) {
+            usernameInput.readOnly = true;
+            editUsernameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+            return;
+        }
         
         try {
-            // Show loading spinner
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            saveBtn.disabled = true;
-            cancelBtn.style.display = 'none';
-
-            let success = true;
-
-            // Update username if changed
-            if (usernameInput.value !== originalUsername) {
-                const usernameResponse = await updateUsername(usernameInput.value);
-                if (!usernameResponse.success) {
-                    showError(usernameResponse.message);
-                    success = false;
-                }
-            }
-
-            // Update photo if changed
-            if (success && newPhotoFile) {
-                const photoResponse = await updatePhoto(newPhotoFile);
-                if (!photoResponse.success) {
-                    showError(photoResponse.message);
-                    success = false;
-                }
-            }
-
-            if (success) {
-                // Show success message
-                showSuccessMessage('Changes saved successfully!');
-                
-                // Reload the page after a short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                resetSaveButton(originalContent);
-            }
-
-        } catch (error) {
-            console.error('Error saving changes:', error);
-            showError('An error occurred while saving changes');
-            resetSaveButton(originalContent);
-        }
-    });
-
-    function resetSaveButton(originalContent) {
-        saveBtn.innerHTML = originalContent;
-        saveBtn.disabled = false;
-        saveBtn.classList.remove('success');
-        cancelBtn.style.display = 'block';
-    }
-
-    // Show error with animation
-    function showError(message) {
-        const errorDiv = document.querySelector('.username-error') || createErrorElement(message);
-        errorDiv.textContent = message;
-        errorDiv.classList.add('visible');
-        inputWrapper.classList.add('error');
-    }
-
-    // Show success message
-    function showSuccessMessage(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'success-message';
-        successDiv.textContent = message;
-        document.body.appendChild(successDiv);
-        setTimeout(() => {
-            successDiv.remove();
-        }, 1000);
-    }
-
-    // Reset all changes
-    function resetChanges() {
-        usernameInput.value = originalUsername;
-        usernameInput.readOnly = true;
-        document.getElementById('profilePhoto').src = originalPhoto;
-        newPhotoFile = null;
-        hasChanges = false;
-        isEditing = false;
-        inputWrapper.classList.remove('editing');
-        inputWrapper.classList.remove('error');
-        saveActions.classList.remove('visible');
-        removeUsernameError();
-        resetSaveButton('Save Changes');
-    }
-
-    cancelBtn.addEventListener('click', resetChanges);
-
-    // Error handling
-    function removeUsernameError() {
-        const errorDiv = document.querySelector('.username-error');
-        if (errorDiv) {
-            errorDiv.classList.remove('visible');
-        }
-        inputWrapper.classList.remove('error');
-    }
-
-    function createErrorElement(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'username-error';
-        errorDiv.textContent = message;
-        usernameInput.parentElement.insertAdjacentElement('afterend', errorDiv);
-        return errorDiv;
-    }
-
-    async function checkUsername(username) {
-        try {
-            console.log('Current page URL:', window.location.href);
-            const fetchUrl = '../website/includes/update_profile.php';
-            console.log('Attempting to fetch from:', fetchUrl);
-            
-            const response = await fetch(fetchUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `action=check_username&username=${encodeURIComponent(username)}`
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.exists) {
-                showUsernameError('Username already exists');
-                return false;
-            } else {
-                removeUsernameError();
-                return true;
+            const valid = await checkUsername(newUsername);
+            if (valid) {
+                usernameInput.readOnly = true;
+                editUsernameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+                usernameChanged = true;
+                updateSaveButtonState();
             }
         } catch (error) {
-            console.error('Response status:', error.message);
-            console.error('Detailed error checking username:', error);
-            console.error('Error stack:', error.stack);
-            return false;
-        }
-    }
-
-    function showUsernameError(message) {
-        const errorDiv = document.querySelector('.username-error') || 
-                        createErrorElement(message);
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = message;
-        usernameInput.parentElement.classList.add('error');
-    }
-
-    function removeUsernameError() {
-        const errorDiv = document.querySelector('.username-error');
-        if (errorDiv) {
-            errorDiv.style.display = 'none';
-        }
-        usernameInput.parentElement.classList.remove('error');
-    }
-
-    function createErrorElement(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'username-error';
-        errorDiv.textContent = message;
-        usernameInput.parentElement.insertAdjacentElement('afterend', errorDiv);
-        return errorDiv;
-    }
-
-    async function updateUsername(username) {
-        try {
-            const response = await fetch('../website/includes/update_profile.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `action=update_username&username=${encodeURIComponent(username)}`
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            return {
-                success: data.status === 'success',
-                message: data.message
-            };
-        } catch (error) {
-            console.error('Error updating username:', error);
-            return {
-                success: false,
-                message: 'Error updating username'
-            };
+            showError('Error validating username');
+            console.error('Error validating username:', error);
         }
     }
     
-    async function updatePhoto(file) {
-        const formData = new FormData();
-        formData.append('action', 'update_photo');
-        formData.append('photo', file);
-
+    // Check if username is available
+    async function checkUsername(username) {
+        const apiUrl = getCorrectPath();
+        console.log('Attempting to fetch from:', apiUrl);
+        
         try {
-            const response = await fetch('../website/includes/update_profile.php', {
+            const formData = new FormData();
+            formData.append('action', 'check_username');
+            formData.append('username', username);
+            
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 body: formData
             });
             
+            console.log('Response status:', response.status);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            return {
-                success: data.status === 'success',
-                message: data.message
-            };
+            
+            if (data.available) {
+                return true;
+            } else {
+                showError('Username already taken');
+                return false;
+            }
         } catch (error) {
-            console.error('Error updating photo:', error);
-            return {
-                success: false,
-                message: 'Error updating photo'
-            };
+            console.log('Detailed error checking username:', error);
+            console.log('Error stack:', error.stack);
+            // Don't block the user if it's just a server error
+            return true;
         }
     }
+    
+    // Handle photo input changes
+    if (photoInput) {
+        photoInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                
+                // Check file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('Image file size must be less than 5MB');
+                    photoInput.value = '';
+                    return;
+                }
+                
+                // Check file type
+                if (!file.type.match('image.*')) {
+                    showError('Only image files are allowed');
+                    photoInput.value = '';
+                    return;
+                }
+                
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePhoto.src = e.target.result;
+                    photoChanged = true;
+                    newPhotoFile = file;
+                    updateSaveButtonState();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Save changes
+    if (saveButton) {
+        saveButton.addEventListener('click', async function() {
+            if (!photoChanged && !usernameChanged) {
+                showError('No changes to save');
+                return;
+            }
+            
+            try {
+                const apiUrl = getCorrectPath();
+                
+                const formData = new FormData();
+                formData.append('action', 'update_profile');
+                
+                if (photoChanged && newPhotoFile) {
+                    formData.append('photo', newPhotoFile);
+                }
+                
+                if (usernameChanged) {
+                    formData.append('username', usernameInput.value.trim());
+                }
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('Profile updated successfully');
+                    
+                    // If username was changed, update it in the UI
+                    if (usernameChanged) {
+                        originalUsername = usernameInput.value;
+                    }
+                    
+                    // Reset change flags
+                    photoChanged = false;
+                    usernameChanged = false;
+                    updateSaveButtonState();
+                    
+                    // Close the modal after a delay
+                    setTimeout(() => {
+                        profileModal.style.display = 'none';
+                        // Reload page to reflect changes
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showError(data.message || 'Failed to update profile');
+                }
+            } catch (error) {
+                console.error('Error saving profile changes:', error);
+                showError('Error updating profile. Please try again later.');
+            }
+        });
+    }
+    
+    // Cancel changes
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
+            resetChanges();
+            profileModal.style.display = 'none';
+        });
+    }
+    
+    // Reset any changes
+    function resetChanges() {
+        if (photoChanged) {
+            // Restore original photo
+            const originalPhotoSrc = profilePhoto.getAttribute('data-original') || profilePhoto.src;
+            profilePhoto.src = originalPhotoSrc;
+            photoChanged = false;
+        }
+        
+        if (usernameChanged) {
+            // Restore original username
+            usernameInput.value = originalUsername;
+            usernameChanged = false;
+        }
+        
+        if (usernameInput) {
+            usernameInput.readOnly = true;
+        }
+        
+        if (editUsernameBtn) {
+            editUsernameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+        }
+        
+        updateSaveButtonState();
+    }
+    
+    // Update save button state
+    function updateSaveButtonState() {
+        if (saveButton) {
+            if (photoChanged || usernameChanged) {
+                saveButton.classList.add('active');
+                saveButton.disabled = false;
+            } else {
+                saveButton.classList.remove('active');
+                saveButton.disabled = true;
+            }
+        }
+    }
+    
+    // Show error message
+    function showError(message) {
+        // Create error element if it doesn't exist
+        let errorElement = document.querySelector('.profile-error-message');
+        if (!errorElement) {
+            errorElement = document.createElement('div');
+            errorElement.className = 'profile-error-message';
+            const modalContent = document.querySelector('.profile-edit-container');
+            modalContent.insertBefore(errorElement, modalContent.firstChild);
+        }
+        
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            errorElement.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Show success message
+    function showSuccess(message) {
+        // Create success element if it doesn't exist
+        let successElement = document.querySelector('.profile-success-message');
+        if (!successElement) {
+            successElement = document.createElement('div');
+            successElement.className = 'profile-success-message';
+            const modalContent = document.querySelector('.profile-edit-container');
+            modalContent.insertBefore(successElement, modalContent.firstChild);
+        }
+        
+        successElement.textContent = message;
+        successElement.style.display = 'block';
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            successElement.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Initialize save button state
+    updateSaveButtonState();
 });

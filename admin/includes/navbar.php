@@ -67,7 +67,7 @@ if (!function_exists('getFullName')) {
             $stmt->close();
             $conn->close();
         }
-        return 'Guest';
+        return 'Admin';
     }
 }
 

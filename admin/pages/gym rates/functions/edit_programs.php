@@ -1,5 +1,11 @@
 <?php
 require_once '../../../../config.php';
+require_once 'activity_logger.php';
+
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
@@ -26,6 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
         }
 
         echo json_encode(['success' => true, 'data' => $program]);
+        
+        // Log activity
+        logStaffActivity('View Program', 'Viewed program details for: ' . $program['program_name'] . ' (ID: ' . $programId . ')');
     } catch (Exception $e) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -41,6 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if (empty($programId)) {
             throw new Exception('Program ID is required');
         }
+        
+        // Get program name before removing
+        $stmtName = $pdo->prepare("SELECT program_name FROM programs WHERE id = :program_id");
+        $stmtName->execute([':program_id' => $programId]);
+        $programName = $stmtName->fetchColumn();
+        
+        if (!$programName) {
+            throw new Exception('Program not found');
+        }
 
         // Soft delete the program
         $sql = "UPDATE programs 
@@ -55,6 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
 
         echo json_encode(['success' => true, 'message' => 'Program removed successfully']);
+        
+        // Log activity with program name
+        logStaffActivity('Remove Program', 'Removed program: ' . $programName . ' (ID: ' . $programId . ')');
     } catch (Exception $e) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -74,6 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if (empty($programId) || empty($programName)) {
             throw new Exception('Program ID and name are required');
         }
+        
+        // Get old program name for logging
+        $stmtOldName = $pdo->prepare("SELECT program_name FROM programs WHERE id = :program_id");
+        $stmtOldName->execute([':program_id' => $programId]);
+        $oldProgramName = $stmtOldName->fetchColumn();
 
         // Fetch existing image from database
         $stmt = $pdo->prepare("SELECT image FROM programs WHERE id = :program_id");
@@ -140,6 +166,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         if ($result) {
             echo json_encode(['success' => true, 'message' => 'Program updated successfully']);
+            
+            // Log activity with old and new program names if they differ
+            if ($oldProgramName !== $programName) {
+                logStaffActivity('Update Program', 'Updated program: ' . $oldProgramName . ' to ' . $programName . ' (ID: ' . $programId . ')');
+            } else {
+                logStaffActivity('Update Program', 'Updated program details for: ' . $programName . ' (ID: ' . $programId . ')');
+            }
         } else {
             throw new Exception('No changes were made or program not found');
         }

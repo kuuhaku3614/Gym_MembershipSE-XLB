@@ -556,46 +556,74 @@ $(document).on('click', '.toggle-status', function() {
     });
 });
 
-        // Remove button handler
-    $(document).on('click', '.remove-btn', function() {
-        const rentalId = $(this).data('id');
-        
-        // Show the delete confirmation modal
-        $('#deleteModal').modal('show');
+       // Remove button handler
+        $(document).on('click', '.remove-btn', function() {
+            const rentalId = $(this).data('id');
+            
+            // Show the delete confirmation modal
+            $('#deleteModal').modal('show');
 
-        // Set the rental ID in a data attribute for later use
-        $('#confirmDelete').data('id', rentalId);
-    });
-
-    // Confirm delete button handler
-    $(document).on('click', '#confirmDelete', function() {
-        const rentalId = $(this).data('id');
-
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/edit_rental_services.php',
-            type: 'POST',
-            data: {
-                action: 'remove',
-                id: rentalId
-            },
-            success: function(response) {
-                const data = JSON.parse(response);
-                if (data.status === 'success') {
-                    // alert(data.message); // You can replace this with a success modal if desired
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message); // You can also replace this with an error modal
-                }
-            },
-            error: function(xhr, status, error) {
-                alert('Error occurred while removing rental service: ' + error); // Replace with an error modal if desired
-            }
+            // Set the rental ID in a data attribute for later use
+            $('#confirmDelete').data('id', rentalId);
         });
 
-        // Hide the modal after confirming deletion
-        $('#deleteModal').modal('hide');
-    });
+        // Confirm delete button handler
+        $(document).on('click', '#confirmDelete', function() {
+            const rentalId = $(this).data('id');
+            
+            // Show loading overlay
+            $('#loadingOverlay').show();
+            
+            $.ajax({
+                url: '../admin/pages/gym rates/functions/edit_rental_services.php',
+                type: 'POST',
+                data: {
+                    action: 'remove',
+                    id: rentalId
+                },
+                success: function(response) {
+                    try {
+                        const data = typeof response === 'object' ? response : JSON.parse(response);
+                        
+                        // Hide loading overlay
+                        $('#loadingOverlay').hide();
+                        
+                        if (data.status === 'success') {
+                            // Show success message
+                            $('#successModal .modal-body p').text(data.message || 'Rental service removed successfully!');
+                            $('#successModal').modal('show');
+                            
+                            // Reload after modal is closed or after short delay
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            // Show error message
+                            $('#errorModal .modal-body').text('Error: ' + data.message);
+                            $('#errorModal').modal('show');
+                        }
+                    } catch (e) {
+                        // Hide loading overlay
+                        $('#loadingOverlay').hide();
+                        
+                        // Show parsing error
+                        $('#errorModal .modal-body').text('Error parsing response');
+                        $('#errorModal').modal('show');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Hide loading overlay
+                    $('#loadingOverlay').hide();
+                    
+                    // Show ajax error
+                    $('#errorModal .modal-body').text('Error occurred while removing rental service: ' + error);
+                    $('#errorModal').modal('show');
+                }
+            });
 
+            // Hide the confirmation modal
+            $('#deleteModal').modal('hide');
+        });
     // Refresh button handler
     $('#refreshBtn').click(function() {
         location.reload();

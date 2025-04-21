@@ -1,9 +1,12 @@
 <?php
 require_once '../../../../config.php';
+session_start(); // Ensure session is started
+
+// Include the activity logger
+require_once 'activity_logger.php';
 
 // Define upload folder
 $uploadDir = __DIR__ . '/../../../../cms_img/gym_rates/';
-
 
 // Fetch gym rate details
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
@@ -47,6 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
+        // Get original gym rate data for activity log
+        $originalDataQuery = "SELECT plan_name, plan_type, price FROM membership_plans WHERE id = :id";
+        $stmt = $pdo->prepare($originalDataQuery);
+        $stmt->execute([':id' => $_POST['id']]);
+        $originalData = $stmt->fetch(PDO::FETCH_ASSOC);
+
         // Get duration_type_id
         $durationTypeQuery = "SELECT id FROM duration_types WHERE type_name = :type_name";
         $stmt = $pdo->prepare($durationTypeQuery);
@@ -118,6 +127,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ]);
 
         if ($result) {
+            // Create description for activity log
+            $changes = [];
+            if ($originalData['plan_name'] != $_POST['promoName']) {
+                $changes[] = "name from '{$originalData['plan_name']}' to '{$_POST['promoName']}'";
+            }
+            if ($originalData['plan_type'] != $_POST['promoType']) {
+                $changes[] = "type from '{$originalData['plan_type']}' to '{$_POST['promoType']}'";
+            }
+            if ($originalData['price'] != $_POST['price']) {
+                $changes[] = "price from '₱" . number_format($originalData['price'], 2) . "' to '₱" . number_format($_POST['price'], 2) . "'";
+            }
+            if (!empty($_FILES['editPromoImage']['name'])) {
+                $changes[] = "updated promo image";
+            }
+            
+            $description = "Updated gym rate '{$_POST['promoName']}' - Changed: " . 
+                        (empty($changes) ? "other details" : implode(", ", $changes));
+            
+            // Log the activity
+            logStaffActivity('Gym Rate Updated', $description);
+            
             echo json_encode(['status' => 'success', 'message' => 'Gym rate updated successfully']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to update gym rate']);
@@ -136,11 +166,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
+        // Get gym rate name for activity log
+        $nameQuery = "SELECT plan_name FROM membership_plans WHERE id = :id";
+        $stmt = $pdo->prepare($nameQuery);
+        $stmt->execute([':id' => $_POST['id']]);
+        $planName = $stmt->fetchColumn();
+        
+        // Update to soft delete
         $sql = "UPDATE membership_plans SET is_removed = 1, status = 'inactive' WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute([':id' => $_POST['id']]);
 
         if ($result) {
+            // Log the activity
+            $description = "Removed gym rate: $planName (ID: {$_POST['id']})";
+            logStaffActivity('Gym Rate Removed', $description);
+            
             echo json_encode(['status' => 'success', 'message' => 'Gym rate removed successfully']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to remove gym rate']);

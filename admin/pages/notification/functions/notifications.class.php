@@ -60,6 +60,39 @@ class Notifications {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getTransactionDetails($transactionId) {
+        try {
+            $query = "SELECT 
+                    t.id as transaction_id,
+                    t.status as transaction_status,
+                    t.user_id,
+                    CASE 
+                        WHEN m.id IS NOT NULL THEN 'membership'
+                        WHEN w.id IS NOT NULL THEN 'walk-in'
+                        ELSE NULL
+                    END as transaction_type,
+                    CASE 
+                        WHEN pd.first_name IS NOT NULL THEN CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name)
+                        WHEN w.first_name IS NOT NULL THEN CONCAT(w.first_name, ' ', COALESCE(w.middle_name, ''), ' ', w.last_name)
+                        ELSE 'Unknown'
+                    END as requester_name
+                    FROM transactions t
+                    LEFT JOIN users u ON t.user_id = u.id
+                    LEFT JOIN personal_details pd ON u.id = pd.user_id
+                    LEFT JOIN memberships m ON t.id = m.transaction_id
+                    LEFT JOIN walk_in_records w ON t.id = w.transaction_id
+                    WHERE t.id = ?";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([$transactionId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            return null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
     public function formatNotification($request) {
         $requestDate = new DateTime($request['created_at']);
         $membershipStart = !empty($request['membership_start']) ? new DateTime($request['membership_start']) : null;

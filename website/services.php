@@ -177,14 +177,18 @@
     <div class="container-fluid p-0">
         <div class="alert-container"></div>
         <div class="content-wrapper">
-            <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                <h2 class="section-heading coach-section">OFFER PROGRAMS</h2>
-                <div class="row g-4 mb-4">
-                    
-                </div>
-            <?php endif; ?>
 
             <div class="container text-center mb-4 button-shortcuts">
+                <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+                    <div class="row justify-content-between">
+                        <div class="mb-2">
+                            <button class="btn scroll-btn py-4" style="background-color: black" data-target="#Teach-Programs">
+                                <i class="fas fa-stopwatch-20 me-2 text-white" style="font-size: 1.4rem;"></i>
+                                <span class="text-white">Teach Programs</span>
+                            </button>
+                        </div>
+                    </div>
+                <?php endif; ?>
                 <div class="row justify-content-between">
                     <div class="col-md-4 mb-2">
                         <button class="btn scroll-btn py-4" data-target="#Gym-Rates">
@@ -206,6 +210,54 @@
                     </div>
                 </div>
             </div>
+            
+    <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+        <!-- Coach Section -->
+        <h2 class="section-heading">Teach Programs</h2>
+        <div class="row g-4 mb-4">
+            <?php foreach ($program_services as $program) { 
+                // Default image path
+                $defaultImage = '../cms_img/default/program.jpeg';
+
+                // Get the image path
+                $imagePath = $defaultImage; // Set default first
+                if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
+                    $imagePath = '../cms_img/program/' . $program['image'];
+                }
+                
+                // Format available types
+                $types = $program['available_types'] ? explode(',', $program['available_types']) : [];
+                $typeLabels = array_map(function($type) {
+                    return ucfirst($type) . ' Training';
+                }, $types);
+            ?>
+                <div class="col-sm-6 col-md-6 col-lg-3">
+                    <a href="services/teach_program.php?id=<?= $program['program_id'] ?>" class="program-link">
+                        <div class="card h-100">
+                            <div class="card-header text-white text-center"
+                                style="background-image: url('<?= $imagePath ?>'); 
+                                background-size: cover; 
+                                background-position: center;
+                                height: 200px;
+                                position: relative;">
+                                <div class="overlay-header">
+                                    <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($program['program_name']) ?></h2>
+                                </div>
+                                <div class="overlay-darker"></div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text mb-1" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100% "><?= htmlspecialchars($program['description']) ?></p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            <?php } ?>
+        </div>
+
+
+                <br>
+                <hr class="my-4" style="border: 2px solid #000;">
+    <?php endif; ?>
 
             <!-- Special Plans Section -->
 <h2 class="section-heading">SPECIAL GYM RATES</h2>

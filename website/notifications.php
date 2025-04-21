@@ -50,6 +50,8 @@ $membership_result = $notifications['memberships'];
 $announcement_result = $notifications['announcements'];
 $program_confirmation_result = function_exists('getProgramConfirmationNotifications') && isset($notifications['program_confirmations']) ? $notifications['program_confirmations'] : [];
 $program_cancellation_result = function_exists('getProgramCancellationNotifications') && isset($notifications['program_cancellations']) ? $notifications['program_cancellations'] : [];
+$cancelled_sessions_result = isset($notifications['cancelled_sessions']) ? $notifications['cancelled_sessions'] : [];
+$completed_sessions_result = isset($notifications['completed_sessions']) ? $notifications['completed_sessions'] : [];
 
 
 // Get coach program requests if user is a coach
@@ -198,7 +200,42 @@ foreach ($program_cancellation_result as $notification) {
     $all_notifications[] = $notification;
 }
 
-// No longer need to add coach requests to notifications array
+// Process cancelled sessions
+foreach ($cancelled_sessions_result as $notification) {
+    $notification['type'] = 'cancelled_sessions';
+    $notification['id'] = $notification['schedule_id'];
+    $notification['date'] = $notification['created_at'] ?? $notification['date'];
+    $notification['title'] = 'Session Cancelled';
+    $formatted_date = date('F j, Y', strtotime($notification['date']));
+    $formatted_start = date('g:i A', strtotime($notification['start_time']));
+    $formatted_end = date('g:i A', strtotime($notification['end_time']));
+    $notification['message'] = 'Your <strong>' . htmlspecialchars($notification['program_name']) . ' - ' . 
+        ucfirst(htmlspecialchars($notification['session_type'])) . '</strong> session on ' . 
+        $formatted_date . ' from ' . $formatted_start . ' to ' . $formatted_end . 
+        ' with ' . htmlspecialchars($notification['coach_username']) . ' has been <strong>cancelled</strong>.';
+    if (!empty($notification['cancellation_reason'])) {
+        $notification['message'] .= ' Reason: ' . htmlspecialchars($notification['cancellation_reason']);
+    }
+    $notification['class'] = 'list-group-item-danger';
+    $all_notifications[] = $notification;
+}
+
+// Process completed sessions
+foreach ($completed_sessions_result as $notification) {
+    $notification['type'] = 'completed_sessions';
+    $notification['id'] = $notification['schedule_id'];
+    $notification['date'] = $notification['created_at'] ?? $notification['date'];
+    $notification['title'] = 'Session Completed';
+    $formatted_date = date('F j, Y', strtotime($notification['date']));
+    $formatted_start = date('g:i A', strtotime($notification['start_time']));
+    $formatted_end = date('g:i A', strtotime($notification['end_time']));
+    $notification['message'] = 'Your <strong>' . htmlspecialchars($notification['program_name']) . ' - ' . 
+        ucfirst(htmlspecialchars($notification['session_type'])) . '</strong> session on ' . 
+        $formatted_date . ' from ' . $formatted_start . ' to ' . $formatted_end . 
+        ' with ' . htmlspecialchars($notification['coach_username']) . ' has been <strong>completed</strong>.';
+    $notification['class'] = 'list-group-item-success';
+    $all_notifications[] = $notification;
+}
 
 // Sort notifications by date (newest first)
 usort($all_notifications, function($a, $b) {
@@ -511,6 +548,21 @@ function executeQuery($query, $params = []) {
     </div>
 </div>
 
+<!-- Add this to the bottom of notifications.php before the closing body tag -->
+<div class="modal fade" id="sessionModal" tabindex="-1" aria-labelledby="sessionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="sessionDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 $(document).ready(function() {
     // Handle program request click
@@ -778,7 +830,19 @@ $('#confirmRequest').on('click', function() {
 
 <script>
 $(document).ready(function() {
-    // ... existing code ...
+        // Individual notification click handler
+        $('.list-group-item[data-notification-type]').click(function() {
+        const type = $(this).data('notification-type');
+        
+        // Skip session notifications and program notifications - they're handled by specific handlers
+        if (type === 'program_confirmations' || type === 'program_cancellations' || 
+            type === 'cancelled_sessions' || type === 'completed_sessions') {
+            return; // Skip these types - they have dedicated handlers
+        }
+        
+        const id = $(this).data('notification-id');
+        const element = $(this);
+    });
     // Add new handler for program confirmations/cancellations
     $('.list-group-item[data-notification-type="program_confirmations"], .list-group-item[data-notification-type="program_cancellations"]').click(function(e) {
         e.stopPropagation(); // Prevent double modal opening
@@ -842,6 +906,7 @@ $(document).ready(function() {
             $('#programNotifScheduleDetails').html('<div class="text-center p-3 text-danger">No subscription ID found for this notification.</div>');
         }
     });
+    
 });
 </script>
 

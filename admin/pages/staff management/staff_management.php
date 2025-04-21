@@ -18,8 +18,8 @@ $query = "SELECT
     FROM users u
     LEFT JOIN personal_details pd ON u.id = pd.user_id
     JOIN roles r ON u.role_id = r.id
-    WHERE r.role_name IN ('staff', 'coach')
-    ORDER BY pd.last_name"; 
+    WHERE r.role_name IN ('staff', 'coach', 'coach/staff')
+    ORDER BY pd.last_name";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute();
@@ -32,6 +32,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h2>Staff Management</h2>
             <div class="col-md-6 text-end">
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">Add New Staff</button>
+            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#adminSettingsModal">Admin Settings</button>
             </div>
         </div>
 
@@ -130,6 +131,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <option value="">Select Role</option>
                                     <option value="staff">Staff</option>
                                     <option value="coach">Coach</option>
+                                    <option value="coach/staff">Coach/Staff</option>
                                 </select>
                             </div>
                         </div>
@@ -208,6 +210,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <option value="">Select Role</option>
                                     <option value="staff">Staff</option>
                                     <option value="coach">Coach</option>
+                                    <option value="coach/staff">Coach/Staff</option>
                                 </select>
                             </div>
                         </div>
@@ -229,6 +232,46 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="updateStaffBtn">Update Staff</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Settings Modal -->
+<div class="modal fade" id="adminSettingsModal" tabindex="-1" aria-labelledby="adminSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminSettingsModalLabel">Admin Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adminSettingsForm">
+                    <div class="mb-3">
+                        <label class="form-label">Current Username</label>
+                        <input type="text" class="form-control" id="current_username" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Username</label>
+                        <input type="text" class="form-control" name="new_username" id="new_username">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-control" name="current_password" id="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" name="new_password" id="new_password" placeholder="leave blank to keep current password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="leave blank to keep current password">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveAdminSettingsBtn">Save Changes</button>
             </div>
         </div>
     </div>
@@ -270,7 +313,7 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <tr>
                         <td><?php echo htmlspecialchars($log['activity']); ?></td>
                         <td><?php echo htmlspecialchars($log['description']); ?></td>
-                        <td><?php echo htmlspecialchars($log['staff_name'] ?? 'Unknown'); ?></td>
+                        <td><?php echo htmlspecialchars($log['staff_name'] ?? 'Admin'); ?></td>
                         <td><?php echo date('M d, Y h:i A', strtotime($log['timestamp'])); ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -430,14 +473,88 @@ $(document).ready(function() {
         $('#editStaffForm')[0].reset();
     });
 
-    // Check if activity log table is already initialized before initializing
+    // Admin Settings Modal Handling
+    const adminSettingsModal = new bootstrap.Modal(document.getElementById('adminSettingsModal'));
+    
+    // When Admin Settings modal is opened
+    $('#adminSettingsModal').on('show.bs.modal', function () {
+        // Fetch current admin username
+        $.ajax({
+            url: '../admin/pages/staff management/functions/get_admin_details.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#current_username').val(response.data.username);
+                    $('#new_username').val(response.data.username);
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                console.log("Response Text:", xhr.responseText);
+                alert('An error occurred while fetching admin details. Check console for details.');
+            }
+        });
+    });
+
+    // Handle Admin Settings save
+    $('#saveAdminSettingsBtn').click(function() {
+        const newPassword = $('#new_password').val();
+        const confirmPassword = $('#confirm_password').val();
+        
+        // Validate passwords match if provided
+        if (newPassword && newPassword !== confirmPassword) {
+            alert('New password and confirmation do not match!');
+            return;
+        }
+        
+        const formData = new FormData($('#adminSettingsForm')[0]);
+        
+        $.ajax({
+            url: '../admin/pages/staff management/functions/update_admin_settings.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    adminSettingsModal.hide();
+                    // Reload only if username was changed
+                    if ($('#current_username').val() !== $('#new_username').val()) {
+                        location.reload();
+                    }
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                console.log("Response Text:", xhr.responseText);
+                alert('An error occurred while updating admin settings. Check console for details.');
+            }
+        });
+    });
+    
+    // Reset form when Admin Settings modal is closed
+    $('#adminSettingsModal').on('hidden.bs.modal', function () {
+        $('#adminSettingsForm')[0].reset();
+    });
+
+   // Check if activity log table is already initialized before initializing
     if (!$.fn.DataTable.isDataTable("#activityLogTable")) {
         $('#activityLogTable').DataTable({
             pageLength: 10,
             ordering: true,
-            order: [[3, 'desc']], // Sort by timestamp by default
+            order: [[3, 'desc']], // Sort by timestamp column in descending order (newest first)
             responsive: true,
             dom: '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip',
+            columnDefs: [
+                { type: 'date', targets: 3 } // Explicitly define column 3 as date type
+            ]
         });
     }
 });
