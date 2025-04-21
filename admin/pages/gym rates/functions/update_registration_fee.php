@@ -1,6 +1,10 @@
 <?php
 // Include your database connection file
 require_once '../../../../config.php';
+session_start(); // Ensure session is started
+
+// Include the activity logger
+require_once 'activity_logger.php';
 
 // Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,6 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
+        // Get the current fee first (for activity log)
+        $currentFeeQuery = "SELECT membership_fee FROM registration WHERE id = 1";
+        $stmt = $pdo->prepare($currentFeeQuery);
+        $stmt->execute();
+        $currentFee = $stmt->fetchColumn();
+        
         // Prepare the SQL query to update the registration fee
         $sql = "UPDATE registration SET membership_fee = :newFee WHERE id = 1";
         $stmt = $pdo->prepare($sql);
@@ -25,6 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check if the update was successful
         if ($stmt->rowCount() > 0) {
+            // Log the activity
+            $description = "Changed registration fee from ₱" . number_format($currentFee, 2) . 
+                           " to ₱" . number_format($newRegistrationFee, 2);
+            logStaffActivity('Registration Fee Updated', $description);
+            
             echo "success";
         } else {
             echo "Error: No changes were made. The fee might be the same as the current fee.";

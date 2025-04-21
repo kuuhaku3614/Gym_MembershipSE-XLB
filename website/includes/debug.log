@@ -664,3 +664,93 @@
     [action] => update_photo
 )
 
+2025-04-20 10:22:27 - Request received
+2025-04-20 10:22:27 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachh
+)
+
+2025-04-20 10:22:27 - Request received
+2025-04-20 10:22:27 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachhd
+)
+
+2025-04-20 10:22:27 - Request received
+2025-04-20 10:22:27 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachhda
+)
+
+2025-04-20 10:22:27 - Request received
+2025-04-20 10:22:27 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachhdag
+)
+
+2025-04-20 10:22:28 - Request received
+2025-04-20 10:22:28 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachhda
+)
+
+2025-04-20 10:22:28 - Request received
+2025-04-20 10:22:28 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachhd
+)
+
+2025-04-20 10:22:28 - Request received
+2025-04-20 10:22:28 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachh
+)
+
+2025-04-20 10:22:29 - Request received
+2025-04-20 10:22:29 - POST data: Array
+(
+    [action] => check_username
+    [username] => coach
+)
+
+2025-04-20 10:22:30 - Request received
+2025-04-20 10:22:30 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachj
+)
+
+2025-04-20 10:22:31 - Request received
+2025-04-20 10:22:31 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachja
+)
+
+2025-04-20 10:22:32 - Request received
+2025-04-20 10:22:32 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachjay
+)
+
+2025-04-20 10:22:32 - Request received
+2025-04-20 10:22:32 - POST data: Array
+(
+    [action] => update_username
+    [username] => coachjay
+)
+
+2025-04-20 22:57:38 - Request received
+2025-04-20 22:57:38 - POST data: Array
+(
+    [action] => update_photo
+)
+

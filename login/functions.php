@@ -46,17 +46,26 @@ function redirectBasedOnRole($role) {
         'coach' => '../website/website.php',
         'member' => '../website/website.php',
         'user' => '../website/website.php',
+        'coach/staff' => false // Special handling - no redirect, will show modal
     ];
     
     $role = sanitizeInput($role);
     
+    // Check if role exists in routes array
     if (isset($roleRoutes[$role])) {
+        // If it's coach/staff, return false to indicate special handling needed
+        if ($role === 'coach/staff' || $roleRoutes[$role] === false) {
+            return false;
+        }
+        
+        // Otherwise redirect
         header("Location: " . $roleRoutes[$role]);
+        exit();
     } else {
         error_log("Unexpected role encountered: " . $role);
         header("Location: index.php");
+        exit();
     }
-    exit();
 }
 
 /**
@@ -96,7 +105,7 @@ function loginUser($username, $password) {
             }
 
             if (password_verify($password, $user['password'])) {
-                $validRoles = ['admin', 'staff', 'coach', 'member', 'user'];
+                $validRoles = ['admin', 'staff', 'coach', 'member', 'user', 'coach/staff'];
                 if (!in_array($user['role'], $validRoles)) {
                     return ['success' => false, 'message' => 'Unauthorized role detected.'];
                 }

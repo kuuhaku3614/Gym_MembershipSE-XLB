@@ -4,16 +4,35 @@ require_once 'functions.php';
 
 // Check if user is already logged in
 if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && isset($_SESSION['role_id'])) {
-    redirectBasedOnRole($_SESSION['role']);
+    // Special handling for coach/staff
+    if ($_SESSION['role'] === 'coach/staff') {
+        // Set flag to show modal but don't redirect
+        $showRoleModal = true;
+    } else {
+        redirectBasedOnRole($_SESSION['role']);
+    }
 }
 
 require_once '../website/includes/loadingScreen.php';
 
 $error = '';
 $username = '';
+$showRoleModal = false;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Sanitize all input data
+    // Check if this is a role selection from the modal
+    if (isset($_POST['role_selection'])) {
+        $selectedRole = sanitizeInput($_POST['role_selection']);
+        
+        if ($selectedRole === 'admin') {
+            header("Location: ../admin/index.php");
+        } else {
+            header("Location: ../website/website.php");
+        }
+        exit();
+    }
+    
+    // Otherwise process normal login
     $username = sanitizeInput($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';  // Don't sanitize password before verification
     
@@ -31,8 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Initialize notification session data from database
             initializeNotificationSession($database, $result['user_id']);
             
-            // Redirect based on role
-            redirectBasedOnRole($result['role']);
+            // Special handling for coach/staff role
+            if ($result['role'] === 'coach/staff') {
+                $showRoleModal = true;
+            } else {
+                // Redirect based on role
+                redirectBasedOnRole($result['role']);
+            }
         } else {
             $error = $result['message'];
         }
@@ -115,6 +139,30 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = ?", ['logo']
         </div>
     </div>
 
+    <!-- Role Selection Modal -->
+    <div class="modal fade" id="roleSelectionModal" tabindex="-1" role="dialog" aria-labelledby="roleSelectionModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roleSelectionModalLabel">Select Your Destination</h5>
+                </div>
+                <div class="modal-body">
+                    <p>As a Coach/Staff member, you have access to both areas. Where would you like to go?</p>
+                    <form method="POST" action="<?php echo sanitizeOutput($_SERVER['PHP_SELF']); ?>">
+                        <div class="d-flex justify-content-around mt-4">
+                            <button type="submit" name="role_selection" value="admin" class="btn btn-primary">
+                                <i class="fas fa-cogs mr-2"></i> Admin Area
+                            </button>
+                            <button type="submit" name="role_selection" value="website" class="btn btn-success">
+                                <i class="fas fa-dumbbell mr-2"></i> Website
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
@@ -141,7 +189,14 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = ?", ['logo']
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
             }
-        }
+        }   
+        
+        <?php if ($showRoleModal || (isset($_SESSION['role']) && $_SESSION['role'] === 'coach/staff')): ?>
+        // Show the modal when page loads if needed
+        $(document).ready(function() {
+            $('#roleSelectionModal').modal('show');
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>

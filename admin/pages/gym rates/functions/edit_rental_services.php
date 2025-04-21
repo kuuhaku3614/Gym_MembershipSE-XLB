@@ -1,5 +1,11 @@
 <?php
 require_once '../../../../config.php';
+require_once 'activity_logger.php';
+
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
@@ -17,6 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
 
         if ($rental) {
             echo json_encode(['status' => 'success', 'data' => $rental]);
+            
+            // Log activity with rental name
+            logStaffActivity('View Rental Service', 'Viewed rental service details for: ' . $rental['service_name'] . ' (ID: ' . $id . ')');
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Rental service not found']);
         }
@@ -43,6 +52,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
+        // Get old service name for logging
+        $stmtOldName = $pdo->prepare("SELECT service_name FROM rental_services WHERE id = :id");
+        $stmtOldName->execute([':id' => $_POST['id']]);
+        $oldServiceName = $stmtOldName->fetchColumn();
+        
+        if (!$oldServiceName) {
+            echo json_encode(['status' => 'error', 'message' => 'Rental service not found']);
+            exit;
+        }
+        
         // Fetch existing image
         $stmt = $pdo->prepare("SELECT image FROM rental_services WHERE id = :id");
         $stmt->execute([':id' => $_POST['id']]);
@@ -107,6 +126,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         if ($result) {
             echo json_encode(['status' => 'success', 'message' => 'Rental service updated successfully']);
+            
+            // Log activity with old and new service names if they differ
+            if ($oldServiceName !== $_POST['serviceName']) {
+                logStaffActivity('Update Rental Service', 'Updated rental service: ' . $oldServiceName . ' to ' . $_POST['serviceName'] . ' (ID: ' . $_POST['id'] . ')');
+            } else {
+                logStaffActivity('Update Rental Service', 'Updated details for rental service: ' . $_POST['serviceName'] . ' (ID: ' . $_POST['id'] . ')');
+            }
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to update rental service']);
         }
@@ -124,12 +150,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
+        // Get service name before removing
+        $stmtName = $pdo->prepare("SELECT service_name FROM rental_services WHERE id = :id");
+        $stmtName->execute([':id' => $_POST['id']]);
+        $serviceName = $stmtName->fetchColumn();
+        
+        if (!$serviceName) {
+            echo json_encode(['status' => 'error', 'message' => 'Rental service not found']);
+            exit;
+        }
+        
         $sql = "UPDATE rental_services SET is_removed = 1, status = 'inactive' WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute([':id' => $_POST['id']]);
 
         if ($result) {
             echo json_encode(['status' => 'success', 'message' => 'Rental service removed successfully']);
+            
+            // Log activity with service name
+            logStaffActivity('Remove Rental Service', 'Removed rental service: ' . $serviceName . ' (ID: ' . $_POST['id'] . ')');
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to remove rental service']);
         }

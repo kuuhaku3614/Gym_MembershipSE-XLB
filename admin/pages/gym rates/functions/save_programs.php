@@ -1,5 +1,12 @@
 <?php
 require_once '../../../../config.php';
+require_once 'activity_logger.php';
+
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header('Content-Type: application/json');
 
 // Handle toggle status
@@ -17,6 +24,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception('Invalid status value');
         }
         
+        // Get program name for logging
+        $stmtName = $pdo->prepare("SELECT program_name FROM programs WHERE id = :id");
+        $stmtName->execute([':id' => $programId]);
+        $programName = $stmtName->fetchColumn();
+        
+        if (!$programName) {
+            throw new Exception('Program not found');
+        }
+        
         $sql = "UPDATE programs SET status = :status, updated_at = NOW() WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -29,6 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
         
         echo json_encode(['status' => 'success', 'message' => 'Program status updated successfully']);
+        
+        // Log activity with program name
+        logStaffActivity('Update Program Status', 'Changed status of program: ' . $programName . ' (ID: ' . $programId . ') to ' . $newStatus);
     } catch (Exception $e) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -108,6 +127,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
                 'message' => 'Program added successfully',
                 'program_id' => $programId
             ]);
+            
+            // Log activity with program name
+            logStaffActivity('Add Program', 'Added new program: ' . $programName . ' (ID: ' . $programId . ')');
         } else {
             throw new Exception('Failed to add program');
         }

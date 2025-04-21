@@ -25,7 +25,7 @@ $staffPages = ['dashboard', 'members', 'members_new', 'add_member', 'renew_membe
 // Check if the user is authorized for the requested page
 if (
     ($userRole === 'admin' && !in_array($page, $adminPages)) ||
-    ($userRole === 'staff' && (!in_array($page, $staffPages) || $page === 'staff_management'))
+    ($userRole === 'staff' || $userRole === 'coach/staff' && (!in_array($page, $staffPages) || $page === 'staff_management'))
 ) {
     // Provide a more user-friendly error or redirect
     header('Location: dashboard?error=unauthorized');

@@ -363,7 +363,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     id="user-dropdown" 
                     role="menu"     
                     aria-label="User menu options">
-                    <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+                    <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach' || 'coach/staff'): ?>
                         <a href="<?php echo $isCoachFolder ? 'programs.php' : './coach/dashboard.php'; ?>" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'admin' || $_SESSION['role'] === 'staff'): ?>
                         <a href="../admin/index.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>

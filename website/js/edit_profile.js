@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let usernameChanged = false;
     let originalUsername = usernameInput ? usernameInput.value : '';
     let newPhotoFile = null;
-    
+
     // Function to determine the correct path for API calls
     function getCorrectPath() {
         const currentUrl = window.location.pathname;
@@ -22,9 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if we're in the coach section
         if (currentUrl.includes('/coach/')) {
-            return '../includes/update_profile.php';
+            return '../../website/includes/update_profile.php';  // Fixed path when in coach folder
         } else {
-            return 'includes/update_profile.php';
+            return 'includes/update_profile.php';  // Path for normal pages
         }
     }
     

@@ -1,5 +1,9 @@
 <?php
 require_once '../../../../config.php';
+session_start(); // Ensure session is started
+
+// Include the activity logger
+require_once 'activity_logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Handle toggle status action
@@ -26,6 +30,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             if ($stmt->rowCount() > 0) {
+                // Log the activity
+                $activityType = $status === 'active' ? 'Gym Rate Activated' : 'Gym Rate Deactivated';
+                
+                // Get the gym rate name for better description
+                $nameQuery = "SELECT plan_name FROM membership_plans WHERE id = :id";
+                $nameStmt = $pdo->prepare($nameQuery);
+                $nameStmt->execute([':id' => $id]);
+                $planName = $nameStmt->fetchColumn();
+                
+                $description = "Changed status of gym rate '$planName' to $status";
+                logStaffActivity($activityType, $description);
+                
                 echo "success";
             } else {
                 echo "Error: No changes were made. The record might not exist.";
@@ -37,26 +53,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-            // Define the correct uploads folder relative to project root
-        $targetDir = __DIR__ . '/../../../../cms_img/gym_rates/';
+    // Define the correct uploads folder relative to project root
+    $targetDir = __DIR__ . '/../../../../cms_img/gym_rates/';
 
+    // Handle image upload
+    $imageName = NULL;
+    if (isset($_FILES['promoImage']) && $_FILES['promoImage']['error'] == 0) {
+        $fileName = basename($_FILES['promoImage']['name']);
+        $imageName = uniqid() . "_" . $fileName; // Prevent duplicate names
+        $targetFilePath = $targetDir . $imageName; // Full path
 
-        // Handle image upload
-        $imageName = NULL;
-        if (isset($_FILES['promoImage']) && $_FILES['promoImage']['error'] == 0) {
-            $fileName = basename($_FILES['promoImage']['name']);
-            $imageName = uniqid() . "_" . $fileName; // Prevent duplicate names
-            $targetFilePath = $targetDir . $imageName; // Full path
-
-            if (move_uploaded_file($_FILES['promoImage']['tmp_name'], $targetFilePath)) {
-                // Store only the filename in the database (not full path)
-            } else {
-                echo "Error uploading image.";
-                exit;
-            }
+        if (move_uploaded_file($_FILES['promoImage']['tmp_name'], $targetFilePath)) {
+            // Store only the filename in the database (not full path)
+        } else {
+            echo "Error uploading image.";
+            exit;
         }
-
-
+    }
 
     // Validate required fields
     $requiredFields = ['promoName', 'promoType', 'duration', 'durationType', 'activationDate', 'deactivationDate', 'price'];
@@ -135,6 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bindParam(':image', $imageName);
 
         if ($stmt->execute()) {
+            // Log the activity
+            $description = "Added new gym rate: $promoName ($promoType) - ₱" . number_format($price, 2);
+            logStaffActivity('Gym Rate Added', $description);
+            
             echo "success";
         } else {
             echo "Database error: Could not execute query.";

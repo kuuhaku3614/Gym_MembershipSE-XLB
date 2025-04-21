@@ -1,5 +1,11 @@
 <?php
 require_once '../../../../config.php';
+require_once 'activity_logger.php';
+
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 $response = ['status' => 'error', 'message' => ''];
@@ -19,9 +25,21 @@ try {
         if ($id <= 0) throw new Exception('Invalid rental service ID');
         if (!in_array($newStatus, ['active', 'inactive'])) throw new Exception('Invalid status value');
 
+        // Get rental service name for logging
+        $stmtName = $pdo->prepare("SELECT service_name FROM rental_services WHERE id = :id");
+        $stmtName->execute([':id' => $id]);
+        $serviceName = $stmtName->fetchColumn();
+        
+        if (!$serviceName) {
+            throw new Exception('Rental service not found');
+        }
+
         $stmt = $pdo->prepare("UPDATE rental_services SET status = :status WHERE id = :id");
         if ($stmt->execute([':status' => $newStatus, ':id' => $id])) {
             echo json_encode(['status' => 'success', 'message' => 'Rental service status updated successfully']);
+            
+            // Log activity with service name
+            logStaffActivity('Update Rental Status', 'Changed status of rental service: ' . $serviceName . ' (ID: ' . $id . ') to ' . $newStatus);
         } else {
             throw new Exception('Failed to update rental service status');
         }
@@ -109,7 +127,11 @@ try {
     ];
 
     if ($stmt->execute($params)) {
+        $rentalId = $pdo->lastInsertId();
         echo json_encode(['status' => 'success', 'message' => 'Rental service added successfully']);
+        
+        // Log activity with service name
+        logStaffActivity('Add Rental Service', 'Added new rental service: ' . $serviceName . ' (ID: ' . $rentalId . ')');
     } else {
         throw new PDOException("Database error: " . implode(", ", $stmt->errorInfo()));
     }
@@ -121,5 +143,3 @@ try {
     error_log("General Exception: " . $e->getMessage());
     echo json_encode(['message' => 'An unexpected error occurred.']);
 }
-
-?>
