@@ -340,36 +340,41 @@ $(document).ready(function() {
         location.reload();
     });
 
-    // Add Program Form Submit
     $('#saveProgramBtn').on('click', function() {
-        const formData = new FormData($('#addProgramForm')[0]);
-        formData.append('programStatus', $('#programStatus').val());
-        
-        $.ajax({
-            url: '../admin/pages/gym rates/functions/save_programs.php',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('#addProgramModal').modal('hide');
-                $('#successModal .modal-body p').text(response.message || 'Program created successfully!');
-                new bootstrap.Modal(document.getElementById('successModal')).show();
-
-                // Reload page after short delay
+    const formData = new FormData($('#addProgramForm')[0]);
+    formData.append('programStatus', $('#programStatus').val());
+    
+    $.ajax({
+        url: '../admin/pages/gym rates/functions/save_programs.php',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.status === 'success') {
+                // Force close any open modals first
+                $('.modal').modal('hide');
+                
+                // Small timeout to ensure modal is hidden
                 setTimeout(function() {
-                    location.reload();
-                }, 2000);
-                } else {
-                    displaySanitizedError(response.message || 'An unknown error occurred');
-                }
-            },
-            error: function(xhr, status, error) {
-                displaySanitizedError('An error occurred: ' + error);
+                    // Update success message and show the success modal
+                    $('#successModal .modal-body').html('<p>' + (response.message || 'Program created successfully!') + '</p>');
+                    $('#successModal').modal('show');
+                    
+                    // Reload page after displaying success
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                }, 300);
+            } else {
+                displaySanitizedError(response.message || 'An unknown error occurred');
             }
-        });
+        },
+        error: function(xhr, status, error) {
+            displaySanitizedError('An error occurred: ' + error);
+        }
     });
+});
 
     // Handle Edit Button Click
     $('.edit-btn').on('click', function() {

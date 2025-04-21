@@ -1,5 +1,6 @@
 <?php
 require_once '../../../config.php';
+require_once 'activity_logger.php'; // Added activity logger inclusion
 
 class Walk_in_class {
     protected $db;
@@ -82,8 +83,15 @@ class Walk_in_class {
                 'phone_number' => $phone_number,
                 'amount' => $walk_in_price
             ]);
+            
+            $walk_in_id = $connection->lastInsertId();
 
             $connection->commit();
+            
+            // Log the activity
+            $full_name = $first_name . (!empty($middle_name) ? ' ' . $middle_name : '') . ' ' . $last_name;
+            logStaffActivity('Add Walk-in', "Added walk-in record #$walk_in_id for {$full_name}");
+            
             return true;
         } catch (PDOException $e) {
             if ($connection) {
@@ -114,6 +122,12 @@ class Walk_in_class {
             $sql = "UPDATE walk_in SET price = :price WHERE id = 1";
             $query = $connection->prepare($sql);
             $result = $query->execute(['price' => $price]);
+            
+            if ($result) {
+                // Log the price update
+                logStaffActivity('Update Walk-in Price', "Updated walk-in price to ₱" . number_format($price, 2));
+            }
+            
             return $result;
         } catch (PDOException $e) {
             error_log("Error updating walk-in price: " . $e->getMessage());
@@ -125,6 +139,12 @@ class Walk_in_class {
         try {
             $connection = $this->db->connect();
             $connection->beginTransaction();
+            
+            // Get walk-in details for the log
+            $sql = "SELECT first_name, middle_name, last_name FROM walk_in_records WHERE id = :id";
+            $query = $connection->prepare($sql);
+            $query->execute(['id' => $id]);
+            $walkin_info = $query->fetch(PDO::FETCH_ASSOC);
 
             // Update walk-in record status and payment status
             $sql = "UPDATE walk_in_records SET 
@@ -149,6 +169,13 @@ class Walk_in_class {
             $query->execute(['transaction_id' => $transaction_id]);
 
             $connection->commit();
+            
+            // Log the activity
+            $full_name = $walkin_info['first_name'] . 
+                       (!empty($walkin_info['middle_name']) ? ' ' . $walkin_info['middle_name'] : '') . 
+                       ' ' . $walkin_info['last_name'];
+            logStaffActivity('Process Walk-in', "Processed walk-in record #$id for {$full_name}");
+            
             return true;
         } catch (PDOException $e) {
             if ($connection) {
@@ -163,7 +190,17 @@ class Walk_in_class {
         try {
             $connection = $this->db->connect();
             $connection->beginTransaction();
-
+            
+            // Get walk-in details for the log
+            $sql = "SELECT first_name, middle_name, last_name FROM walk_in_records WHERE id = :id";
+            $query = $connection->prepare($sql);
+            $query->execute(['id' => $id]);
+            $walkin_info = $query->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$walkin_info) {
+                throw new PDOException("Walk-in record not found");
+            }
+            
             // Get transaction ID before deleting the walk-in record
             $sql = "SELECT transaction_id FROM walk_in_records WHERE id = :id";
             $query = $connection->prepare($sql);
@@ -176,6 +213,11 @@ class Walk_in_class {
             
             $transaction_id = $result['transaction_id'];
 
+            // Build full name for the log
+            $full_name = $walkin_info['first_name'] . 
+                       (!empty($walkin_info['middle_name']) ? ' ' . $walkin_info['middle_name'] : '') . 
+                       ' ' . $walkin_info['last_name'];
+
             // Delete the walk-in record
             $sql = "DELETE FROM walk_in_records WHERE id = :id";
             $query = $connection->prepare($sql);
@@ -187,6 +229,10 @@ class Walk_in_class {
             $query->execute(['transaction_id' => $transaction_id]);
 
             $connection->commit();
+            
+            // Log the activity
+            logStaffActivity('Remove Walk-in', "Removed walk-in record #$id for {$full_name}");
+            
             return true;
         } catch (PDOException $e) {
             if ($connection) {

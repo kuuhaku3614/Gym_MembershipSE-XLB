@@ -1,6 +1,7 @@
 <?php
     require_once(__DIR__ . '/../../../config.php');
     require_once(__DIR__ . '/functions/notifications.class.php');
+    require_once(__DIR__ . '/functions/activity_logger.php');
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -25,7 +26,14 @@
                     }
                     
                     $userId = isset($data['userId']) ? $data['userId'] : null;
+                    
+                    // Get transaction details to include username in log
+                    $transaction = $notificationsObj->getTransactionDetails($data['transactionId']);
+                    $username = $transaction['requester_name'] ?? 'Unknown';
+                    
                     if ($notificationsObj->confirmTransaction($data['transactionId'], $userId)) {
+                        // Log the staff activity with username
+                        logStaffActivity('confirm_transaction', 'Confirmed transaction #' . $data['transactionId'] . ' - ' . $username);
                         echo json_encode(['success' => true]);
                         exit;
                     }
@@ -36,14 +44,17 @@
                         throw new Exception('Invalid transaction');
                     }
                     
+                    // Get transaction details to include username in log
+                    $transaction = $notificationsObj->getTransactionDetails($data['transactionId']);
+                    $username = $transaction['requester_name'] ?? 'Unknown';
+                    
                     if ($notificationsObj->cancelTransaction($data['transactionId'])) {
+                        // Log the staff activity with username
+                        logStaffActivity('cancel_transaction', 'Cancelled transaction #' . $data['transactionId'] . ' - ' . $username);
                         echo json_encode(['success' => true]);
                         exit;
                     }
                     throw new Exception('Failed to process');
-                
-                default:
-                    throw new Exception('Invalid request');
             }
         } catch (Exception $e) {
             http_response_code(400);
