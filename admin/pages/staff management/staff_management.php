@@ -261,11 +261,11 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <div class="mb-3">
                         <label class="form-label">New Password</label>
-                        <input type="password" class="form-control" name="new_password" id="new_password">
+                        <input type="password" class="form-control" name="new_password" id="new_password" placeholder="leave blank to keep current password">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" name="confirm_password" id="confirm_password">
+                        <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="leave blank to keep current password">
                     </div>
                 </form>
             </div>

@@ -1,7 +1,10 @@
 <?php
-// save_staff.php
+// save_staff.php - with activity logging added
 header('Content-Type: application/json');
 require_once 'config.php';
+
+// Include activity logger
+require_once 'activity_logger.php';
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);
@@ -72,6 +75,11 @@ try {
         $_POST['birthdate'],
         $_POST['phone_number']
     ]);
+
+    // Log the activity
+    $staffName = $_POST['first_name'] . ' ' . $_POST['last_name'];
+    $activityDescription = "Added new staff member: {$staffName} ({$_POST['username']}) with role {$_POST['role']}";
+    logStaffActivity("Add Staff", $activityDescription);
 
     $pdo->commit();
     echo json_encode(['success' => true, 'message' => 'Staff member added successfully']);
