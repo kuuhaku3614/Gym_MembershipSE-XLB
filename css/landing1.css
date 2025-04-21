@@ -289,9 +289,309 @@ nav.sticky {
   background-size: cover;
 }
 /* Modal edit profile */
-@media (max-width: 480px) {
+/* @media (max-width: 480px) {
   #profileEditModal .modal-content {
     width: 80%;
+  }
+} */
+ /* Profile Edit Modal - Landscape Minimal Design */
+.profile-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: none;
+  z-index: 1000;
+  overflow: auto;
+}
+
+.profile-modal-content {
+  background-color: #fff;
+  margin: 10vh auto;
+  width: 80%;
+  max-width: 800px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: modalFadeIn 0.3s;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+  color: #333;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.close-modal:hover {
+  color: #333;
+}
+
+.profile-edit-container {
+  padding: 0;
+  position: relative;
+}
+
+/* Two-column layout */
+.profile-edit-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-content-wrapper {
+  display: flex;
+  padding: 20px;
+}
+
+.profile-photo-section {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-right: 1px solid #f0f0f0;
+}
+
+.profile-info-section {
+  width: 60%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Profile photo styling */
+.photo-wrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+#profilePhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-edit-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 8px 0;
+  transition: opacity 0.3s;
+  text-align: center;
+  cursor: pointer;
+}
+
+.photo-edit-button {
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-edit-button i {
+  font-size: 16px;
+  margin-bottom: 3px;
+}
+
+.photo-hint {
+  color: #888;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 5px;
+}
+
+/* Input styling */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+  font-size: 14px;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Footer with buttons */
+.modal-footer {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f0f0f0;
+  background-color: #f9f9f9;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  margin-right: 10px;
+}
+
+.btn-secondary:hover {
+  background-color: #e5e5e5;
+}
+
+.btn-primary {
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+}
+
+.btn-primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-primary.active:not(:disabled) {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-color-dark, #0069d9);
+}
+
+/* Notification messages */
+.profile-success-message,
+.profile-error-message {
+  padding: 10px 15px;
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+  border-radius: 0;
+}
+
+.profile-success-message {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.profile-error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+/* Loading spinner */
+.btn.loading {
+  position: relative;
+  padding-left: 30px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  margin-top: -8px;
+}
+
+@keyframes spin {
+  to {
+      transform: rotate(360deg);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+      opacity: 0;
+      transform: translateY(-20px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .profile-modal-content {
+      width: 95%;
+      margin: 5vh auto;
+  }
+  
+  .profile-content-wrapper {
+      flex-direction: column;
+  }
+  
+  .profile-photo-section, 
+  .profile-info-section {
+      width: 100%;
+      border-right: none;
+  }
+  
+  .profile-photo-section {
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 20px;
+      margin-bottom: 0;
   }
 }
 /* Modal Base Styles */
@@ -362,6 +662,7 @@ nav.sticky {
   flex-direction: column;
   align-items: center;
   gap: 28px;
+
 }
 
 .profile-photo-container {

@@ -24,8 +24,9 @@ class Profile_class{
     public function getUserDetails($userId) {
         $conn = $this->db->connect();
         
-        $query = "SELECT pd.*, CONCAT(pd.first_name, ' ', pd.middle_name, ' ', pd.last_name) AS name,
-                  r.role_name
+        $query = "SELECT pd.*, 
+                  CONCAT(pd.first_name, ' ', IFNULL(pd.middle_name, ''), ' ', pd.last_name) AS name,
+                  r.role_name, u.role_id
                   FROM personal_details pd 
                   JOIN users u ON pd.user_id = u.id
                   JOIN roles r ON u.role_id = r.id
@@ -36,6 +37,29 @@ class Profile_class{
         $stmt->execute();
         
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function isAdmin($userId = null) {
+        if ($userId === null && isset($_SESSION['user_id'])) {
+            $userId = $_SESSION['user_id'];
+        }
+        
+        if (!$userId) return false;
+        
+        $conn = $this->db->connect();
+        $query = "SELECT r.role_name 
+                  FROM users u
+                  JOIN roles r ON u.role_id = r.id
+                  WHERE u.id = :user_id";
+                  
+        $stmt = $conn->prepare($query);
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->execute();
+        
+        $role = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Check if role is admin (you might adjust the role name based on your system)
+        return ($role && ($role['role_name'] === 'admin' || $role['role_name'] === 'administrator'));
     }
 
     private function timeAgo($datetime) {

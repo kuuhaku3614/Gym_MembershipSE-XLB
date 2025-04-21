@@ -230,7 +230,7 @@ if (!function_exists('getFullName')) {
             $stmt->close();
             $conn->close();
         }
-        return 'Guest';
+        return 'Admin';
     }
 }
 
@@ -365,12 +365,22 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     aria-label="User menu options">
                     <?php if (isset($_SESSION['personal_details']['role_name']) && ($_SESSION['personal_details']['role_name'] === 'coach' || $_SESSION['personal_details']['role_name'] === 'coach/staff')): ?>
                         <a href="<?php echo $isCoachFolder ? 'programs.php' : './coach/dashboard.php'; ?>" class="username" role="menuitem"><?php echo getFullName(); ?></a>
-                    <?php elseif (isset($_SESSION['role']) && $_SESSION['role'] === 'admin' || $_SESSION['role'] === 'staff'): ?>
-                        <a href="../admin/index.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php else: ?>
                         <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php endif; ?>
                     <hr class="dropdown-divider" style="margin: 5px auto; border-top: 1px solid rgba(0,0,0,0.2); width: 90%;">
+                    
+                    <!-- Add Go to Admin button for admin, staff, or coach/staff roles -->
+                    <?php if ((isset($_SESSION['personal_details']['role_name']) && 
+                            ($_SESSION['personal_details']['role_name'] === 'admin' || 
+                            $_SESSION['personal_details']['role_name'] === 'staff' || 
+                            $_SESSION['personal_details']['role_name'] === 'coach/staff')) || 
+                            (isset($_SESSION['role']) && $_SESSION['role'] === 'admin')): ?>
+                        <a href="<?php echo $basePath; ?>admin" role="menuitem">
+                            <i class="fas fa-user-shield pe-3"></i> Go to Admin
+                        </a>
+                    <?php endif; ?>
+                    
                     <a class="notifications-btn" href="<?php echo $isCoachFolder ? '../notifications.php' : 'notifications.php'; ?>">
                         <i class="fas fa-bell pe-3"></i> Notifications
                         <?php if ($unreadNotificationsCount > 0): ?>
@@ -421,41 +431,55 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 </style>
                     
 <!-- Profile Edit Modal -->
-<div id="profileEditModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close-modal"><i class="fas fa-times"></i></span>
-        <h2>Edit Profile</h2>
+<div id="profileEditModal" class="profile-modal">
+    <div class="profile-modal-content">
+        <div class="modal-header">
+            <h2>Edit Profile</h2>
+            <button class="close-modal" aria-label="Close modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
         <div class="profile-edit-container">
-            <div class="profile-photo-container">
-                <div class="photo-wrapper">
-                    <img src="<?php echo $basePath; ?><?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : 'cms_img/user.png'; ?>" 
-                         alt="Profile Photo" 
-                         id="profilePhoto">
-                    <div class="photo-edit-overlay">
-                        <label for="photoInput" class="edit-icon">
-                            <i class="fas fa-pencil-alt"></i>
-                        </label>
-                        <input type="file" 
-                               id="photoInput" 
-                               accept="image/*" 
-                               style="display: none;">
+            <!-- Notifications will be inserted here -->
+            
+            <div class="profile-content-wrapper">
+                <div class="profile-photo-section">
+                    <div class="photo-wrapper">
+                        <img src="<?php echo $basePath; ?><?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : 'cms_img/user.png'; ?>" 
+                             alt="Profile Photo" 
+                             id="profilePhoto">
+                        <div class="photo-edit-overlay">
+                            <label for="photoInput" class="photo-edit-button">
+                                <i class="fas fa-camera"></i>
+                                <span>Change Photo</span>
+                            </label>
+                            <input type="file" 
+                                   id="photoInput" 
+                                   accept="image/jpeg,image/png,image/gif" 
+                                   style="display: none;">
+                        </div>
+                    </div>
+                    <p class="photo-hint">Max file size: 5MB</p>
+                </div>
+                
+                <div class="profile-info-section">
+                    <div class="input-group">
+                        <label for="usernameInput">Username</label>
+                        <div class="input-wrapper">
+                            <input type="text" 
+                                   id="usernameInput" 
+                                   value="<?php echo $_SESSION['username'] ?? ''; ?>" 
+                                   placeholder="Enter username"
+                                   class="form-control">
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="username-container">
-                <div class="input-wrapper">
-                    <input type="text" 
-                           id="usernameInput" 
-                           value="<?php echo $_SESSION['username'] ?? ''; ?>" 
-                           readonly>
-                    <button class="edit-username-btn">
-                        <i class="fas fa-pencil-alt"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="save-actions">
-                <button id="saveChanges" class="save-btn">Save Changes</button>
-                <button id="cancelChanges" class="cancel-btn">Cancel</button>
+            
+            <div class="modal-footer">
+                <button id="cancelChanges" class="btn btn-secondary">Cancel</button>
+                <button id="saveChanges" class="btn btn-primary" disabled>Save Changes</button>
             </div>
         </div>
     </div>

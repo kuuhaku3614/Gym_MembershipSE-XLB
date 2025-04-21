@@ -154,89 +154,87 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($upcomingSessions as $session): 
-                                    // Calculate if session is current (today and within time range)
-                                    $sessionDate = new DateTime($session['date']);
-                                    $today = new DateTime();
-                                    $isToday = $sessionDate->format('Y-m-d') === $today->format('Y-m-d');
-                                    
-                                    $sessionStartTime = new DateTime($session['date'] . ' ' . $session['start_time']);
-                                    $sessionEndTime = new DateTime($session['date'] . ' ' . $session['end_time']);
-                                    $now = new DateTime();
-                                    
-                                    $sessionInProgress = ($now >= $sessionStartTime && $now <= $sessionEndTime);
-                                    $sessionCompleted = ($now > $sessionEndTime);
-                                    $canCancel = !$sessionInProgress && !$sessionCompleted && $session['status'] !== 'cancelled';
-                                    $canMarkAttendance = $isToday && $sessionInProgress && $session['status'] === 'scheduled';
-                                ?>
-                                    <tr class="<?php echo $session['status'] === 'cancelled' ? 'table-danger' : ($session['status'] === 'completed' ? 'table-success' : ''); ?>">
-                                        <td><?php echo date('M d, Y', strtotime($session['date'])); ?></td>
-                                        <td><?php echo date('h:i A', strtotime($session['start_time'])) . ' - ' . date('h:i A', strtotime($session['end_time'])); ?></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-circle">
-                                                    <?php echo strtoupper(substr($session['username'], 0, 1)); ?>
-                                                </div>
-                                                <span class="ms-2"><?php echo htmlspecialchars($session['username']); ?></span>
-                                            </div>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($session['program_name'] ?? 'N/A'); ?></td>
-                                        <td>
-                                            <span class="badge <?php echo $session['session_type'] === 'Personal' ? 'badge-personal' : 'badge-group'; ?>">
-                                                <?php echo $session['session_type']; ?>
-                                            </span>
-                                        </td>
-                                        <td>₱<?php echo number_format($session['amount'], 2); ?></td>
-                                        <td>
-                                            <span class="badge <?php 
-                                                if ($session['status'] === 'cancelled') {
-                                                    echo 'badge-cancelled';
-                                                } elseif ($session['status'] === 'completed') {
-                                                    echo 'badge-completed';
-                                                } else {
-                                                    echo $session['is_paid'] ? 'badge-paid' : 'badge-unpaid';
-                                                }
-                                            ?>">
-                                                <?php 
-                                                if ($session['status'] === 'cancelled') {
-                                                    echo 'Cancelled';
-                                                } elseif ($session['status'] === 'completed') {
-                                                    echo 'Completed';
-                                                } else {
-                                                    echo $session['is_paid'] ? 'Paid' : 'Unpaid';
-                                                }
-                                                ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <?php if ($canCancel): ?>
-                                                <button class="btn btn-sm btn-outline-danger session-action-btn" 
-                                                        data-action="cancel" 
-                                                        data-session-id="<?php echo $session['id']; ?>"
-                                                        data-bs-toggle="tooltip"
-                                                        title="Cancel Session">
-                                                    <i class="fas fa-times-circle"></i> Cancel
-                                                </button>
-                                            <?php endif; ?>
+                            <?php foreach ($upcomingSessions as $session): 
+                            // Calculate if session is current (today and within time range)
+                            $sessionDate = new DateTime($session['date']);
+                            $today = new DateTime();
+                            $isToday = $sessionDate->format('Y-m-d') === $today->format('Y-m-d');
+                            
+                            // Simplified logic - only check if the session is already cancelled or completed
+                            $sessionCancelled = $session['status'] === 'cancelled';
+                            $sessionCompleted = $session['status'] === 'completed';
+                            
+                            // We'll show both buttons unless the session is already cancelled or completed
+                            $showButtons = !$sessionCancelled && !$sessionCompleted;
+                        ?>
+                            <tr class="<?php echo $session['status'] === 'cancelled' ? 'table-danger' : ($session['status'] === 'completed' ? 'table-success' : ''); ?>">
+                                <td><?php echo date('M d, Y', strtotime($session['date'])); ?></td>
+                                <td><?php echo date('h:i A', strtotime($session['start_time'])) . ' - ' . date('h:i A', strtotime($session['end_time'])); ?></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle">
+                                            <?php echo strtoupper(substr($session['username'], 0, 1)); ?>
+                                        </div>
+                                        <span class="ms-2"><?php echo htmlspecialchars($session['username']); ?></span>
+                                    </div>
+                                </td>
+                                <td><?php echo htmlspecialchars($session['program_name'] ?? 'N/A'); ?></td>
+                                <td>
+                                    <span class="badge <?php echo $session['session_type'] === 'Personal' ? 'badge-personal' : 'badge-group'; ?>">
+                                        <?php echo $session['session_type']; ?>
+                                    </span>
+                                </td>
+                                <td>₱<?php echo number_format($session['amount'], 2); ?></td>
+                                <td>
+                                    <span class="badge <?php 
+                                        if ($session['status'] === 'cancelled') {
+                                            echo 'badge-cancelled';
+                                        } elseif ($session['status'] === 'completed') {
+                                            echo 'badge-completed';
+                                        } else {
+                                            echo $session['is_paid'] ? 'badge-paid' : 'badge-unpaid';
+                                        }
+                                    ?>">
+                                        <?php 
+                                        if ($session['status'] === 'cancelled') {
+                                            echo 'Cancelled';
+                                        } elseif ($session['status'] === 'completed') {
+                                            echo 'Completed';
+                                        } else {
+                                            echo $session['is_paid'] ? 'Paid' : 'Unpaid';
+                                        }
+                                        ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if ($showButtons): ?>
+                                        <div class="d-flex gap-1">
+                                            <!-- Show complete button with just an icon when both buttons are present -->
+                                            <button class="btn btn-sm btn-outline-success session-action-btn"
+                                                    data-action="complete"
+                                                    data-session-id="<?php echo $session['id']; ?>"
+                                                    data-bs-toggle="tooltip"
+                                                    title="Mark as Completed">
+                                                <i class="fas fa-check-circle"></i><?php echo count($upcomingSessions) <= 3 ? ' Complete' : ''; ?>
+                                            </button>
                                             
-                                            <?php if ($canMarkAttendance): ?>
-                                                <button class="btn btn-sm btn-outline-success session-action-btn"
-                                                        data-action="complete"
-                                                        data-session-id="<?php echo $session['id']; ?>"
-                                                        data-bs-toggle="tooltip"
-                                                        title="Mark as Completed">
-                                                    <i class="fas fa-check-circle"></i> Complete
-                                                </button>
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($session['status'] === 'cancelled'): ?>
-                                                <span class="text-danger"><i class="fas fa-ban"></i> Cancelled</span>
-                                            <?php elseif ($session['status'] === 'completed'): ?>
-                                                <span class="text-success"><i class="fas fa-check-circle"></i> Completed</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
+                                            <!-- Show cancel button with just an icon when both buttons are present -->
+                                            <button class="btn btn-sm btn-outline-danger session-action-btn" 
+                                                    data-action="cancel" 
+                                                    data-session-id="<?php echo $session['id']; ?>"
+                                                    data-bs-toggle="tooltip"
+                                                    title="Cancel Session">
+                                                <i class="fas fa-times-circle"></i><?php echo count($upcomingSessions) <= 3 ? ' Cancel' : ''; ?>
+                                            </button>
+                                        </div>
+                                    <?php elseif ($session['status'] === 'cancelled'): ?>
+                                        <span class="text-danger"><i class="fas fa-ban"></i> Cancelled</span>
+                                    <?php elseif ($session['status'] === 'completed'): ?>
+                                        <span class="text-success"><i class="fas fa-check-circle"></i> Completed</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -341,10 +339,12 @@
                                     $conn = $database->connect();
                                     $stmt = $conn->prepare("
                                         SELECT COUNT(*) as session_count 
-                                        FROM program_subscription_schedule 
-                                        WHERE date = ?
+                                        FROM program_subscription_schedule pss
+                                        JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+                                        JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+                                        WHERE pss.date = ? AND cpt.coach_id = ?
                                     ");
-                                    $stmt->execute([$formattedDate]);
+                                    $stmt->execute([$formattedDate, $_SESSION['user_id']]);
                                     $result = $stmt->fetch(PDO::FETCH_ASSOC);
                                     $sessionCount = $result['session_count'] ?? 0;
                                 } catch (PDOException $e) {
@@ -551,11 +551,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to send session action request
     function sendSessionAction(formData) {
-        fetch('functions/session_action.php', {
+        fetch('functions/session_action.php', {  // Make sure this path is correct
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert(data.message || 'Action completed successfully!');
@@ -567,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            alert('An error occurred while processing your request. Please try again.');
         });
     }
 });

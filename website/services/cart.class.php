@@ -449,7 +449,8 @@ class Cart_Class {
                 'start_time' => date('h:i A', strtotime(clean_input($item['start_time']))),
                 'end_time' => date('h:i A', strtotime(clean_input($item['end_time']))),
                 'price' => floatval(clean_input($item['price'])),
-                'is_personal' => (bool)($item['is_personal'] ?? false)
+                'is_personal' => (bool)($item['is_personal'] ?? false),
+                'program_type' => $item['program_type'] ?? ($item['is_personal'] ? 'personal' : 'group')
             ];
 
             // Calculate all program dates

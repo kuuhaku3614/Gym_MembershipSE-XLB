@@ -154,8 +154,8 @@ try {
             $activeMembership = $Services->checkActiveMembership($_SESSION['user_id']);
             $hasMembershipInCart = $Cart->hasMembershipInCart();
 
-            // Determine if this is a personal schedule by checking the database
-            $isPersonal = $Services->isPersonalSchedule($data['schedule_id']);
+            // Determine if this is a personal schedule by passed type
+            $isPersonal = (isset($data['program_type']) && $data['program_type'] === 'personal');
             if (!$activeMembership && !$hasMembershipInCart) {
                 send_json_response(['message' => 'You need to have an active membership or include a membership plan in your cart to avail this program.'], false);
             }

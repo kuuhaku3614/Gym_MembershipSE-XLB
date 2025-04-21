@@ -195,8 +195,33 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                         </div>
 
                         <div class="row g-4">
-                            <?php if (!empty($coaches)): ?>
-                                <?php foreach ($coaches as $coach): ?>
+                        <?php
+                        $available_coaches = [];
+                        foreach ($coaches as $coach) {
+                            $available = false;
+                            if ($coach['program_type'] === 'group') {
+                                $schedules = $Services->getCoachGroupSchedule($coach['coach_program_type_id']);
+                                if ($schedules && is_array($schedules)) {
+                                    foreach ($schedules as $schedule) {
+                                        if (isset($schedule['availability_status']) && $schedule['availability_status'] !== 'full') {
+                                            $available = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } else if ($coach['program_type'] === 'personal') {
+                                $schedules = $Services->getCoachPersonalSchedule($coach['coach_program_type_id']);
+                                if ($schedules && is_array($schedules) && empty($schedules['error']) && empty($schedules['message']) && count($schedules) > 0) {
+                                    $available = true;
+                                }
+                            }
+                            if ($available) {
+                                $available_coaches[] = $coach;
+                            }
+                        }
+                        ?>
+                        <?php if (!empty($available_coaches)): ?>
+                            <?php foreach ($available_coaches as $coach): ?>
                                     <div class="col-md-6 col-lg-4">
                                         <div class="card coach-card h-100">
                                             <div class="card-header bg-custom-red text-white">
@@ -307,7 +332,7 @@ function loadSchedules(coachProgramTypeId, type) {
                             <td>${time}</td>
                             <td>${schedule.current_members}/${schedule.capacity}</td>
                             <td>₱${schedule.price}</td>
-                            <td><button class="btn btn-sm btn-primary" onclick="addToCart(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, '${schedule.program_name}', '${schedule.coach_name}')" data-schedule-id="${schedule.id}">Add to Cart</button></td>
+                            <td><button class="btn btn-sm btn-primary" onclick="addToCart(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, '${schedule.program_name}', '${schedule.coach_name}', '${type}')" data-schedule-id="${schedule.id}">Add to Cart</button></td>
                         </tr>`;
                 });
 
@@ -348,7 +373,7 @@ function loadSchedules(coachProgramTypeId, type) {
                         schedulesByDay[day].forEach((schedule, index) => {
                             scheduleHtml += `
                                 <div class="col-md-3">
-                                    <button class="btn btn-outline-primary w-100" onclick="addToCart(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, '${schedule.program_name}', '${schedule.coach_name}')" data-schedule-id="${schedule.id}" data-slot-order="${index + 1}">
+                                    <button class="btn btn-outline-primary w-100" onclick="addToCart(${schedule.id}, '${schedule.day}', '${schedule.start_time}', '${schedule.end_time}', ${schedule.price}, '${schedule.program_name}', '${schedule.coach_name}', '${type}')" data-schedule-id="${schedule.id}" data-slot-order="${index + 1}">
                                         ${schedule.start_time} - ${schedule.end_time}
                                     </button>
                                 </div>`;
@@ -372,7 +397,7 @@ function loadSchedules(coachProgramTypeId, type) {
         });
 }
 
-function addToCart(scheduleId, day, startTime, endTime, price, programName, coachName) {
+function addToCart(scheduleId, day, startTime, endTime, price, programName, coachName, programType) {
     const scheduleData = {
         schedule_id: scheduleId,
         day: day,
@@ -381,7 +406,8 @@ function addToCart(scheduleId, day, startTime, endTime, price, programName, coac
         price: price,
         program_name: programName,
         coach_name: coachName,
-        is_personal: programName.includes('Personal')
+        is_personal: programName.includes('Personal'),
+        program_type: programType
     };
 
     fetch('cart_handler.php', {
