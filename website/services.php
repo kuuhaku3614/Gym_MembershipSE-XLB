@@ -10,6 +10,10 @@
     $rental_services = $Obj->displayRentalServices();
     $walkin = $Obj->displayWalkinServices();
     $program_services = $Obj->displayProgramServices();
+// Filter out programs with no schedules
+$program_services = array_filter($program_services, function($program) use ($Obj) {
+    return $Obj->programHasSchedules($program['program_id']);
+});
     
 ?>
 
@@ -385,6 +389,8 @@
             <h2 class="section-heading">COACHING PROGRAMS</h2>
             <div class="row g-4 mb-4 program-services-row">
                 <?php foreach ($program_services as $program) { 
+                    // Only show if at least one coach is assigned
+                    if (empty($program['available_types'])) continue;
                     // Default image path
                     $defaultImage = '../cms_img/default/program.jpeg';
 
