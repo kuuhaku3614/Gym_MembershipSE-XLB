@@ -754,3 +754,72 @@
     [action] => update_photo
 )
 
+2025-04-21 14:41:06 - Request received
+2025-04-21 14:41:06 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-21 14:59:53 - Request received
+2025-04-21 14:59:53 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachjays
+)
+
+2025-04-21 14:59:54 - Request received
+2025-04-21 14:59:54 - POST data: Array
+(
+    [action] => update_username
+    [username] => coachjays
+)
+
+2025-04-21 15:00:01 - Request received
+2025-04-21 15:00:01 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachjay
+)
+
+2025-04-21 15:00:02 - Request received
+2025-04-21 15:00:02 - POST data: Array
+(
+    [action] => update_username
+    [username] => coachjay
+)
+
+2025-04-21 15:47:58 - Request received
+2025-04-21 15:47:58 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerardds
+)
+
+2025-04-21 15:55:11 - Request received
+2025-04-21 15:55:11 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerarddsa
+)
+
+2025-04-21 15:55:16 - Request received
+2025-04-21 15:55:16 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerarddsadwq
+)
+
+2025-04-21 15:57:15 - Request received
+2025-04-21 15:57:15 - POST data: Array
+(
+    [action] => check_username
+    [username] => coachjays
+)
+
+2025-04-21 15:57:15 - Request received
+2025-04-21 15:57:15 - POST data: Array
+(
+    [action] => update_username
+    [username] => coachjays
+)
+

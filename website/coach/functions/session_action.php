@@ -23,18 +23,19 @@ if (!isset($_POST['action']) || !isset($_POST['session_id'])) {
 
 $action = $_POST['action'];
 $sessionId = $_POST['session_id'];
+$coachId = $_SESSION['user_id']; // Get the coach ID from the session
 
 // Initialize database and coaching system
 $database = new Database();
 $coachingSystem = new CoachingSystem($database);
 
 // Get session details first
-$sessionDetails = $coachingSystem->getSessionById($sessionId);
+$sessionDetails = $coachingSystem->getSessionById($sessionId, $coachId);
 
-if (isset($sessionDetails['error'])) {
+if (!$sessionDetails || isset($sessionDetails['error'])) {
     $response = [
         'success' => false,
-        'message' => 'Error retrieving session details: ' . $sessionDetails['error']
+        'message' => 'Error retrieving session details: ' . ($sessionDetails['error'] ?? 'Session not found')
     ];
     echo json_encode($response);
     exit();
@@ -47,11 +48,11 @@ switch ($action) {
         $cancellationReason = isset($_POST['cancellation_reason']) ? $_POST['cancellation_reason'] : null;
         
         // Update status with cancellation reason
-        $result = $coachingSystem->updateSessionStatus($sessionId, 'cancelled', $cancellationReason);
+        $result = $coachingSystem->updateSessionStatus($sessionId, 'cancelled', $coachId, $cancellationReason);
         break;
     
     case 'complete':
-        $result = $coachingSystem->updateSessionStatus($sessionId, 'completed');
+        $result = $coachingSystem->updateSessionStatus($sessionId, 'completed', $coachId);
         break;
     
     default:
@@ -70,3 +71,4 @@ if ($result['success']) {
 // Return JSON response
 header('Content-Type: application/json');
 echo json_encode($result);
+exit();
