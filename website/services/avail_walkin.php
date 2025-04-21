@@ -124,6 +124,8 @@ $primaryHex = isset($color['latitude']) ? decimalToHex($color['latitude']) : '#0
 $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) : '#000000';
 ?>
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <link rel="stylesheet" href="service.css">
@@ -146,13 +148,13 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     p, label {
         font-weight: 600;
     }
-    #start_date{
+    #start_date {
         transition: all 0.3s ease;
-        }
-        #start_date:required:invalid:not(:focus) {
+    }
+    #start_date:required:invalid:not(:focus) {
         animation: pulse-border 1.5s infinite;
-        }
-        @keyframes pulse-border {
+    }
+    @keyframes pulse-border {
         0% {
             border-color: #ced4da;
         }
@@ -161,8 +163,9 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         }
         100% {
             border-color: #ced4da;
-        }}
-    
+        }
+    }
+
     /* Styles for date chips */
     .date-chip {
         display: inline-block;
@@ -173,12 +176,12 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         border-radius: 20px;
         font-size: 14px;
     }
-    
+
     .date-chip .remove-date {
         margin-left: 5px;
         cursor: pointer;
     }
-    
+
     #dates-container {
         min-height: 50px;
         padding: 10px;
@@ -186,133 +189,137 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         border-radius: 5px;
         margin-top: 10px;
     }
-    
+
     /* Calendar styles */
     .calendar-container {
         margin-top: 15px;
     }
-    
+
     .calendar-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
     }
-    
+
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: 5px;
         text-align: center;
     }
-    
+
     .calendar-weekday {
         font-weight: bold;
         padding: 5px;
     }
-    
+
     .calendar-day {
         padding: 10px 5px;
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.2s;
     }
-    
+
     .calendar-day.disabled {
         background-color: #f5f5f5;
         color: #aaa;
         cursor: not-allowed;
     }
-    
+
     .calendar-day.selected {
         background-color: var(--primary-color);
         color: white;
     }
-    
+
     .calendar-day:not(.disabled):not(.empty):hover {
         background-color: rgba(var(--primary-color-rgb), 0.2);
     }
-    
+
     .calendar-day.empty {
         visibility: hidden;
     }
-    
+
     /* Hide the date input as we'll use the calendar instead */
     #selected_date {
         display: none;
     }
 
+    
     @media screen and (max-width: 480px) {
-    /* 1. Hide the services-header */
-    .services-header {
-        display: none !important;
+        .services-header {
+            display: none !important;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .avail-walkin-page {
+            width: 100%;
+            height: 100%;
+        }
+
+        .img-fluid.rounded {
+            display: none !important;
+        }
+
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            background-color: #f5f5f5;
+        }
+
+        .main-container {
+            height: 100%;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .col-12 {
+            padding: 10px;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+        }
+
+        .card-body {
+            height: 100%;
+        }
+
+        .scrollable-section {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0;
+        }
+
+        .row {
+            margin: 0;
+            height: 100%;
+        }
+
+        .d-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap;
+        }
+
+        .h5 {
+            font-size: 1.5rem !important;
+            margin-bottom: 5px !important;
+        }
     }
-    
-    /* 2. Make the content fill the entire screen and scale properly */
-    body, html {
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-    }
-    
-    .avail-membership-page {
-        width: 100%;
-        height: 100%;
-    }
-    
-    .container-fluid {
-        padding: 0;
-        margin: 0;
-        width: 100%;
-        background-color: #f5f5f5;
-    }
-    
-    .main-container {
-        height: 100%;
-        width: 100%;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .col-12 {
-        padding: 10px;
-        margin-top: 0px!important;
-        margin-bottom: 0px!important;
-    }
-    
-    .card-body{
-        height: 100%;
-    }
-    
-    .scrollable-section {
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 0;
-    }
-    
-    .row {
-        margin: 0;
-        height: 100%;
-    }
-    
-    .d-grid{
-        display: flex!important;
-        flex-direction: row!important;
-        flex-wrap: nowrap;
-    }
-    .h5{
-        font-size: 1.5rem!important;
-        margin-bottom: 5px!important;
-    }
-}
 </style>
 
 <div class="avail-walkin-page">
     <div class="container-fluid p-0">
         <!-- Header -->
-        <div class="bg-custom-red text-white p-3 d-flex align-items-center">
+        <div class="bg-custom-red text-white p-3 d-flex align-items-center services-header">
             <button class="btn text-white me-3" onclick="window.location.href='../services.php'">
                 <i class="bi bi-arrow-left fs-4"></i>
             </button>

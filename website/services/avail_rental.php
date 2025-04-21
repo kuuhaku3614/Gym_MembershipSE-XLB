@@ -184,7 +184,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         color: white;
     }
     .card-header {
-        background-color: var(--primary-color);
+        background-color: var(--primary-color)!important;
         padding: 1rem;
     }
     
@@ -304,6 +304,10 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     .avail-membership-page {
         width: 100%;
         height: 100%;
+    }
+
+    .img-fluid.rounded{
+        display: none!important;
     }
     
     .container-fluid {

@@ -97,6 +97,75 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
             max-height: 300px;
             overflow-y: auto;
         }
+        
+        @media screen and (max-width: 480px) {
+        .services-header {
+            display: none !important;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .avail-walkin-page {
+            width: 100%;
+            height: 100%;
+        }
+
+        .img-fluid.rounded {
+            display: none !important;
+        }
+
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            background-color: #f5f5f5;
+        }
+
+        .main-container {
+            height: 100%;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .col-12 {
+            padding: 10px;
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+        }
+
+        .card-body {
+            height: 100%;
+        }
+
+        .scrollable-section {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0;
+        }
+
+        .row {
+            margin: 0;
+            height: 100%;
+        }
+
+        .d-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap;
+        }
+
+        .h5 {
+            font-size: 1.5rem !important;
+            margin-bottom: 5px !important;
+        }
+    }
     </style>
 </head>
 <body>
