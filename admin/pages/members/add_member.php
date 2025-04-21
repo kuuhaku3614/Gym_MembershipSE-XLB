@@ -82,16 +82,20 @@ if (isset($_GET['action'])) {
 // Handle AJAX form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
-    error_log("=== FORM SUBMISSION DEBUG ===");
-    error_log("POST Data: " . print_r($_POST, true));
+    
+
+    
+
     
     if ($_POST['action'] === 'add_member') {
         try {
             $result = $memberRegistration->addMember($_POST);
-            error_log("Add member result: " . print_r($result, true));
+            
+
             echo json_encode($result);
         } catch (Exception $e) {
-            error_log("Error in add_member.php: " . $e->getMessage());
+            
+
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;

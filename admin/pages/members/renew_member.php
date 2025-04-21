@@ -83,29 +83,40 @@ if (isset($_GET['action'])) {
 // Handle AJAX form submission for renewal
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
-    error_log("=== FORM SUBMISSION DEBUG ===");
-    error_log("POST Data: " . print_r($_POST, true));
+    
+
+    
+
     
     if ($_POST['action'] === 'renew_member') {
         try {
-            error_log("=== RENEW MEMBER AJAX SUBMISSION ===");
-            error_log("POST Data: " . print_r($_POST, true));
+            
+//"=== RENEW MEMBER AJAX SUBMISSION ===");
+            
+
             if (isset($_POST['selected_programs'])) {
-                error_log('selected_programs (raw): ' . $_POST['selected_programs']);
+                
+
                 $decoded = json_decode($_POST['selected_programs'], true);
-                error_log('selected_programs (decoded): ' . print_r($decoded, true));
+                
+
             }
             if (isset($_POST['selected_rentals'])) {
-                error_log('selected_rentals (raw): ' . $_POST['selected_rentals']);
+                
+//'selected_rentals (raw): ' . $_POST['selected_rentals']);
                 $decoded = json_decode($_POST['selected_rentals'], true);
-                error_log('selected_rentals (decoded): ' . print_r($decoded, true));
+                
+//'selected_rentals (decoded): ' . print_r($decoded, true));
             }
             $result = $renewMember->renewMember($_POST);
-            error_log("Renew member result: " . print_r($result, true));
+            
+//"Renew member result: " . print_r($result, true));
             echo json_encode($result);
         } catch (Exception $e) {
-            error_log("Error in renew_member.php: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
+            
+//"Error in renew_member.php: " . $e->getMessage());
+            
+//"Stack trace: " . $e->getTraceAsString());
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
         exit;
@@ -594,11 +605,7 @@ function generateProgramCard($program) {
     <!-- Membership Summary Section -->
     <div class="membership-summary">
         <div class="container">
-            <div class="summary-row" data-type="registration">
-                <div class="details">
-                    <p><strong>Registration Fee:</strong> ₱<?= $memberRegistration->getRegistrationFee() ?></p>
-                </div>
-            </div>
+            
             <!-- Selected Plan -->
             <div class="summary-row" data-type="membership" style="display: none;">
                 <h5>Membership Plan</h5>
