@@ -47,57 +47,86 @@
                 <i class="fas fa-exclamation-triangle"></i> There were errors fetching some data. Please check your database connection.
             </div>
         <?php endif; ?>
-
         <!-- Stats Cards -->
+        <style>
+            @media screen and (max-width: 480px) {
+                .stat-card {
+                    padding: 8px;
+                   height: 150px;
+                   width: 150px;
+                    height: 100%;
+                }
+                .row{
+                    flex-wrap: wrap;
+                    justify-content: center;
+                }
+                .stat-icon  {
+                    font-size: 1rem;
+                    margin-bottom: 10px;
+                }
+                .stat-value {
+                    font-size: .75rem;
+                }
+                .stat-label {
+                    font-size: 0.5rem;
+                }
+                .col-md-4, .col-md-6 {
+                    width: 150px;
+                    margin: 0 10px;
+                    padding: 0 5px;
+                
+                }
+            }
+        </style>
         <div class="row mb-4">
             <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-value"><?php echo $stats['activeSubscriptions'] ?? 0; ?></div>
-                    <div class="stat-label">Active Subscriptions</div>
-                </div>
+            <div class="card stat-card">
+            <div class="stat-icon">
+            <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-value"><?php echo $stats['activeSubscriptions'] ?? 0; ?></div>
+            <div class="stat-label">Active Subscriptions</div>
+            </div>
             </div>
             
             <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <div class="stat-value"><?php echo $stats['scheduledSessions'] ?? 0; ?></div>
-                    <div class="stat-label">Scheduled Sessions</div>
-                </div>
+            <div class="card stat-card">
+            <div class="stat-icon">
+            <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-value"><?php echo $stats['scheduledSessions'] ?? 0; ?></div>
+            <div class="stat-label">Scheduled Sessions</div>
+            </div>
             </div>
             
             <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-peso-sign"></i>
-                    </div>
-                    <div class="stat-value">₱<?php echo number_format($stats['revenue'] ?? 0, 2); ?></div>
-                    <div class="stat-label">Expected Revenue</div>
-                </div>
+            <div class="card stat-card">
+            <div class="stat-icon">
+            <i class="fas fa-peso-sign"></i>
+            </div>
+            <div class="stat-value">₱<?php echo number_format($stats['revenue'] ?? 0, 2); ?></div>
+            <div class="stat-label">Expected Revenue</div>
+            </div>
             </div>
             
             <div class="col-md-6 col-sm-6 mb-3">
-                <div class="card stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-user-friends"></i>
-                    </div>
-                    <div class="stat-value"><?php echo $stats['personalSessions'] ?? 0; ?></div>
-                    <div class="stat-label">Personal Sessions</div>
-                </div>
+            <div class="card stat-card">
+            <div class="stat-icon">
+            <i class="fas fa-user-friends"></i>
+            </div>
+            <div class="stat-value"><?php echo $stats['personalSessions'] ?? 0; ?></div>
+            <div class="stat-label">Personal Sessions</div>
+            </div>
             </div>
             
             <div class="col-md-6 col-sm-6 mb-3">
-                <div class="card stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-value"><?php echo $stats['groupSessions'] ?? 0; ?></div>
-                    <div class="stat-label">Group Sessions</div>
-                </div>
+            <div class="card stat-card">
+            <div class="stat-icon">
+            <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-value"><?php echo $stats['groupSessions'] ?? 0; ?></div>
+            <div class="stat-label">Group Sessions</div>
+            </div>
             </div>
         </div>
 
@@ -361,25 +390,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Responsive sidebar toggle
-    const sidebar = document.getElementById('sidebar');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    const burgerMenu = document.getElementById('burgerMenu');
-    const sessionActionButtons = document.querySelectorAll('.session-action-btn');
+    // // Responsive sidebar toggle
+    // const sidebar = document.getElementById('sidebar');
+    // const sidebarOverlay = document.getElementById('sidebarOverlay');
+    // const burgerMenu = document.getElementById('burgerMenu');
+    // const sessionActionButtons = document.querySelectorAll('.session-action-btn');
 
-    if (burgerMenu) {
-        burgerMenu.addEventListener('click', function() {
-            if (sidebar) sidebar.classList.toggle('active');
-            if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
-        });
-    }
+    // if (burgerMenu) {
+    //     burgerMenu.addEventListener('click', function() {
+    //         if (sidebar) sidebar.classList.toggle('active');
+    //         if (sidebarOverlay) sidebarOverlay.classList.toggle('active');
+    //     });
+    // }
     
-    if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', function() {
-            if (sidebar) sidebar.classList.remove('active');
-            if (sidebarOverlay) sidebarOverlay.classList.remove('active');
-        });
-    }
+    // if (sidebarOverlay) {
+    //     sidebarOverlay.addEventListener('click', function() {
+    //         if (sidebar) sidebar.classList.remove('active');
+    //         if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+    //     });
+    // }
     
     // Make dashboard link active
     const dashboardLink = document.getElementById('dashboard-link');

@@ -142,6 +142,9 @@ require_once('includes/loadingScreen.php');
                 left: 30px;
                 top: 30px;
             }
+            .subtext1{
+                font-size: .9em;
+            }
         }
     </style>
 <!-- Offers Section -->
@@ -198,7 +201,7 @@ require_once('includes/loadingScreen.php');
         }
 
         .S-Offers .offers-text .subtext, .subtext {
-            font-size: 0.7em;
+            font-size: 0.8em;
             justify-content: center;
 
         }
@@ -351,10 +354,10 @@ require_once('includes/loadingScreen.php');
         }
 
         .aboutUs-text .subtext {
-            font-size: 0.6em;
+            font-size: 0.8em;
             max-height: 400px;
             overflow-y: auto;
-            width: 70%;
+            width: 100%;
         }
 
         .joinNow-container {

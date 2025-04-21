@@ -589,23 +589,21 @@ $('#saveRegistrationFeeBtn').click(function() {
         },
         success: function(response) {
             if (response.trim() === 'success') {
-                // First hide the modal
+                // Update the modal body with success message
+                $('#updateSuccessModal .modal-body p').text("Registration fee updated successfully!");
+                
+                // Hide the registration modal
                 $('#updateRegistrationModal').modal('hide');
                 
-                // Then show the success message after modal is hidden
-                setTimeout(function() {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Registration fee updated successfully',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(function() {
-                        location.reload();
-                    });
-                }, 500); // Small delay to ensure modal is fully hidden
+                // Show the success modal
+                $('#updateSuccessModal').modal('show');
+                
+                // Reload page after success modal is hidden
+                $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                    location.reload();
+                });
             } else {
-                alert(response);
+                alert('Error: ' + response);
             }
         },
         error: function(xhr, status, error) {

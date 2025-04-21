@@ -202,9 +202,17 @@ function generateProgramCard($program) {
         .membership-summary .btn {
             margin-top: 5px;
         }
-        body {
-            padding-bottom: 215px;
+        .phase {
+            overflow-y: auto;
+            max-height: calc(100vh - 400px); /* Adjust height accounting for headers and footer */
+            padding: 0 20px 20px 20px;
         }
+        .phases{
+        border-bottom: 1px solid #ccc;
+        }
+        #phase4{
+            min-height: 100vh;
+        }        
         .summary-row {
             border: 1px solid #ddd;
             padding: 8px;
@@ -372,6 +380,9 @@ function generateProgramCard($program) {
             color: #2c3e50;
             text-align: right;
         }
+        h3.mb-4{
+            font-weight:600;
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -383,7 +394,7 @@ function generateProgramCard($program) {
                 <h3 class="mb-4">Renew Membership</h3>
                 
                 <!-- Phase Navigation -->
-                <ul class="nav nav-pills nav-fill mb-4">
+                <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">
                         <a class="nav-link active" data-phase="2" href="#">Membership Plan</a>
                     </li>
@@ -987,8 +998,15 @@ function generateProgramCard($program) {
                             }
                             
                             if (response.success) {
-                                alert('Membership renewal successful!');
-                                window.location.href = BASE_URL + '/admin/members_new';
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'Membership renewal successful!',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.href = BASE_URL + '/admin/members_new';
+                                });
                             } else {
                                 alert('Error: ' + (response.message || 'Failed to renew membership'));
                             }

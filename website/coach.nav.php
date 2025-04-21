@@ -39,7 +39,7 @@
     .sidebar {
         position: fixed;
         left: 0;
-        top: 80px; /* Match header height */
+        top: 70px; /* Match header height */
         height: calc(100vh - 60px); /* Adjust for header height */
         width: 250px;
         background: #ffffff;
@@ -151,7 +151,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: 768px) {
+    /* @media (max-width: 768px) {
         .sidebar {
             transform: translateX(-100%);
         }
@@ -171,7 +171,7 @@
         #content {
             margin-left: 0;
         }
-    }
+    } */
 </style>
 
 <!-- Sidebar -->
@@ -197,7 +197,7 @@
                     <i class="fas fa-dumbbell"></i>
                     My Programs
                 </div>
-            </a>
+            </a> 
 
             <a href="members.php" id="members-link" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'members.php' ? 'active' : '' ?>">
                 <div class="nav-item-content">
@@ -222,13 +222,57 @@
         </nav>
     </div>
 
+<style>
+    @media (max-width: 768px) {
+    .sidebar {
+        display: flex;
+        width: 100%;
+        padding: 0 20px;
+        height: auto;
+        background: #ffffff;
+        z-index: 500;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 0 0 10px 10px;
+    }
+    .logo-container{
+        display: none;
+    }
 
+    .nav-links-container {
+        border: none;
+    }
+
+    .nav-links-container nav {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+    }
+
+    .nav-item {
+        padding: 10px;
+        flex: 1;
+        
+        text-align: center;
+        min-width: 80px;
+        justify-content: center;
+    }
+
+    .nav-item-content {
+        flex-direction: column;
+        gap: 5px;
+
+    }
+
+    .nav-text {
+        font-size: 0.8em;
+    }
+
+    #content {
+        margin-left: 0;
+        margin-top: 170px;
+    }
+}
+</style>
 </div>
-
-<!-- Sidebar Overlay -->
-<div id="sidebarOverlay" class="sidebar-overlay"></div>
-
-<!-- Burger Menu -->
-<button id="burgerMenu" class="burger-menu">
-    <i class="fas fa-bars"></i>
 </button>

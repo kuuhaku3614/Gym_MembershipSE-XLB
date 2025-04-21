@@ -152,6 +152,38 @@ $membersList = $members->getAllMembers();
   </div>
 </div>
 
+<!-- Payment Success Modal -->
+<div
+  class="modal fade"
+  id="paymentSuccessModal"
+  tabindex="-1"
+  aria-labelledby="paymentSuccessModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="paymentSuccessModalLabel">Payment Successful!</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fas fa-check-circle text-success" style="font-size: 48px"></i>
+        <p class="mt-3">Payment processed successfully!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+          Okay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 $(document).ready(function() {
   // Destroy existing DataTable instance if it exists
@@ -183,9 +215,7 @@ $(document).ready(function() {
 });
 
 function processPayment(userId, type, itemId) {
-    if (!confirm('Are you sure you want to mark this as paid?')) {
-        return;
-    }
+    
     
     // Get base URL from current page URL
     const baseUrl = '<?php echo BASE_URL; ?>';
@@ -203,8 +233,15 @@ function processPayment(userId, type, itemId) {
                 console.log('Server response:', response);
                 const result = typeof response === 'string' ? JSON.parse(response) : response;
                 if (result.success) {
-                    alert('Payment processed successfully!');
-                    location.reload();
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
+                    // Close payment details modal before showing success modal
+                    $('#paymentDetailsModal').modal('hide');
+                    successModal.show();
+                    // Add event listener for when modal is hidden
+                    $('#paymentSuccessModal').on('hidden.bs.modal', function () {
+                      location.reload(); // Reload page after modal is closed
+                    });
                 } else {
                     alert('Error: ' + (result.message || 'Failed to process payment'));
                 }
@@ -622,9 +659,7 @@ function cancelItem(type, itemId) {
 }
 
 function processMultiplePayments(userId, payments) {
-    if (!confirm('Are you sure you want to mark these as paid?')) {
-        return;
-    }
+
     
     // Get base URL from current page URL
     const baseUrl = '<?php echo BASE_URL; ?>';
@@ -641,8 +676,15 @@ function processMultiplePayments(userId, payments) {
                 console.log('Server response:', response);
                 const result = typeof response === 'string' ? JSON.parse(response) : response;
                 if (result.success) {
-                    alert('Payments processed successfully!');
-                    location.reload();
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
+                    // Close payment details modal before showing success modal
+                    $('#paymentDetailsModal').modal('hide');
+                    successModal.show();
+                    // Add event listener for when modal is hidden
+                    $('#paymentSuccessModal').on('hidden.bs.modal', function () {
+                      location.reload(); // Reload page after modal is closed
+                    });
                 } else {
                     alert('Error: ' + (result.message || 'Failed to process payments'));
                 }

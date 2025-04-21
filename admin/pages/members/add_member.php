@@ -160,11 +160,25 @@ function generateProgramCard($program) {
         const BASE_URL = '<?= BASE_URL ?>';
     </script>
     <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
         .summary-card {
             border: 1px solid #ddd;
             padding: 15px;
             margin-bottom: 15px;
             background: #fff;
+        }
+        .phase {
+            overflow-y: auto;
+            max-height: calc(100vh - 400px); /* Adjust height accounting for headers and footer */
+            padding: 0 20px 20px 20px;
+        }
+        #phase4{
+            max-height: 100vh;
+                }
+        .phases{
+        border-bottom: 1px solid #ccc;
         }
         .membership-summary {
             position: fixed;
@@ -189,9 +203,7 @@ function generateProgramCard($program) {
         .membership-summary .btn {
             margin-top: 5px;
         }
-        body {
-            padding-bottom: 215px;
-        }
+
         .summary-row {
             border: 1px solid #ddd;
             padding: 8px;
@@ -439,6 +451,10 @@ function generateProgramCard($program) {
             border: 2px solid #0d6efd;
             background-color: rgba(13, 110, 253, 0.05);
         }
+        h3.mb-4{
+            font-weight: 600;
+            color: #212529;
+        }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -450,7 +466,7 @@ function generateProgramCard($program) {
                 <h3 class="mb-4">Add New Member</h3>
                 
                 <!-- Phase Navigation -->
-                <ul class="nav nav-pills nav-fill mb-4">
+                <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">
                         <a class="nav-link active" data-phase="1" href="#">Personal Information</a>
                     </li>
@@ -797,12 +813,6 @@ function generateProgramCard($program) {
         </div>
     </div>
 
-    <!-- Add padding to body to account for fixed summary -->
-    <style>
-        body {
-            padding-bottom: 215px; /* Adjust based on summary height */
-        }
-    </style>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
