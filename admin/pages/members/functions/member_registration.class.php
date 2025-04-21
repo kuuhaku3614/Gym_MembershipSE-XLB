@@ -4,12 +4,16 @@ require_once(__DIR__ . '/../../../../config.php');
 class MemberRegistration {
     private $pdo;
 
-    public function __construct() {
-        try {
-            $database = new Database();
-            $this->pdo = $database->connect();
-        } catch (PDOException $e) {
-            throw $e;
+    public function __construct($pdo = null) {
+        if ($pdo) {
+            $this->pdo = $pdo;
+        } else {
+            try {
+                $database = new Database();
+                $this->pdo = $database->connect();
+            } catch (PDOException $e) {
+                throw $e;
+            }
         }
     }
 
@@ -410,7 +414,7 @@ class MemberRegistration {
         }
     }
 
-    private function getMembershipPlanDetails($planId) {
+    public function getMembershipPlanDetails($planId) {
         try {
             $sql = "SELECT mp.*, dt.type_name as duration_type 
                     FROM membership_plans mp
@@ -425,7 +429,7 @@ class MemberRegistration {
         }
     }
 
-    private function calculateEndDate($startDate, $duration, $durationType) {
+    public function calculateEndDate($startDate, $duration, $durationType) {
         $start = new DateTime($startDate);
         switch ($durationType) {
             case 'days':
@@ -439,7 +443,7 @@ class MemberRegistration {
         }
     }
 
-    private function getRentalServiceDetails($rentalId) {
+    public function getRentalServiceDetails($rentalId) {
         try {
             $sql = "SELECT rs.*, dt.type_name as duration_type 
                     FROM rental_services rs
