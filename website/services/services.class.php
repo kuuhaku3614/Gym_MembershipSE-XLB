@@ -4,6 +4,40 @@ require_once __DIR__ . '/../../config.php';
 
 class Services_class{
     /**
+     * Check if a program has at least one schedule (group or personal)
+     * @param int $program_id
+     * @return bool
+     */
+    public function programHasSchedules($program_id) {
+        $conn = $this->db->connect();
+        // Get all coach_program_types for this program
+        $sql = "SELECT id, type FROM coach_program_types WHERE program_id = ? AND status = 'active'";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$program_id]);
+        $coachTypes = $stmt->fetchAll();
+        if (!$coachTypes) return false;
+        foreach ($coachTypes as $cpt) {
+            if ($cpt['type'] === 'group') {
+                // Get group schedules for this coach_program_type
+                $groupSchedules = $this->getCoachGroupSchedule($cpt['id']);
+                // Check if any group schedule has availability_status !== 'full'
+                foreach ($groupSchedules as $schedule) {
+                    if ($schedule['availability_status'] !== 'full') {
+                        return true;
+                    }
+                }
+            } else if ($cpt['type'] === 'personal') {
+                // Get personal schedules for this coach_program_type
+                $personalSchedules = $this->getCoachPersonalSchedule($cpt['id']);
+                // Check if any personal schedule has available slots
+                if (is_array($personalSchedules) && !isset($personalSchedules['error']) && !isset($personalSchedules['message']) && count($personalSchedules) > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    /**
      * Get coach_program_type_id for coach, program, type
      */
     public function getCoachProgramTypeId($coach_id, $program_id, $type) {
