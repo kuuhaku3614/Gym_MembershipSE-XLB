@@ -3,6 +3,111 @@
 require_once __DIR__ . '/../../config.php';
 
 class Services_class{
+    /**
+     * Get coach_program_type_id for coach, program, type
+     */
+    public function getCoachProgramTypeId($coach_id, $program_id, $type) {
+        $conn = $this->db->connect();
+        $sql = "SELECT id FROM coach_program_types WHERE coach_id = ? AND program_id = ? AND type = ? AND status = 'active' LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$coach_id, $program_id, $type]);
+        $row = $stmt->fetch();
+        return $row ? $row['id'] : false;
+    }
+
+    /**
+     * Get all schedules for a coach_program_type (group and personal)
+     *
+     * Used in:
+     *   - teach_program_backend.php (lines 33, 47)
+     */
+    public function getSchedulesByCoachProgramType($coach_program_type_id, $type) {
+        $conn = $this->db->connect();
+        if ($type === 'group') {
+            $sql = "SELECT * FROM coach_group_schedule WHERE coach_program_type_id = ?";
+        } else {
+            $sql = "SELECT * FROM coach_personal_schedule WHERE coach_program_type_id = ?";
+        }
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$coach_program_type_id]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Create a coach_program_type entry (assigns a type to a coach for a program)
+     * @param int $coach_id
+     * @param int $program_id
+     * @param string $type (group|personal)
+     * @param string $description
+     * @return int|false New coach_program_type_id or false on failure
+     */
+    public function createCoachProgramType($coach_id, $program_id, $type, $description = '') {
+        $conn = $this->db->connect();
+        try {
+            $sql = "INSERT INTO coach_program_types (coach_id, program_id, type, description, status) VALUES (?, ?, ?, ?, 'active')";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$coach_id, $program_id, $type, $description]);
+            return $conn->lastInsertId();
+        } catch (Exception $e) {
+            error_log('Error in createCoachProgramType: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Add a new group schedule for a coach/program
+     */
+    public function addCoachGroupSchedule($coach_program_type_id, $day, $start_time, $end_time, $capacity, $price) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "INSERT INTO coach_group_schedule (coach_program_type_id, day, start_time, end_time, capacity, price)
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$coach_program_type_id, $day, $start_time, $end_time, $capacity, $price]);
+            return true;
+        } catch (Exception $e) {
+            error_log('Error in addCoachGroupSchedule: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Add a new personal schedule for a coach/program
+     */
+    public function addCoachPersonalSchedule($coach_program_type_id, $day, $start_time, $end_time, $duration_rate, $price) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "INSERT INTO coach_personal_schedule (coach_program_type_id, day, start_time, end_time, duration_rate, price)
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$coach_program_type_id, $day, $start_time, $end_time, $duration_rate, $price]);
+            return true;
+        } catch (Exception $e) {
+            error_log('Error in addCoachPersonalSchedule: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get a single program by its ID
+     * @param int $programId
+     * @return array|null
+     */
+    public function getProgramById($program_id) {
+        $conn = $this->db->connect();
+        try {
+            $sql = "SELECT id as program_id, program_name, description, image, status, is_removed
+                    FROM programs
+                    WHERE id = ? AND status = 'active' AND is_removed = 0";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$program_id]);
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            error_log('Error in getProgramById: ' . $e->getMessage());
+            return null;
+        }
+    }
+
 
     // Properties for membership
     public $membership_plan_id = '';
@@ -18,6 +123,11 @@ class Services_class{
 
     function __construct(){
         $this->db = new Database();
+    }
+
+    // Public getter for DB connection
+    public function getDbConnection() {
+        return $this->db->connect();
     }
 
     public function checkActiveMembership($user_id) {
@@ -311,20 +421,6 @@ class Services_class{
             return array_values($programs);
         } catch (Exception $e) {
             error_log("Error in getPrograms: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    public function getProgram($programId) {
-        try {
-            $sql = "SELECT id as program_id, program_name, program_description, program_type
-                    FROM programs 
-                    WHERE id = ? AND status = 'active' AND is_removed = 0";
-            $stmt = $this->db->connect()->prepare($sql);
-            $stmt->execute([$programId]);
-            return $stmt->fetch();
-        } catch (Exception $e) {
-            error_log("Error in getProgram: " . $e->getMessage());
             return null;
         }
     }
