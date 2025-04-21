@@ -12,6 +12,7 @@ class Coach_class {
             die("Connection failed: " . $e->getMessage());
         }
     }
+    
 
     public function getCoachPrograms($coachId) {
         $sql = "SELECT 
@@ -535,5 +536,34 @@ class Coach_class {
             return false;
         }
     }
+
+    public function getTransactionHistory($coach_id) {
+        $query = "SELECT 
+                t.id as transaction_id,
+                ps.id as subscription_id,
+                CONCAT_WS(' ', pd.first_name, NULLIF(pd.middle_name, ''), pd.last_name) as member_name,
+                p.program_name,
+                cpt.type as program_type,
+                pss.date,
+                pss.start_time,
+                pss.end_time,
+                pss.amount,
+                pss.is_paid
+            FROM program_subscription_schedule pss
+            JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+            JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+            JOIN programs p ON cpt.program_id = p.id
+            JOIN users u ON ps.user_id = u.id
+            JOIN personal_details pd ON u.id = pd.user_id
+            LEFT JOIN transactions t ON ps.transaction_id = t.id
+            WHERE cpt.coach_id = ? AND pss.is_paid = 1
+            ORDER BY pss.date DESC, pss.start_time ASC";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$coach_id]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
 }
 ?>
