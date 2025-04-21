@@ -122,46 +122,53 @@ $(document).ready(function () {
             const price = parseFloat(selectedPlan.data('price'));
             const startDate = $('#membership_start_date').val();
             const endDate = calculateEndDate(startDate, duration, durationType);
-
-            $('#review-plan-name').text(planName);
-            $('#review-plan-duration').text(duration + ' ' + durationType);
-            $('#review-plan-price').text('₱ ' + price.toFixed(2));
-            $('#review-plan-start').text(startDate || 'Not selected');
-            $('#review-plan-end').text(endDate || 'Not calculated');
+            $('#review-plan').text(planName);
+            $('#review-duration').text(duration + ' ' + durationType);
+            $('#review-start-date').text(startDate);
+            $('#review-end-date').text(endDate);
+            $('.review-price').text('₱ ' + price.toFixed(2));
+            $('.review-registration-fee').text('₱ ' + (window.registrationFee || 0).toFixed(2));
         } else {
-            $('#review-plan-name').text('No plan selected');
-            $('#review-plan-duration').text('-');
-            $('#review-plan-price').text('-');
-            $('#review-plan-start').text('-');
-            $('#review-plan-end').text('-');
+            $('#review-plan, #review-duration, #review-start-date, #review-end-date').text('');
+            $('.review-price, .review-registration-fee').text('₱ 0.00');
         }
 
         // Programs
         let programsHtml = '';
         let totalPrograms = 0;
-        selectedPrograms.forEach((program, index) => {
-            if (!program || !program.id || !program.coach_program_type_id || !program.program || !program.coach || !program.day || !program.startTime || !program.endTime || !program.price) return;
-            const numSessions = program.schedules ? program.schedules.length : 0;
+        selectedPrograms.forEach(function(program) {
+            if (!program || !program.program) return;
+            // Calculate session dates
+            const plan = $('input[name="membership_plan"]:checked');
+            const startDate = $('#membership_start_date').val();
+            let sessionDates = [];
+            let numSessions = 1;
+            if (plan.length && startDate) {
+                const duration = plan.data('duration');
+                const durationType = plan.data('duration-type');
+                const endDate = calculateEndDate(startDate, duration, durationType);
+                sessionDates = generateProgramDates(startDate, endDate, program.day, program.startTime, program.endTime, program.price).map(s => s.date);
+                numSessions = sessionDates.length;
+            }
             const total = program.price * numSessions;
             totalPrograms += total;
-            programsHtml += `
-                <div class="program-item mb-2" data-index="${index}" data-program-id="${program.id}">
-                    <div class="program-title">${program.program}</div>
-                    <div class="program-details">
-                        Coach: ${program.coach}<br>
-                        Schedule: ${program.day} ${program.startTime} - ${program.endTime}<br>
-                        Price per Session: ₱${program.price}<br>
-                        Number of Sessions: ${numSessions}<br>
-                        Total: ₱${total.toFixed(2)}
-                    </div>
-                    <button type="button" class="btn btn-link text-danger remove-program-review p-0" title="Remove" style="font-size: 1.2rem;">
-                        <i class="fas fa-times"></i>
-                    </button>
+            programsHtml += `<div class="program-item mb-2">
+                <div class="program-title">${program.program}</div>
+                <div class="program-details">
+                    Coach: ${program.coach}<br>
+                    Schedule: ${program.day} ${program.startTime} - ${program.endTime}<br>
+                    Price per Session: ₱${program.price}<br>
+                    Number of Sessions: ${numSessions}<br>
+                    <strong>Session Dates:</strong> ${sessionDates.length ? sessionDates.join(', ') : 'N/A'}<br>
+                    Total: ₱${total.toFixed(2)}
                 </div>
-            `;
+                <button type="button" class="btn btn-link text-danger remove-program-review p-0" title="Remove" style="font-size: 1.2rem;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`;
         });
         $('#review-programs-list').html(programsHtml || '<p>No programs selected</p>');
-        $('.review-programs-fee').text('₱' + totalPrograms.toFixed(2));
+        $('.review-programs-fee').text('₱ ' + totalPrograms.toFixed(2));
 
         // Attach remove handler for review phase
         $('.remove-program-review').off('click').on('click', function() {
@@ -170,7 +177,6 @@ $(document).ready(function () {
                 selectedPrograms.splice(index, 1);
                 updateReviewInformation();
                 updateProgramsSummary();
-                updateTotalAmount();
             }
         });
 

@@ -57,6 +57,102 @@
     </div>
   </div>
 </div>
+
+<!-- Add Success Modal -->
+<div
+  class="modal fade"
+  id="addSuccessModal"
+  tabindex="-1"
+  aria-labelledby="addSuccessModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="addSuccessModalLabel">Success!</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fas fa-check-circle text-success" style="font-size: 48px"></i>
+        <p class="mt-3">Added successfully!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+          Okay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Success Modal -->
+<div
+  class="modal fade"
+  id="paymentSuccessModal"
+  tabindex="-1"
+  aria-labelledby="paymentSuccessModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="paymentSuccessModalLabel">Payment Successful!</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fas fa-check-circle text-success" style="font-size: 48px"></i>
+        <p class="mt-3">Payment processed successfully!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+          Okay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Renew Success Modal -->
+<div
+  class="modal fade"
+  id="renewSuccessModal"
+  tabindex="-1"
+  aria-labelledby="renewSuccessModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="renewSuccessModalLabel">Renewal Successful!</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fas fa-check-circle text-primary" style="font-size: 48px"></i>
+        <p class="mt-3">Membership renewed successfully!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+          Okay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Update Success Modal -->
 <div
   class="modal fade"

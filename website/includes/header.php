@@ -369,6 +369,18 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                         <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php endif; ?>
                     <hr class="dropdown-divider" style="margin: 5px auto; border-top: 1px solid rgba(0,0,0,0.2); width: 90%;">
+                    
+                    <!-- Add Go to Admin button for admin, staff, or coach/staff roles -->
+                    <?php if ((isset($_SESSION['personal_details']['role_name']) && 
+                            ($_SESSION['personal_details']['role_name'] === 'admin' || 
+                            $_SESSION['personal_details']['role_name'] === 'staff' || 
+                            $_SESSION['personal_details']['role_name'] === 'coach/staff')) || 
+                            (isset($_SESSION['role']) && $_SESSION['role'] === 'admin')): ?>
+                        <a href="<?php echo $basePath; ?>admin" role="menuitem">
+                            <i class="fas fa-user-shield pe-3"></i> Go to Admin
+                        </a>
+                    <?php endif; ?>
+                    
                     <a class="notifications-btn" href="<?php echo $isCoachFolder ? '../notifications.php' : 'notifications.php'; ?>">
                         <i class="fas fa-bell pe-3"></i> Notifications
                         <?php if ($unreadNotificationsCount > 0): ?>
@@ -388,7 +400,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 
 <!-- Logout Confirmation Modal -->
 <div id="logoutModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-    <div class="modal-content" style="background-color: #fff; margin: 15% auto; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+    <div class="modal-content" style="background-color: #fff; margin: 50% auto; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
         <h4>Confirm Logout</h4>
         <p>Are you sure you want to logout?</p>
         <div style="margin-top: 20px;">

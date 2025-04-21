@@ -137,11 +137,11 @@ $program_services = array_filter($program_services, function($program) use ($Obj
     .button-shortcuts .scroll-btn {
         padding: 12px 8px !important; /* Reduce padding on mobile */
         white-space: nowrap; /* Prevent text from wrapping */
-        font-size: 0.9rem; /* Slightly smaller font for mobile */
+        font-size: 0.7rem; /* Slightly smaller font for mobile */
     }
     
     .button-shortcuts .scroll-btn i {
-        font-size: 1.2rem !important; /* Slightly smaller icon for mobile */
+        font-size: .8rem !important; /* Slightly smaller icon for mobile */
     }
     
     /* If text needs to be truncated for very small screens */
