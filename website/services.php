@@ -12,6 +12,8 @@
     $program_services = $Obj->displayProgramServices();
     
 ?>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../css/browse_services.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
@@ -329,7 +331,7 @@
             <br id="Programs">
             <hr class="my-4" style="border: 2px solid #000;">
             <h2 class="section-heading">COACHING PROGRAMS</h2>
-            <div class="row g-4 mb-4">
+            <div class="row g-4 mb-4 program-services-row">
                 <?php foreach ($program_services as $program) { 
                     // Default image path
                     $defaultImage = '../cms_img/default/program.jpeg';
@@ -346,14 +348,14 @@
                         return ucfirst($type) . ' Training';
                     }, $types);
                     ?>
-                    <div class="col-sm-6 col-md-6 col-lg-3">
+                    <div class="col-sm-6 col-md-6 col-lg-3 program-card">
                         <a href="services/avail_program.php?id=<?= $program['program_id'] ?>" class="program-link">
                             <div class="card h-100">
                                 <div class="card-header text-white text-center"
                                     style="background-image: url('<?= $imagePath ?>'); 
                                     background-size: cover; 
                                     background-position: center;
-                                    height: 200px;
+                                    height: 150px;
                                     position: relative;">
                                     <div class="overlay-header">
                                         <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($program['program_name']) ?></h2>
@@ -373,6 +375,48 @@
                     </div>
                 <?php } ?>
             </div>
+
+            <style>
+            @media screen and (max-width: 480px) {
+                .row.g-4.mb-4 {
+                    display: flex;
+                    flex-direction: row;
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    gap: .5rem;
+                    margin: 0 -5px;
+                    max-width: 100%;
+                    padding-bottom: 10px;
+                    margin-bottom: 10px!important;
+                    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+                }
+
+                .col-sm-6, .col-md-6, .col-lg-3 {
+                    flex: 0 0 auto;
+                    width: 200px; /* Fixed width for horizontal scrolling */
+                    padding: 0 5px;
+                }
+
+                .card-header {
+                    height: 150px; /* Adjust height for smaller screens */
+                }
+
+                .card-body {
+                    font-size: 0.9rem; /* Slightly smaller text for mobile */
+                }
+
+                /* Hide scrollbar but keep functionality */
+                .row.g-4.mb-4::-webkit-scrollbar {
+                    display: none;
+                }
+
+                .row.g-4.mb-4 {
+                    -ms-overflow-style: none;  /* IE and Edge */
+                    scrollbar-width: none;  /* Firefox */
+                }
+            }
+            </style>
+</style>
             
             <br id="Optional-Services">
             <hr class="my-4" style="border: 2px solid #000;">

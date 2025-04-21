@@ -156,6 +156,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     .main-container {
         max-height: 100vh;
     }
+
     .bg-custom-red {
         background-color: var(--primary-color) !important;
     }
@@ -279,6 +280,9 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         margin: 0;
         padding: 0;
         overflow-x: hidden;
+    }
+    .img-fluid.rounded{
+        display: none!important;
     }
     
     .avail-membership-page {

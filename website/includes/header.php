@@ -390,15 +390,35 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 
 <!-- Logout Confirmation Modal -->
 <div id="logoutModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-                        <div class="modal-content" style="background-color: #fff; margin: 15% auto; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
-                            <h4>Confirm Logout</h4>
-                            <p>Are you sure you want to logout?</p>
-                            <div style="margin-top: 20px;">
-                                <a href="<?php echo $basePath; ?>login/logout.php" class="btn btn-danger" style="margin-right: 10px;">Yes, Logout</a>
-                                <button onclick="closeLogoutModal()" class="btn btn-secondary">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
+    <div class="modal-content" style="background-color: #fff; margin: 15% auto; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+        <h4>Confirm Logout</h4>
+        <p>Are you sure you want to logout?</p>
+        <div style="margin-top: 20px;">
+            <a href="<?php echo $basePath; ?>login/logout.php" class="btn btn-danger" style="margin-right: 10px;">Yes, Logout</a>
+            <button onclick="closeLogoutModal()" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+@media screen and (max-width: 480px) {
+    #logoutModal .modal-content {
+        width: 90%;
+        padding: 15px;
+        font-size: 14px;
+    }
+    #logoutModal .modal-content h4 {
+        font-size: 18px;
+    }
+    #logoutModal .modal-content p {
+        font-size: 14px;
+    }
+    #logoutModal .modal-content .btn {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}
+</style>
                     
 <!-- Profile Edit Modal -->
 <div id="profileEditModal" class="modal" style="display: none;">

@@ -507,14 +507,14 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     <div class="contactUs-text">
         <h1 class="title">You can find us here, sign up, local supplements and equipments</h1>
         <?php if (!$isLoggedIn): ?>
-        <div class="joinNow-container">
+        
             <a href="../register/register.php" style="text-decoration: none;">
                 <button class="joinButton-2">
                     Sign up to start now <img src="../icon/arrow-right-solid.svg" alt="Join Now" />
                 </button>
             </a>
             <?php endif; ?>
-        </div>
+       
     </div>
     <div class="image-location">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
