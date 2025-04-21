@@ -293,7 +293,8 @@ color: #f8f8f8;
 <div class="container-fluid px-4 py-4">
 <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Website Settings</h2>
-        </div>
+        <a href="../index.php" class="btn btn-primary">Go to Website</a>
+    </div>
 <!-- Logo Section Update -->
 <div class="card mb-3" data-section="logo">
     <div class="card-header">
