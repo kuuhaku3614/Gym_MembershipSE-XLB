@@ -399,8 +399,8 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 </nav>
 
 <!-- Logout Confirmation Modal -->
-<div id="logoutModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-    <div class="modal-content" style="background-color: #fff; margin: 50% auto; padding: 20px; border-radius: 5px; width: 300px; text-align: center;">
+<div id="logoutModal" class="modal" style="display: none; position: fixed; z-index: 2500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background-color: #fff; padding: 20px; border-radius: 5px; width: 300px; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
         <h4>Confirm Logout</h4>
         <p>Are you sure you want to logout?</p>
         <div style="margin-top: 20px;">
@@ -431,7 +431,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 </style>
                     
 <!-- Profile Edit Modal -->
-<div id="profileEditModal" class="profile-modal">
+<div id="profileEditModal" class="profile-modal" style="display: none;">
     <div class="profile-modal-content">
         <div class="modal-header">
             <h2>Edit Profile</h2>

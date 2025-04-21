@@ -178,6 +178,9 @@ function generateProgramCard($program) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        .html{
+            height: auto;
+        }
         .summary-card {
             border: 1px solid #ddd;
             padding: 15px;
@@ -196,6 +199,24 @@ function generateProgramCard($program) {
             height: 200px;
             overflow-y: auto;
         }
+        #phase2, #phase3{
+            overflow-y: auto;
+            max-height: calc(100vh - 400px); /* Adjust height accounting for headers and footer */
+            padding: 0 20px 20px 20px;
+        }
+        #phase4{
+            height: 100vh;
+                
+        }
+        .review-container{
+            margin-bottom: 20px;
+        }
+        .phases{
+        border-bottom: 1px solid #ccc;
+        }
+        h3.mb-4{
+            font-weight: 600;
+        }
         .membership-summary h5 {
             font-size: 14px;
             margin-bottom: 5px;
@@ -206,9 +227,6 @@ function generateProgramCard($program) {
         }
         .membership-summary .btn {
             margin-top: 5px;
-        }
-        body {
-            padding-bottom: 215px;
         }
         .summary-row {
             border: 1px solid #ddd;
@@ -405,6 +423,7 @@ function generateProgramCard($program) {
             border: 2px solid #0d6efd;
             background-color: rgba(13, 110, 253, 0.05);
         }
+
     </style>
 </head>
 <body>
@@ -413,7 +432,7 @@ function generateProgramCard($program) {
             <div class="col-12">
                 <h3 class="mb-4">Renew Membership</h3>
                 <!-- Phase Navigation (skip Phase 1) -->
-                <ul class="nav nav-pills nav-fill mb-4">
+                <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">
                         <a class="nav-link active" data-phase="2" href="#">Membership Plan</a>
                     </li>
@@ -617,11 +636,7 @@ function generateProgramCard($program) {
             </div>
         </div>
     </div>
-    <style>
-        body {
-            padding-bottom: 215px; /* Adjust based on summary height */
-        }
-    </style>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

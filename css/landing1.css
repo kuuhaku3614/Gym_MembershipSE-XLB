@@ -294,7 +294,7 @@ nav.sticky {
     width: 80%;
   }
 } */
- /* Profile Edit Modal - Landscape Minimal Design */
+/* Profile Edit Modal - Landscape Minimal Design */
 .profile-modal {
   position: fixed;
   top: 0;
@@ -303,18 +303,30 @@ nav.sticky {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.7);
   display: none;
-  z-index: 1000;
+  z-index: 2000;
   overflow: auto;
+}
+#profileEditModal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(4px);
 }
 
 .profile-modal-content {
   background-color: #fff;
   margin: 10vh auto;
-  width: 80%;
+  width: 50%;
   max-width: 800px;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  padding: 20px;
   animation: modalFadeIn 0.3s;
 }
 
@@ -390,6 +402,7 @@ nav.sticky {
   overflow: hidden;
   margin-bottom: 15px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  aspect-ratio: 1/1;
 }
 
 #profilePhoto {
@@ -468,6 +481,7 @@ nav.sticky {
 .modal-footer {
   padding: 15px 20px;
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
   border-top: 1px solid #f0f0f0;
   background-color: #f9f9f9;
@@ -556,42 +570,42 @@ nav.sticky {
 
 @keyframes spin {
   to {
-      transform: rotate(360deg);
+    transform: rotate(360deg);
   }
 }
 
 @keyframes modalFadeIn {
   from {
-      opacity: 0;
-      transform: translateY(-20px);
+    opacity: 0;
+    transform: translateY(-20px);
   }
   to {
-      opacity: 1;
-      transform: translateY(0);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .profile-modal-content {
-      width: 95%;
-      margin: 5vh auto;
+    width: 95%;
+    margin: 5vh auto;
   }
-  
+
   .profile-content-wrapper {
-      flex-direction: column;
+    flex-direction: column;
   }
-  
-  .profile-photo-section, 
+
+  .profile-photo-section,
   .profile-info-section {
-      width: 100%;
-      border-right: none;
+    width: 100%;
+    border-right: none;
   }
-  
+
   .profile-photo-section {
-      border-bottom: 1px solid #f0f0f0;
-      padding-bottom: 20px;
-      margin-bottom: 0;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 20px;
+    margin-bottom: 0;
   }
 }
 /* Modal Base Styles */
@@ -662,7 +676,6 @@ nav.sticky {
   flex-direction: column;
   align-items: center;
   gap: 28px;
-
 }
 
 .profile-photo-container {
