@@ -1,3 +1,4 @@
+
 <?php
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
@@ -11,6 +12,14 @@
 
     $profile = new Profile_class();
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
+    if ($userDetails !== false && !empty($userDetails)) {
+        $_SESSION['personal_details'] = $userDetails;
+        $_SESSION['is_admin'] = ($userDetails['role_name'] === 'admin' || $userDetails['role_name'] === 'administrator');
+    } else {
+        // Handle the error case
+        $_SESSION['personal_details'] = array('name' => 'Guest', 'role_name' => '', 'role_id' => '');
+        $_SESSION['is_admin'] = false;
+    }
     $searchDate = isset($_GET['search_date']) ? $_GET['search_date'] : null;
     $array = $profile->fetchAttendanceLog($searchDate);
     $avail_array = $profile->fetchAvailedServices();
@@ -60,22 +69,24 @@
     <section class="main-content vh-100">
         <div id="availed_services">
         <header id="title">
-        <div id="name">
-            <h1><?= $_SESSION['personal_details']['name'] ?></h1>
-            <?php if (isset($_SESSION['personal_details']['role_name'])): ?>
-                <?php if ($_SESSION['personal_details']['role_name'] === 'member'): ?>
-                    <h5>Member</h5>
-                <?php elseif ($_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                    <h5>Coach</h5>
+            <div id="name">
+                <h1><?= isset($_SESSION['personal_details']['name']) && !empty($_SESSION['personal_details']['name']) ? htmlspecialchars($_SESSION['personal_details']['name']) : 'Guest' ?></h1>
+                <?php if (isset($_SESSION['personal_details']['role_name'])): ?>
+                    <?php if ($_SESSION['personal_details']['role_name'] === 'member'): ?>
+                        <h5>Member</h5>
+                    <?php elseif ($_SESSION['personal_details']['role_name'] === 'coach'): ?>
+                        <h5>Coach</h5>
+                    <?php elseif ($_SESSION['personal_details']['role_name'] === 'admin' || $_SESSION['personal_details']['role_name'] === 'administrator'): ?>
+                        <h5>Administrator</h5>
+                    <?php endif; ?>
                 <?php endif; ?>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['personal_details']['role_id']) && $_SESSION['personal_details']['role_id'] === '3'): ?>
-                <a href="coach_profile.php" class="btn btn-link" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
-                    <i class="fas fa-user-tie"></i>
-                </a>
-            <?php endif; ?>
-        </div>
-    </header>
+                <?php if (isset($_SESSION['personal_details']['role_id']) && $_SESSION['personal_details']['role_id'] === '3'): ?>
+                    <a href="coach_profile.php" class="btn btn-link" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
+                        <i class="fas fa-user-tie"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </header>
             <div class="section-header">
                 <h4>Current Membership Plan</h4>
                 <button type="button" class="icon-button" id="history-btn" onclick="toggleHistory()">
