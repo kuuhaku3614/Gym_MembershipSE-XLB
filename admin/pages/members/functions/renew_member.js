@@ -49,7 +49,7 @@ $(document).ready(function () {
         $('input[name="rental_services[]"]:checked').each(function() {
             selectedRentals.push($(this).val());
         });
-        console.log('Selected rentals before submit:', selectedRentals);
+        ('Selected rentals before submit:', selectedRentals);
         // Collect all renewal data
         // Prepare selected programs with schedules for backend
         var plan = $('input[name="membership_plan"]:checked');
@@ -101,7 +101,7 @@ $(document).ready(function () {
             },
             error: function(xhr) {
                 alert('An error occurred while renewing membership.');
-                console.error('AJAX error:', {
+                ('AJAX error:', {
                     status: xhr.status,
                     statusText: xhr.statusText,
                     responseText: xhr.responseText,
@@ -136,7 +136,7 @@ $(document).ready(function () {
         // Programs
         let programsHtml = '';
         let totalPrograms = 0;
-        selectedPrograms.forEach(function(program) {
+        selectedPrograms.forEach(function(program, index) {
             if (!program || !program.program) return;
             // Calculate session dates
             const plan = $('input[name="membership_plan"]:checked');
@@ -152,7 +152,7 @@ $(document).ready(function () {
             }
             const total = program.price * numSessions;
             totalPrograms += total;
-            programsHtml += `<div class="program-item mb-2">
+            programsHtml += `<div class="program-item mb-2" data-index="${index}">
                 <div class="program-title">${program.program}</div>
                 <div class="program-details">
                     Coach: ${program.coach}<br>
@@ -739,7 +739,7 @@ function generateProgramDates(startDate, endDate, dayOfWeek, startTime, endTime,
 
     // Utility: Update total amount
     function updateTotalAmount() {
-        let total = window.registrationFee || 0;
+        let total = 0;
         const selectedPlan = $('input[name="membership_plan"]:checked');
         if (selectedPlan.length) {
             total += parseFloat(selectedPlan.data('price')) || 0;

@@ -16,8 +16,10 @@ class RenewMember {
      * @return array
      */
     public function renewMember($data) {
-    error_log("=== ENTERING renewMember METHOD ===");
-    error_log("Rental POST data: " . print_r($data, true));
+    
+
+    
+
         try {
             $this->pdo->beginTransaction();
             // Validate required inputs
@@ -44,14 +46,6 @@ class RenewMember {
             if (!$result) throw new Exception('Failed to create transaction record');
             $transactionId = $this->pdo->lastInsertId();
 
-            // Insert registration record (for renewal)
-            $registrationFee = $memberReg->getRegistrationFee();
-            $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount, is_paid) VALUES (:transaction_id, 1, :amount, 0)";
-            $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([
-                ':transaction_id' => $transactionId,
-                ':amount' => $registrationFee
-            ]);
             if (!$result) throw new Exception('Failed to create registration record');
 
             // Insert membership record
@@ -80,11 +74,14 @@ class RenewMember {
                 }
             }
             $rentalIds = array_unique($rentalIds);
-            error_log('Decoded rentalIds: ' . print_r($rentalIds, true));
+            
+
             foreach ($rentalIds as $rentalId) {
-                error_log('Processing rentalId: ' . print_r($rentalId, true));
+                
+
                 $rentalDetails = $memberReg->getRentalServiceDetails($rentalId);
-                error_log('Rental details: ' . print_r($rentalDetails, true));
+                
+
                 if (!$rentalDetails) throw new Exception('Invalid rental service selected');
                 $rentalStart = date('Y-m-d');
                 $rentalEnd = $memberReg->calculateEndDate($rentalStart, $rentalDetails['duration'], $rentalDetails['duration_type']);
@@ -97,7 +94,8 @@ class RenewMember {
                     ':end_date' => $rentalEnd,
                     ':amount' => $rentalDetails['price']
                 ]);
-                error_log('Rental insert result: ' . print_r($result, true));
+                
+
                 if (!$result) throw new Exception('Failed to process rental service');
             }
 
@@ -134,11 +132,13 @@ class RenewMember {
                                 ':coach_group_schedule_id' => isset($schedule['coach_group_schedule_id']) ? $schedule['coach_group_schedule_id'] : null,
                                 ':coach_personal_schedule_id' => isset($schedule['coach_personal_schedule_id']) ? $schedule['coach_personal_schedule_id'] : null
                             ]);
-                            error_log('Inserted schedule: ' . print_r($schedule, true));
+                            
+
                             if (!$result) throw new Exception('Failed to insert program schedule');
                         }
                     } else {
-                        error_log('No schedules found for program: ' . print_r($program, true));
+                        
+
                     }
                 }
             }

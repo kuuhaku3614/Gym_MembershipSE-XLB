@@ -310,6 +310,11 @@ class CoachingSystem {
                 SET status = :status,
                     updated_at = NOW()";
             
+            // If status is completed, also mark is_paid as true
+            if ($status === 'completed') {
+                $sql .= ", is_paid = 1";
+            }
+            
             // Add cancellation_reason to SQL if reason is provided
             if ($reason !== null) {
                 $sql .= ", cancellation_reason = :reason";
