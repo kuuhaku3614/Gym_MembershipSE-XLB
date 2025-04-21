@@ -112,7 +112,7 @@ div {
   opacity: 0.9;
 }
 
-.btn-primary {
+/* .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: var(--white);
@@ -122,7 +122,7 @@ div {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
   color: var(--white);
-}
+} */
 
 /* Modal Styles */
 .modal-header {

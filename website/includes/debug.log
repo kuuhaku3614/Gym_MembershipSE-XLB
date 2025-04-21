@@ -1038,3 +1038,115 @@
     [action] => update_photo
 )
 
+2025-04-21 21:53:24 - Request received
+2025-04-21 21:53:24 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerardo
+)
+
+2025-04-21 21:53:24 - Request received
+2025-04-21 21:53:24 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerardo
+)
+
+2025-04-21 21:56:57 - Request received
+2025-04-21 21:56:57 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerardoo
+)
+
+2025-04-21 21:56:57 - Request received
+2025-04-21 21:56:57 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerardoo
+)
+
+2025-04-21 21:57:07 - Request received
+2025-04-21 21:57:07 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerard
+)
+
+2025-04-21 21:57:07 - Request received
+2025-04-21 21:57:07 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerard
+)
+
+2025-04-21 21:57:47 - Request received
+2025-04-21 21:57:47 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerardo
+)
+
+2025-04-21 21:57:47 - Request received
+2025-04-21 21:57:47 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerardo
+)
+
+2025-04-21 21:57:47 - Request received
+2025-04-21 21:57:47 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerardo
+)
+
+2025-04-21 21:57:47 - Request received
+2025-04-21 21:57:47 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerardo
+)
+
+2025-04-21 21:58:04 - Request received
+2025-04-21 21:58:04 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerard
+)
+
+2025-04-21 21:58:04 - Request received
+2025-04-21 21:58:04 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerard
+)
+
+2025-04-21 21:58:19 - Request received
+2025-04-21 21:58:19 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerardo
+)
+
+2025-04-21 21:58:19 - Request received
+2025-04-21 21:58:19 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerardo
+)
+
+2025-04-21 22:06:38 - Request received
+2025-04-21 22:06:38 - POST data: Array
+(
+    [action] => check_username
+    [username] => jerard
+)
+
+2025-04-21 22:06:38 - Request received
+2025-04-21 22:06:38 - POST data: Array
+(
+    [action] => update_username
+    [username] => jerard
+)
+
