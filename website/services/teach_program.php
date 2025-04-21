@@ -91,6 +91,13 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
             <h4><?php echo htmlspecialchars($program['program_name']); ?></h4>
             <p class="mb-1 text-muted"><?php echo htmlspecialchars($program['description'] ?? ''); ?></p>
         </div>
+
+        <div id="existingSchedulesSection" class="mt-4" style="display:none;">
+            <h5>Existing Schedules</h5>
+            <ul id="existingGroupSchedules" class="list-group mb-2"></ul>
+            <ul id="existingPersonalSchedules" class="list-group mb-2"></ul>
+        </div>
+
         <form id="teachProgramForm">
             <input type="hidden" name="program_id" value="<?php echo $program_id; ?>">
             <div class="row g-3">
@@ -114,13 +121,8 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                     <textarea class="form-control" id="programDescription" name="description" rows="2" placeholder="Add a description for this offering (optional)"></textarea>
                 </div>
             </div>
-
-            <div id="existingSchedulesSection" class="mt-4" style="display:none;">
-    <h5>Existing Schedules</h5>
-    <ul id="existingGroupSchedules" class="list-group mb-2"></ul>
-    <ul id="existingPersonalSchedules" class="list-group mb-2"></ul>
-</div>
-<div id="scheduleInputs" class="mt-4" style="display:none;"></div>
+            
+        <div id="scheduleInputs" class="mt-4" style="display:none;"></div>
             <div class="mt-3">
                 <button type="button" class="btn btn-custom-red" id="addScheduleBtn">Add Schedule to List</button>
             </div>
@@ -231,6 +233,27 @@ addScheduleBtn.addEventListener('click', function() {
     });
     if (!valid) { alert('Please fill all required schedule fields.'); return; }
 
+    // Validation: capacity, duration_rate, and price must be greater than 0
+    if (type === 'group') {
+        if (Number(schedule.capacity) <= 1) {
+            alert('Capacity must be greater than 1.');
+            return;
+        }
+        if (Number(schedule.price) <= 0) {
+            alert('Price must be greater than 0.');
+            return;
+        }
+    } else if (type === 'personal') {
+        if (Number(schedule.duration_rate) <= 0) {
+            alert('Duration must be greater than 0.');
+            return;
+        }
+        if (Number(schedule.price) <= 0) {
+            alert('Price must be greater than 0.');
+            return;
+        }
+    }
+
     // Validation: start_time must be less than end_time
     if (schedule.start_time && schedule.end_time) {
         const start = schedule.start_time;
@@ -240,6 +263,31 @@ addScheduleBtn.addEventListener('click', function() {
             alert('Start time must be less than end time.');
             return;
         }
+    }
+
+    // Overlap check: same day and time ranges intersect (cart + existing schedules from backend)
+    const allExistingSchedules = [
+        ...scheduleCart,
+        ...(window.existingSchedulesGroup || []),
+        ...(window.existingSchedulesPersonal || [])
+    ];
+    const isOverlap = allExistingSchedules.some(existing => {
+        if (existing.day !== schedule.day) return false;
+        // Convert to minutes for easier comparison
+        const [startHour, startMin] = schedule.start_time.split(':').map(Number);
+        const [endHour, endMin] = schedule.end_time.split(':').map(Number);
+        const [exStartHour, exStartMin] = existing.start_time.split(':').map(Number);
+        const [exEndHour, exEndMin] = existing.end_time.split(':').map(Number);
+        const startMins = startHour * 60 + startMin;
+        const endMins = endHour * 60 + endMin;
+        const exStartMins = exStartHour * 60 + exStartMin;
+        const exEndMins = exEndHour * 60 + exEndMin;
+        // Overlap if ranges intersect
+        return (startMins < exEndMins && endMins > exStartMins);
+    });
+    if (isOverlap) {
+        alert('This schedule overlaps with an existing or already saved schedule. Please choose a different time.');
+        return;
     }
 
     scheduleCart.push(schedule);
@@ -278,27 +326,30 @@ function fetchAndRenderExistingSchedules() {
         .then(res => res.json())
         .then(data => {
             let hasAny = false;
+            // Store existing schedules globally for overlap check
+            window.existingSchedulesGroup = data.success && data.schedules && data.schedules.group ? data.schedules.group : [];
+            window.existingSchedulesPersonal = data.success && data.schedules && data.schedules.personal ? data.schedules.personal : [];
             // Render group schedules
-            if (data.success && data.schedules && data.schedules.group.length) {
+            if (window.existingSchedulesGroup.length) {
                 groupList.innerHTML = '<li class="list-group-item active">Group Schedules</li>';
-                data.schedules.group.forEach(s => {
+                window.existingSchedulesGroup.forEach(s => {
                     groupList.innerHTML += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Capacity: ${s.capacity}, ₱${s.price}</li>`;
                 });
                 hasAny = true;
             } else {
-                groupList.innerHTML = '<li class="list-group-item text-muted">No group schedules.</li>';
+                groupList.innerHTML = '';
             }
             // Render personal schedules
-            if (data.success && data.schedules && data.schedules.personal.length) {
+            if (window.existingSchedulesPersonal.length) {
                 personalList.innerHTML = '<li class="list-group-item active">Personal Schedules</li>';
-                data.schedules.personal.forEach(s => {
+                window.existingSchedulesPersonal.forEach(s => {
                     personalList.innerHTML += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Duration: ${s.duration_rate} mins, ₱${s.price}</li>`;
                 });
                 hasAny = true;
             } else {
-                personalList.innerHTML = '<li class="list-group-item text-muted">No personal schedules.</li>';
+                personalList.innerHTML = '';
             }
-            section.style.display = hasAny ? 'block' : 'block';
+            section.style.display = hasAny ? 'block' : 'none';
         })
         .catch(() => {
             document.getElementById('existingSchedulesSection').style.display = 'none';
