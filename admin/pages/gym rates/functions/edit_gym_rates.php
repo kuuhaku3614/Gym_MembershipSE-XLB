@@ -39,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $missingFields = [];
 
     foreach ($requiredFields as $field) {
-        if (empty($_POST[$field])) {
+        // Accept 0 (string or int) as valid for price, only treat as missing if not set or is exactly empty string (not '0' or 0)
+        if (!isset($_POST[$field]) || ($field !== 'price' && $_POST[$field] === '') || ($field === 'price' && $_POST[$field] === '')) {
             $missingFields[] = $field;
         }
     }

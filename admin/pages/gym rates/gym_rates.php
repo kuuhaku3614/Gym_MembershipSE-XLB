@@ -242,7 +242,6 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <option value="">Select Promo Type</option>
                                     <option value="standard">Standard</option>
                                     <option value="special">Special</option>
-                                    <option value="walk-in">Walk-in</option>
                                 </select>
                             </div>
                             <div class="row">
@@ -341,14 +340,45 @@ $('#saveGymRateBtn').click(function() {
     }
 
     // Validate required fields
-    const isValid = 
+    let isValid = 
         validateField('promoName', 'Promo Name is required') &
         validateField('promoType', 'Promo Type must be selected') &
         validateField('duration', 'Duration is required') &
         validateField('durationType', 'Duration Type must be selected') &
         validateField('activationDate', 'Activation Date is required') &
-        validateField('deactivationDate', 'Deactivation Date is required') &
-        validateField('price', 'Price is required');
+        validateField('deactivationDate', 'Deactivation Date is required');
+
+    // Enhanced price validation (allow 0, disallow negative, require numeric)
+    const priceField = $('#price');
+    const priceValue = priceField.val().trim();
+    if (priceValue === '' || priceValue === null) {
+        priceField.addClass('is-invalid');
+        priceField.after('<div class="invalid-feedback">Price is required</div>');
+        isValid = false;
+    } else if (parseFloat(priceValue) < 0) {
+        priceField.addClass('is-invalid');
+        priceField.after('<div class="invalid-feedback">Price must not be negative</div>');
+        isValid = false;
+    }
+
+    // Enhanced duration validation (required, numeric, positive integer, >0) in one place
+    const durationField = $('#duration');
+    const durationValue = durationField.val().trim();
+    // Remove existing feedback before adding new
+    durationField.next('.invalid-feedback').remove();
+    if (durationValue === '' || durationValue === null) {
+        durationField.addClass('is-invalid');
+        durationField.after('<div class="invalid-feedback">Duration is required</div>');
+        isValid = false;
+    } else if (isNaN(durationValue) || !/^[0-9]+$/.test(durationValue)) {
+        durationField.addClass('is-invalid');
+        durationField.after('<div class="invalid-feedback">Duration must be a positive integer</div>');
+        isValid = false;
+    } else if (parseInt(durationValue, 10) <= 0) {
+        durationField.addClass('is-invalid');
+        durationField.after('<div class="invalid-feedback">Duration must be greater than 0</div>');
+        isValid = false;
+    }
 
     // Validate date range
     const activationDate = new Date($('#activationDate').val());
@@ -453,6 +483,43 @@ $('#updateGymRateBtn').click(function() {
     $('.is-invalid').removeClass('is-invalid');
     $('.invalid-feedback').remove();
 
+    // Enhanced price validation (allow 0, disallow negative, require numeric)
+    const editPriceField = $('#editPrice');
+    const editPriceValue = editPriceField.val().trim();
+    editPriceField.next('.invalid-feedback').remove();
+    let isValid = true;
+    if (editPriceValue === '' || editPriceValue === null) {
+        editPriceField.addClass('is-invalid');
+        editPriceField.after('<div class="invalid-feedback">Price is required</div>');
+        isValid = false;
+    } else if (isNaN(editPriceValue)) {
+        editPriceField.addClass('is-invalid');
+        editPriceField.after('<div class="invalid-feedback">Price must be a valid number</div>');
+        isValid = false;
+    } else if (parseFloat(editPriceValue) < 0) {
+        editPriceField.addClass('is-invalid');
+        editPriceField.after('<div class="invalid-feedback">Price must not be negative</div>');
+        isValid = false;
+    }
+
+    // Enhanced duration validation (required, numeric, positive integer, >0)
+    const editDurationField = $('#editDuration');
+    const editDurationValue = editDurationField.val().trim();
+    editDurationField.next('.invalid-feedback').remove();
+    if (editDurationValue === '' || editDurationValue === null) {
+        editDurationField.addClass('is-invalid');
+        editDurationField.after('<div class="invalid-feedback">Duration is required</div>');
+        isValid = false;
+    } else if (isNaN(editDurationValue) || !/^[0-9]+$/.test(editDurationValue)) {
+        editDurationField.addClass('is-invalid');
+        editDurationField.after('<div class="invalid-feedback">Duration must be a positive integer</div>');
+        isValid = false;
+    } else if (parseInt(editDurationValue, 10) <= 0) {
+        editDurationField.addClass('is-invalid');
+        editDurationField.after('<div class="invalid-feedback">Duration must be greater than 0</div>');
+        isValid = false;
+    }
+
     // Create validation function
     function validateField(fieldId, errorMessage) {
         const field = $(`#${fieldId}`);
@@ -465,15 +532,17 @@ $('#updateGymRateBtn').click(function() {
         return true;
     }
 
-    // Validate all required fields
-    const isValid = 
-        validateField('editPromoName', 'Promo Name is required') &
-        validateField('editPromoType', 'Promo Type must be selected') &
-        validateField('editDuration', 'Duration is required') &
-        validateField('editDurationType', 'Duration Type must be selected') &
-        validateField('editActivationDate', 'Activation Date is required') &
-        validateField('editDeactivationDate', 'Deactivation Date is required') &
-        validateField('editPrice', 'Price is required');
+    // Validate all other required fields
+    isValid =
+        validateField('editPromoName', 'Promo Name is required') & isValid;
+    isValid =
+        validateField('editPromoType', 'Promo Type must be selected') & isValid;
+    isValid =
+        validateField('editDurationType', 'Duration Type must be selected') & isValid;
+    isValid =
+        validateField('editActivationDate', 'Activation Date is required') & isValid;
+    isValid =
+        validateField('editDeactivationDate', 'Deactivation Date is required') & isValid;
 
     // Check activation and deactivation dates
     const activationDate = new Date($('#editActivationDate').val());
