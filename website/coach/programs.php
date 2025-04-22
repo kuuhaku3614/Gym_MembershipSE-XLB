@@ -97,6 +97,19 @@
         exit;
     }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programs</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="../../vendor/bootstrap-5.3.3/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="../../vendor/fontawesome-free-5.15.4-web/css/all.min.css">
+    
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 
 <style>
     .modal-content {
@@ -135,7 +148,20 @@
     .is-invalid:focus {
         box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
     }
+    @media screen and (max-width: 480px) {
+        #content {
+            margin-top: 150px;
+            padding: 0;
+            font-size: xx-small;
+        }
+        th{
+            font-size: 10px!important;
+        }
+    }
+    
 </style>
+</head>
+<body>
 
 <div id="content">
     <div class="container-fluid">
@@ -147,10 +173,10 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table id="programTable" class="table table-hover">
+                                <thead class="table-light">
                                     <tr>
-                                        <th>Program Name</th>
+                                        <th>Name</th>
                                         <th>Type</th>
                                         <th>Description</th>
                                         <th>Status</th>
@@ -193,10 +219,6 @@
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="6" class="text-center">No programs found</td>
-                                        </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -396,7 +418,23 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#programTable').DataTable({
+        responsive: true
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    if (tooltipTriggerList.length > 0) {
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
 function toggleStatus(coachProgramTypeId, currentStatus, button) {
     fetch('programs.php', {
         method: 'POST',
@@ -860,6 +898,7 @@ function validateAndSavePersonalSchedule(event) {
     
     return false;
 }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     const modals = [
@@ -879,8 +918,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </script>
 
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</div>
 </body>
 </html>

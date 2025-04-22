@@ -149,6 +149,88 @@
         transition: 0.3s;
         margin-top: 80px; /* Match header height */
     }
+    @media (max-width: 768px) {
+    .sidebar {
+        display: flex;
+        width: 100%;
+        padding: 0 20px;
+        height: auto;
+        background: #ffffff;
+        z-index: 500;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 0 0 10px 10px;
+    }
+    .logo-container{
+        display: none;
+    }
+
+    .nav-links-container {
+        border: none;
+    }
+
+    .nav-links-container nav {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+    }
+
+    .nav-item {
+        padding: 10px;
+        flex: 1;
+        
+        text-align: center;
+        min-width: 80px;
+        justify-content: center;
+    }
+
+    .nav-item-content {
+        flex-direction: column;
+        gap: 5px;
+
+    }
+
+    .nav-text {
+        font-size: 0.8em;
+    }
+
+    #content {
+        margin-left: 0;
+        margin-top: 170px;
+    }
+}
+
+
+@media (max-width: 480px) {
+  #content {
+    margin-top: 120px;
+  }
+  .sidebar {
+    font-size: 12px;
+  }
+  .nav-item {
+    min-width: 50px !important;
+    font-size: 10px !important;
+    justify-content: center;
+  }
+  .nav-item-content span {
+    display: none;
+  }
+  .nav-item-content i {
+    margin: 0;
+  }
+  .dashboard-header {
+    padding: 20px 10px;
+    margin: 20px;
+  }
+  .dashboard-header h4 {
+    font-size: 14px;
+    margin-bottom: 0px;
+  }
+  .dashboard-header span {
+    font-size: 8px;
+  }
+}
 
     /* Responsive Design */
     /* @media (max-width: 768px) {
@@ -222,57 +304,6 @@
         </nav>
     </div>
 
-<style>
-    @media (max-width: 768px) {
-    .sidebar {
-        display: flex;
-        width: 100%;
-        padding: 0 20px;
-        height: auto;
-        background: #ffffff;
-        z-index: 500;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 0 0 10px 10px;
-    }
-    .logo-container{
-        display: none;
-    }
 
-    .nav-links-container {
-        border: none;
-    }
-
-    .nav-links-container nav {
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
-    }
-
-    .nav-item {
-        padding: 10px;
-        flex: 1;
-        
-        text-align: center;
-        min-width: 80px;
-        justify-content: center;
-    }
-
-    .nav-item-content {
-        flex-direction: column;
-        gap: 5px;
-
-    }
-
-    .nav-text {
-        font-size: 0.8em;
-    }
-
-    #content {
-        margin-left: 0;
-        margin-top: 170px;
-    }
-}
-</style>
 </div>
 </button>

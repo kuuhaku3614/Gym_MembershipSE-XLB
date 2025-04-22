@@ -324,7 +324,7 @@ function generateProgramCard($program) {
             display: flex;
             justify-content: center;
             gap: 15px;
-            margin-top: 30px;
+            margin: 30px 0;
         }
         .review-actions .btn {
             min-width: 150px;

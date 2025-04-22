@@ -32,7 +32,7 @@ $membersList = $members->getAllMembers();
   <div class="card">
     <div class="card-body">
       <div class="table-responsive">
-        <table id="membersTable" class="table table-hover">
+        <table id="membersTable" class="table table-striped table-bordered">
           <thead>
             <tr>
               <th class="text-center" style="width: 80px">Photo</th>

@@ -53,7 +53,7 @@ try {
         </div>
 <div class="card">
 <div class="card-body">
-    <table id="rentalsTable" class="table table-bordered table-hover">
+    <table id="rentalsTable" class="table table-striped table-bordered">
         <thead>
             <tr>
                 <th>Image</th>
