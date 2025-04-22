@@ -52,6 +52,19 @@
 <link rel="stylesheet" href="dashboard.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 
+<style>
+    @media screen and (max-width: 480px) {
+        #content {
+            margin-top: 150px;
+            padding: 0;
+            font-size: xx-small;
+        }
+        th{
+            font-size: 10px!important;
+        }
+    }
+</style>
+
 <!-- Content Area -->
 <div id="content">
     <div class="dashboard-header">
@@ -81,7 +94,7 @@
                                 <th>Transaction ID</th>
                                 <th>Member Name</th>
                                 <th>Program</th>
-                                <th>Type</th>
+                                <th>Type</ th>
                                 <th>Date</th>
                                 <th>Time</th>
                                 <th>Amount</th>

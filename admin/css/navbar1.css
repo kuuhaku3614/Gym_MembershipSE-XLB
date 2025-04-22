@@ -42,6 +42,9 @@ body {
   background-color: var(--gray-100);
   line-height: 1.6;
 }
+h2 {
+  font-weight: 600 !important;
+}
 button,
 a,
 td,

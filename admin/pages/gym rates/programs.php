@@ -45,6 +45,8 @@ $programs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
+        <div class="card">
+        <div class="card-body">
         <div class="table-responsive">
             <table id="programsTable" class="table table-striped table-bordered">
                 <thead>
@@ -98,6 +100,8 @@ $programs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </table>
         </div>
     </div>
+    </div>
+</div>
 
     <!-- Add Program Modal -->
     <div class="modal" id="addProgramModal" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addProgramModalLabel" aria-hidden="true">
