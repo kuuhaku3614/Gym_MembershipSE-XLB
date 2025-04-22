@@ -205,9 +205,8 @@ function saveAllSchedules() {
     .then(data => {
         if (data.success) {
             alert('Schedules saved successfully!');
-            scheduleCart = [];
-            updateScheduleCartUI();
-            fetchAndRenderExistingSchedules();
+            window.location.href = '../services.php';
+            return;
         } else {
             alert(data.message || 'Failed to save schedules.');
         }

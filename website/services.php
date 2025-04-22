@@ -9,11 +9,11 @@
     $special_plans = $Obj->displaySpecialPlans();
     $rental_services = $Obj->displayRentalServices();
     $walkin = $Obj->displayWalkinServices();
+    // For general display, keep using displayProgramServices (with schedules filter)
     $program_services = $Obj->displayProgramServices();
-// Filter out programs with no schedules
-$program_services = array_filter($program_services, function($program) use ($Obj) {
-    return $Obj->programHasSchedules($program['program_id']);
-});
+    // For Teach Programs section, show ALL active programs (even those with no schedules)
+    $all_programs = $Obj->getProgramsList(); // We'll add this method to fetch all active programs
+
     
 ?>
 
@@ -219,21 +219,17 @@ $program_services = array_filter($program_services, function($program) use ($Obj
         <!-- Coach Section -->
         <h2 class="section-heading">Teach Programs</h2>
         <div class="row g-4 mb-4">
-            <?php foreach ($program_services as $program) { 
+            <?php foreach ($all_programs as $program) { 
                 // Default image path
                 $defaultImage = '../cms_img/default/program.jpeg';
 
                 // Get the image path
                 $imagePath = $defaultImage; // Set default first
-                if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
-                    $imagePath = '../cms_img/program/' . $program['image'];
+                if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
+                    $imagePath = '../cms_img/programs/' . $program['image'];
                 }
-                
-                // Format available types
-                $types = $program['available_types'] ? explode(',', $program['available_types']) : [];
-                $typeLabels = array_map(function($type) {
-                    return ucfirst($type) . ' Training';
-                }, $types);
+                // No available_types for new programs, so skip types display for now
+
             ?>
                 <div class="col-sm-6 col-md-6 col-lg-3">
                     <a href="services/teach_program.php?id=<?= $program['program_id'] ?>" class="program-link">
