@@ -58,6 +58,9 @@
     <link rel="stylesheet" href="../../vendor/bootstrap-5.3.3/dist/css/bootstrap.min.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../vendor/fontawesome-free-5.15.4-web/css/all.min.css">
+    
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <style>
         .modal-content {
             padding: 0 !important;
@@ -75,6 +78,16 @@
             font-size: inherit;
             font-weight: 600;
         }
+        @media screen and (max-width: 480px) {
+        #content {
+            margin-top: 150px!important;
+            padding: 0!important;
+            font-size: xx-small!important;
+        }
+        th{
+            font-size: 10px!important;
+        }
+    }
     </style>
 </head>
 <body>
@@ -90,11 +103,11 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                                <table id="memberTable" class="table table-hover">
+                                <thead class="table-light">
                                         <tr>
                                             <th>Status</th>
-                                            <th>Member Name</th>
+                                            <th>Name</th>
                                             <th>Program</th>
                                             <th>Contact</th>
                                             <th>Schedule</th>
@@ -180,10 +193,6 @@
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td colspan="7" class="text-center">No members found</td>
-                                            </tr>
                                         <?php endif; ?>
                                     </tbody>
                                 </table>
@@ -342,8 +351,25 @@
     </div>
 
     <!-- Bootstrap Bundle with Popper -->
-    <script src="../../vendor/bootstrap-5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    $('#memberTable').DataTable({
+        order: [[4, 'desc'], [5, 'asc']], // Sort by date (desc) and time (asc)
+
+        responsive: true
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    if (tooltipTriggerList.length > 0) {
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
         function handlePayment(memberId) {
             const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal' + memberId));
             paymentModal.show();
@@ -423,6 +449,7 @@
                 confirmButton.innerHTML = '<i class="fas fa-check me-1"></i>Confirm Payment';
             }
         }
+    });
     </script>
 </body>
 </html>

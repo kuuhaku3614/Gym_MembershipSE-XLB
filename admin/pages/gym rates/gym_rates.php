@@ -51,7 +51,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
 
-
+    <div class="card">
+        <div class="card-body">
     <div class="table-responsive">
     <table id="gymRatesTable" class="table table-striped table-bordered">
     <thead>
@@ -115,6 +116,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </tbody>
 
 </table>
+</div>
+</div>
 </div>
 </div>
 
