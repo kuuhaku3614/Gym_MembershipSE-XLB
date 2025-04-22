@@ -34,21 +34,27 @@ try {
         throw new Exception("Invalid item type");
     }
 
-    // After successful cancellation, check if only registration is left
+    // After successful cancellation, check if only unpaid registration remains
     if ($result && $userId) {
         $newCounts = $members->getUnpaidItemCounts($userId);
         
-        // If only registration is left (no memberships or rentals)
-        if ($newCounts['registrations'] > 0 && 
-            $newCounts['memberships'] === 0 && 
-            $newCounts['rentals'] === 0) {
-            
+        // If only unpaid registration is left (no memberships or rentals)
+        $unpaidMemberships = isset($newCounts['unpaid_memberships']) ? $newCounts['unpaid_memberships'] : 0;
+        $unpaidRentals = isset($newCounts['unpaid_rentals']) ? $newCounts['unpaid_rentals'] : 0;
+        
+        // Check for unpaid registration
+        $pdo = $members->getPdo();
+        $stmt = $pdo->prepare("SELECT COUNT(*) as unpaid_registrations FROM registration_records rr JOIN transactions t ON rr.transaction_id = t.id WHERE t.user_id = :user_id AND rr.is_paid = 0");
+        $stmt->execute([':user_id' => $userId]);
+        $regResult = $stmt->fetch(PDO::FETCH_ASSOC);
+        $unpaidRegistrations = isset($regResult['unpaid_registrations']) ? (int)$regResult['unpaid_registrations'] : 0;
+        
+        if ($unpaidRegistrations > 0 && $unpaidMemberships === 0) {
             // Delete registration record and update user role
             $members->deleteRegistrationAndUpdateRole($userId);
-            
             echo json_encode([
                 'success' => true,
-                'message' => $message . '. Registration cancelled as no other items remain.',
+                'message' => $message,
                 'onlyRegistrationLeft' => true
             ]);
             exit;

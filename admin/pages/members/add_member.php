@@ -603,31 +603,31 @@ function generateProgramCard($program) {
                     <div id="phase2" class="phase" style="display: none;">
                         <h4 class="mb-4">Select Your Membership Plan</h4>
                         <!-- Filter & Search Controls -->
-<div class="row mb-3 align-items-center g-2">
-    <div class="col-auto d-flex gap-2 align-items-center">
-        <span class="fw-semibold me-2">Filter:</span>
-        <button type="button" class="btn btn-outline-secondary btn-sm plan-filter active" data-filter="all">All</button>
-        <button type="button" class="btn btn-outline-primary btn-sm plan-filter" data-filter="special">Special</button>
-        <button type="button" class="btn btn-outline-success btn-sm plan-filter" data-filter="regular">Regular</button>
-    </div>
-    <div class="col-auto">
-        <input type="text" class="form-control form-control-sm" id="planSearch" placeholder="Search plan name...">
-    </div>
-    <div class="col-auto">
-    <select class="form-select form-select-sm" id="planSortDuration">
-        <option value="none">Sort by Duration</option>
-        <option value="duration-asc">Duration Low-High</option>
-        <option value="duration-desc">Duration High-Low</option>
-    </select>
-</div>
-<div class="col-auto">
-    <select class="form-select form-select-sm" id="planSortPrice">
-        <option value="none">Sort by Price</option>
-        <option value="price-asc">Price Low-High</option>
-        <option value="price-desc">Price High-Low</option>
-    </select>
-</div>
-</div>
+                        <div class="row mb-3 align-items-center g-2">
+                            <div class="col-auto d-flex gap-2 align-items-center">
+                                <span class="fw-semibold me-2">Filter:</span>
+                                <button type="button" class="btn btn-outline-secondary btn-sm plan-filter active" data-filter="all">All</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm plan-filter" data-filter="special">Special</button>
+                                <button type="button" class="btn btn-outline-success btn-sm plan-filter" data-filter="regular">Regular</button>
+                            </div>
+                            <div class="col-auto">
+                                <input type="text" class="form-control form-control-sm" id="planSearch" placeholder="Search plan name...">
+                            </div>
+                            <div class="col-auto">
+                            <select class="form-select form-select-sm" id="planSortDuration">
+                                <option value="none">Sort by Duration</option>
+                                <option value="duration-asc">Duration Low-High</option>
+                                <option value="duration-desc">Duration High-Low</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select form-select-sm" id="planSortPrice">
+                                <option value="none">Sort by Price</option>
+                                <option value="price-asc">Price Low-High</option>
+                                <option value="price-desc">Price High-Low</option>
+                            </select>
+                        </div>
+                        </div>
                         <div class="row">
                             <?php
                             // Fetch membership plans from database with duration type
@@ -642,16 +642,16 @@ function generateProgramCard($program) {
                             foreach ($membershipPlans as $plan): ?>
                             <div class="col-sm-6 col-md-6 col-lg-3 mb-4">
                                 <?php
-    $planTypeRaw = isset($plan['plan_type']) ? strtolower($plan['plan_type']) : 'regular';
-    $planTypeUi = ($planTypeRaw === 'standard') ? 'regular' : $planTypeRaw;
-?>
-<div class="card membership-option h-100 plan-type-<?= $planTypeUi ?>" onclick="selectMembershipPlan(this)"
-     data-plan-id="<?= $plan['id'] ?>"
-     data-price="<?= $plan['price'] ?>"
-     data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
-     data-duration="<?= htmlspecialchars($plan['duration']) ?>"
-     data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>"
-     data-plan-type="<?= $planTypeUi ?>">
+                                    $planTypeRaw = isset($plan['plan_type']) ? strtolower($plan['plan_type']) : 'regular';
+                                    $planTypeUi = ($planTypeRaw === 'standard') ? 'regular' : $planTypeRaw;
+                                ?>
+                                <div class="card membership-option h-100 plan-type-<?= $planTypeUi ?>" onclick="selectMembershipPlan(this)"
+                                    data-plan-id="<?= $plan['id'] ?>"
+                                    data-price="<?= $plan['price'] ?>"
+                                    data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                                    data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                                    data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>"
+                                    data-plan-type="<?= $planTypeUi ?>">
                                     <?php
                                         $defaultImage = '../cms_img/default/membership.jpeg';
                                         $imagePath = $defaultImage;
@@ -660,18 +660,18 @@ function generateProgramCard($program) {
                                         }
                                     ?>
                                     <div class="card-header text-white text-center" style="background-image: url('<?= $imagePath ?>'); background-size: cover; background-position: center; position: relative; min-height: 120px;">
-    <?php
-        $planType = isset($plan['plan_type']) ? strtolower($plan['plan_type']) : 'regular';
-        $planTypeUi = ($planType === 'standard') ? 'regular' : $planType;
-        $badgeClass = $planTypeUi === 'special' ? 'bg-primary' : 'bg-success';
-        $badgeText = ucfirst($planTypeUi);
-    ?>
-    <span class="badge rounded-pill plan-badge-indicator <?= $badgeClass ?>"> <?= $badgeText ?> </span>
-    <div class="overlay-header">
-        <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($plan['plan_name']) ?></h2>
-    </div>
-    <div class="overlay-darker"></div>
-</div>
+                                        <?php
+                                            $planType = isset($plan['plan_type']) ? strtolower($plan['plan_type']) : 'regular';
+                                            $planTypeUi = ($planType === 'standard') ? 'regular' : $planType;
+                                            $badgeClass = $planTypeUi === 'special' ? 'bg-primary' : 'bg-success';
+                                            $badgeText = ucfirst($planTypeUi);
+                                        ?>
+                                        <span class="badge rounded-pill plan-badge-indicator <?= $badgeClass ?>"> <?= $badgeText ?> </span>
+                                        <div class="overlay-header">
+                                            <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($plan['plan_name']) ?></h2>
+                                        </div>
+                                        <div class="overlay-darker"></div>
+                                    </div>
                                     <div class="card-body">
                                         <p class="card-text mb-1">Price: ₱<?= number_format($plan['price'], 2) ?></p>
                                         <?php

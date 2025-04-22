@@ -407,16 +407,116 @@ function generateProgramCard($program) {
         .membership-option .form-check {
             display: none;
         }
+        body {
+            font-family: "Inter", sans-serif;
+        }
         .summary-card {
             border: 1px solid #ddd;
             padding: 15px;
             margin-bottom: 15px;
-            border-radius: 8px;
+            background: #fff;
+        }
+        .phase {
+            overflow-y: auto;
+            max-height: calc(100vh - 400px);
+            padding: 0 20px 20px 20px;
+        }
+        #phase4{
+            max-height: 100vh;
+        }
+        .phases{
+            border-bottom: 1px solid #ccc;
+        }
+        .membership-summary {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 15px;
+            padding-bottom: 70px;
+            border-top: 1px solid #ddd;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .membership-summary h5 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .membership-summary p {
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+        .membership-summary .btn {
+            margin-top: 5px;
         }
         .summary-row {
-            border: 1px solid #e9ecef;
-            padding: 15px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: #fff;
+            position: relative;
+        }
+        .summary-row .remove-program {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            cursor: pointer;
+            color: #dc3545;
+        }
+        .membership-summary h5 {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .membership-summary .details {
+            font-size: 13px;
+        }
+        .review-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .review-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .review-section {
+            margin-bottom: 30px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .review-section h5 {
+            color: #2c3e50;
             margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .review-info {
+            display: grid;
+            gap: 10px;
+        }
+        .info-row {
+            display: flex;
+            align-items: baseline;
+            padding: 5px 0;
+        }
+        .info-label {
+            flex: 0 0 100px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .info-value {
+            flex: 1;
+        }
+        .membership-option.selected {
+            border: 2px solid #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .membership-option .form-check {
+            display: none;
         }
         .rental-option {
             border: 1px solid #e9ecef;
@@ -434,8 +534,117 @@ function generateProgramCard($program) {
             border: 2px solid #0d6efd;
             background-color: rgba(13, 110, 253, 0.05);
         }
-
-    </style>
+        .plan-badge-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.9rem;
+            padding: 4px 12px;
+            border-radius: 14px;
+            z-index: 2;
+            font-weight: 600;
+        }
+        .card-header {
+            min-height: 120px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .overlay-header .service-name {
+            color: #fff;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        .overlay-darker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.25);
+            z-index: 1;
+        }
+.membership-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.membership-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.membership-option.selected {
+    border: 2px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+.membership-option .form-check {
+    display: none;
+}
+.card.membership-option:hover, .card.membership-option.selected {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 6px 24px 0 rgba(0,0,0,0.15);
+    border: 2px solid #c92f2f;
+}
+.card-header {
+    position: relative;
+}
+.overlay-header {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+.overlay-darker{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1;
+}
+.card-header .service-name {
+    color: #fff;
+    text-shadow: 1px 1px 10px rgba(0,0,0,0.85);
+    font-size: 2.1rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 0;
+    line-height: 1.1;
+}
+.plan-badge-indicator {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.96;
+    padding: 0.22em 0.65em;
+    z-index: 10;
+    background-color: #e0e0e0 !important;
+    color: #333 !important;
+    border: none;
+    letter-spacing: 0.08em;
+    box-shadow: none;
+}
+.bg-success.plan-badge-indicator {
+    background-color: #e7f7ea !important;
+    color: #22713a !important;
+}
+.bg-primary.plan-badge-indicator {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+    border: 1px solid #ffe066 !important;
+}
+</style>
 </head>
 <body>
     <div class="container-fluid py-4">
@@ -455,11 +664,37 @@ function generateProgramCard($program) {
                     </li>
                 </ul>
                 <form id="renewMemberForm" method="POST" enctype="multipart/form-data">
-    <input type="hidden" id="member_id" name="member_id" value="<?= htmlspecialchars($memberId) ?>">
-                    <!-- Phase 2: Membership Plan -->
-                    <div id="phase2" class="phase">
-                        <h4 class="mb-4">Select Your Membership Plan</h4>
-                        <div class="row">
+                    <input type="hidden" id="member_id" name="member_id" value="<?= htmlspecialchars($memberId) ?>">
+                                    <!-- Phase 2: Membership Plan -->
+                                    <div id="phase2" class="phase">
+                    <h4 class="mb-4">Select Your Membership Plan</h4>
+                    <!-- Filter/Search/Sort Bar -->
+                    <div class="row mb-3 align-items-center g-2">
+                        <div class="col-auto d-flex gap-2 align-items-center">
+                            <span class="fw-semibold me-2">Filter:</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm plan-filter active" data-filter="all">All</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm plan-filter" data-filter="special">Special</button>
+                            <button type="button" class="btn btn-outline-success btn-sm plan-filter" data-filter="regular">Regular</button>
+                        </div>
+                        <div class="col-auto">
+                            <input type="text" class="form-control form-control-sm" id="planSearch" placeholder="Search plan name...">
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select form-select-sm" id="planSortDuration">
+                                <option value="none">Sort by Duration</option>
+                                <option value="duration-asc">Duration Low-High</option>
+                                <option value="duration-desc">Duration High-Low</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <select class="form-select form-select-sm" id="planSortPrice">
+                                <option value="none">Sort by Price</option>
+                                <option value="price-asc">Price Low-High</option>
+                                <option value="price-desc">Price High-Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
                             <?php
                             $sql = "SELECT mp.*, dt.type_name as duration_type 
                                    FROM membership_plans mp 
@@ -469,28 +704,56 @@ function generateProgramCard($program) {
                             $stmt->execute();
                             $membershipPlans = $stmt->fetchAll();
                             foreach ($membershipPlans as $plan): ?>
-                            <div class="col-md-4 mb-4">
-                                <div class="card membership-option h-100" onclick="selectMembershipPlan(this)" 
-                                     data-plan-id="<?= $plan['id'] ?>"
-                                     data-price="<?= $plan['price'] ?>"
-                                     data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
-                                     data-duration="<?= htmlspecialchars($plan['duration']) ?>"
-                                     data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
-                                    <div class="card-body">
-                                        <h5 class="card-title"><?= htmlspecialchars($plan['plan_name']) ?></h5>
-                                        <span class="duration-badge">
-                                            <?= htmlspecialchars($plan['duration']) ?> <?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>
-                                        </span>
-                                        <div class="h4">₱<?= number_format($plan['price'], 2) ?></div>
-                                        <p class="description"><?= htmlspecialchars($plan['description']) ?></p>
-                                        <input type="radio" name="membership_plan" class="d-none"
-                                               value="<?= $plan['id'] ?>" 
-                                               data-price="<?= $plan['price'] ?>"
-                                               data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
-                                               data-duration="<?= htmlspecialchars($plan['duration']) ?>"
-                                               data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
-                                    </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                                <?php
+                            $planTypeRaw = isset($plan['plan_type']) ? strtolower($plan['plan_type']) : 'regular';
+                            $planTypeUi = ($planTypeRaw === 'standard') ? 'regular' : $planTypeRaw;
+                            $defaultImage = '../cms_img/default/membership.jpeg';
+                            $imagePath = $defaultImage;
+                            if (!empty($plan['image']) && file_exists(__DIR__ . "/../../../cms_img/gym_rates/" . $plan['image'])) {
+                                $imagePath = '../cms_img/gym_rates/' . htmlspecialchars($plan['image']);
+                            }
+                        ?>
+                        <div class="card membership-option h-100 plan-type-<?= $planTypeUi ?>" onclick="selectMembershipPlan(this)"
+                            data-plan-id="<?= $plan['id'] ?>"
+                            data-price="<?= $plan['price'] ?>"
+                            data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                            data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                            data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>"
+                            data-plan-type="<?= $planTypeUi ?>">
+                            <div class="card-header text-white text-center" style="background-image: url('<?= $imagePath ?>'); background-size: cover; background-position: center; position: relative; min-height: 120px;">
+                                <?php
+                                    $planType = isset($plan['plan_type']) ? strtolower($plan['plan_type']) : 'regular';
+                                    $planTypeUi = ($planType === 'standard') ? 'regular' : $planType;
+                                    $badgeClass = $planTypeUi === 'special' ? 'bg-primary' : 'bg-success';
+                                    $badgeText = ucfirst($planTypeUi);
+                                ?>
+                                <span class="badge rounded-pill plan-badge-indicator <?= $badgeClass ?>"> <?= $badgeText ?> </span>
+                                <div class="overlay-header">
+                                    <h2 class="fw-bold mb-0 service-name">
+                                        <?= htmlspecialchars($plan['plan_name']) ?>
+                                    </h2>
                                 </div>
+                                <div class="overlay-darker"></div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text mb-1">Price: ₱<?= number_format($plan['price'], 2) ?></p>
+                                <?php
+                                    $duration = (int)$plan['duration'];
+                                    $durationType = isset($plan['duration_type']) ? $plan['duration_type'] : 'months';
+                                    if ($duration === 1) {
+                                        $durationType = preg_replace('/s$/', '', $durationType);
+                                    }
+                                ?>
+                                <p class="card-text mb-1">Duration: <?= htmlspecialchars($plan['duration']) ?> <?= htmlspecialchars($durationType) ?></p>
+                                <input type="radio" name="membership_plan" class="d-none"
+                                    value="<?= $plan['id'] ?>" 
+                                    data-price="<?= $plan['price'] ?>"
+                                    data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                                    data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                                    data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
+                            </div>
+                        </div>
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -534,7 +797,7 @@ function generateProgramCard($program) {
                         <h4 class="mb-4 mt-5">Additional Rental Services</h4>
                         <div class="row">
                             <?php foreach ($rentalServices as $service): ?>
-                            <div class="col-md-4 mb-4">
+                            <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
                                 <div class="card rental-option h-100">
                                     <div class="card-body">
                                         <h5 class="card-title"><?= htmlspecialchars($service['rental_name']) ?></h5>
@@ -660,6 +923,73 @@ function generateProgramCard($program) {
             }
             return date.toISOString().split('T')[0];
         }
+        // Membership Plan Filter, Search, and Sort Logic (from add_member.js)
+        $(document).ready(function() {
+            function filterAndSortPlans() {
+                var filter = $('.plan-filter.active').data('filter');
+                var search = $('#planSearch').val().toLowerCase();
+                var sortDuration = $('#planSortDuration').val();
+                var sortPrice = $('#planSortPrice').val();
+                var durationTypeToDays = {
+                    'day': 1, 'days': 1,
+                    'week': 7, 'weeks': 7,
+                    'month': 30, 'months': 30,
+                    'year': 365, 'years': 365
+                };
+                var $cols = $('.membership-option').closest('.col-md-4, .col-sm-6, .col-md-6, .col-lg-3');
+                var $cards = $cols.map(function() {
+                    var $card = $(this).find('.membership-option');
+                    var name = $card.data('name').toLowerCase();
+                    var type = $card.data('plan-type');
+                    if (type === 'standard') type = 'regular';
+                    var price = parseFloat($card.data('price'));
+                    var duration = parseFloat($card.data('duration'));
+                    var durationType = ($card.data('duration-type') || '').toLowerCase();
+                    var durationDays = duration * (durationTypeToDays[durationType] || 1);
+                    return {
+                        col: $(this),
+                        card: $card,
+                        name: name,
+                        type: type,
+                        price: price,
+                        duration: duration,
+                        durationType: durationType,
+                        durationDays: durationDays
+                    };
+                }).get();
+                $cards.forEach(function(obj) {
+                    var show = true;
+                    if (filter !== 'all' && obj.type !== filter) show = false;
+                    if (search && !obj.name.includes(search)) show = false;
+                    obj.col.toggle(show);
+                });
+                var $row = $('.membership-option').closest('.row');
+                var $visibleCols = $cards.filter(function(obj) { return obj.col.is(':visible'); });
+                if (sortDuration !== 'none') {
+                    $visibleCols.sort(function(a, b) {
+                        if (sortDuration === 'duration-asc') return a.durationDays - b.durationDays;
+                        if (sortDuration === 'duration-desc') return b.durationDays - a.durationDays;
+                        return 0;
+                    });
+                } else if (sortPrice !== 'none') {
+                    $visibleCols.sort(function(a, b) {
+                        if (sortPrice === 'price-asc') return a.price - b.price;
+                        if (sortPrice === 'price-desc') return b.price - a.price;
+                        return 0;
+                    });
+                }
+                $visibleCols.forEach(function(obj) { $row.append(obj.col); });
+            }
+            $('.plan-filter').on('click', function() {
+                $('.plan-filter').removeClass('active');
+                $(this).addClass('active');
+                filterAndSortPlans();
+            });
+            $('#planSearch').on('input', filterAndSortPlans);
+            $('#planSortDuration').on('change', filterAndSortPlans);
+            $('#planSortPrice').on('change', filterAndSortPlans);
+            filterAndSortPlans();
+        });
     </script>
     <script src="<?= BASE_URL ?>/admin/pages/members/functions/renew_member.js"></script>
 </body>
