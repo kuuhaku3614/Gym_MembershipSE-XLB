@@ -1,3 +1,47 @@
+// Remove all sessions in a program schedule group
+function removeProgramGroupFromCart(groupKey) {
+  const formData = new URLSearchParams();
+  formData.append("action", "remove_group");
+  formData.append("type", "program");
+  formData.append("groupKey", groupKey);
+
+  fetch("services/cart_handler.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Cache-Control": "no-cache",
+    },
+    body: formData.toString(),
+    credentials: "same-origin",
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.success) {
+        if (data.data && data.data.cart) {
+          updateCartDisplay(data.data.cart);
+        } else {
+          loadCart();
+        }
+      } else {
+        loadCart();
+        const message = data.data && data.data.message
+          ? data.data.message
+          : "Failed to remove program group";
+        console.error("Server error:", message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error removing program group:", error);
+      loadCart();
+      alert("Failed to remove all sessions in this schedule");
+    });
+}
+
 // Function to show alerts
 function showAlert(type, message) {
   const alertContainer = document.querySelector(".alert-container");
@@ -94,31 +138,66 @@ function updateCartDisplay(cart) {
     });
   }
 
-  // Programs section
+  // Programs section (grouped by schedule)
   if (cart.programs && cart.programs.length > 0) {
+    // Group program sessions by shared schedule properties
+    const groupedPrograms = {};
     cart.programs.forEach((program, index) => {
+      // Use a composite key of schedule properties except date
+      const key = [
+        program.program_id,
+        program.program_name,
+        program.coach_id,
+        program.coach_name,
+        program.day,
+        program.start_time,
+        program.end_time,
+        program.price
+      ].join('|');
+      if (!groupedPrograms[key]) {
+        groupedPrograms[key] = {
+          ...program,
+          session_dates: [],
+          indices: [],
+          groupKey: key
+        };
+      }
+      groupedPrograms[key].session_dates.push(program.session_date);
+      groupedPrograms[key].indices.push(index);
+    });
+
+    // Render each group as one card with all dates listed
+    Object.values(groupedPrograms).forEach((group) => {
       html += `
-                <div class="cart-item">
-                    <div class="item-details">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="mb-1">${program.program_name}</p>
-                                <p class="price mb-1">₱${parseFloat(
-                                  program.price
-                                ).toFixed(2)}</p>
-                                <p class="text-muted mb-0">Coach: ${program.coach_name}</p>
-                                <p class="text-muted mb-0">Day: ${program.day}</p>
-                                <p class="text-muted mb-0">Date: ${formatDate(program.session_date)}</p>
-                                <p class="text-muted mb-0">Time: ${program.start_time} - ${program.end_time}</p>
-                            </div>
-                            <button class="remove-item" 
-                                    onclick="removeFromCart('program', ${index})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
+        <div class="cart-item">
+          <div class="item-details">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="mb-1">${group.program_name}</p>
+                <p class="price mb-1">₱${parseFloat(group.price).toFixed(2)}</p>
+                <p class="text-muted mb-0">Coach: ${group.coach_name}</p>
+                <p class="text-muted mb-0">Day: ${group.day}</p>
+                <p class="text-muted mb-0">Time: ${group.start_time} - ${group.end_time}</p>
+                <div class="mt-2">
+                  <span class="fw-bold">Session Dates:</span>
+                  <ul class="mb-1 ps-4">
+                    ${group.session_dates.map((date, i) => `
+                      <li class="d-flex align-items-center justify-content-between">
+                        <span>${formatDate(date)}</span>
+                        <button class="btn btn-sm btn-link text-danger p-0 ms-2" title="Remove this session" onclick="removeFromCart('program', ${group.indices[i]})"><i class="fas fa-times"></i></button>
+                      </li>
+                    `).join('')}
+                  </ul>
                 </div>
-            `;
+              </div>
+              <button class="remove-item ms-3" title="Remove all sessions in this schedule"
+                onclick="removeProgramGroupFromCart('${group.groupKey}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
     });
   }
 

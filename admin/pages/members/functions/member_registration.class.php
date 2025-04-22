@@ -219,6 +219,7 @@ class MemberRegistration {
 
             try {
                 
+                $registrationFee = $this->getRegistrationFee();
                 $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount, is_paid) 
                         VALUES (:transaction_id, 1, :amount, 0)";
                 $stmt = $this->pdo->prepare($sql);

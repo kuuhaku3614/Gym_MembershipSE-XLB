@@ -76,7 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $missingFields = [];
 
     foreach ($requiredFields as $field) {
-        if (empty($_POST[$field])) {
+        // Accept 0 as valid for price, only treat as missing if not set or empty string
+        if (!isset($_POST[$field]) || ($_POST[$field] === '' && $field !== 'price') || ($field === 'price' && $_POST[$field] === '')) {
             $missingFields[] = $field;
         }
     }
@@ -94,6 +95,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deactivationDate = $_POST['deactivationDate'];
     $price = $_POST['price'];
     $description = isset($_POST['description']) ? $_POST['description'] : null;
+
+    // Server-side validation for duration: must be a positive numeric value
+    if (!isset($duration) || trim($duration) === '') {
+        echo "Error: Duration is required";
+        exit;
+    }
+    if (!is_numeric($duration) || intval($duration) != $duration || intval($duration) <= 0) {
+        echo "Error: Duration must be a positive integer";
+        exit;
+    }
 
     // Get duration_type_id from duration_types table
     $durationTypeQuery = "SELECT id FROM duration_types WHERE type_name = :type_name";

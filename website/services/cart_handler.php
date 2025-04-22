@@ -138,6 +138,46 @@ try {
             }
             break;
 
+        case 'remove_group':
+            // Remove all program sessions matching the group key (schedule properties)
+            $type = isset($_POST['type']) ? clean_input($_POST['type']) : (isset($data['type']) ? clean_input($data['type']) : null);
+            $groupKey = isset($_POST['groupKey']) ? $_POST['groupKey'] : (isset($data['groupKey']) ? $data['groupKey'] : null);
+            if ($type !== 'program' || !$groupKey) {
+                handle_error('Invalid group removal request');
+            }
+            // The key is: program_id|program_name|coach_id|coach_name|day|start_time|end_time|price
+            $parts = explode('|', $groupKey);
+            if (count($parts) !== 8) {
+                handle_error('Invalid group key');
+            }
+            list($program_id, $program_name, $coach_id, $coach_name, $day, $start_time, $end_time, $price) = $parts;
+            $removed = false;
+            if (isset($_SESSION['cart']['programs']) && is_array($_SESSION['cart']['programs'])) {
+                // Remove all matching sessions
+                $_SESSION['cart']['programs'] = array_values(array_filter($_SESSION['cart']['programs'], function($session) use ($program_id, $program_name, $coach_id, $coach_name, $day, $start_time, $end_time, $price, &$removed) {
+                    $matches = (
+                        (string)$session['program_id'] === (string)$program_id &&
+                        (string)$session['program_name'] === (string)$program_name &&
+                        (string)$session['coach_id'] === (string)$coach_id &&
+                        (string)$session['coach_name'] === (string)$coach_name &&
+                        (string)$session['day'] === (string)$day &&
+                        (string)$session['start_time'] === (string)$start_time &&
+                        (string)$session['end_time'] === (string)$end_time &&
+                        (string)$session['price'] === (string)$price
+                    );
+                    if ($matches) $removed = true;
+                    return !$matches;
+                }));
+                $Cart->updateTotal();
+            }
+            $cart = $Cart->getCart();
+            if ($removed) {
+                send_json_response(['cart' => $cart]);
+            } else {
+                send_json_response(['cart' => $cart, 'message' => 'No sessions found for this schedule'], false);
+            }
+            break;
+
         case 'add_program_schedule':
             if (!isset($data['schedule_id'], $data['day'], $data['start_time'], 
                       $data['end_time'], $data['price'], $data['program_name'], $data['coach_name'])) {
