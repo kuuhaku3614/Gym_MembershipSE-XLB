@@ -17,7 +17,8 @@ $total_revenue_sql = "
     SELECT 
         (SELECT COALESCE(SUM(amount), 0) FROM memberships) +
         (SELECT COALESCE(SUM(amount), 0) FROM program_subscription_schedule) +
-        (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions) as total_revenue";
+        (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions) +
+        (SELECT COALESCE(SUM(amount), 0) FROM walk_in_records WHERE is_paid = 1) as total_revenue";
 $total_revenue_stmt = $pdo->prepare($total_revenue_sql);
 $total_revenue_stmt->execute();
 $total_revenue = $total_revenue_stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'];
@@ -138,6 +139,8 @@ function getIncomeExtremes($pdo) {
             SELECT created_at, amount FROM program_subscription_schedule
             UNION ALL
             SELECT created_at, amount FROM rental_subscriptions
+            UNION ALL
+            SELECT date as created_at, amount FROM walk_in_records WHERE is_paid = 1
         ) as all_revenue
         GROUP BY month_key, month_name
     )
@@ -433,6 +436,21 @@ function getPeakMonthsByAge($pdo) {
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
+// Walk-ins query
+$walkins_sql = "
+    SELECT 
+        MONTH(date) as month,
+        YEAR(date) as year,
+        COUNT(*) as total_walkins,
+        SUM(amount) as total_amount
+    FROM walk_in_records
+    WHERE is_paid = 1
+    GROUP BY year, month
+    ORDER BY year, month";
+$walkins_stmt = $pdo->prepare($walkins_sql);
+$walkins_stmt->execute();
+$walkins = $walkins_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get the peak months data
 $peak_months_gender = getPeakMonthsByGender($pdo);
@@ -871,6 +889,42 @@ date_default_timezone_set('Asia/Manila');
                 </div>
             </div>
         </div>
+
+        <div class="report-section">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Walk-In Records</h4>
+                    <button class="btn btn-sm btn-outline-primary" onclick="exportTableToCSV('walkinsTable', 'walkin_records.csv')">
+                        Export Data
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="walkinsTable">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Year</th>
+                                    <th>Total Walk-ins</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($walkins as $row): ?>
+                                <tr>
+                                    <td><?= date('F', mktime(0, 0, 0, $row['month'], 10)) ?></td>
+                                    <td><?= $row['year'] ?></td>
+                                    <td><?= number_format($row['total_walkins']) ?></td>
+                                    <td>₱<?= number_format($row['total_amount'], 2) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>    
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -929,6 +983,12 @@ $(document).ready(function() {
             info: false,
             ordering: true
         });
+        
+        $('#walkinsTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc'], [1, 'desc']] // Sort by month and year
+        });
+
     } catch(e) {
         console.error("DataTables initialization error:", e);
     }
