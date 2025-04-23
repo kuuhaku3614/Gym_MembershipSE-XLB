@@ -80,19 +80,6 @@
 <link rel="stylesheet" href="transaction.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 
-<style>
-    @media screen and (max-width: 480px) {
-        #content {
-            margin-top: 150px;
-            padding: 0;
-            font-size: xx-small;
-        }
-        th{
-            font-size: 10px!important;
-        }
-    }
-</style>
-
 <!-- Content Area -->
 <div id="content">
     <div class="dashboard-header">
@@ -116,66 +103,68 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="transactionTable" class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Transaction ID</th>
-                                <th>Member Name</th>
-                                <th>Program</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Amount</th>
-                                <th>Payment</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if(isset($transactions) && !empty($transactions)): ?>
-                                <?php foreach($transactions as $transaction): 
-                                ?>
-                                    <tr class="<?php echo $statusClass; ?>">
-                                        <td><?= $transaction['transaction_id'] ?? 'N/A' ?></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-circle">
-                                                    <?php echo strtoupper(substr($transaction['member_name'], 0, 1)); ?>
-                                                </div>
-                                                <span class="ms-2"><?= htmlspecialchars($transaction['member_name']) ?></span>
+                <table id="transactionTable" class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Member Name</th>
+                            <th>Program</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Sessions</th>
+                            <th>Total Amount</th>
+                            <th>Payment</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if(isset($groupedTransactions) && !empty($groupedTransactions)): ?>
+                            <?php foreach($groupedTransactions as $transaction): ?>
+                                <tr>
+                                    <td><?= $transaction['transaction_id'] ?></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle">
+                                                <?php echo strtoupper(substr($transaction['member_name'], 0, 1)); ?>
                                             </div>
-                                        </td>
-                                        <td><?= htmlspecialchars($transaction['program_name']) ?></td>
-                                        <td>
-                                            <span class="badge <?php echo $transaction['program_type'] === 'Personal' ? 'badge-personal' : 'badge-group'; ?>">
-                                                <?= ucfirst(htmlspecialchars($transaction['program_type'])) ?>
-                                            </span>
-                                        </td>
-                                        <td><?= date('M d, Y', strtotime($transaction['date'])) ?></td>
-                                        <td><?= date('h:i A', strtotime($transaction['start_time'])) ?> - <?= date('h:i A', strtotime($transaction['end_time'])) ?></td>
-                                        <td>₱<?= number_format($transaction['amount'], 2) ?></td>
-                                        <td>
-                                            <span class="badge <?php echo $transaction['is_paid'] ? 'badge-paid' : 'badge-unpaid'; ?>">
-                                                <?php echo $transaction['is_paid'] ? 'Paid' : 'Unpaid'; ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-info session-action-btn view-receipt" 
-                                                data-id="<?= $transaction['transaction_id'] ?? $transaction['subscription_id'] ?>"
-                                                data-member="<?= htmlspecialchars($transaction['member_name']) ?>"
-                                                data-program="<?= htmlspecialchars($transaction['program_name']) ?>"
-                                                data-type="<?= ucfirst(htmlspecialchars($transaction['program_type'])) ?>"
-                                                data-date="<?= date('M d, Y', strtotime($transaction['date'])) ?>"
-                                                data-time="<?= date('h:i A', strtotime($transaction['start_time'])) ?> - <?= date('h:i A', strtotime($transaction['end_time'])) ?>"
-                                                data-amount="<?= number_format($transaction['amount'], 2) ?>"
-                                                data-paid="<?= $transaction['is_paid'] ? 'Paid' : 'Unpaid' ?>">
-                                                <i class="fas fa-receipt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                            <span class="ms-2"><?= htmlspecialchars($transaction['member_name']) ?></span>
+                                        </div>
+                                    </td>
+                                    <td><?= htmlspecialchars($transaction['program_name']) ?></td>
+                                    <td>
+                                        <span class="badge <?php echo $transaction['program_type'] === 'Personal' ? 'badge-personal' : 'badge-group'; ?>">
+                                            <?= ucfirst(htmlspecialchars($transaction['program_type'])) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= date('M d, Y', strtotime($transaction['session_date'])) ?></td>
+                                    <td><?= count($transaction['items']) ?> session(s)</td>
+                                    <td>₱<?= number_format($transaction['total_amount'], 2) ?></td>
+                                    <td>
+                                        <span class="badge <?php echo $transaction['is_paid'] ? 'badge-paid' : 'badge-unpaid'; ?>">
+                                            <?php echo $transaction['is_paid'] ? 'Paid' : 'Unpaid'; ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info session-action-btn view-receipt" 
+                                            data-id="<?= $transaction['transaction_id'] ?>"
+                                            data-member="<?= htmlspecialchars($transaction['member_name']) ?>"
+                                            data-member-id="<?= $transaction['member_id'] ?>"
+                                            data-program="<?= htmlspecialchars($transaction['program_name']) ?>"
+                                            data-type="<?= ucfirst(htmlspecialchars($transaction['program_type'])) ?>"
+                                            data-date="<?= date('M d, Y', strtotime($transaction['session_date'])) ?>"
+                                            data-time="<?= date('h:i A', strtotime($transaction['start_time'])) ?> - <?= date('h:i A', strtotime($transaction['end_time'])) ?>"
+                                            data-amount="<?= number_format($transaction['total_amount'], 2) ?>"
+                                            data-schedule-id="<?= $transaction['schedule_id'] ?>"
+                                            data-schedule-type="<?= $transaction['schedule_type'] ?>"
+                                            data-payment-date="<?= $transaction['payment_date'] ? date('Y-m-d', strtotime($transaction['payment_date'])) : '' ?>">
+                                            <i class="fas fa-receipt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
                 </div>
             </div>
         </div>
@@ -185,7 +174,7 @@
 <!-- Receipt Modal -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content" id="modal-receipt">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="receiptModalLabel"><i class="fas fa-receipt"></i> Member Transaction Receipt</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>

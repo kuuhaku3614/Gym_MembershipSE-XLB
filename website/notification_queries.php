@@ -16,6 +16,7 @@ if (!function_exists('getNotificationsWithReadStatus')) {
         $program_confirmations = getProgramConfirmationNotifications($database, $user_id);
         $program_cancellations = getProgramCancellationNotifications($database, $user_id);
         $session_notifications = getSessionNotifications($database, $user_id);
+        $receipt_notifications = getTransactionReceiptNotifications($database, $user_id);
         
         // Initialize session array for read notifications if not exists
         if (!isset($_SESSION['read_notifications'])) {
@@ -26,7 +27,8 @@ if (!function_exists('getNotificationsWithReadStatus')) {
                 'program_confirmations' => [],
                 'program_cancellations' => [],
                 'cancelled_sessions' => [],
-                'completed_sessions' => []
+                'completed_sessions' => [],
+                'transaction_receipts' => []
             ];
         }
         
@@ -61,6 +63,11 @@ if (!function_exists('getNotificationsWithReadStatus')) {
             $_SESSION['read_notifications']['completed_sessions'] = [];
         }
         
+        // Ensure transaction_receipts array is always set
+        if (!isset($_SESSION['read_notifications']['transaction_receipts']) || !is_array($_SESSION['read_notifications']['transaction_receipts'])) {
+            $_SESSION['read_notifications']['transaction_receipts'] = [];
+        }
+        
         // Mark program confirmations as read/unread based on session
         foreach ($program_confirmations as &$confirmation) {
             $confirmation['is_read'] = in_array($confirmation['notification_id'], $_SESSION['read_notifications']['program_confirmations']);
@@ -81,6 +88,11 @@ if (!function_exists('getNotificationsWithReadStatus')) {
             $completed_session['is_read'] = in_array($completed_session['schedule_id'], $_SESSION['read_notifications']['completed_sessions']);
         }
         
+        // Mark transaction receipts as read/unread based on session
+        foreach ($receipt_notifications as &$receipt) {
+            $receipt['is_read'] = in_array($receipt['transaction_id'], $_SESSION['read_notifications']['transaction_receipts']);
+        }
+        
         return [
             'transactions' => $transactions,
             'memberships' => $memberships,
@@ -88,54 +100,90 @@ if (!function_exists('getNotificationsWithReadStatus')) {
             'program_confirmations' => $program_confirmations,
             'program_cancellations' => $program_cancellations,
             'cancelled_sessions' => $session_notifications['cancelled'],
-            'completed_sessions' => $session_notifications['completed']
+            'completed_sessions' => $session_notifications['completed'],
+            'transaction_receipts' => $receipt_notifications
         ];
     }
 }
 
 if (!function_exists('getUnreadNotificationsCount')) {
-    /**
- * Get count of unread notifications for a user using both session and database
- * 
- * @param Database $database Database connection class
- * @param int $user_id User ID
- * @return int Count of unread notifications
- */
-function getUnreadNotificationsCount($database, $user_id) {
-    $notifications = getNotificationsWithReadStatus($database, $user_id);
-    
-    $unread_count = 0;
-    
-    // Count unread transactions
-    foreach ($notifications['transactions'] as $transaction) {
-        if (!$transaction['is_read']) {
-            $unread_count++;
+   /**
+     * Get count of unread notifications for a user using both session and database
+     * 
+     * @param Database $database Database connection class
+     * @param int $user_id User ID
+     * @return int Count of unread notifications
+     */
+    function getUnreadNotificationsCount($database, $user_id) {
+        $notifications = getNotificationsWithReadStatus($database, $user_id);
+        
+        $unread_count = 0;
+        
+        // Count unread transactions
+        foreach ($notifications['transactions'] as $transaction) {
+            if (!$transaction['is_read']) {
+                $unread_count++;
+            }
         }
-    }
-    
-    // Count unread memberships
-    foreach ($notifications['memberships'] as $membership) {
-        if (!$membership['is_read']) {
-            $unread_count++;
+        
+        // Count unread memberships
+        foreach ($notifications['memberships'] as $membership) {
+            if (!$membership['is_read']) {
+                $unread_count++;
+            }
         }
-    }
-    
-    // Count unread announcements
-    foreach ($notifications['announcements'] as $announcement) {
-        if (!$announcement['is_read']) {
-            $unread_count++;
+        
+        // Count unread announcements
+        foreach ($notifications['announcements'] as $announcement) {
+            if (!$announcement['is_read']) {
+                $unread_count++;
+            }
         }
+        
+        // Count unread transaction receipts
+        foreach ($notifications['transaction_receipts'] as $receipt) {
+            if (!$receipt['is_read']) {
+                $unread_count++;
+            }
+        }
+        
+        // Count unread cancelled sessions
+        foreach ($notifications['cancelled_sessions'] as $cancelled_session) {
+            if (!$cancelled_session['is_read']) {
+                $unread_count++;
+            }
+        }
+        
+        // Count unread completed sessions
+        foreach ($notifications['completed_sessions'] as $completed_session) {
+            if (!$completed_session['is_read']) {
+                $unread_count++;
+            }
+        }
+        
+        // Count unread program confirmations
+        foreach ($notifications['program_confirmations'] as $confirmation) {
+            if (!$confirmation['is_read']) {
+                $unread_count++;
+            }
+        }
+        
+        // Count unread program cancellations
+        foreach ($notifications['program_cancellations'] as $cancellation) {
+            if (!$cancellation['is_read']) {
+                $unread_count++;
+            }
+        }
+        
+        return $unread_count;
     }
-    
-    return $unread_count;
-}
 }
 
 if (!function_exists('markNotificationAsRead')) {
-    /**
+   /**
  * Mark a notification as read in both session and database
  * 
- * @param string $type Notification type (transactions, memberships, announcements, program_confirmations, program_cancellations)
+ * @param string $type Notification type (transactions, memberships, announcements, program_confirmations, program_cancellations, cancelled_sessions, completed_sessions, transaction_receipts)
  * @param int $id Notification ID
  * @return void
  */
@@ -149,7 +197,10 @@ function markNotificationAsRead($type, $id) {
             'memberships' => [],
             'announcements' => [],
             'program_confirmations' => [],
-            'program_cancellations' => []
+            'program_cancellations' => [],
+            'cancelled_sessions' => [],
+            'completed_sessions' => [],
+            'transaction_receipts' => []
         ];
     }
     
@@ -175,8 +226,9 @@ function markNotificationAsRead($type, $id) {
     }
 }
 }
+
 if (!function_exists('markAllNotificationsAsRead')) {
-  /**
+ /**
  * Mark all notifications as read in both session and database
  * 
  * @param Database $database Database connection class
@@ -194,7 +246,10 @@ function markAllNotificationsAsRead($database, $user_id) {
             'memberships' => [],
             'announcements' => [],
             'program_confirmations' => [],
-            'program_cancellations' => []
+            'program_cancellations' => [],
+            'cancelled_sessions' => [],
+            'completed_sessions' => [],
+            'transaction_receipts' => []
         ];
     }
     
@@ -258,6 +313,7 @@ function markAllNotificationsAsRead($database, $user_id) {
             $stmt->execute();
         }
     }
+    
     // Mark all program cancellations as read
     if (isset($notifications['program_cancellations'])) {
         foreach ($notifications['program_cancellations'] as $cancellation) {
@@ -272,9 +328,54 @@ function markAllNotificationsAsRead($database, $user_id) {
             }
         }
     }
+    
+    // Mark all cancelled sessions as read
+    if (isset($notifications['cancelled_sessions'])) {
+        foreach ($notifications['cancelled_sessions'] as $cancelled_session) {
+            if (!in_array($cancelled_session['schedule_id'], $_SESSION['read_notifications']['cancelled_sessions'])) {
+                $_SESSION['read_notifications']['cancelled_sessions'][] = $cancelled_session['schedule_id'];
+                // Also persist to database
+                $type = 'cancelled_sessions';
+                $stmt->bindParam(1, $user_id, PDO::PARAM_INT);
+                $stmt->bindParam(2, $type, PDO::PARAM_STR);
+                $stmt->bindParam(3, $cancelled_session['schedule_id'], PDO::PARAM_INT);
+                $stmt->execute();
+            }
+        }
+    }
+    
+    // Mark all completed sessions as read
+    if (isset($notifications['completed_sessions'])) {
+        foreach ($notifications['completed_sessions'] as $completed_session) {
+            if (!in_array($completed_session['schedule_id'], $_SESSION['read_notifications']['completed_sessions'])) {
+                $_SESSION['read_notifications']['completed_sessions'][] = $completed_session['schedule_id'];
+                // Also persist to database
+                $type = 'completed_sessions';
+                $stmt->bindParam(1, $user_id, PDO::PARAM_INT);
+                $stmt->bindParam(2, $type, PDO::PARAM_STR);
+                $stmt->bindParam(3, $completed_session['schedule_id'], PDO::PARAM_INT);
+                $stmt->execute();
+            }
+        }
+    }
+    
+    // Mark all transaction receipts as read
+    if (isset($notifications['transaction_receipts'])) {
+        foreach ($notifications['transaction_receipts'] as $receipt) {
+            if (!in_array($receipt['transaction_id'], $_SESSION['read_notifications']['transaction_receipts'])) {
+                $_SESSION['read_notifications']['transaction_receipts'][] = $receipt['transaction_id'];
+                // Also persist to database
+                $type = 'transaction_receipts';
+                $stmt->bindParam(1, $user_id, PDO::PARAM_INT);
+                $stmt->bindParam(2, $type, PDO::PARAM_STR);
+                $stmt->bindParam(3, $receipt['transaction_id'], PDO::PARAM_INT);
+                $stmt->execute();
+            }
+        }
+    }
+}
 }
 
-}
 if (!function_exists('getTransactionNotifications')) {
     /**
      * Get recent transaction notifications for a user
@@ -384,6 +485,121 @@ if (!function_exists('getProgramCancellationNotifications')) {
 }
 }
 
+if (!function_exists('getTransactionReceiptNotifications')) {
+    /**
+     * Get transaction receipt notifications for a user, grouped by schedule ID
+     * 
+     * @param Database $database Database connection class
+     * @param int $user_id User ID
+     * @return array Transaction receipt notifications
+     */
+    function getTransactionReceiptNotifications($database, $user_id) {
+        $pdo = $database->connect();
+        
+        // First, get all receipt notifications
+        $query = "SELECT 
+                t.id as transaction_id,
+                ps.id as subscription_id,
+                CONCAT_WS(' ', u2.username) as coach_name,
+                u2.id as coach_id,
+                p.program_name,
+                cpt.type as program_type,
+                pss.date as session_date,
+                pss.start_time,
+                pss.end_time,
+                pss.amount,
+                pss.is_paid,
+                DATE(pss.updated_at) as payment_date,
+                pss.updated_at as created_at,
+                COALESCE(pss.coach_personal_schedule_id, pss.coach_group_schedule_id) as schedule_id,
+                CASE 
+                    WHEN pss.coach_personal_schedule_id IS NOT NULL THEN 'personal'
+                    WHEN pss.coach_group_schedule_id IS NOT NULL THEN 'group'
+                    ELSE NULL
+                END as schedule_type,
+                0 as is_read
+            FROM program_subscription_schedule pss
+            JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+            JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+            JOIN programs p ON cpt.program_id = p.id
+            JOIN users u ON ps.user_id = u.id
+            JOIN users u2 ON cpt.coach_id = u2.id
+            LEFT JOIN transactions t ON ps.transaction_id = t.id
+            WHERE ps.user_id = ? AND pss.is_paid = 1
+            ORDER BY pss.updated_at DESC";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$user_id]);
+        $all_receipts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Group receipts by schedule_id
+        $grouped_receipts = [];
+        foreach ($all_receipts as $receipt) {
+            $key = $receipt['coach_id'] . '_' . $receipt['schedule_id'] . '_' . $receipt['schedule_type'];
+            
+            if (!isset($grouped_receipts[$key])) {
+                $grouped_receipts[$key] = $receipt;
+                // Initialize a transactions array to store multiple transaction IDs
+                $grouped_receipts[$key]['transaction_ids'] = [$receipt['transaction_id']];
+                $grouped_receipts[$key]['total_amount'] = $receipt['amount'];
+            } else {
+                // Add transaction ID to the array if not already included
+                if (!in_array($receipt['transaction_id'], $grouped_receipts[$key]['transaction_ids'])) {
+                    $grouped_receipts[$key]['transaction_ids'][] = $receipt['transaction_id'];
+                }
+                // Update the total amount
+                $grouped_receipts[$key]['total_amount'] += $receipt['amount'];
+                
+                // Keep the most recent date if this receipt is newer
+                if (strtotime($receipt['created_at']) > strtotime($grouped_receipts[$key]['created_at'])) {
+                    $grouped_receipts[$key]['created_at'] = $receipt['created_at'];
+                    $grouped_receipts[$key]['payment_date'] = $receipt['payment_date'];
+                }
+            }
+        }
+        
+        // Convert back to indexed array
+        $result = array_values($grouped_receipts);
+        
+        // For each grouped receipt, add a comma-separated list of transaction IDs
+        foreach ($result as &$item) {
+            $item['transaction_ids_list'] = implode(',', $item['transaction_ids']);
+            // Use the first transaction ID as the main one for display/linking
+            $item['transaction_id'] = $item['transaction_ids'][0];
+        }
+        
+        return $result;
+    }
+    function getTransactionProgramDetails($database, $transaction_ids) {
+        $pdo = $database->connect();
+        
+        $query = "SELECT 
+                t.id as transaction_id,
+                cpt.coach_id,
+                CONCAT_WS(' ', u2.username) as coach_name,
+                p.program_name,
+                CASE
+                    WHEN pss.coach_personal_schedule_id IS NOT NULL THEN 'personal'
+                    WHEN pss.coach_group_schedule_id IS NOT NULL THEN 'group'
+                    ELSE NULL
+                END as schedule_type,
+                COUNT(pss.id) as session_count
+            FROM program_subscription_schedule pss
+            JOIN program_subscriptions ps ON pss.program_subscription_id = ps.id
+            JOIN coach_program_types cpt ON ps.coach_program_type_id = cpt.id
+            JOIN programs p ON cpt.program_id = p.id
+            JOIN users u2 ON cpt.coach_id = u2.id
+            LEFT JOIN transactions t ON ps.transaction_id = t.id
+            WHERE t.id IN (" . $transaction_ids . ")
+            AND pss.is_paid = 1
+            GROUP BY p.program_name, schedule_type, cpt.coach_id";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
 if (!function_exists('insertProgramCancellationNotification')) {
     /**
      * Insert a program cancellation notification for a user (uses transaction_id as notification_id)
@@ -410,6 +626,22 @@ if (!function_exists('insertProgramConfirmationNotification')) {
     function insertProgramConfirmationNotification($database, $user_id, $transaction_id) {
         $pdo = $database->connect();
         $type = 'program_confirmations';
+        $sql = "INSERT IGNORE INTO notification_reads (user_id, notification_type, notification_id) VALUES (?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$user_id, $type, $transaction_id]);
+    }
+}
+
+if (!function_exists('insertTransactionReceiptNotification')) {
+    /**
+     * Insert a transaction receipt notification for a user
+     * @param Database $database
+     * @param int $user_id
+     * @param int $transaction_id
+     */
+    function insertTransactionReceiptNotification($database, $user_id, $transaction_id) {
+        $pdo = $database->connect();
+        $type = 'transaction_receipts';
         $sql = "INSERT IGNORE INTO notification_reads (user_id, notification_type, notification_id) VALUES (?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$user_id, $type, $transaction_id]);
