@@ -1,569 +1,307 @@
-html {
-  background-color: transparent;
-}
+/* Global adjustments */
 body {
-  height: 100vh;
+  background-color: #f5f7fa;
+  padding-top: 70px; /* Add padding to body to account for fixed navbar */
+}
+
+.main-content {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 .home-navbar {
-  background-color: red;
-  position: fixed;
   border-radius: 0;
 }
-.main-content {
-  padding-top: 100px;
-}
-strong {
-  font-weight: 500 !important;
-}
-
-.error-message {
-  color: red;
-  font-size: 0.85em;
-  margin-top: 5px;
-  display: none;
-}
-.form-control.invalid {
-  border-color: red;
+/* Profile header styling */
+.profile-header {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
 }
 
-@font-face {
-  font-family: myFont;
-  src: url(../AC.ttf);
+.profile-name {
+  margin-bottom: 0.25rem;
+  color: #333;
 }
 
-body {
-  background-color: whitesmoke;
-  min-height: 100vh;
+.profile-role {
+  color: #6c757d;
+  font-weight: 500;
 }
 
-#title {
-  color: #343a40;
+/* Grid layout for main content */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Availed services card styling */
+.availed-services-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+  height: 600px; /* Fixed height for the entire card */
   display: flex;
-  border-bottom: 2px solid #5a6268;
-  margin-bottom: 15px;
-  padding-bottom: 5px;
+  flex-direction: column;
 }
-h5 {
-  font-family: myFont;
+
+.service-tab-content {
+  flex-grow: 1; /* Allow the content area to take up available space */
+  overflow: hidden; /* Important: Hide any overflow from the tab content itself */
+  display: flex; /* Add flex display to the tab content */
+  flex-direction: column; /* Stack the title and the list */
 }
-#name h1 {
-  font-size: 2.5rem;
+
+.availed-services-card .card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Card body takes full height */
+}
+
+.availed-services-card .card-title {
+  color: #333;
   font-weight: 600;
-  margin: 0;
-}
-#name h5 {
-  font-size: 1.75rem;
-}
-#name {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-section {
-  width: 100%;
-  padding: 0 5%;
-  display: flex;
-  flex-wrap: wrap;
-}
-
-section #availed_services {
-  min-height: 75vh;
-  width: 30%;
-  margin-right: 3%;
-  box-shadow: 0px 1px 3px gray;
-  border-radius: 10px;
-  background-color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  height: auto;
-  max-height: 70vh;
-  overflow: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-section #availed_services::-webkit-scrollbar {
-  display: none;
-}
-
-section #log {
-  padding-top: 5px;
-  width: 67%;
-  background-color: whitesmoke;
-  height: 70vh;
-  overflow: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-section #log::-webkit-scrollbar {
-  display: none;
-}
-
-.subscription-table {
-  width: 100%;
-  margin-bottom: 20px;
-  border-collapse: collapse;
-}
-
-.subscription-table tr {
   border-bottom: 1px solid #eee;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-.subscription-table tr:last-child {
-  border-bottom: none;
-}
-
-.subscription-table td {
-  padding: 12px;
-  color: #666;
-}
-
-.subscription-table span {
-  color: #333;
-  font-weight: 500;
-  margin-left: 5px;
-}
-
-.log-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.attendance-title {
-  font-size: 2.25em;
-  margin: 0;
-}
-
-.search-container {
-  position: relative;
-}
-
-.search-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.date-input-wrapper {
-  background: #fff;
-  border-radius: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  width: 200px;
-}
-
-.date-input {
-  border: none;
-  padding: 8px 15px;
-  border-radius: 20px;
-  outline: none;
-  background: transparent;
-  width: 100%;
-}
-
-.button-group {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.search-btn,
-.clear-btn {
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.search-btn {
-  background: #007bff;
-}
-
-.search-btn:hover {
-  background: #ff1a1a;
-  transform: translateY(-2px);
-}
-
-.clear-btn {
-  background: #6c757d;
-  text-decoration: none;
-}
-
-.clear-btn:hover {
-  background: #5a6268;
-  color: white;
-  transform: translateY(-2px);
-}
-
-.attendance-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.attendance-card {
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.log-item {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.log-label {
-  color: #666;
-  font-style: italic;
-  font-size: 14px;
-}
-
-.log-time {
-  color: #333;
-  font-weight: 500;
-}
-
-.log-time-ago {
-  color: #666;
-  font-size: 14px;
-  text-align: right;
-  min-width: 120px;
-  font-weight: bold;
-}
-
-@media (max-width: 600px) {
-  .attendance-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-
-  .log-time-ago {
-    align-self: flex-end;
-  }
-}
-
-@media (max-width: 768px) {
-  /* #title {
-            padding: 1.5rem 0!important;
-        } */
-  #name h1 {
-    font-size: 1.75rem !important;
-  }
-  #name h5 {
-    font-size: 1rem !important;
-  }
-  section {
-    flex-direction: column !important;
-  }
-  section #availed_services,
-  section #log {
-    width: 100% !important;
-    margin-right: 0 !important;
-    margin-bottom: 2rem !important;
-  }
-  section #availed_services {
-    max-height: none !important;
-    height: auto !important;
-  }
-}
-
-#availed_services {
-  padding: 20px;
-}
-
-#availed_services h4 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.subscription-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.subscription-card {
-  background-color: #28a745;
-  border-radius: 10px;
-  padding: 15px;
-  color: white;
-  margin-bottom: 10px;
-}
-
-.card-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-info {
-  flex-grow: 1;
-}
-
-.info-row {
-  margin-bottom: 5px;
-}
-
-.info-row:last-child {
-  margin-bottom: 0;
-}
-
-.info-row .label {
-  font-weight: normal;
-  margin-right: 10px;
-}
-
-.card-icon {
-  font-size: 24px;
-  margin-left: 15px;
-}
-
-@media (max-width: 768px) {
-  .subscription-card {
-    width: 100%;
-  }
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.section-header h4 {
-  color: #333;
-  margin: 0;
-}
-
-.icon-button {
-  min-width: 35px;
-  max-width: 35px;
-  min-height: 35px;
-  max-height: 35px;
-  border-radius: 50%;
-  background-color: #ff3b30;
-  border: none;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  padding: 0;
+/* Tabs styling */
+#serviceTabs {
+  border-bottom: 1px solid #e9ecef;
   flex-shrink: 0;
 }
 
-.icon-button i {
-  font-size: 16px;
+#serviceTabsContent {
+  flex-grow: 1; /* Takes remaining vertical space */
+  overflow-y: auto; /* Enables vertical scrolling */
 }
 
-#history-btn {
-  background-color: #00000070;
-  transition: all 0.3s ease !important;
+.tab-content {
+  height: 100%;
 }
 
-#history-btn:hover {
-  transform: translateY(-2px);
-}
-
-#history-btn.active {
-  background-color: #28a745 !important;
-}
-
-#history-btn {
-  background-color: #00000070;
-  transition: background-color 0.3s ease;
-}
-
-.expired-card {
-  background-color: #00000060 !important;
-}
-
-.transaction-group {
-  margin-bottom: 15px;
-}
-.transaction-group h6 {
-  margin: 0 0 10px 0;
-  color: #333;
-}
-.transaction-group .subscription-cards {
-  margin: 0;
-  gap: 10px;
-}
-.transaction-group .subscription-cards .subscription-card {
-  margin: 0;
-}
-
-.no-services-message {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-.detail-item {
+.tab-pane {
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
-.label {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.service-name {
-  color: #ff0000;
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-.status {
-  text-transform: capitalize;
-}
-.amount {
-  font-weight: 600;
-  color: #28a745;
-}
-.view-details-btn {
-  background: none;
+
+#serviceTabs .nav-link {
+  color: #495057;
   border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+#serviceTabs .nav-link:hover {
   color: #007bff;
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-  font-size: 0.9rem;
-}
-.view-details-btn:hover {
-  color: #0056b3;
 }
 
-.view-receipt-btn {
-  background: none;
+#serviceTabs .nav-link.active {
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+.service-list {
+  padding-top: 1rem;
+  overflow-y: auto; /* Scroll within each tab pane */
+}
+
+.service-item {
   border: none;
-  padding: 5px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
 }
 
-.view-receipt-btn:hover {
-  transform: scale(1.1);
+.service-item .card-body {
+  padding: 1rem;
+  height: auto;
 }
 
-.view-receipt-btn i {
-  font-size: 1.2em;
+.service-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
 }
 
-.receipt-item {
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-  margin-bottom: 10px;
+/* Standardized layout for all service items */
+.service-item .d-flex {
+  width: 100%;
 }
 
-.receipt-item p {
-  margin-bottom: 8px;
-}
-
-/* Simple Modal Styling */
-.modal-content {
-  border-radius: 10px;
-  border: none;
-
-}
-
-.modal-header {
-  background-color: var(--red);
+.service-item h6 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
   color: #333;
-  border: none;
-  border-radius: 10px 10px 0 0;
 }
 
-.modal-header .btn-close {
-  filter: brightness(0) invert(1);
+.service-item .text-muted {
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
-.receipt-item {
+.service-item .badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+}
+
+/* Fix for memberships display */
+#memberships .service-item .card-body {
+  display: flex;
+  flex-direction: column;
+}
+
+#memberships .service-item .d-flex {
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Fix for walkins display */
+/* Updated walk-in styling to ensure left alignment */
+#walkins .service-item .card-body {
   padding: 1rem;
 }
 
-.receipt-item p {
-  margin-bottom: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  padding: 0.25rem 0;
-}
-
-.receipt-item p:last-child {
+#walkins .service-item h6 {
+  text-align: left;
   margin-bottom: 0;
 }
 
-.modal-footer {
-  border-top: 1px solid #dee2e6;
+#walkins .service-item .badge {
+  margin-left: auto;
 }
 
-.modal-footer .btn-secondary {
-  background-color: #6c757d;
+/* Add a subtle divider below header */
+#walkins .service-item .d-flex {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Ensure consistent spacing for all items */
+#walkins .service-item .text-muted {
+  display: flex;
+  align-items: center;
+}
+
+#walkins .service-item .text-muted i {
+  width: 16px;
+  text-align: center;
+  margin-right: 0.5rem;
+}
+
+
+
+/* Fix for expired services display */
+.expired-card .card-body {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem !important;
+}
+
+.expired-card h6 {
+  margin-bottom: 0.5rem;
+}
+
+/* Attendance log card styling */
+.attendance-log-card {
   border: none;
+  border-radius: 10px;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+  height: 600px; /* Fixed height for the entire card */
+  display: flex;
+  flex-direction: column;
 }
 
-@media screen and (max-width: 480px) {
-  .main-content {
-    position: relative;
-    display: flex;
-    flex-direction: row !important;
-    padding: 10px;
+.attendance-log-card .card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.attendance-log-card .card-title {
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.log-filter {
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.attendance-list {
+  overflow-y: auto; /* Enables scrolling */
+  padding-right: 0.5rem; /* Optional: Space for scrollbar */
+  flex-grow: 1;    /* Take up remaining space */
+}
+
+.attendance-item {
+  background-color: #fff;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.attendance-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+/* Badge styling */
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.6em;
+}
+
+.badge-personal {
+  background-color: #007bff;
+  color: white;
+}
+
+.badge-group {
+  background-color: #28a745;
+  color: white;
+}
+
+
+/* Media queries for responsive design */
+@media (max-width: 992px) {
+  .dashboard-grid {
+      grid-template-columns: 1fr;
   }
-  .home-navbar {
-    position: sticky;
+  
+  .availed-services-card, .attendance-log-card {
+      height: 500px;
   }
-  #availed_services {
-    min-height: 30% !important;
+}
+
+@media (max-width: 768px) {
+  #serviceTabs {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      white-space: nowrap;
   }
-  #availed_services .subscription-card span {
-    font-size: 0.7em;
-  }
-  #availed_services .subscription-card {
-    padding: 5px 10px;
-  }
-  .info-row {
-    display: none;
-    margin: 0 !important;
-  }
-  .info-row:first-child {
-    display: block;
-  }
-  .log-header {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  #walkins .service-item .d-flex {
+    flex-direction: row;
     align-items: center;
   }
-  .view-receipt-btn {
-    font-size: 0.7em;
-  }
-  #current_services {
-    max-height: 100px;
-    overflow-y: auto;
-  }
-  .avail_services header #title {
-    padding: 10px 0 !important;
+  
+  .availed-services-card, .attendance-log-card {
+      height: 450px;
   }
 }
