@@ -77,6 +77,7 @@
         }
     }
 ?>
+    <link rel="stylesheet" href="dashboard.css">
 <link rel="stylesheet" href="transaction.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 
@@ -98,7 +99,7 @@
     <div class="dashboard-header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h4><i class="fas fa-money-bill-wave"></i> Transaction History</h4>
+                <h4> TRANSACTION HISTORY</h4>
                 <div>
                     <span class="badge bg-light text-dark">
                         <i class="fas fa-calendar-day"></i> <?php echo date('F d, Y l'); ?>

@@ -23,12 +23,30 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 
 <link rel="stylesheet" href="calendar.css">
+<link rel="stylesheet" href="dashboard.css">
+
+<style>
+    .dashboard-header{
+        margin-left: 0px;
+        margin-right: 0px;
+    }
+</style>
 
 <div class="main-content">
-    <div class="calendar-card">
-        <div class="calendar-header">
-            <h4 class="calendar-title">Program Schedule</h4>
+<div class="dashboard-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>SCHEDULE</h4>
+                <div>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-calendar-day"></i> <?php echo date('F d, Y l'); ?>
+                    </span>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <div class="calendar-card">
         
         <div class="calendar-legend">
             <div class="legend-item">
