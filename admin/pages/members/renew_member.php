@@ -852,24 +852,36 @@ function generateProgramCard($program) {
                         <div class="row">
                             <?php foreach ($rentalServices as $service): ?>
                             <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
-                                <div class="card rental-option h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title"><?= htmlspecialchars($service['rental_name']) ?></h5>
-                                        <p class="card-text">
-                                            Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?><br>
-                                            Price: ₱<?= number_format($service['price'], 2) ?>
-                                        </p>
-                                        <input type="checkbox" 
-                                               name="rental_services[]" 
-                                               value="<?= $service['id']; ?>"
-                                               class="rental-service-checkbox"
-                                               data-name="<?= htmlspecialchars($service['rental_name']) ?>"
-                                               data-price="<?= $service['price'] ?>"
-                                               data-duration="<?= htmlspecialchars($service['duration']) ?>"
-                                               data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
-                                               style="display: none;">
+                                <?php
+                                $defaultImage = '../cms_img/default/rental.jpeg';
+                                $imagePath = $defaultImage;
+                                if (!empty($service['image']) && file_exists(__DIR__ . "/../../../cms_img/gym_rates/" . $service['image'])) {
+                                    $imagePath = '../cms_img/gym_rates/' . htmlspecialchars($service['image']);
+                                }
+                            ?>
+                            <div class="card rental-option">
+                                <div class="card-header text-white text-center" style="background-image: url('<?= $imagePath ?>'); background-size: cover; background-position: center; position: relative; min-height: 120px;">
+                                    <span class="badge rounded-pill plan-badge-indicator bg-warning">Rental</span>
+                                    <div class="overlay-header">
+                                        <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($service['rental_name']) ?></h2>
                                     </div>
+                                    <div class="overlay-darker"></div>
                                 </div>
+                                <div class="card-body">
+                                    <p class="card-text mb-1">Price: ₱<?= number_format($service['price'], 2) ?></p>
+                                    <p class="card-text mb-1">Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?></p>
+                                    <p class="card-text small text-muted" style="min-height:32px;"><?= !empty($service['description']) ? htmlspecialchars($service['description']) : '' ?></p>
+                                    <input type="checkbox" 
+                                        name="rental_services[]" 
+                                        value="<?= $service['id']; ?>"
+                                        class="rental-service-checkbox"
+                                        data-name="<?= htmlspecialchars($service['rental_name']) ?>"
+                                        data-price="<?= $service['price'] ?>"
+                                        data-duration="<?= htmlspecialchars($service['duration']) ?>"
+                                        data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
+                                        style="display: none;">
+                                </div>
+                            </div>
                             </div>
                             <?php endforeach; ?>
                         </div>

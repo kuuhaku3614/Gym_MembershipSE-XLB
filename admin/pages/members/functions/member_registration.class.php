@@ -39,7 +39,7 @@ class MemberRegistration {
                 AND p.is_removed = 0
                 AND u.is_active = 1
                 AND u.is_banned = 0
-                AND u.role_id = 4
+                AND u.role_id IN (4, 6)
                 AND (
                     (cpt.type = 'group' AND cgs.id IS NOT NULL)
                     OR 

@@ -884,4 +884,8 @@ $(document).ready(function () {
 
   // Initialize totals
   updateTotalAmount();
+
+  // Expose functions globally for inline handlers
+  window.updateRentalServicesSummary = updateRentalServicesSummary;
+  window.updateTotalAmount = updateTotalAmount;
 });
