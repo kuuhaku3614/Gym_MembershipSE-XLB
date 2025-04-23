@@ -21,7 +21,10 @@ if ($isLoggedIn) {
             'memberships' => [],
             'announcements' => [],
             'program_confirmations' => [],
-            'program_cancellations' => []
+            'program_cancellations' => [],
+            'cancelled_sessions' => [],
+            'completed_sessions' => [],
+            'transaction_receipts' => []
         ];
         $pdo = $database->connect();
         $sql = "SELECT notification_type, notification_id 
