@@ -16,6 +16,43 @@ $Services = new Services_Class();
 $user_id = $_SESSION['user_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Fetch ALL schedules for this coach across ALL programs (for overlap checking)
+    if (isset($_GET['all_coach_schedules']) && $_GET['all_coach_schedules'] == '1') {
+        $conn = $Services->getDbConnection();
+        $sql = "SELECT id, type FROM coach_program_types WHERE coach_id = ? AND status = 'active'";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$user_id]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $schedules = [ 'group' => [], 'personal' => [] ];
+        foreach ($rows as $row) {
+            $cpt_id = $row['id'];
+            $cpt_type = $row['type'];
+            // Get program_id and program_name for this coach_program_type
+            $sqlProg = "SELECT p.id as program_id, p.program_name FROM coach_program_types cpt JOIN programs p ON cpt.program_id = p.id WHERE cpt.id = ? LIMIT 1";
+            $stmtProg = $conn->prepare($sqlProg);
+            $stmtProg->execute([$cpt_id]);
+            $progRow = $stmtProg->fetch(PDO::FETCH_ASSOC);
+            $program_id = $progRow ? $progRow['program_id'] : null;
+            $program_name = $progRow ? $progRow['program_name'] : null;
+
+            $scheds = $Services->getSchedulesByCoachProgramType($cpt_id, $cpt_type);
+            // Attach program_id and program_name to each schedule
+            foreach ($scheds as &$sched) {
+                $sched['program_id'] = $program_id;
+                $sched['program_name'] = $program_name;
+                $sched['type'] = $cpt_type;
+            }
+            unset($sched); // break reference
+            if ($cpt_type === 'group') {
+                $schedules['group'] = array_merge($schedules['group'], $scheds);
+            } else if ($cpt_type === 'personal') {
+                $schedules['personal'] = array_merge($schedules['personal'], $scheds);
+            }
+        }
+        echo json_encode(['success' => true, 'schedules' => $schedules]);
+        exit;
+    }
     // --- FETCH SCHEDULES LOGIC (was teach_program_schedules.php) ---
     if (!isset($_GET['program_id'])) {
         echo json_encode(['success' => false, 'message' => 'Missing program_id parameter.']);
