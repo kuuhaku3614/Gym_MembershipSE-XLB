@@ -707,10 +707,10 @@ function generateProgramCard($program) {
     <div class="container-fluid py-4">
         <div class="row">
             <div class="col-12">
-                <h3 class="mb-4">Renew Membership</h3>
-                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">
-                    <i class="fas fa-arrow-left me-1"></i> Return
+                <button class="btn btn-outline-secondary rounded-pill back-btn position-absolute z-1" type="button" onclick="window.location.reload()">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
+                <div class="display-6 fw-bold mb-4" style="width: 100%; text-align: center;">Renew Membership</div>
                 <!-- Phase Navigation (skip Phase 1) -->
                 <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">

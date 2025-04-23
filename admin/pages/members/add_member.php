@@ -502,13 +502,13 @@ function generateProgramCard($program) {
 </head>
 <body>
 
-    <div class="container-fluid py-4">
+    <div class="container-fluid py-4">  
         <div class="row">
-            <div class="col-12">
-                <h3 class="mb-4">Add New Member</h3>
-                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">
-                    <i class="fas fa-arrow-left me-1"></i> Return
+            <div class="col-12">  
+                <button class="btn btn-outline-secondary rounded-pill back-btn position-absolute z-1" type="button" onclick="window.location.reload()">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
+                <div class="display-6 fw-bold mb-4" style="width: 100%; text-align: center;">Add New Member</div>
                 <!-- Phase Navigation -->
                 <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">
@@ -526,9 +526,8 @@ function generateProgramCard($program) {
                 </ul>
 
                 <form id="memberForm" method="POST" enctype="multipart/form-data">
-                   <!-- Phase 1: Personal Details -->
+                    <!-- Phase 1: Personal Details -->
                     <div id="phase1" class="phase">
-                        <h4 class="mb-4">Personal Information</h4>
                         <div class="card">
                             <div class="card-body">
                                 <!-- Walk-in Member Selector -->
@@ -638,9 +637,9 @@ function generateProgramCard($program) {
                             <?php
                             // Fetch membership plans from database with duration type
                             $sql = "SELECT mp.*, dt.type_name as duration_type 
-                                   FROM membership_plans mp 
-                                   LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
-                                   WHERE mp.status = 'active'";
+                                    FROM membership_plans mp 
+                                    LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                                    WHERE mp.status = 'active'";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
                             $membershipPlans = $stmt->fetchAll();
@@ -690,11 +689,11 @@ function generateProgramCard($program) {
                                         ?>
                                         <p class="card-text mb-1">Duration: <?= htmlspecialchars($plan['duration']) ?> <?= htmlspecialchars($durationType) ?></p>
                                         <input type="radio" name="membership_plan" class="d-none"
-                                               value="<?= $plan['id'] ?>"
-                                               data-price="<?= $plan['price'] ?>"
-                                               data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
-                                               data-duration="<?= htmlspecialchars($plan['duration']) ?>"
-                                               data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
+                                                value="<?= $plan['id'] ?>"
+                                                data-price="<?= $plan['price'] ?>"
+                                                data-name="<?= htmlspecialchars($plan['plan_name']) ?>"
+                                                data-duration="<?= htmlspecialchars($plan['duration']) ?>"
+                                                data-duration-type="<?= isset($plan['duration_type']) ? htmlspecialchars($plan['duration_type']) : 'months' ?>">
                                     </div>
                                 </div>
                             </div>

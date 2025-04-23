@@ -154,14 +154,14 @@ $(document).ready(function () {
       },
       success: function (response) {
         const tableBody = $("#scheduleTableBody");
-        const tableHead = $("#scheduleTable thead");
+        const tableHead = $("#scheduleTableHead");
         const programDesc = $("#programDesc");
 
         // Clear previous content
         tableBody.empty();
         programDesc.empty();
 
-        if (response.success && response.data?.length > 0) {
+        if (response.success && response.data && response.data.length > 0) {
           // Different headers for personal and group schedules
           if (response.program_type === "personal") {
             // For personal training, group time slots by day, duration, and price
@@ -217,34 +217,26 @@ $(document).ready(function () {
 
             // Now create rows for each unique combination
             const rows = Object.values(scheduleGroups).map((group) => {
-              const timeButtons = group.slots
-                .map(
-                  (slot) => `
-                                <button class="btn btn-primary btn-sm select-schedule m-1" type="button"
-                                    data-id="${slot.id}"
-                                    data-type="personal"
-                                    data-coach-program-type-id="${coachProgramTypeId}"
-                                    data-program="${programName}"
-                                    data-coach="${group.coach}"
-                                    data-day="${group.day}"
-                                    data-starttime="${slot.startTime}"
-                                    data-endtime="${slot.endTime}"
-                                    data-price="${group.price}">
-                                    ${slot.startTime} - ${slot.endTime}
-                                </button>
-                            `
-                )
-                .join("");
-
-              return `
-                                <tr>
-                                    <td>${group.day}</td>
-                                    <td>${group.duration}</td>
-                                    <td>${group.coach}</td>
-                                    <td>₱${group.price}</td>
-                                    <td>${timeButtons}</td>
-                                </tr>
-                            `;
+              const timeButtons = group.slots.map((slot) =>
+                `<button class="btn btn-primary btn-sm select-schedule m-1" type="button"
+                      data-id="${slot.id}"
+                      data-type="personal"
+                      data-coach-program-type-id="${coachProgramTypeId}"
+                      data-program="${programName}"
+                      data-coach="${group.coach}"
+                      data-day="${group.day}"
+                      data-starttime="${slot.startTime}"
+                      data-endtime="${slot.endTime}"
+                      data-price="${group.price}">
+                      ${slot.startTime} - ${slot.endTime}
+                  </button>`).join("");
+                  return`
+                      <tr>
+                          <td>${group.day}</td>
+                          <td>${group.duration}</td>
+                          <td>₱${group.price}</td>
+                          <td>${timeButtons}</td>
+                      </tr>`;
             });
 
             // Sort rows by day, duration, and price
@@ -265,45 +257,51 @@ $(document).ready(function () {
 
             // Update table header for the new format
             tableHead.html(`
-                            <tr>
-                                <th>Day</th>
-                                <th>Duration (mins)</th>
-                                <th>Coach</th>
-                                <th>Price</th>
-                                <th>Available Time Slots</th>
-                            </tr>
-                        `);
+              <tr>
+                <th>Day</th>
+                <th>Duration (mins)</th>
+                <th>Price</th>
+                <th>Available Time Slots</th>
+              </tr>
+            `);
 
             tableBody.html(rows.join(""));
           } else {
-            // Original group schedule display
-            const rows = response.data
-              .map(
-                (schedule) => `
-                            <tr>
-                                <td>${schedule.day}</td>
-                                <td>${schedule.start_time} - ${schedule.end_time}</td>
-                                <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
-                                <td>${schedule.coach_name}</td>
-                                <td>₱${schedule.price}</td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-primary select-schedule"
-                                        data-id="${schedule.id}"
-                                        data-type="group"
-                                        data-coach-program-type-id="${coachProgramTypeId}"
-                                        data-program="${programName}"
-                                        data-coach="${schedule.coach_name}"
-                                        data-day="${schedule.day}"
-                                        data-starttime="${schedule.start_time}"
-                                        data-endtime="${schedule.end_time}"
-                                        data-price="${schedule.price}">
-                                        Select
-                                    </button>
-                                </td>
-                            </tr>
-                        `
-              )
-              .join("");
+            // Group schedule display
+            const rows = response.data.map(
+              (schedule) => `
+                <tr>
+                  <td>${schedule.day}</td>
+                  <td>${schedule.start_time} - ${schedule.end_time}</td>
+                  <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
+                  <td>₱${schedule.price}</td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-primary select-schedule"
+                      data-id="${schedule.id}"
+                      data-type="group"
+                      data-coach-program-type-id="${coachProgramTypeId}"
+                      data-program="${programName}"
+                      data-coach="${schedule.coach_name}"
+                      data-day="${schedule.day}"
+                      data-starttime="${schedule.start_time}"
+                      data-endtime="${schedule.end_time}"
+                      data-price="${schedule.price}">
+                      Select
+                    </button>
+                  </td>
+                </tr>
+              `
+            ).join("");
+
+            tableHead.html(`
+              <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Capacity</th>
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+            `);
             tableBody.html(rows);
           }
         } else {
