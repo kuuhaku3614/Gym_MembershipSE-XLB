@@ -347,6 +347,7 @@ $(document).ready(function() {
     $('#saveProgramBtn').on('click', function() {
     const formData = new FormData($('#addProgramForm')[0]);
     formData.append('programStatus', $('#programStatus').val());
+});
     
     $.ajax({
         url: '../admin/pages/gym rates/functions/save_programs.php',
@@ -357,7 +358,7 @@ $(document).ready(function() {
         success: function(response) {
             if (response.status === 'success') {
                 // Force close any open modals first
-                $('.modal').modal('hide');
+                $('#addProgramModal').modal('hide');
                 
                 // Small timeout to ensure modal is hidden
                 setTimeout(function() {
@@ -378,7 +379,7 @@ $(document).ready(function() {
             displaySanitizedError('An error occurred: ' + error);
         }
     });
-});
+
 
     // Handle Edit Button Click
     $('.edit-btn').on('click', function() {

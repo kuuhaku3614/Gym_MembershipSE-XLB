@@ -114,7 +114,7 @@ try {
                                     data-id="<?= $rental['id'] ?>" data-status="<?= $rental['status'] ?>">
                                 <?= $toggleBtnText ?>
                             </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>"><i class='fas fa-power-off'></i></button>
+                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>">Edit</button>
                             <button class="btn btn-sm btn-danger remove-btn" data-id="<?= $rental['id'] ?>">Remove</button>
                         </div>
                     </td>

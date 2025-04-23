@@ -116,7 +116,7 @@ try {
         $attendance = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$attendance) {
-            echo json_encode(['status' => 'error', 'message' => 'No active check-in found for this user']);
+            echo json_encode(['status' => 'error', 'message' => 'No active time-in found for this user']);
             exit;
         }
         
@@ -158,7 +158,7 @@ try {
     
     echo json_encode([
         'status' => 'success',
-        'message' => $action === 'checkin' ? 'Check-in successful' : 'Check-out successful',
+        'message' => $action === 'checkin' ? 'Time-in successful' : 'Time-out successful',
         'data' => $updatedRecord
     ]);
     

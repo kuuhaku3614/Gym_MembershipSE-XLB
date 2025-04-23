@@ -142,7 +142,7 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         SELECT COALESCE(COUNT(*), 0) AS member_users 
         FROM users 
         JOIN roles ON users.role_id = roles.id 
-        WHERE roles.role_name = 'member'
+        WHERE users.role_id IN (3, 4, 5, 6)
         ";
         $member_users_stmt = $pdo->prepare($member_users_sql);
         $member_users_stmt->execute();

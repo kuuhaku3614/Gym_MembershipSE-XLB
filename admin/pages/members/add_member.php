@@ -501,7 +501,9 @@ function generateProgramCard($program) {
         <div class="row">
             <div class="col-12">
                 <h3 class="mb-4">Add New Member</h3>
-                
+                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">
+                    <i class="fas fa-arrow-left me-1"></i> Return
+                </button>
                 <!-- Phase Navigation -->
                 <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">

@@ -158,6 +158,10 @@ try {
         .card-body{
             gap: 1rem;
         }
+        .highlight-row {
+            background-color: #ffffcc !important;
+            transition: background-color 1.5s ease;
+        }
     </style>
 </head>
 <body>
@@ -292,14 +296,17 @@ try {
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
+// Make DataTable variable globally accessible
+let checkinTable;
+
 $(document).ready(function() {
     // Initialize DataTable with updated configuration
-    const checkinTable = $('#checkinTable').DataTable({
+    checkinTable = $('#checkinTable').DataTable({
         responsive: true,
         order: [[3, 'desc']], // Sort by check-in time by default
         language: {
             search: "_INPUT_",
-            searchPlaceholder: "Search check-ins..."
+            searchPlaceholder: "Search Time-ins..."
         },
         columnDefs: [
             { orderable: false, targets: [0, 6] } // Disable sorting for photo and action columns
@@ -318,51 +325,117 @@ $(document).ready(function() {
     }, 1000);
 
     // Handle check-in form submission
-$('#checkinForm').on('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    
-    $.ajax({
-        url: 'process_checkin.php',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-            if (response.status === 'success') {
-                // Clear form
-                $('#checkinForm')[0].reset();
-                
-                // Create and show success popup
-                const successDiv = $('<div>')
-                    .css({
-                        'position': 'fixed',
-                        'top': '20px',
-                        'left': '50%',
-                        'transform': 'translateX(-50%)',
-                        'background-color': '#198754', // Green color for success
-                        'color': 'white',
-                        'padding': '15px 25px',
-                        'border-radius': '5px',
-                        'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
-                        'z-index': '9999'
-                    })
-                    .text('Check-in successful!');
-                
-                $('body').append(successDiv);
-                
-                // Remove the success popup after 3 seconds
-                setTimeout(() => {
-                    successDiv.fadeOut(300, function() {
-                        $(this).remove();
-                        // Reload the page after popup fades
+    $('#checkinForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: 'process_checkin.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Clear form
+                    $('#checkinForm')[0].reset();
+                    
+                    // Create and show success popup
+                    const successDiv = $('<div>')
+                        .css({
+                            'position': 'fixed',
+                            'top': '20px',
+                            'left': '50%',
+                            'transform': 'translateX(-50%)',
+                            'background-color': '#198754', // Green color for success
+                            'color': 'white',
+                            'padding': '15px 25px',
+                            'border-radius': '5px',
+                            'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+                            'z-index': '9999'
+                        })
+                        .text('Time-in successful!');
+                    
+                    $('body').append(successDiv);
+                    
+                    // Add the new record to the table immediately
+                    if (response.data) {
+                        const userData = response.data;
+                        const timeIn = userData.time_in ? new Date('1970-01-01T' + userData.time_in).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        }) : '-';
+                        
+                        // Format the date
+                        const currentDate = new Date().toISOString().split('T')[0];
+                        
+                        // Create status badge
+                        const statusBadge = '<span class="badge bg-success">Time In</span>';
+                        
+                        // Create action button
+                        const actionButton = '<button class="btn btn-warning btn-sm checkout-btn" data-user-id="' + 
+                                            userData.user_id + '">Time Out</button>';
+                        
+                        // Add new row to DataTable
+                        const photoPath = userData.photo_path ? '../' + userData.photo_path : '../default-avatar.png';
+                        
+                        const newRow = [
+                            '<img src="' + photoPath + '" alt="Profile" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">',
+                            userData.full_name,
+                            userData.username,
+                            currentDate,
+                            timeIn,
+                            '-', // Time out is empty
+                            statusBadge,
+                            actionButton
+                        ];
+                        
+                        // Add the new row to the top of the table
+                        const newRowNode = checkinTable.row.add(newRow).draw(false).node();
+                        $(newRowNode).attr('data-user-id', userData.user_id);
+                        
+                        // Highlight the new row
+                        $(newRowNode).addClass('highlight-row');
+                    }
+                    
+                    // Reload the page after showing the new record and message
+                    setTimeout(() => {
                         window.location.reload();
-                    });
-                }, 3000);
-                
-            } else {
-                // Create and show error popup
+                    }, 3000); // Wait 3 seconds before reloading to allow user to see the new record
+                    
+                    // Note: We don't need to remove the success popup since the page will reload
+                    
+                } else {
+                    // Create and show error popup
+                    const errorDiv = $('<div>')
+                        .css({
+                            'position': 'fixed',
+                            'top': '20px',
+                            'left': '50%',
+                            'transform': 'translateX(-50%)',
+                            'background-color': '#dc3545',
+                            'color': 'white',
+                            'padding': '15px 25px',
+                            'border-radius': '5px',
+                            'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+                            'z-index': '9999'
+                        })
+                        .text(response.message);
+                    
+                    $('body').append(errorDiv);
+                    
+                    // Remove the error popup after 3 seconds
+                    setTimeout(() => {
+                        errorDiv.fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    }, 3000);
+                }
+            },
+            error: function() {
+                // Error handling
                 const errorDiv = $('<div>')
                     .css({
                         'position': 'fixed',
@@ -376,7 +449,7 @@ $('#checkinForm').on('submit', function(e) {
                         'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
                         'z-index': '9999'
                     })
-                    .text(response.message);
+                    .text('An error occurred during time-in.');
                 
                 $('body').append(errorDiv);
                 
@@ -387,35 +460,8 @@ $('#checkinForm').on('submit', function(e) {
                     });
                 }, 3000);
             }
-        },
-        error: function() {
-            // Create and show error popup for AJAX error
-            const errorDiv = $('<div>')
-                .css({
-                    'position': 'fixed',
-                    'top': '20px',
-                    'left': '50%',
-                    'transform': 'translateX(-50%)',
-                    'background-color': '#dc3545',
-                    'color': 'white',
-                    'padding': '15px 25px',
-                    'border-radius': '5px',
-                    'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
-                    'z-index': '9999'
-                })
-                .text('An error occurred during check-in.');
-            
-            $('body').append(errorDiv);
-            
-            // Remove the error popup after 3 seconds
-            setTimeout(() => {
-                errorDiv.fadeOut(300, function() {
-                    $(this).remove();
-                });
-            }, 3000);
-        }
+        });
     });
-});
 
     // Handle check-out button clicks
     $(document).on('click', '.checkout-btn:not([disabled])', function() {
@@ -427,7 +473,7 @@ $('#checkinForm').on('submit', function(e) {
             return;
         }
         
-        if (confirm('Are you sure you want to check out?')) {
+        if (confirm('Are you sure you want to time out?')) {
             $.ajax({
                 url: 'process_checkin.php',
                 type: 'POST',
@@ -449,49 +495,48 @@ $('#checkinForm').on('submit', function(e) {
                         const rowIndex = checkinTable.row(row).index();
                         
                         const rowData = checkinTable.row(rowIndex).data();
-                        rowData[4] = timeOut; // Update check-out time
-                        rowData[5] = '<span class="badge bg-secondary">Checked Out</span>'; // Update status
-                        rowData[6] = '<button class="btn btn-warning btn-sm checkout-btn" disabled>Check Out</button>'; // Disable button
+                        rowData[5] = timeOut; // Update check-out time
+                        rowData[6] = '<span class="badge bg-secondary">Time Out</span>'; // Update status
+                        rowData[7] = '<button class="btn btn-warning btn-sm checkout-btn" disabled>Time Out</button>'; // Disable button
                         
                         checkinTable.row(rowIndex).data(rowData).draw(false);
                         
-                        alert('Check-out successful!');
-                        
-                        window.location.reload();
+                        alert('Time-out successful!');
                     } else {
                         alert(response.message);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Checkout error:', error);
-                    alert('An error occurred during check-out.');
+                    alert('An error occurred during time-out.');
                 }
             });
         }
     });
+
     // Add reset button functionality
     $('#resetButton').on('click', function() {
-    if (confirm('Are you sure you want to reset the attendance records? This action cannot be undone.')) {
-        $.ajax({
-            url: 'process_reset.php',
-            type: 'POST',
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    alert('Attendance reset successful!');
-                    $('#resetButton').hide();
-                    window.location.reload();
-                } else {
-                    alert('Reset failed: ' + (response.message || 'Unknown error'));
+        if (confirm('Are you sure you want to reset the attendance records? This action cannot be undone.')) {
+            $.ajax({
+                url: 'process_reset.php',
+                type: 'POST',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('Attendance reset successful!');
+                        $('#resetButton').hide();
+                        window.location.reload();
+                    } else {
+                        alert('Reset failed: ' + (response.message || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Reset error:', xhr.responseText);
+                    alert('An error occurred during reset. Check console for details.');
                 }
-            },
-            error: function(xhr, status, error) {
-                console.error('Reset error:', xhr.responseText);
-                alert('An error occurred during reset. Check console for details.');
-            }
-        });
-    }
-});
+            });
+        }
+    });
 });
 </script>
 
