@@ -53,19 +53,19 @@ try {
         </div>
 <div class="card">
 <div class="card-body">
-    <table id="rentalsTable" class="table table-striped table-bordered">
-        <thead>
+    <table id="rentalsTable" class="table table-hovered">
+        <thead class="table-light border">
             <tr>
-                <th>Image</th>
-                <th>No.</th>
-                <th>Service Name</th>
-                <th>Duration</th>
-                <th>Price</th>
-                <th>Total Slots</th>
-                <th>Available Slots</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th class="border">Image</th>
+                <th class="border">No.</th>
+                <th class="border">Service Name</th>
+                <th class="border">Duration</th>
+                <th class="border">Price</th>
+                <th class="border">Total Slots</th>
+                <th class="border">Available Slots</th>
+                <th class="border">Description</th>
+                <th class="border">Status</th>
+                <th class="border">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -114,7 +114,7 @@ try {
                                     data-id="<?= $rental['id'] ?>" data-status="<?= $rental['status'] ?>">
                                 <?= $toggleBtnText ?>
                             </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>">Edit</button>
+                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>"><i class='fas fa-power-off'></i></button>
                             <button class="btn btn-sm btn-danger remove-btn" data-id="<?= $rental['id'] ?>">Remove</button>
                         </div>
                     </td>

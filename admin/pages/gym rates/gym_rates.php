@@ -13,6 +13,19 @@ $stmt->execute();
 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
+<style>
+    thead th {
+        font-weight: 600;
+        text-transform: uppercase;
+        color: gray!important;
+        font-size: 14px!important;
+    }
+    table td{
+        vertical-align: middle;
+        font-size: 14px;
+
+    }
+</style>
 
 <!-- Update Registration Modal -->
 <div class="modal fade" id="updateRegistrationModal" tabindex="-1" aria-labelledby="updateRegistrationModalLabel" aria-hidden="true">
@@ -54,20 +67,20 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="card">
         <div class="card-body">
     <div class="table-responsive">
-    <table id="gymRatesTable" class="table table-striped table-bordered">
-    <thead>
+    <table id="gymRatesTable" class="table table-hovered">
+    <thead class="table-light border">
         <tr>
-            <th>Image</th>
-            <th>No.</th>
-            <th>Promo Name</th>
-            <th>Promo Type</th>
-            <th>Duration</th>
-            <th>Start Date</th>
-            <th>Deactivation Date</th>
-            <th>Price</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th class="border">Image</th>
+            <th class="border">No.</th>
+            <th class="border">Promo Name</th>
+            <th class="border">Promo Type</th>
+            <th class="border">Duration</th>
+            <th class="border">Start Date</th>
+            <th class="border">Deactivation Date</th>
+            <th class="border">Price</th>
+            <th class="border">Description</th>
+            <th class="border">Status</th>
+            <th class="border">Action</th>
         </tr>
     </thead>
     <tbody>

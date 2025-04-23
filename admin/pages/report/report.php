@@ -491,71 +491,65 @@ date_default_timezone_set('Asia/Manila');
                     <div class="row">
                         <!-- Income Extremes -->
                         <div class="col-md-4">
-                            <div class="card shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="h5 mb-0 font-weight-bold text-primary mb-3">Income</div>
                                             
                                             <div class="mb-3">
-                                                <div class="text-success font-weight-bold">Highest: <?= $income_data['highest']['month'] ?></div>
+                                                <div class="text-success font-weight-bold">Highest: <?= $income_data['highest']['month'] ?> <i class="fas fa-arrow-up"></i></div>
                                                 <div class="h4">₱<?= number_format($income_data['highest']['value'], 2) ?></div>
                                             </div>
                                             
                                             <div>
-                                                <div class="text-danger font-weight-bold">Lowest: <?= $income_data['lowest']['month'] ?></div>
-                                                <div class="h4">₱<?= number_format($income_data['lowest']['value'], 2) ?></div>
+                                                <div class="text-danger font-weight-bold">Lowest: <?= $income_data['lowest']['month'] ?> <i class="fas fa-arrow-down"></i></div>
+                                                <div class="h4">₱<?= number_format($income_data['lowest']['value'], 2) ?> </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                         </div>
                         
                         <!-- Services Extremes -->
                         <div class="col-md-4">
-                            <div class="card shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="h5 mb-0 font-weight-bold text-primary mb-3">Services Availed</div>
                                             
                                             <div class="mb-3">
-                                                <div class="text-success font-weight-bold">Most: <?= $service_data['highest']['month'] ?></div>
+                                                <div class="text-success font-weight-bold">Most: <?= $service_data['highest']['month'] ?> <i class="fas fa-arrow-up"></i></div>
                                                 <div class="h4"><?= number_format($service_data['highest']['value']) ?> services</div>
                                             </div>
                                             
                                             <div>
-                                                <div class="text-danger font-weight-bold">Least: <?= $service_data['lowest']['month'] ?></div>
+                                                <div class="text-danger font-weight-bold">Least: <?= $service_data['lowest']['month'] ?> <i class="fas fa-arrow-down"></i></div>
                                                 <div class="h4"><?= number_format($service_data['lowest']['value']) ?> services</div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                         </div>
                         
                         <!-- Memberships Extremes -->
                         <div class="col-md-4">
-                            <div class="card shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="h5 mb-0 font-weight-bold text-primary mb-3">Memberships</div>
                                             
                                             <div class="mb-3">
-                                                <div class="text-success font-weight-bold">Most: <?= $membership_data['highest']['month'] ?></div>
+                                                <div class="text-success font-weight-bold">Most: <?= $membership_data['highest']['month'] ?> <i class="fas fa-arrow-up"></i></div>
                                                 <div class="h4"><?= number_format($membership_data['highest']['value']) ?> memberships</div>
                                             </div>
                                             
                                             <div>
-                                                <div class="text-danger font-weight-bold">Least: <?= $membership_data['lowest']['month'] ?></div>
+                                                <div class="text-danger font-weight-bold">Least: <?= $membership_data['lowest']['month'] ?> <i class="fas fa-arrow-down"></i></div>
                                                 <div class="h4"><?= number_format($membership_data['lowest']['value']) ?> memberships</div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
                         </div>
                     </div>
                 </div>

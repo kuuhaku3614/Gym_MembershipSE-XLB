@@ -48,15 +48,15 @@ $programs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="card">
         <div class="card-body">
         <div class="table-responsive">
-            <table id="programsTable" class="table table-striped table-bordered">
-                <thead>
+            <table id="programsTable" class="table table-hovered">
+                <thead class="table-light border">
                     <tr>
-                        <th>Image</th>
-                        <th>No.</th>
-                        <th>Program Name</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th class="border">Image</th>
+                        <th class="border">No.</th>
+                        <th class="border">Program Name</th>
+                        <th class="border">Description</th>
+                        <th class="border">Status</th>
+                        <th class="border">Actions</th>
                     </tr>
                 </thead>
                 <tbody>

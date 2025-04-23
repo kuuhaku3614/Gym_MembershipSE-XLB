@@ -55,6 +55,19 @@ div {
   font-family: "Inter", sans-serif !important;
 }
 
+thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  color: gray !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+table td {
+  vertical-align: middle;
+  text-align: center;
+  font-size: 14px;
+}
+
 /* Layout Utilities */
 .main-content {
   margin-left: 300px;
