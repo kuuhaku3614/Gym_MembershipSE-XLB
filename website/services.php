@@ -22,165 +22,58 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
-<style>
-    
-    .overlay-header{
-        position: relative;
-        z-index: 2;
-    }
-
-    .overlay-darker{
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0,0,0,0.5);
-        z-index: 1;
-    }
-
-        /* .services-header h1 {
-            font-size: 2rem;
-        }
-        .services-header p {
-            font-size: 1rem;
-        }
-        .card .card-header h2 {
-            font-size: 1.2rem;
-        }
-        .card .card-body p {
-            font-size: 0.9rem;
-        }
-        .button-shortcuts .btn {
-            padding: 10px;
-            font-size: 0.9rem;
-        } */
-        html{
-            background-color: transparent;
-        }
-        body{
-            height: 100vh;
-            background-color: #efefef!important;
-        }
-        .home-navbar{
-            background-color: #c92f2f;
-            position: fixed;
-            border-radius: 0;
-        }
-        .main-content{
-            padding-top: 80px;
-        }
-        /* Default red color for all sections */
-
-
-        /* Black color only for OFFER PROGRAMS section */
-
-        .coach-card .card-header {
-            background-color: #000000 !important;
-        }
-
-        .coach-card:hover {
-            transform: translateY(-5px);
-            transition: transform 0.3s ease;
-}
-
-
-/* General styling for the button-shortcuts section */
-.button-shortcuts .scroll-btn {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-.scroll-btn {
-    font-family: "Inter", sans-serif!important;
-    font-weight: 600;
-}
-.button-shortcuts .scroll-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-}
-
-/* Mobile responsive styles */
-@media screen and (max-width: 480px) {
-    .main-content {
-        padding-top: 70px;
-    }
-    .services-header {
-        margin-bottom: 0!important;
-    }
-    .button-shortcuts{
-        margin-bottom: 0!important;
-
-    }
-    .button-shortcuts .row {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        margin: 0 -10px; /* Negative margin to counteract padding */
-        padding-bottom: 10px; /* Space for the scrollbar */
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    }
-    
-    .button-shortcuts .col-md-4 {
-        flex: 0 0 auto;
-        width: 33.33%; /* Equal width for all three buttons */
-        padding: 0 5px; /* Reduce padding for mobile */
-        margin-bottom: 0; /* Remove bottom margin */
-    }
-    
-    .button-shortcuts .scroll-btn {
-        padding: 12px 8px !important; /* Reduce padding on mobile */
-        white-space: nowrap; /* Prevent text from wrapping */
-        font-size: 0.7rem; /* Slightly smaller font for mobile */
-    }
-    
-    .button-shortcuts .scroll-btn i {
-        font-size: .8rem !important; /* Slightly smaller icon for mobile */
-    }
-    
-    /* If text needs to be truncated for very small screens */
-    .button-shortcuts .scroll-btn span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    /* Hide scrollbar but keep functionality */
-    .button-shortcuts .row::-webkit-scrollbar {
-        display: none;
-    }
-    
-    .button-shortcuts .row {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-    }
-}
-
-/* For very small screens */
-@media screen and (max-width: 360px) {
-    .button-shortcuts .col-md-4 {
-        width: 120px; /* Fixed width for very small screens */
-    }
-}
-
-</style>
-
 <section class="main-content">
 
 <div class="services-header text-center d-flex flex-column justify-content-center align-items-center mb-5">
     <h1 class="display-2 fw-bold text-white" style="text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.6);">Choose your programs</h1>
     <p class="lead text-white fs-2" style="text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.6);">Discover our comprehensive range of fitness solutions and memberships</p>
 </div>
-
 <div class="services-page">
     <div class="container-fluid p-0">
         <div class="alert-container"></div>
         <div class="content-wrapper">
+            
+            <!-- Filter and Search Controls -->
+            <div class="container mb-4">
+                <div class="row g-3">
+                    <!-- Search Bar -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark text-white"><i class="fas fa-search"></i></span>
+                            <input type="text" id="serviceSearch" class="form-control" placeholder="Search services...">
+                        </div>
+                    </div>
+                    
+                    <!-- Price Range Filter -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark text-white"><i class="fas fa-peso-sign"></i></span>
+                            <select id="priceFilter" class="form-select">
+                                <option value="all">All Prices</option>
+                                <option value="0-500">₱0 - ₱500</option>
+                                <option value="501-1000">₱501 - ₱1000</option>
+                                <option value="1001-2000">₱1001 - ₱2000</option>
+                                <option value="2001+">₱2001+</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Filter -->
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark text-white"><i class="fas fa-tags"></i></span>
+                            <select id="categoryFilter" class="form-select">
+                                <option value="all">All Categories</option>
+                                <option value="special">Special Gym Rates</option>
+                                <option value="normal">Normal Gym Rates</option>
+                                <option value="walkin">Walk-In Rates</option>
+                                <option value="programs">Coaching Programs</option>
+                                <option value="other">Other Services</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="container text-center mb-4 button-shortcuts">
                 <div class="row justify-content-between">
@@ -205,178 +98,20 @@
                 </div>
             </div>
             
+            <!-- Filter Results Container -->
+            <div id="filterResultsContainer" class="container mb-4" style="display: none;">
+                <h2 class="section-heading">Search Results</h2>
+                <div class="row g-4 mb-4" id="filterResults">
+                    <!-- Filter results will be dynamically loaded here -->
+                </div>
+            </div>
+            
     <?php if (isset($_SESSION['personal_details']['role_name']) && ($_SESSION['personal_details']['role_name'] === 'coach' || $_SESSION['personal_details']['role_name'] === 'coach/staff')): ?>
         <!-- Coach Section -->
-        <h2 class="section-heading">Teach Programs</h2>
-        <div class="row g-4 mb-4">
-            <?php foreach ($all_programs as $program) { 
-                // Default image path
-                $defaultImage = '../cms_img/default/program.jpeg';
-
-                // Get the image path
-                $imagePath = $defaultImage; // Set default first
-                if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
-                    $imagePath = '../cms_img/programs/' . $program['image'];
-                }
-                // No available_types for new programs, so skip types display for now
-
-            ?>
-                <div class="col-sm-6 col-md-6 col-lg-3">
-                    <a href="services/teach_program.php?id=<?= $program['program_id'] ?>" class="program-link">
-                        <div class="card h-100">
-                            <div class="card-header text-white text-center"
-                                style="background-image: url('<?= $imagePath ?>'); 
-                                background-size: cover; 
-                                background-position: center;
-                                height: 200px;
-                                position: relative;">
-                                <div class="overlay-header">
-                                    <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($program['program_name']) ?></h2>
-                                </div>
-                                <div class="overlay-darker"></div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-text mb-1" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100% "><?= htmlspecialchars($program['description']) ?></p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            <?php } ?>
-        </div>
-
-
-                <br>
-                <hr class="my-4" style="border: 2px solid #000;">
-    <?php endif; ?>
-
-            <!-- Special Plans Section -->
-<h2 class="section-heading">SPECIAL GYM RATES</h2>
-<div class="row g-4 mb-4">
-    <?php foreach ($special_plans as $arr) { 
-        // Default image path
-        $defaultImage = '../cms_img/default/membership.jpeg';
-
-        // Get the image path
-        $imagePath = $defaultImage; // Set default first
-        if (!empty($arr['image']) && file_exists(__DIR__ . "/../cms_img/gym_rates/" . $arr['image'])) {
-            $imagePath = '../cms_img/gym_rates/' . $arr['image'];
-        }
-    ?>
-        <div class="col-sm-6 col-md-6 col-lg-3">
-            <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
-                <div class="card">
-                    <div class="card-header text-white text-center" 
-                         style="background-image: url('<?= $imagePath ?>'); 
-                                background-size: cover; 
-                                background-position: center;
-                                position: relative;">
-                        <!-- Add an overlay to ensure text is readable -->
-                        <div class="overlay-header">
-                            <h2 class="fw-bold mb-0 service-name"><?= $arr['plan_name'] ?></h2>
-                        </div>
-                        <!-- Dark overlay to make text readable on any image -->
-                        <div class="overlay-darker"></div>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
-                        <p class="card-text mb-1">Validity: <?= $arr['validity'] ?></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    <?php } ?>
-</div>
-
-
-            <br id="Gym-Rates">
-            <hr class="my-4" style="border: 2px solid #000;">
-
-            <!-- Standard Plans Section -->
-<h2 class="section-heading">NORMAL GYM RATES</h2>
-<div class="row g-4 mb-4">
-    <?php foreach ($standard_plans as $arr) { 
-        // Default image path
-        $defaultImage = '../cms_img/default/membership.jpeg';
-
-        // Get the image path
-        $imagePath = $defaultImage; // Set default first
-        if (!empty($arr['image']) && file_exists(__DIR__ . "/../cms_img/gym_rates/" . $arr['image'])) {
-            $imagePath = '../cms_img/gym_rates/' . $arr['image'];
-        }
-    ?>
-        <div class="col-sm-6 col-md-6 col-lg-3">
-            <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
-                <div class="card">
-                    <div class="card-header text-white text-center" 
-                         style="background-image: url('<?= $imagePath ?>'); 
-                                background-size: cover; 
-                                background-position: center;
-                                position: relative;">
-                        <!-- Add an overlay to ensure text is readable -->
-
-                        <div class="overlay-header">
-                        <h2 class="fw-bold mb-0 service-name"><?= $arr['plan_name'] ?></h2>
-                        </div>
-                        <div class="overlay-darker"></div>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
-                        <p class="card-text mb-1">Validity: <?= $arr['validity'] ?></p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    <?php } ?>
-</div>
-
-
-            <br>
-            <hr class="my-4" style="border: 2px solid #000;">
-
-            <!-- Walk in Section -->
-            <h2 class="section-heading">WALK-IN GYM RATES</h2>
+        <div class="section-container" data-category="teach">
+            <h2 class="section-heading">Teach Programs</h2>
             <div class="row g-4 mb-4">
-            <?php foreach ($walkin as $arr) { 
-                // Default image path
-                $defaultImage = '../cms_img/default/walkIn.jpeg';
-
-                // Get the image path
-                $imagePath = $defaultImage; // Set default first
-                // if (!empty($arr['image']) && file_exists(__DIR__ . "/../cms_img/gym_rates/" . $arr['image'])) {
-                //     $imagePath = '../cms_img/walk/' . $arr['image'];
-                // }
-            ?>
-                    <div class="col-sm-6 col-md-6 col-lg-3">
-                        <a href="services/avail_walkin.php?id=<?= $arr['walkin_id'] ?>" class="program-link">
-                            <div class="card">
-                                <div class="card-header text-white text-center"
-                                style="background-image: url('<?= $imagePath ?>'); 
-                                background-size: cover; 
-                                background-position: center;
-                                position: relative;">
-                        
-                                    <div class="overlay-header">
-                                    <h2 class="fw-bold mb-0 service-name">Walk-in</h2>
-                                    </div>
-                                    <div class="overlay-darker"></div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
-                                    <p class="card-text mb-1">Validity: 1 day</p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                <?php } ?>
-            </div>
-
-            <br id="Programs">
-            <hr class="my-4" style="border: 2px solid #000;">
-            <h2 class="section-heading">COACHING PROGRAMS</h2>
-            <div class="row g-4 mb-4 program-services-row">
-                <?php foreach ($program_services as $program) { 
-                    // Only show if at least one coach is assigned
-                    if (empty($program['available_types'])) continue;
+                <?php foreach ($all_programs as $program) { 
                     // Default image path
                     $defaultImage = '../cms_img/default/program.jpeg';
 
@@ -385,21 +120,17 @@
                     if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
                         $imagePath = '../cms_img/programs/' . $program['image'];
                     }
-                    
-                    // Format available types
-                    $types = $program['available_types'] ? explode(',', $program['available_types']) : [];
-                    $typeLabels = array_map(function($type) {
-                        return ucfirst($type) . ' Training';
-                    }, $types);
-                    ?>
-                    <div class="col-sm-6 col-md-6 col-lg-3 program-card">
-                        <a href="services/avail_program.php?id=<?= $program['program_id'] ?>" class="program-link">
+                    // No available_types for new programs, so skip types display for now
+
+                ?>
+                    <div class="col-sm-6 col-md-6 col-lg-3 service-card" data-category="teach" data-name="<?= strtolower(htmlspecialchars($program['program_name'])) ?>">
+                        <a href="services/teach_program.php?id=<?= $program['program_id'] ?>" class="program-link">
                             <div class="card h-100">
                                 <div class="card-header text-white text-center"
                                     style="background-image: url('<?= $imagePath ?>'); 
                                     background-size: cover; 
                                     background-position: center;
-                                    height: 150px;
+                                    height: 200px;
                                     position: relative;">
                                     <div class="overlay-header">
                                         <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($program['program_name']) ?></h2>
@@ -407,12 +138,7 @@
                                     <div class="overlay-darker"></div>
                                 </div>
                                 <div class="card-body">
-                                    <p class="card-text mb-1">Program Type:</p>
-                                    <?php if (!empty($typeLabels)): ?>
-                                        <p class="card-text mb-1">
-                                            <?= implode(',<br>', array_map('htmlspecialchars', $typeLabels)) ?>
-                                        </p>
-                                    <?php endif; ?>
+                                    <p class="card-text mb-1" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100% "><?= htmlspecialchars($program['description']) ?></p>
                                 </div>
                             </div>
                         </a>
@@ -420,89 +146,243 @@
                 <?php } ?>
             </div>
 
-            <style>
-            @media screen and (max-width: 480px) {
-                .row.g-4.mb-4 {
-                    display: flex;
-                    flex-direction: row;
-                    flex-wrap: nowrap;
-                    overflow-x: auto;
-                    gap: .5rem;
-                    margin: 0 -5px;
-                    max-width: 100%;
-                    padding-bottom: 10px;
-                    margin-bottom: 10px!important;
-                    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-                }
 
-                .col-sm-6, .col-md-6, .col-lg-3 {
-                    flex: 0 0 auto;
-                    width: 200px; /* Fixed width for horizontal scrolling */
-                    padding: 0 5px;
-                }
+                <br>
+                <hr class="my-4 section-divider" style="border: 2px solid #000;">
+        </div>
+    <?php endif; ?>
 
-                .card-header {
-                    height: 150px; /* Adjust height for smaller screens */
-                }
+            <!-- Special Plans Section -->
+            <div class="section-container" data-category="special">
+                <h2 class="section-heading">SPECIAL GYM RATES</h2>
+                <div class="row g-4 mb-4">
+                    <?php foreach ($special_plans as $arr) { 
+                        // Default image path
+                        $defaultImage = '../cms_img/default/membership.jpeg';
 
-                .card-body {
-                    font-size: 0.9rem; /* Slightly smaller text for mobile */
-                }
+                        // Get the image path
+                        $imagePath = $defaultImage; // Set default first
+                        if (!empty($arr['image']) && file_exists(__DIR__ . "/../cms_img/gym_rates/" . $arr['image'])) {
+                            $imagePath = '../cms_img/gym_rates/' . $arr['image'];
+                        }
+                        $price = floatval($arr['price']);
+                    ?>
+                        <div class="col-sm-6 col-md-6 col-lg-3 service-card" data-category="special" data-price="<?= $price ?>" data-name="<?= strtolower($arr['plan_name']) ?>">
+                            <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
+                                <div class="card">
+                                    <div class="card-header text-white text-center" 
+                                        style="background-image: url('<?= $imagePath ?>'); 
+                                                background-size: cover; 
+                                                background-position: center;
+                                                position: relative;">
+                                        <!-- Add an overlay to ensure text is readable -->
+                                        <div class="overlay-header">
+                                            <h2 class="fw-bold mb-0 service-name"><?= $arr['plan_name'] ?></h2>
+                                        </div>
+                                        <!-- Dark overlay to make text readable on any image -->
+                                        <div class="overlay-darker"></div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
+                                        <p class="card-text mb-1">Validity: <?= $arr['validity'] ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php } ?>
+                </div>
 
-                /* Hide scrollbar but keep functionality */
-                .row.g-4.mb-4::-webkit-scrollbar {
-                    display: none;
-                }
+                <br id="Gym-Rates">
+                <hr class="my-4 section-divider" style="border: 2px solid #000;">
+            </div>
 
-                .row.g-4.mb-4 {
-                    -ms-overflow-style: none;  /* IE and Edge */
-                    scrollbar-width: none;  /* Firefox */
-                }
-            }
-            </style>
-</style>
+            <!-- Standard Plans Section -->
+            <div class="section-container" data-category="normal">
+                <h2 class="section-heading">NORMAL GYM RATES</h2>
+                <div class="row g-4 mb-4">
+                    <?php foreach ($standard_plans as $arr) { 
+                        // Default image path
+                        $defaultImage = '../cms_img/default/membership.jpeg';
+
+                        // Get the image path
+                        $imagePath = $defaultImage; // Set default first
+                        if (!empty($arr['image']) && file_exists(__DIR__ . "/../cms_img/gym_rates/" . $arr['image'])) {
+                            $imagePath = '../cms_img/gym_rates/' . $arr['image'];
+                        }
+                        $price = floatval($arr['price']);
+                    ?>
+                        <div class="col-sm-6 col-md-6 col-lg-3 service-card" data-category="normal" data-price="<?= $price ?>" data-name="<?= strtolower($arr['plan_name']) ?>">
+                            <a href="services/avail_membership.php?id=<?= $arr['plan_id'] ?>" class="program-link">
+                                <div class="card">
+                                    <div class="card-header text-white text-center" 
+                                        style="background-image: url('<?= $imagePath ?>'); 
+                                                background-size: cover; 
+                                                background-position: center;
+                                                position: relative;">
+                                        <!-- Add an overlay to ensure text is readable -->
+
+                                        <div class="overlay-header">
+                                        <h2 class="fw-bold mb-0 service-name"><?= $arr['plan_name'] ?></h2>
+                                        </div>
+                                        <div class="overlay-darker"></div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
+                                        <p class="card-text mb-1">Validity: <?= $arr['validity'] ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php } ?>
+                </div>
+
+                <br>
+                <hr class="my-4 section-divider" style="border: 2px solid #000;">
+            </div>
+
+            <!-- Walk in Section -->
+            <div class="section-container" data-category="walkin">
+                <h2 class="section-heading">WALK-IN GYM RATES</h2>
+                <div class="row g-4 mb-4">
+                <?php foreach ($walkin as $arr) { 
+                    // Default image path
+                    $defaultImage = '../cms_img/default/walkIn.jpeg';
+
+                    // Get the image path
+                    $imagePath = $defaultImage; // Set default first
+                    // if (!empty($arr['image']) && file_exists(__DIR__ . "/../cms_img/gym_rates/" . $arr['image'])) {
+                    //     $imagePath = '../cms_img/walk/' . $arr['image'];
+                    // }
+                    $price = floatval($arr['price']);
+                ?>
+                        <div class="col-sm-6 col-md-6 col-lg-3 service-card" data-category="walkin" data-price="<?= $price ?>" data-name="walk-in">
+                            <a href="services/avail_walkin.php?id=<?= $arr['walkin_id'] ?>" class="program-link">
+                                <div class="card">
+                                    <div class="card-header text-white text-center"
+                                    style="background-image: url('<?= $imagePath ?>'); 
+                                    background-size: cover; 
+                                    background-position: center;
+                                    position: relative;">
+                            
+                                        <div class="overlay-header">
+                                        <h2 class="fw-bold mb-0 service-name">Walk-in</h2>
+                                        </div>
+                                        <div class="overlay-darker"></div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text mb-1">Price: Php <?= number_format($arr['price'], 2) ?></p>
+                                        <p class="card-text mb-1">Validity: 1 day</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php } ?>
+                </div>
+
+                <br id="Programs">
+                <hr class="my-4 section-divider" style="border: 2px solid #000;">
+            </div>
             
-            <br id="Optional-Services">
-            <hr class="my-4" style="border: 2px solid #000;">
+            <!-- Programs Section -->
+            <div class="section-container" data-category="programs">
+                <h2 class="section-heading">COACHING PROGRAMS</h2>
+                <div class="row g-4 mb-4 program-services-row">
+                    <?php foreach ($program_services as $program) { 
+                        // Only show if at least one coach is assigned
+                        if (empty($program['available_types'])) continue;
+                        // Default image path
+                        $defaultImage = '../cms_img/default/program.jpeg';
+
+                        // Get the image path
+                        $imagePath = $defaultImage; // Set default first
+                        if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
+                            $imagePath = '../cms_img/programs/' . $program['image'];
+                        }
+                        
+                        // Format available types
+                        $types = $program['available_types'] ? explode(',', $program['available_types']) : [];
+                        $typeLabels = array_map(function($type) {
+                            return ucfirst($type) . ' Training';
+                        }, $types);
+                        ?>
+                        <div class="col-sm-6 col-md-6 col-lg-3 service-card" data-category="programs" data-name="<?= strtolower(htmlspecialchars($program['program_name'])) ?>">
+                            <a href="services/avail_program.php?id=<?= $program['program_id'] ?>" class="program-link">
+                                <div class="card h-100">
+                                    <div class="card-header text-white text-center"
+                                        style="background-image: url('<?= $imagePath ?>'); 
+                                        background-size: cover; 
+                                        background-position: center;
+                                        height: 150px;
+                                        position: relative;">
+                                        <div class="overlay-header">
+                                            <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($program['program_name']) ?></h2>
+                                        </div>
+                                        <div class="overlay-darker"></div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text mb-1">Program Type:</p>
+                                        <?php if (!empty($typeLabels)): ?>
+                                            <p class="card-text mb-1">
+                                                <?= implode(',<br>', array_map('htmlspecialchars', $typeLabels)) ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    <?php } ?>
+                </div>
+                
+                <br id="Optional-Services">
+                <hr class="my-4 section-divider" style="border: 2px solid #000;">
+            </div>
 
             <!-- Rental Services Section -->
-            <h2 class="section-heading">OTHER OFFERED SERVICES</h2>
-            <div class="row g-4 mb-4">
-                <?php foreach ($rental_services as $rental){
-                     // Default image path
-                     $defaultImage = '../cms_img/default/rental.jpeg';
+            <div class="section-container" data-category="other">
+                <h2 class="section-heading">OTHER OFFERED SERVICES</h2>
+                <div class="row g-4 mb-4">
+                    <?php foreach ($rental_services as $rental){
+                        // Default image path
+                        $defaultImage = '../cms_img/default/rental.jpeg';
 
-                     // Get the image path
-                     $imagePath = $defaultImage; // Set default first
-                     if (!empty($rental['image']) && file_exists(__DIR__ . "/../cms_img/rentals/" . $rental['image'])) {
-                         $imagePath = '../cms_img/rentals/' . $rental['image'];
-                     }  
-                    ?>
-                    <div class="col-sm-6 col-md-6 col-lg-3">
-                        <a href="services/avail_rental.php?id=<?= $rental['rental_id'] ?>" class="program-link">
-                            <div class="card">
-                                <div class="card-header text-white text-center"
-                                style="background-image: url('<?= $imagePath ?>'); 
-                                background-size: cover; 
-                                background-position: center;
-                                position: relative;">
-                                <div class="overlay-header">
-                                    <h2 class="fw-bold mb-0 service-name"><?= $rental['service_name'] ?></h2>
+                        // Get the image path
+                        $imagePath = $defaultImage; // Set default first
+                        if (!empty($rental['image']) && file_exists(__DIR__ . "/../cms_img/rentals/" . $rental['image'])) {
+                            $imagePath = '../cms_img/rentals/' . $rental['image'];
+                        }  
+                        $price = floatval($rental['price']);
+                        ?>
+                        <div class="col-sm-6 col-md-6 col-lg-3 service-card" data-category="other" data-price="<?= $price ?>" data-name="<?= strtolower($rental['service_name']) ?>">
+                            <a href="services/avail_rental.php?id=<?= $rental['rental_id'] ?>" class="program-link">
+                                <div class="card">
+                                    <div class="card-header text-white text-center"
+                                    style="background-image: url('<?= $imagePath ?>'); 
+                                    background-size: cover; 
+                                    background-position: center;
+                                    position: relative;">
+                                    <div class="overlay-header">
+                                        <h2 class="fw-bold mb-0 service-name"><?= $rental['service_name'] ?></h2>
+                                    </div>
+                                    <div class="overlay-darker"></div>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text mb-1">Price: Php <?= number_format($rental['price'], 2) ?></p>
+                                        <p class="card-text mb-1">Validity: <?= $rental['validity'] ?></p>
+                                    </div>
                                 </div>
-                                <div class="overlay-darker"></div>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text mb-1">Price: Php <?= number_format($rental['price'], 2) ?></p>
-                                    <p class="card-text mb-1">Validity: <?= $rental['validity'] ?></p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                <?php } ?>
+                            </a>
+                        </div>
+                    <?php } ?>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Add JavaScript for the filters -->
+<script>
+
+</script>
 </section>
 
 <?php if (isset($_SESSION['success_message'])): ?>
@@ -558,6 +438,101 @@
 <script src="js/cart.js"></script>
 
 <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('serviceSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const priceFilter = document.getElementById('priceFilter');
+    const filterResultsContainer = document.getElementById('filterResultsContainer');
+    const filterResults = document.getElementById('filterResults');
+    const sectionContainers = document.querySelectorAll('.section-container');
+    const sectionHeadings = document.querySelectorAll('.section-heading');
+    const sectionDividers = document.querySelectorAll('.section-divider');
+    
+    // Function to check if any filter is active
+    function isFilterActive() {
+        return (
+            searchInput.value.trim() !== '' || 
+            categoryFilter.value !== 'all' || 
+            priceFilter.value !== 'all'
+        );
+    }
+    
+    // Function to filter services
+    function filterServices() {
+        // Get filter values
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const category = categoryFilter.value;
+        const priceRange = priceFilter.value;
+        
+        // Track if we have any matches
+        let hasMatches = false;
+        
+        // Clear previous results
+        filterResults.innerHTML = '';
+        
+        // Get all service cards
+        const serviceCards = document.querySelectorAll('.service-card');
+        
+        if (isFilterActive()) {
+            // Hide all section containers and their headings
+            sectionContainers.forEach(container => {
+                container.style.display = 'none';
+            });
+            
+            // Show filter results container
+            filterResultsContainer.style.display = 'block';
+            
+            // Filter the cards
+            serviceCards.forEach(card => {
+                // Get card data
+                const cardName = card.getAttribute('data-name') || '';
+                const cardCategory = card.getAttribute('data-category') || '';
+                const cardPriceStr = card.getAttribute('data-price') || '0';
+                const cardPrice = parseFloat(cardPriceStr);
+                
+                // Category filter
+                let categoryMatch = category === 'all' || cardCategory === category;
+                
+                // Price filter
+                let priceMatch = priceRange === 'all';
+                if (priceRange === '0-500' && cardPrice >= 0 && cardPrice <= 500) priceMatch = true;
+                if (priceRange === '501-1000' && cardPrice > 500 && cardPrice <= 1000) priceMatch = true;
+                if (priceRange === '1001-2000' && cardPrice > 1000 && cardPrice <= 2000) priceMatch = true;
+                if (priceRange === '2001+' && cardPrice > 2000) priceMatch = true;
+                
+                // Name search filter
+                const nameMatch = cardName.includes(searchTerm);
+                
+                // If the card matches all filters
+                if (nameMatch && categoryMatch && priceMatch) {
+                    hasMatches = true;
+                    // Clone the card and add it to the results
+                    const clone = card.cloneNode(true);
+                    filterResults.appendChild(clone);
+                }
+            });
+            
+            // If no matches found, show message
+            if (!hasMatches) {
+                filterResults.innerHTML = '<div class="col-12 text-center"><h3>No matching services found</h3></div>';
+            }
+        } else {
+            // Reset display if no filters active
+            filterResultsContainer.style.display = 'none';
+            
+            // Show all section containers
+            sectionContainers.forEach(container => {
+                container.style.display = 'block';
+            });
+        }
+    }
+    
+    // Add event listeners to filters
+    searchInput.addEventListener('input', filterServices);
+    categoryFilter.addEventListener('change', filterServices);
+    priceFilter.addEventListener('change', filterServices);
+});
 
       // Add event listeners to all buttons with the class "scroll-btn"
   document.querySelectorAll('.scroll-btn').forEach(button => {
