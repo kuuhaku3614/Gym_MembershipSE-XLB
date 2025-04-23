@@ -122,6 +122,7 @@
                                             <th>Program</th>
                                             <th>Contact</th>
                                             <th>Payment Status</th>
+                                            
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -130,6 +131,7 @@
                                                 $subscription_ids = explode(',', $member['subscription_ids']);
                                                 $latestSchedule = null;
                                                 $allSchedules = [];
+                                                $output = [];
                                                 
                                                 foreach ($subscription_ids as $subscription_id) {
                                                     $schedules = $coach->getProgramSubscriptionSchedule($subscription_id);
@@ -350,8 +352,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTable
     $('#memberTable').DataTable({
-        order: [[4, 'desc'], [5, 'asc']], // Sort by date (desc) and time (asc)
-
+        order: [[4, 'desc']], // Sort by Payment Status, which is column 4
         responsive: true
     });
     
