@@ -68,6 +68,20 @@ table td {
   font-size: 14px;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+  display: block; /* Important to remove extra space */
+}
+
+table {
+  width: 100%;
+  table-layout: fixed; /* For better control */
+}
+
+td, th {
+  overflow-wrap: break-word; /* Handle long words */
+}
 /* Layout Utilities */
 .main-content {
   margin-left: 300px;

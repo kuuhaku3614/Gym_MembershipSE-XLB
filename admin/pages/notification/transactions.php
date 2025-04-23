@@ -29,7 +29,7 @@
                     
                     // Get transaction details to include username in log
                     $transaction = $notificationsObj->getTransactionDetails($data['transactionId']);
-                    $username = $transaction['requester_name'] ?? 'Unknown';
+                    $username = $transaction['requester_name'] ?? 'Admin';
                     
                     if ($notificationsObj->confirmTransaction($data['transactionId'], $userId)) {
                         // Log the staff activity with username

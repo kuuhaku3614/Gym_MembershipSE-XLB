@@ -90,7 +90,7 @@ $activity_stmt->execute();
 $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <link rel="stylesheet" href="css/dashboard.css">
-<div class="dashboard-container">
+<div id="dashboard-container">
     <!-- Stats Section -->
     <div class="stats-section">
         <?php

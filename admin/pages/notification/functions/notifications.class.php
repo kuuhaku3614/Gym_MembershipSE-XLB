@@ -223,23 +223,26 @@ class Notifications {
             // Only update user role for membership transactions
             if ($transaction['type'] === 'membership' && $userId) {
                 // Verify user exists
-                $checkUserQuery = "SELECT id FROM users WHERE id = ?";
+                $checkUserQuery = "SELECT id, role_id FROM users WHERE id = ?";
                 $checkUserStmt = $this->db->prepare($checkUserQuery);
                 $checkUserStmt->execute([$userId]);
+                $user = $checkUserStmt->fetch(PDO::FETCH_ASSOC);
                 
-                if (!$checkUserStmt->fetch()) {
+                if (!$user) {
                     $this->db->rollBack();
                     return false;
                 }
 
-                // Update user role to member (role_id = 3)
-                $query = "UPDATE users SET role_id = 3 WHERE id = ?";
-                $stmt = $this->db->prepare($query);
-                $result = $stmt->execute([$userId]);
+                // Update user role to member (role_id = 3), if the role is not admin (role_id = 1)
+                if ($user['role_id'] != 1) { 
+                    $query = "UPDATE users SET role_id = 3 WHERE id = ?";
+                    $stmt = $this->db->prepare($query);
+                    $result = $stmt->execute([$userId]);
 
-                if (!$result) {
-                    $this->db->rollBack();
-                    return false;
+                    if (!$result) {
+                        $this->db->rollBack();
+                        return false;
+                    }
                 }
             }
 
