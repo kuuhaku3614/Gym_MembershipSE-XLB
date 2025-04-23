@@ -1150,20 +1150,6 @@
     [username] => jerard
 )
 
-2025-04-21 23:19:53 - Request received
-2025-04-21 23:19:53 - POST data: Array
-(
-    [action] => check_username
-    [username] => jerardo
-)
-
-2025-04-21 23:19:53 - Request received
-2025-04-21 23:19:53 - POST data: Array
-(
-    [action] => update_username
-    [username] => jerardo
-)
-
 2025-04-23 13:15:34 - Request received
 2025-04-23 13:15:34 - POST data: Array
 (

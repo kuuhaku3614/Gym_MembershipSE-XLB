@@ -9,11 +9,11 @@
     $special_plans = $Obj->displaySpecialPlans();
     $rental_services = $Obj->displayRentalServices();
     $walkin = $Obj->displayWalkinServices();
+    // For general display, keep using displayProgramServices (with schedules filter)
     $program_services = $Obj->displayProgramServices();
-// Filter out programs with no schedules
-$program_services = array_filter($program_services, function($program) use ($Obj) {
-    return $Obj->programHasSchedules($program['program_id']);
-});
+    // For Teach Programs section, show ALL active programs (even those with no schedules)
+    $all_programs = $Obj->getProgramsList(); // We'll add this method to fetch all active programs
+
     
 ?>
 
@@ -183,16 +183,6 @@ $program_services = array_filter($program_services, function($program) use ($Obj
         <div class="content-wrapper">
 
             <div class="container text-center mb-4 button-shortcuts">
-                <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                    <div class="row justify-content-between">
-                        <div class="mb-2">
-                            <button class="btn scroll-btn py-4" style="background-color: black" data-target="#Teach-Programs">
-                                <i class="fas fa-stopwatch-20 me-2 text-white" style="font-size: 1.4rem;"></i>
-                                <span class="text-white">Teach Programs</span>
-                            </button>
-                        </div>
-                    </div>
-                <?php endif; ?>
                 <div class="row justify-content-between">
                     <div class="col-md-4 mb-2">
                         <button class="btn scroll-btn py-4" data-target="#Gym-Rates">
@@ -215,25 +205,21 @@ $program_services = array_filter($program_services, function($program) use ($Obj
                 </div>
             </div>
             
-    <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+    <?php if (isset($_SESSION['personal_details']['role_name']) && ($_SESSION['personal_details']['role_name'] === 'coach' || $_SESSION['personal_details']['role_name'] === 'coach/staff')): ?>
         <!-- Coach Section -->
         <h2 class="section-heading">Teach Programs</h2>
         <div class="row g-4 mb-4">
-            <?php foreach ($program_services as $program) { 
+            <?php foreach ($all_programs as $program) { 
                 // Default image path
                 $defaultImage = '../cms_img/default/program.jpeg';
 
                 // Get the image path
                 $imagePath = $defaultImage; // Set default first
-                if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
-                    $imagePath = '../cms_img/program/' . $program['image'];
+                if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
+                    $imagePath = '../cms_img/programs/' . $program['image'];
                 }
-                
-                // Format available types
-                $types = $program['available_types'] ? explode(',', $program['available_types']) : [];
-                $typeLabels = array_map(function($type) {
-                    return ucfirst($type) . ' Training';
-                }, $types);
+                // No available_types for new programs, so skip types display for now
+
             ?>
                 <div class="col-sm-6 col-md-6 col-lg-3">
                     <a href="services/teach_program.php?id=<?= $program['program_id'] ?>" class="program-link">
@@ -396,8 +382,8 @@ $program_services = array_filter($program_services, function($program) use ($Obj
 
                     // Get the image path
                     $imagePath = $defaultImage; // Set default first
-                    if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
-                        $imagePath = '../cms_img/program/' . $program['image'];
+                    if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
+                        $imagePath = '../cms_img/programs/' . $program['image'];
                     }
                     
                     // Format available types
@@ -488,8 +474,8 @@ $program_services = array_filter($program_services, function($program) use ($Obj
 
                      // Get the image path
                      $imagePath = $defaultImage; // Set default first
-                     if (!empty($rental['image']) && file_exists(__DIR__ . "/../cms_img/rental/" . $rental['image'])) {
-                         $imagePath = '../cms_img/rental/' . $rental['image'];
+                     if (!empty($rental['image']) && file_exists(__DIR__ . "/../cms_img/rentals/" . $rental['image'])) {
+                         $imagePath = '../cms_img/rentals/' . $rental['image'];
                      }  
                     ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">

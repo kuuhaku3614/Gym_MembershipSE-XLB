@@ -41,13 +41,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $missingFields = [];
 
     foreach ($requiredFields as $field) {
-        if (empty($_POST[$field])) {
+        if (!isset($_POST[$field]) || $_POST[$field] === '') {
             $missingFields[] = $field;
         }
     }
 
     if (!empty($missingFields)) {
         echo json_encode(['status' => 'error', 'message' => 'Missing required fields: ' . implode(', ', $missingFields)]);
+        exit;
+    }
+
+    // Extra validation for price: allow 0, disallow negative, require numeric
+    $errors = [];
+    $price = $_POST['price'];
+    if ($price === '' || $price === null || !is_numeric($price)) {
+        $errors['price'] = 'Price is required';
+    } else if ($price < 0) {
+        $errors['price'] = 'Price cannot be negative';
+    }
+    if (!empty($errors)) {
+        echo json_encode(['status' => 'error', 'message' => 'Please correct the errors below', 'errors' => $errors]);
         exit;
     }
 

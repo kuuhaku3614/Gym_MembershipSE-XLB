@@ -383,7 +383,7 @@ class Members {
 
     public function cancelMembership($membershipId) {
         try {
-            $sql = "UPDATE memberships SET status = 'cancelled' WHERE id = :id";
+            $sql = "DELETE FROM memberships WHERE id = :id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':id' => $membershipId]);
             return ['success' => true];
@@ -395,7 +395,7 @@ class Members {
 
     public function cancelRental($rentalId) {
         try {
-            $sql = "UPDATE rental_subscriptions SET status = 'cancelled' WHERE id = :id";
+            $sql = "DELETE FROM rental_subscriptions WHERE id = :id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':id' => $rentalId]);
             return ['success' => true];
@@ -438,13 +438,22 @@ class Members {
         try {
             $this->pdo->beginTransaction();
 
+            // Delete registration records
             $sql = "DELETE rr FROM registration_records rr
                     JOIN transactions t ON rr.transaction_id = t.id
                     WHERE t.user_id = :user_id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':user_id' => $userId]);
 
-            $sql = "UPDATE users SET role_id = 3 WHERE id = :user_id";
+            // Delete rental subscriptions
+            $sql = "DELETE rs FROM rental_subscriptions rs
+                    JOIN transactions t ON rs.transaction_id = t.id
+                    WHERE t.user_id = :user_id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':user_id' => $userId]);
+
+            // Update user role
+            $sql = "UPDATE users SET role_id = 5 WHERE id = :user_id";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':user_id' => $userId]);
 

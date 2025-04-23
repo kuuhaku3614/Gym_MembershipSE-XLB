@@ -4,6 +4,21 @@ require_once __DIR__ . '/../../config.php';
 
 class Services_class{
     /**
+     * Get all active (non-removed) programs for teaching
+     * Returns: id, program_name, description, image
+     */
+    public function getProgramsList() {
+        $conn = $this->db->connect();
+        $sql = "SELECT id as program_id, program_name, description, image
+                FROM programs
+                WHERE status = 'active' AND is_removed = 0
+                ORDER BY program_name";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Check if a program has at least one schedule (group or personal)
      * @param int $program_id
      * @return bool
@@ -232,7 +247,7 @@ class Services_class{
 
     public function displayRentalServices(){
         $conn = $this->db->connect();
-        $sql = "SELECT rs.id as rental_id, rs.service_name, rs.price,
+        $sql = "SELECT rs.id as rental_id, rs.service_name, rs.price, rs.image,
                 CONCAT(rs.duration, ' ', dt.type_name) as validity,
                 rs.available_slots
                 FROM rental_services rs

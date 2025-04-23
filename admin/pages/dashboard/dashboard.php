@@ -169,7 +169,8 @@ $activity_announcements = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
         SELECT COALESCE(
             (SELECT COALESCE(SUM(amount), 0) FROM memberships) +
             (SELECT COALESCE(SUM(amount), 0) FROM program_subscription_schedule) +
-            (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions),
+            (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions) +
+        (SELECT COALESCE(SUM(amount), 0) FROM walk_in_records WHERE is_paid = 1),
             0
         ) AS total_earnings;
         ";
