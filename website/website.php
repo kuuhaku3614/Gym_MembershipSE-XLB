@@ -164,9 +164,8 @@ require_once('includes/loadingScreen.php');
   
     </div>
 
-    <!-- Navigation Buttons -->
-  
-    <div class="slider-navigation d-flex justify-content-end">
+    <!-- Navigation Buttons, initially hidden -->
+    <div class="slider-navigation d-flex justify-content-end" style="display: none !important;">
         <button class="nav-button prev-button btn btn-secondary" style="font-size: 1.5em;">‹</button>
         <button class="nav-button next-button btn btn-secondary" style="font-size: 1.5em;">›</button>
     </div>
@@ -181,6 +180,7 @@ require_once('includes/loadingScreen.php');
             <?php endforeach; ?>
         </div>
     </div>
+
 </section>
 
 <style>
@@ -673,10 +673,26 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
         wrapper.scrollBy({ left: slideWidth * 4, behavior: 'smooth' }); // Scroll 4 slides right
     });
 });
-  </script>
-  <!-- location pointer -->
-  <script>
     document.addEventListener('DOMContentLoaded', function() {
+
+        const container = document.querySelector('.offers-container');
+            const wrapper = document.querySelector('.offers-wrapper');
+            const navigation = document.querySelector('.slider-navigation');
+            
+            // Check if content width exceeds container width
+            if (wrapper.scrollWidth > container.clientWidth) {
+                navigation.style.display = 'flex'; // Show navigation
+            }
+            
+            // Re-check on window resize
+            window.addEventListener('resize', function() {
+                if (wrapper.scrollWidth > container.clientWidth) {
+                    navigation.style.display = 'flex';
+                } else {
+                    navigation.style.display = 'none';
+                }
+            });
+
         const locationBox = document.querySelector('.location-box');
         const mapSection = document.getElementById('S-ContactUs');
         
