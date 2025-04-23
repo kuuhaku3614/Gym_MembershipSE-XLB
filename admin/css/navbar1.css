@@ -55,6 +55,33 @@ div {
   font-family: "Inter", sans-serif !important;
 }
 
+thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  color: gray !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+table td {
+  vertical-align: middle;
+  text-align: center;
+  font-size: 14px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block; /* Important to remove extra space */
+}
+
+table {
+  width: 100%;
+  table-layout: fixed; /* For better control */
+}
+
+td, th {
+  overflow-wrap: break-word; /* Handle long words */
+}
 /* Layout Utilities */
 .main-content {
   margin-left: 300px;

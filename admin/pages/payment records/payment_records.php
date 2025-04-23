@@ -96,19 +96,21 @@ try {
 </style>
 
 <div class="container my-5">
-    <h2 class="text-center mb-4">Transaction Records</h2>
+    <h2 class="mb-4">Transaction Records</h2>
+    <div class="card">
+    <div class="card-body">
     <div class="table-responsive">
-        <table id="transactionTable" class="table table-bordered table-striped table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Transaction ID</th>
-                    <th>Member/Client</th>
-                    <th>Total Amount</th>
-                    <th>Payment Date</th>
-                    <th>Service Type</th>
-                    <th>Payment Status</th>
-                    <th>Actions</th>
-                </tr>
+        <table id="transactionTable" class="table table-hovered">
+            <thead class="table-light border">
+            <tr>
+                <th class="border">Transaction ID</th>
+                <th class="border">Member/Client</th>
+                <th class="border">Total Amount</th>
+                <th class="border">Payment Date</th>
+                <th class="border">Service Type</th>
+                <th class="border">Payment Status</th>
+                <th class="border">Actions</th>
+            </tr>
             </thead>
             <tbody>
             <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
@@ -131,6 +133,8 @@ try {
                         </button>
                     </td>
                 </tr>
+            </div>
+            </div>
 
                 <!-- Modal for Receipt -->
                 <div class="modal fade" id="receiptModal-<?php echo $row['transaction_id']; ?>" tabindex="-1" aria-labelledby="receiptModalLabel-<?php echo $row['transaction_id']; ?>" aria-hidden="true">

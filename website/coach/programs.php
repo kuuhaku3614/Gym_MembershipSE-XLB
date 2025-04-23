@@ -104,10 +104,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programs</title>
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="../../vendor/bootstrap-5.3.3/dist/css/bootstrap.min.css">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="../../vendor/fontawesome-free-5.15.4-web/css/all.min.css">
-    
+    <!-- <link rel="stylesheet" href="../../vendor/bootstrap-5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../vendor/fontawesome-free-5.15.4-web/css/all.min.css"> -->
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
 
@@ -164,12 +162,25 @@
 <body>
 
 <div id="content">
+<div class="dashboard-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>PROGRAMS</h4>
+                <div>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-calendar-day"></i> <?php echo date('F d, Y l'); ?>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="card-title">My Programs</h4>
+                    <i class="fas fa-dumbbell"></i> My Programs
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -435,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     }
+});
 function toggleStatus(coachProgramTypeId, currentStatus, button) {
     fetch('programs.php', {
         method: 'POST',
@@ -898,7 +910,7 @@ function validateAndSavePersonalSchedule(event) {
     
     return false;
 }
-});
+
 
 document.addEventListener('DOMContentLoaded', function() {
     const modals = [

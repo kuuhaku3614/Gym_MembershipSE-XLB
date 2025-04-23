@@ -96,11 +96,30 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 </div>
 
 <script>
-// Show loader function
+// Add a timestamp tracking variable
+let pageLoadStartTime = 0;
+
+// Show loader function with timing check
 function showLoader() {
     const loader = document.getElementById('loader-wrapper');
-    loader.style.display = 'flex';
-    loader.style.opacity = '1';
+    
+    // Calculate time since last page unload
+    const currentTime = new Date().getTime();
+    const timeSinceUnload = localStorage.getItem('pageUnloadTime') ? 
+        currentTime - parseInt(localStorage.getItem('pageUnloadTime')) : 9999;
+    
+    // Only show loader if page reload took more than 1 second (1000ms)
+    if (timeSinceUnload > 1000) {
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+    } else {
+        // For quick reloads, keep loader hidden
+        loader.style.display = 'none';
+        loader.style.opacity = '0';
+    }
+    
+    // Store current time for tracking page load start
+    pageLoadStartTime = currentTime;
 }
 
 // Hide loader function
@@ -109,6 +128,11 @@ function hideLoader() {
     loader.style.opacity = '0';
     setTimeout(() => loader.style.display = 'none', 500);
 }
+
+// Store timestamp when user leaves/reloads the page
+window.addEventListener('beforeunload', function() {
+    localStorage.setItem('pageUnloadTime', new Date().getTime());
+});
 
 // Show loader when page starts loading
 document.addEventListener('DOMContentLoaded', function() {
@@ -134,4 +158,3 @@ fetch('/some-data')
     });
 */
 </script>
-

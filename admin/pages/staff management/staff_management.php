@@ -37,15 +37,17 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
     <!-- Staff Table -->
+    <div class="card">
+        <div class="card-body">
     <div class="table-responsive">
-    <table id="staffManagementTable" class="table table-striped table-bordered" id="staffTable">
-        <thead >
+    <table id="staffManagementTable" class="table table-hovered">
+        <thead class="table-light border">
             <tr>
-                <th >Full Name</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Contact Number</th>
-                <th>Actions</th>
+                <th class="border">Full Name</th>
+                <th class="border">Username</th>
+                <th class="border">Role</th>
+                <th class="border">Contact Number</th>
+                <th class="border">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -79,6 +81,8 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </table>
 </div>
 </div>
+        </div>
+    </div>
 
 <!-- Add Staff Modal -->
 <div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
@@ -298,14 +302,16 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $logStmt->execute();
         $logResult = $logStmt->fetchAll(PDO::FETCH_ASSOC);
         ?>
-        
-        <table id="activityLogTable" class="table table-striped table-bordered w-100">
-            <thead>
+        <div class="card">
+            <div class="card-body">
+        <div class="table-responsive">
+        <table id="activityLogTable" class="table table-hovered">
+            <thead class="table-light border">
                 <tr>
-                    <th>Activity</th>
-                    <th>Description</th>
-                    <th>Staff Member</th>
-                    <th>Timestamp</th>
+                    <th class="border">Activity</th>
+                    <th class="border">Description</th>
+                    <th class="border">Staff Member</th>
+                    <th class="border">Timestamp</th>
                 </tr>
             </thead>
             <tbody>
@@ -321,6 +327,9 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </table>
     </div>
 </div>
+            </div>
+        </div>
+    </div>
 
 <script>
 $(document).ready(function() {

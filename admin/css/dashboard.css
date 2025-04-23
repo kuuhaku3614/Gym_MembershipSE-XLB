@@ -15,35 +15,39 @@ body {
   padding: 20px;
 }
 
-.dashboard-container {
-  margin: 0 auto;
-  padding: 20px;
+#dashboard-container {
+  margin: 0; /* As before */
+  padding: 0; /* As before */
   display: grid;
   gap: 24px;
+  width: calc(100% - 40px);
 }
 
 .stats-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* Reduce minmax to allow more columns */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
   gap: 20px;
 }
 
 .main-section {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  /* Adjust right column width or make it flexible */
+  grid-template-columns: 1fr 25%; /* 1fr and 25% of the remaining space */
   gap: 20px;
-  min-height: 400px; /* Set minimum height for main section */
+  min-height: 400px;
 }
 
 @media (max-width: 1024px) {
   .main-section {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Keep responsive */
   }
 }
 
 .tables-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  /* Reduce minmax here too if needed */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 20px;
 }
 
@@ -53,6 +57,7 @@ body {
   padding: 20px;
   box-shadow: var(--card-shadow);
   transition: transform 0.2s;
+  overflow: hidden;
 }
 
 .stats-card {
@@ -119,13 +124,15 @@ body {
 
 /* Updated graph container styles */
 .graph-container {
+  /* height: 700px;  */ /* Remove fixed height */
+  max-height: 700px;
+  overflow-y: auto;  /* Add scroll if content overflows */
+  display: flex;
+  flex-direction: column;
   padding: 24px;
   background: white;
   border-radius: 12px;
   box-shadow: var(--card-shadow);
-  height: 700px; /* Fixed height */
-  display: flex;
-  flex-direction: column;
 }
 
 .graph-container h2 {
@@ -142,6 +149,7 @@ body {
 }
 
 .table-container {
+  overflow-x: auto; /* If tables are wide */
   background: white;
   border-radius: 12px;
   padding: 20px;

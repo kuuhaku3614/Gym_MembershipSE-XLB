@@ -17,11 +17,11 @@
 }
 
 .card-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-  font-weight: 600;
-  padding: 16px 20px;
-  color: #495057;
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef !important;
+  font-weight: 600 !important;
+  padding: 16px 20px !important;
+  color: #495057 !important;
 }
 
 /* Stat cards */
@@ -330,6 +330,11 @@
 /* Fix for the table responsiveness */
 .table-responsive {
   overflow-x: auto;
+}
+
+.dashboard-header h4 {
+  color: #495057;
+  font-weight: 700;
 }
 
 @media (max-width: 768px) {

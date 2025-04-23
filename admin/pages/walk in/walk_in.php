@@ -97,17 +97,17 @@
 
     <div class="card">
         <div class="card-body">
-          <table id="walk_inTable" class="table table-striped table-bordered">
-              <thead>
+          <table id="walk_inTable" class="table table-hovered">
+              <thead class="table-light border">
                   <tr>
-                      <th>No.</th>
-                      <th>Full Name</th>
-                      <th>Phone Number</th>
-                      <th>Date</th>
-                      <th>Time in</th>
-                      <th>Payment Status</th>
-                      <th>Status</th>
-                      <th>Action</th>
+                      <th class="border">No.</th>
+                      <th class="border">Full Name</th>
+                      <th class="border">Phone Number</th>
+                      <th class="border">Date</th>
+                      <th class="border">Time in</th>
+                      <th class="border">Payment Status</th>
+                      <th class="border">Status</th>
+                      <th class="border">Action</th>
                   </tr>
               </thead>
               <tbody>

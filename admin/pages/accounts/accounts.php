@@ -89,17 +89,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>User Management</h2>
     </div>
+    <div class="card">
+        <div class="card-body">
         <div class="table-responsive">
-        <table id="accountTable" class="table table-striped table-bordered scrollable-table">
-            <thead>
-                <tr>
-                    <th>User Name</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+            <table id="accountTable" class="table table-hovered">
+                <thead class="table-light border">
+                    <tr>
+                        <th class="border">User Name</th>
+                        <th class="border">Role</th>
+                        <th class="border">Status</th>
+                        <th class="border">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                 <?php
                 $stmt = $pdo->prepare("SELECT u.id,u.username, r.role_name, u.is_banned 
                     FROM users u
@@ -125,6 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tbody>
         </table>
         </div>
+        </div>
+    </div>
 
         <!-- Ban Modal -->
         <div class="modal fade" id="banModal" tabindex="-1" aria-labelledby="banModalLabel" aria-hidden="true">

@@ -32,14 +32,14 @@ $membersList = $members->getAllMembers();
   <div class="card">
     <div class="card-body">
       <div class="table-responsive">
-        <table id="membersTable" class="table table-striped table-bordered">
-          <thead>
+        <table id="membersTable" class="table table-hovered">
+          <thead class="table-light border">
             <tr>
-              <th class="text-center" style="width: 80px">Photo</th>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Payment Status</th>
-              <th class="text-center" style="width: 100px">Action</th>
+              <th class="text-center border" style="width: 80px">Photo</th>
+              <th class="border">Name</th>
+              <th class="border">Status</th>
+              <th class="border">Payment Status</th>
+              <th class="text-center border" style="width: 100px">Action</th>
             </tr>
           </thead>
           <tbody>
