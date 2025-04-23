@@ -68,6 +68,28 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         .schedule-list { max-height: 300px; overflow-y: auto; }
         .is-invalid { border-color: #dc3545 !important; }
         .is-invalid:focus { box-shadow: 0 0 0 0.25rem rgba(220,53,69,0.25) !important; }
+        /* Responsive FullCalendar wrapper */
+        .calendar-picture-wrapper {
+            width: 100%;
+            height: auto;
+            font-size: 1.1vw; /* Scale all calendar content based on viewport width */
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible; /* No scrollbars */
+        }
+        #coachScheduleCalendar, .fc {
+            width: 100% !important;
+            height: auto !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+        }
+        .fc, .fc-scrollgrid, .fc-view, .fc-timegrid, .fc-timegrid-body, .fc-timegrid-slots, .fc-timegrid-cols {
+            transition: none !important;
+        }
+        .fc-col-header-cell, .fc-col-header-cell a {
+        color: #111 !important;
+        text-decoration: none !important;
+        }
     </style>
 </head>
 <body>
@@ -92,11 +114,38 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
             <p class="mb-1 text-muted"><?php echo htmlspecialchars($program['description'] ?? ''); ?></p>
         </div>
 
-        <div id="existingSchedulesSection" class="mt-4" style="display:none;">
-            <h5>Existing Schedules</h5>
-            <ul id="existingGroupSchedules" class="list-group mb-2"></ul>
-            <ul id="existingPersonalSchedules" class="list-group mb-2"></ul>
+        <!-- Button to trigger modal -->
+<button id="showFullScheduleModalBtn" type="button" class="btn btn-outline-secondary mb-2" data-bs-toggle="modal" data-bs-target="#fullScheduleModal" title="Show My Full Schedule">
+    <i class="bi bi-calendar-week fs-5"></i>
+</button>
+<!-- Modal for Full Schedule Calendar -->
+<div class="modal fade" id="fullScheduleModal" tabindex="-1" aria-labelledby="fullScheduleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fullScheduleModalLabel">My Full Schedule</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="calendar-picture-wrapper">
+          <div id="coachScheduleCalendar" class="mt-0"></div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var fullScheduleModal = document.getElementById('fullScheduleModal');
+    if (fullScheduleModal) {
+        fullScheduleModal.addEventListener('shown.bs.modal', function () {
+            if (window.coachScheduleCalendarObj) {
+                window.coachScheduleCalendarObj.updateSize();
+            }
+        });
+    }
+});
+</script>
 
         <form id="teachProgramForm">
             <input type="hidden" name="program_id" value="<?php echo $program_id; ?>">
@@ -140,12 +189,26 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- FullCalendar CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
 // All DOM references and event listeners are declared only once below
 let groupDescription = '';
 let personalDescription = '';
 
 window.addEventListener('DOMContentLoaded', function() {
+    // Fetch all schedules for this coach for overlap checking
+    fetch('teach_program_backend.php?all_coach_schedules=1')
+        .then(res => res.json())
+        .then(data => {
+            window.allCoachSchedulesGroup = Array.isArray(data.schedules && data.schedules.group) ? data.schedules.group : [];
+            window.allCoachSchedulesPersonal = Array.isArray(data.schedules && data.schedules.personal) ? data.schedules.personal : [];
+        })
+        .catch(() => {
+            window.allCoachSchedulesGroup = [];
+            window.allCoachSchedulesPersonal = [];
+        });
     const scheduleInputs = document.getElementById('scheduleInputs');
     const typeRadios = document.querySelectorAll('input[name="type"]');
     const descriptionInput = document.getElementById('programDescription');
@@ -264,11 +327,11 @@ addScheduleBtn.addEventListener('click', function() {
         }
     }
 
-    // Overlap check: same day and time ranges intersect (cart + existing schedules from backend)
+    // Overlap check: same day and time ranges intersect (cart + ALL schedules for this coach across ALL programs)
     const allExistingSchedules = [
         ...scheduleCart,
-        ...(window.existingSchedulesGroup || []),
-        ...(window.existingSchedulesPersonal || [])
+        ...(window.allCoachSchedulesGroup || []),
+        ...(window.allCoachSchedulesPersonal || [])
     ];
     const isOverlap = allExistingSchedules.some(existing => {
         if (existing.day !== schedule.day) return false;
@@ -313,46 +376,119 @@ window.removeSchedule = function(idx) {
     updateScheduleCartUI();
 }
 // Show schedule fields if a type is already selected on page load
+// Always initialize these globals so they're never undefined
+window.allCoachSchedulesGroup = [];
+window.allCoachSchedulesPersonal = [];
+
 window.addEventListener('DOMContentLoaded', function() {
+    // Fetch all schedules for this coach for overlap checking
+    fetch('teach_program_backend.php?all_coach_schedules=1')
+        .then(res => res.json())
+        .then(data => {
+            window.allCoachSchedulesGroup = Array.isArray(data.schedules && data.schedules.group) ? data.schedules.group : [];
+            window.allCoachSchedulesPersonal = Array.isArray(data.schedules && data.schedules.personal) ? data.schedules.personal : [];
+        })
+        .catch(() => {
+            window.allCoachSchedulesGroup = [];
+            window.allCoachSchedulesPersonal = [];
+        })
+        .finally(() => {
+            fetchAndRenderExistingSchedules();
+        });
     renderScheduleFields();
 });
 function fetchAndRenderExistingSchedules() {
-    const programId = document.querySelector('input[name="program_id"]').value;
+    // Hide the old section UI
     const section = document.getElementById('existingSchedulesSection');
-    const groupList = document.getElementById('existingGroupSchedules');
-    const personalList = document.getElementById('existingPersonalSchedules');
-    fetch(`teach_program_backend.php?program_id=${programId}`)
-        .then(res => res.json())
-        .then(data => {
-            let hasAny = false;
-            // Store existing schedules globally for overlap check
-            window.existingSchedulesGroup = data.success && data.schedules && data.schedules.group ? data.schedules.group : [];
-            window.existingSchedulesPersonal = data.success && data.schedules && data.schedules.personal ? data.schedules.personal : [];
-            // Render group schedules
-            if (window.existingSchedulesGroup.length) {
-                groupList.innerHTML = '<li class="list-group-item active">Group Schedules</li>';
-                window.existingSchedulesGroup.forEach(s => {
-                    groupList.innerHTML += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Capacity: ${s.capacity}, ₱${s.price}</li>`;
-                });
-                hasAny = true;
+    if (section) section.style.display = 'none';
+    // FullCalendar rendering
+    const calendarEl = document.getElementById('coachScheduleCalendar');
+    const groupSchedules = window.allCoachSchedulesGroup || [];
+    const personalSchedules = window.allCoachSchedulesPersonal || [];
+    const allSchedules = groupSchedules.concat(personalSchedules);
+
+    // Map to FullCalendar event objects
+    const events = allSchedules.map(s => {
+        // Map PHP day name to JS day index (0=Sunday...6=Saturday)
+        const dayMap = {
+            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+            'Thursday': 4, 'Friday': 5, 'Saturday': 6
+        };
+        // Find the next occurrence of the schedule's day in the current week
+        const now = new Date();
+        const weekStart = new Date(now.setDate(now.getDate() - now.getDay())); // Sunday
+        const eventDate = new Date(weekStart);
+        eventDate.setDate(weekStart.getDate() + dayMap[s.day]);
+        function setTime(date, time) {
+            const [h, m] = time.split(":");
+            date.setHours(+h, +m, 0, 0);
+        }
+        const start = new Date(eventDate);
+        setTime(start, s.start_time);
+        const end = new Date(eventDate);
+        setTime(end, s.end_time);
+        return {
+            title: (s.program_name ? s.program_name + ' - ' : '') + (s.type === 'group' ? 'Group' : 'Personal'),
+            start,
+            end,
+            backgroundColor: (function() {
+                function blendWithWhite(hex, percent) {
+                    hex = hex.replace('#', '');
+                    if (hex.length === 3) {
+                        hex = hex.split('').map(x => x + x).join('');
+                    }
+                    const num = parseInt(hex, 16);
+                    let r = (num >> 16) & 255;
+                    let g = (num >> 8) & 255;
+                    let b = num & 255;
+                    r = Math.round(r + (255 - r) * percent);
+                    g = Math.round(g + (255 - g) * percent);
+                    b = Math.round(b + (255 - b) * percent);
+                    return `rgb(${r},${g},${b})`;
+                }
+                const primary = getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim() || '#0d6efd';
+                const secondary = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim() || '#198754';
+                return s.type === 'group' ? blendWithWhite(primary, 0.2) : blendWithWhite(secondary, 0.2);
+            })(), // pastel system palette
+            borderColor: '#fff',
+            textColor: '#fff',
+            extendedProps: s
+        };
+    });
+
+    // Destroy previous calendar if exists
+    if (window.coachScheduleCalendarObj) {
+        window.coachScheduleCalendarObj.destroy();
+    }
+
+    // Render FullCalendar
+    window.coachScheduleCalendarObj = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        allDaySlot: false,
+        slotMinTime: "06:00:00",
+        slotMaxTime: "22:00:00",
+        headerToolbar: false, // Remove all navigation and title
+        titleFormat: '', // Remove date range title
+        events,
+        initialDate: '2025-04-21', // Static Monday (any Monday works)
+        navLinks: false,
+        editable: false,
+        selectable: false,
+        showNonCurrentDates: false, // Hide any extra dates if possible
+        dayHeaderFormat: { weekday: 'long' }, // Show only full day name, no date
+        eventContent: function(arg) {
+            const event = arg.event.extendedProps;
+            const programName = event.program_name || arg.event.title || '';
+            let details = '';
+            if (event.type === 'personal') {
+                details = ` (Personal) <br> ${event.duration_rate} mins, ₱${Number(event.price).toLocaleString()}`;
             } else {
-                groupList.innerHTML = '';
+                details = ` (Group) <br> ${event.capacity} slots, ₱${Number(event.price).toLocaleString()}`;
             }
-            // Render personal schedules
-            if (window.existingSchedulesPersonal.length) {
-                personalList.innerHTML = '<li class="list-group-item active">Personal Schedules</li>';
-                window.existingSchedulesPersonal.forEach(s => {
-                    personalList.innerHTML += `<li class="list-group-item">${s.day}, ${s.start_time}-${s.end_time}, Duration: ${s.duration_rate} mins, ₱${s.price}</li>`;
-                });
-                hasAny = true;
-            } else {
-                personalList.innerHTML = '';
-            }
-            section.style.display = hasAny ? 'block' : 'none';
-        })
-        .catch(() => {
-            document.getElementById('existingSchedulesSection').style.display = 'none';
-        });
+            return { html: `<div class='fc-simple-event'>${programName}${details}</div>` };
+        }
+    });
+    window.coachScheduleCalendarObj.render();
 }
 
 function renderScheduleFields() {
@@ -418,14 +554,7 @@ function renderScheduleFields() {
 document.getElementById('teachProgramForm').addEventListener('submit', function(e) {
     e.preventDefault();
     alert('Submit logic not implemented yet.');
-        if (res.success) {
-            alert('Program availed and schedule added!');
-            window.location.reload();
-        } else {
-            alert(res.message || 'Failed to avail program.');
-        }
-    })
-    .catch(() => alert('An error occurred.'));
+});
 
 </script>
 </body>
