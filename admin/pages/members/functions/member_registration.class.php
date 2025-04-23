@@ -39,7 +39,7 @@ class MemberRegistration {
                 AND p.is_removed = 0
                 AND u.is_active = 1
                 AND u.is_banned = 0
-                AND u.role_id = 4
+                AND u.role_id IN (4, 6)
                 AND (
                     (cpt.type = 'group' AND cgs.id IS NOT NULL)
                     OR 
@@ -78,11 +78,11 @@ class MemberRegistration {
 
     public function getRentalServices() {
         try {
-            $sql = "SELECT rs.id, rs.service_name as rental_name, rs.description, rs.price,
+            $sql = "SELECT rs.id, rs.service_name as rental_name, rs.description, rs.price, rs.total_slots, rs.available_slots,
                            rs.duration, rs.duration_type_id, dt.type_name as duration_type 
                     FROM rental_services rs
                     JOIN duration_types dt ON rs.duration_type_id = dt.id
-                    WHERE rs.status = 'active' AND rs.is_removed = 0";
+                    WHERE rs.status = 'active' AND rs.is_removed = 0 AND rs.available_slots > 0";
             
             $stmt = $this->pdo->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);

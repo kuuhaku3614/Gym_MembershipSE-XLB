@@ -117,12 +117,12 @@
                                 <table id="memberTable" class="table table-hover">
                                 <thead class="table-light">
                                         <tr>
-                                            <th>Status</th>
+                                            <th></th>
                                             <th>Name</th>
                                             <th>Program</th>
                                             <th>Contact</th>
-                                            <th>Schedule</th>
                                             <th>Payment Status</th>
+                                            
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -131,6 +131,7 @@
                                                 $subscription_ids = explode(',', $member['subscription_ids']);
                                                 $latestSchedule = null;
                                                 $allSchedules = [];
+                                                $output = [];
                                                 
                                                 foreach ($subscription_ids as $subscription_id) {
                                                     $schedules = $coach->getProgramSubscriptionSchedule($subscription_id);
@@ -147,27 +148,8 @@
                                                 }
                                                 ?>
                                                 <tr>
-                                                    <td><?= htmlspecialchars($member['subscription_status']) ?></td>
-                                                    <td><?= htmlspecialchars($member['member_name']) ?></td>
-                                                    <td><?= $member['programs'] ?></td>
-                                                    <td><?= htmlspecialchars($member['contact']) ?></td>
                                                     <td id="schedtd">
                                                         <?php
-                                                        $output = [];
-                                                        if ($latestSchedule) {
-                                                            $formattedSchedule = formatSchedule($latestSchedule);
-                                                            $paymentStatus = $latestSchedule['is_paid'] ? '[Paid]' : '[Unpaid]';
-                                                            $output[] = sprintf(
-                                                                '<div class="d-flex align-items-center"><div class="me-2">%s<br>%s<br> (%s) %s</div>',
-                                                                $formattedSchedule['date'],
-                                                                $formattedSchedule['time'],
-                                                                $formattedSchedule['type'],
-                                                                $paymentStatus
-                                                            );
-                                                        } else {
-                                                            $output[] = 'No schedules found';
-                                                        }
-
                                                         if (!empty($allSchedules)) {
                                                             $output[] = sprintf(
                                                                 '<button type="button" class="btn btn-sm btn-info ms-2" data-bs-toggle="modal" data-bs-target="#scheduleModal%d">
@@ -180,6 +162,9 @@
                                                         echo implode('', $output);
                                                         ?>
                                                     </td>
+                                                    <td><?= htmlspecialchars($member['member_name']) ?></td>
+                                                    <td><?= $member['programs'] ?></td>
+                                                    <td><?= htmlspecialchars($member['contact']) ?></td>
                                                     <td>
                                                         <?php
                                                         if ($member['total_sessions'] > 0) {
@@ -367,8 +352,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DataTable
     $('#memberTable').DataTable({
-        order: [[4, 'desc'], [5, 'asc']], // Sort by date (desc) and time (asc)
-
+        order: [[4, 'desc']], // Sort by Payment Status, which is column 4
         responsive: true
     });
     

@@ -520,8 +520,6 @@ function generateProgramCard($program) {
         }
         .rental-option {
             border: 1px solid #e9ecef;
-            padding: 15px;
-            margin-bottom: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
@@ -700,16 +698,19 @@ function generateProgramCard($program) {
     opacity: 0.85;
     border-color: #888;
 }
+.nav-link{
+    pointer-events: none !important;
+}
 </style>
 </head>
 <body>
     <div class="container-fluid py-4">
         <div class="row">
             <div class="col-12">
-                <h3 class="mb-4">Renew Membership</h3>
-                <button type="button" class="btn btn-secondary" onclick="window.location.reload()">
-                    <i class="fas fa-arrow-left me-1"></i> Return
+                <button class="btn btn-outline-secondary rounded-pill back-btn position-absolute z-1" type="button" onclick="window.location.reload()">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
+                <div class="display-6 fw-bold mb-4" style="width: 100%; text-align: center;">Renew Membership</div>
                 <!-- Phase Navigation (skip Phase 1) -->
                 <ul class="phases nav nav-pills nav-fill mb-4">
                     <li class="nav-item">
@@ -856,24 +857,44 @@ function generateProgramCard($program) {
                         <div class="row">
                             <?php foreach ($rentalServices as $service): ?>
                             <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
-                                <div class="card rental-option h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title"><?= htmlspecialchars($service['rental_name']) ?></h5>
-                                        <p class="card-text">
-                                            Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?><br>
-                                            Price: ₱<?= number_format($service['price'], 2) ?>
-                                        </p>
-                                        <input type="checkbox" 
-                                               name="rental_services[]" 
-                                               value="<?= $service['id']; ?>"
-                                               class="rental-service-checkbox"
-                                               data-name="<?= htmlspecialchars($service['rental_name']) ?>"
-                                               data-price="<?= $service['price'] ?>"
-                                               data-duration="<?= htmlspecialchars($service['duration']) ?>"
-                                               data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
-                                               style="display: none;">
+                                <?php
+                                $defaultImage = '../cms_img/default/rental.jpeg';
+                                $imagePath = $defaultImage;
+                                if (!empty($service['image']) && file_exists(__DIR__ . "/../../../cms_img/gym_rates/" . $service['image'])) {
+                                    $imagePath = '../cms_img/gym_rates/' . htmlspecialchars($service['image']);
+                                }
+                            ?>
+                            <div class="card rental-option">
+                                <div class="card-header text-white text-center" style="background-image: url('<?= $imagePath ?>'); background-size: cover; background-position: center; position: relative; min-height: 120px;">
+                                    <span class="badge rounded-pill plan-badge-indicator bg-warning">
+                                        <?php
+                                        if (isset($service['available_slots'])) {
+                                            $slots = (int)$service['available_slots'];
+                                            echo $slots . ' ' . ($slots === 1 ? 'slot' : 'slots');
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
+                                    </span>
+                                    <div class="overlay-header">
+                                        <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($service['rental_name']) ?></h2>
                                     </div>
+                                    <div class="overlay-darker"></div>
                                 </div>
+                                <div class="card-body">
+                                    <p class="card-text mb-1">Price: ₱<?= number_format($service['price'], 2) ?></p>
+                                    <p class="card-text mb-1">Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?></p>
+                                    <input type="checkbox" 
+                                        name="rental_services[]" 
+                                        value="<?= $service['id']; ?>"
+                                        class="rental-service-checkbox"
+                                        data-name="<?= htmlspecialchars($service['rental_name']) ?>"
+                                        data-price="<?= $service['price'] ?>"
+                                        data-duration="<?= htmlspecialchars($service['duration']) ?>"
+                                        data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
+                                        style="display: none;">
+                                </div>
+                            </div>
                             </div>
                             <?php endforeach; ?>
                         </div>

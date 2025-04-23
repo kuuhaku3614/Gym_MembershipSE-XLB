@@ -2,6 +2,39 @@
 // Adapted from add_member.js for the renewal process. Phase 1 logic is removed.
 
 $(document).ready(function () {
+  // Restore summary state (minimized/maximized) from localStorage
+  function restoreSummaryState() {
+    const $summary = $('.membership-summary');
+    const $showBtn = $('#show-summary-btn');
+    if (localStorage.getItem('summaryMinimized') === 'true') {
+      $summary.hide();
+      $showBtn.show();
+    } else {
+      $summary.show();
+      $showBtn.hide();
+    }
+  }
+
+  // Membership Summary Minimize/Restore Button Logic
+  const $summary = $('.membership-summary');
+  const $showBtn = $('#show-summary-btn');
+  const $toggleBtn = $('#toggle-summary-btn');
+
+  $toggleBtn.on('click', function() {
+    $summary.hide();
+    $showBtn.show();
+    localStorage.setItem('summaryMinimized', 'true');
+  });
+  $showBtn.on('click', function() {
+    $summary.show();
+    $showBtn.hide();
+    localStorage.setItem('summaryMinimized', 'false');
+  });
+
+  // Always show summary as open on page load
+  localStorage.setItem('summaryMinimized', 'false');
+  restoreSummaryState(); // <-- This will now always open on initial load
+
   let currentPhase = 2;
   let selectedPrograms = [];
   let selectedRentals = [];
@@ -612,81 +645,73 @@ $(document).ready(function () {
               }
             });
             const rows = Object.values(scheduleGroups).map((group) => {
-              const timeButtons = group.slots
-                .map(
-                  (slot) => `
-                                <button class="btn btn-primary btn-sm select-schedule m-1" type="button"
-                                    data-id="${slot.id}"
-                                    data-type="personal"
-                                    data-coach-program-type-id="${coachProgramTypeId}"
-                                    data-program="${programName}"
-                                    data-coach="${group.coach}"
-                                    data-day="${group.day}"
-                                    data-starttime="${slot.startTime}"
-                                    data-endtime="${slot.endTime}"
-                                    data-price="${group.price}">
-                                    ${slot.startTime} - ${slot.endTime}
-                                </button>
-                            `
-                )
-                .join("");
+              const timeButtons = group.slots.map((slot) =>
+                `<button class="btn btn-primary btn-sm select-schedule m-1" type="button"
+                  data-id="${slot.id}"
+                  data-type="personal"
+                  data-coach-program-type-id="${coachProgramTypeId}"
+                  data-program="${programName}"
+                  data-coach="${group.coach}"
+                  data-day="${group.day}"
+                  data-starttime="${slot.startTime}"
+                  data-endtime="${slot.endTime}"
+                  data-price="${group.price}">
+                  ${slot.startTime} - ${slot.endTime}
+                </button>`
+              ).join("");
               return `
-                                <tr>
-                                    <td>${group.day}</td>
-                                    <td>${group.duration}</td>
-                                    <td>${group.coach}</td>
-                                    <td>₱${group.price}</td>
-                                    <td>${timeButtons}</td>
-                                </tr>
-                            `;
+                <tr>
+                  <td>${group.day}</td>
+                  <td>${group.duration}</td>
+                  <td>₱${group.price}</td>
+                  <td>${timeButtons}</td>
+                </tr>
+              `;
             });
             tableHead.html(`
-                            <tr>
-                                <th>Day</th>
-                                <th>Duration (mins)</th>
-                                <th>Coach</th>
-                                <th>Price</th>
-                                <th>Available Time Slots</th>
-                            </tr>
-                        `);
+              <tr>
+                <th>Day</th>
+                <th>Duration (mins)</th>
+                <th>Price</th>
+                <th>Available Time Slots</th>
+              </tr>
+            `);
             tableBody.html(rows.join(""));
           } else {
             // Group schedule display
             const rows = response.data.map(
               (schedule) => `
-                            <tr>
-                                <td>${schedule.day}</td>
-                                <td>${schedule.start_time} - ${schedule.end_time}</td>
-                                <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
-                                <td>${schedule.coach_name}</td>
-                                <td>₱${schedule.price}</td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm select-schedule" type="button"
-                                        data-id="${schedule.id}"
-                                        data-type="group"
-                                        data-coach-program-type-id="${coachProgramTypeId}"
-                                        data-program="${programName}"
-                                        data-coach="${schedule.coach_name}"
-                                        data-day="${schedule.day}"
-                                        data-starttime="${schedule.start_time}"
-                                        data-endtime="${schedule.end_time}"
-                                        data-price="${schedule.price}">
-                                        Select
-                                    </button>
-                                </td>
-                            </tr>
-                        `
+                <tr>
+                  <td>${schedule.day}</td>
+                  <td>${schedule.start_time} - ${schedule.end_time}</td>
+                  <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
+                  <td>₱${schedule.price}</td>
+                  <td>
+                    <button class="btn btn-primary btn-sm select-schedule" type="button"
+                      data-id="${schedule.id}"
+                      data-type="group"
+                      data-coach-program-type-id="${coachProgramTypeId}"
+                      data-program="${programName}"
+                      data-coach="${schedule.coach_name}"
+                      data-day="${schedule.day}"
+                      data-starttime="${schedule.start_time}"
+                      data-endtime="${schedule.end_time}"
+                      data-price="${schedule.price}">
+                      Select
+                    </button>
+                  </td>
+                </tr>
+              `
             );
             tableHead.html(`
-                            <tr>
-                                <th>Day</th>
-                                <th>Time</th>
-                                <th>Subscribers</th>
-                                <th>Coach</th>
-                                <th>Price</th>
-                                <th>Action</th>
-                            </tr>
-                        `);
+              <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Capacity</th>
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+            `);
             tableBody.html(rows.join(""));
           }
           programDesc.text(
@@ -845,8 +870,9 @@ $(document).ready(function () {
     if (phaseNumber === 4) {
       updateReviewInformation();
       $(".membership-summary").hide();
+      $showBtn.hide(); // Also hide minimized button in review phase
     } else {
-      $(".membership-summary").show();
+      restoreSummaryState();
     }
   }
 
@@ -884,4 +910,8 @@ $(document).ready(function () {
 
   // Initialize totals
   updateTotalAmount();
+
+  // Expose functions globally for inline handlers
+  window.updateRentalServicesSummary = updateRentalServicesSummary;
+  window.updateTotalAmount = updateTotalAmount;
 });

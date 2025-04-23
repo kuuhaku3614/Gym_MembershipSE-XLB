@@ -154,14 +154,14 @@ $(document).ready(function () {
       },
       success: function (response) {
         const tableBody = $("#scheduleTableBody");
-        const tableHead = $("#scheduleTable thead");
+        const tableHead = $("#scheduleTableHead");
         const programDesc = $("#programDesc");
 
         // Clear previous content
         tableBody.empty();
         programDesc.empty();
 
-        if (response.success && response.data?.length > 0) {
+        if (response.success && response.data && response.data.length > 0) {
           // Different headers for personal and group schedules
           if (response.program_type === "personal") {
             // For personal training, group time slots by day, duration, and price
@@ -217,34 +217,26 @@ $(document).ready(function () {
 
             // Now create rows for each unique combination
             const rows = Object.values(scheduleGroups).map((group) => {
-              const timeButtons = group.slots
-                .map(
-                  (slot) => `
-                                <button class="btn btn-primary btn-sm select-schedule m-1" type="button"
-                                    data-id="${slot.id}"
-                                    data-type="personal"
-                                    data-coach-program-type-id="${coachProgramTypeId}"
-                                    data-program="${programName}"
-                                    data-coach="${group.coach}"
-                                    data-day="${group.day}"
-                                    data-starttime="${slot.startTime}"
-                                    data-endtime="${slot.endTime}"
-                                    data-price="${group.price}">
-                                    ${slot.startTime} - ${slot.endTime}
-                                </button>
-                            `
-                )
-                .join("");
-
-              return `
-                                <tr>
-                                    <td>${group.day}</td>
-                                    <td>${group.duration}</td>
-                                    <td>${group.coach}</td>
-                                    <td>₱${group.price}</td>
-                                    <td>${timeButtons}</td>
-                                </tr>
-                            `;
+              const timeButtons = group.slots.map((slot) =>
+                `<button class="btn btn-primary btn-sm select-schedule m-1" type="button"
+                      data-id="${slot.id}"
+                      data-type="personal"
+                      data-coach-program-type-id="${coachProgramTypeId}"
+                      data-program="${programName}"
+                      data-coach="${group.coach}"
+                      data-day="${group.day}"
+                      data-starttime="${slot.startTime}"
+                      data-endtime="${slot.endTime}"
+                      data-price="${group.price}">
+                      ${slot.startTime} - ${slot.endTime}
+                  </button>`).join("");
+                  return`
+                      <tr>
+                          <td>${group.day}</td>
+                          <td>${group.duration}</td>
+                          <td>₱${group.price}</td>
+                          <td>${timeButtons}</td>
+                      </tr>`;
             });
 
             // Sort rows by day, duration, and price
@@ -265,45 +257,51 @@ $(document).ready(function () {
 
             // Update table header for the new format
             tableHead.html(`
-                            <tr>
-                                <th>Day</th>
-                                <th>Duration (mins)</th>
-                                <th>Coach</th>
-                                <th>Price</th>
-                                <th>Available Time Slots</th>
-                            </tr>
-                        `);
+              <tr>
+                <th>Day</th>
+                <th>Duration (mins)</th>
+                <th>Price</th>
+                <th>Available Time Slots</th>
+              </tr>
+            `);
 
             tableBody.html(rows.join(""));
           } else {
-            // Original group schedule display
-            const rows = response.data
-              .map(
-                (schedule) => `
-                            <tr>
-                                <td>${schedule.day}</td>
-                                <td>${schedule.start_time} - ${schedule.end_time}</td>
-                                <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
-                                <td>${schedule.coach_name}</td>
-                                <td>₱${schedule.price}</td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-primary select-schedule"
-                                        data-id="${schedule.id}"
-                                        data-type="group"
-                                        data-coach-program-type-id="${coachProgramTypeId}"
-                                        data-program="${programName}"
-                                        data-coach="${schedule.coach_name}"
-                                        data-day="${schedule.day}"
-                                        data-starttime="${schedule.start_time}"
-                                        data-endtime="${schedule.end_time}"
-                                        data-price="${schedule.price}">
-                                        Select
-                                    </button>
-                                </td>
-                            </tr>
-                        `
-              )
-              .join("");
+            // Group schedule display
+            const rows = response.data.map(
+              (schedule) => `
+                <tr>
+                  <td>${schedule.day}</td>
+                  <td>${schedule.start_time} - ${schedule.end_time}</td>
+                  <td>${schedule.current_subscribers} / ${schedule.capacity}</td>
+                  <td>₱${schedule.price}</td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-primary select-schedule"
+                      data-id="${schedule.id}"
+                      data-type="group"
+                      data-coach-program-type-id="${coachProgramTypeId}"
+                      data-program="${programName}"
+                      data-coach="${schedule.coach_name}"
+                      data-day="${schedule.day}"
+                      data-starttime="${schedule.start_time}"
+                      data-endtime="${schedule.end_time}"
+                      data-price="${schedule.price}">
+                      Select
+                    </button>
+                  </td>
+                </tr>
+              `
+            ).join("");
+
+            tableHead.html(`
+              <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Capacity</th>
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+            `);
             tableBody.html(rows);
           }
         } else {
@@ -1203,7 +1201,42 @@ $(document).ready(function () {
     }
   });
 
-  // Handle phase navigation
+  // Membership Summary Minimize/Maximize Logic (mirroring renew_member.js)
+  function setExpanded(state) {
+    const $summary = $('.membership-summary');
+    const $showBtn = $('#show-summary-btn');
+    const $toggleBtn = $('#toggle-summary-btn');
+    const $toggleIcon = $('#toggle-summary-icon');
+    const $summaryContent = $('#membership-summary-content');
+    if (state) {
+      $summary.show();
+      $showBtn.hide();
+      $summaryContent.show();
+      $toggleIcon && $toggleIcon.css('transform', 'rotate(0deg)');
+      localStorage.setItem('summaryMinimized', 'false');
+    } else {
+      $summary.hide();
+      $showBtn.show();
+      localStorage.setItem('summaryMinimized', 'true');
+    }
+  }
+
+  function restoreSummaryState() {
+    const minimized = localStorage.getItem('summaryMinimized');
+    setExpanded(minimized !== 'true');
+  }
+
+  $('#toggle-summary-btn').on('click', function() {
+    setExpanded(false);
+  });
+  $('#show-summary-btn').on('click', function() {
+    setExpanded(true);
+  });
+  // Always show summary as open on page load (match renew_member.js)
+  localStorage.setItem('summaryMinimized', 'false');
+  restoreSummaryState();
+
+// Handle phase navigation
   function showPhase(phaseNumber) {
     // Hide all phases
     $(".phase").hide();
@@ -1225,9 +1258,10 @@ $(document).ready(function () {
       generateDefaultCredentials();
       // Hide the membership summary section in phase 4
       $(".membership-summary").hide();
+      $('#show-summary-btn').hide();
     } else {
-      // Show the membership summary section in other phases
-      $(".membership-summary").show();
+      // Restore summary minimized/maximized state from localStorage
+      restoreSummaryState();
     }
 
     // Update buttons

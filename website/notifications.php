@@ -56,7 +56,7 @@ $receipt_notifications = isset($notifications['transaction_receipts']) ? $notifi
 
 // Get coach program requests if user is a coach
 $coach_requests = [];
-if ($user && $user['role_id'] == 4) { // Role 4 for coaches
+if ($user && ($user['role_id'] == 4 || $user['role_id'] == 6) ) { // Role 4 for coaches
     $coachRequests = new CoachRequests($database);
     $coach_requests = $coachRequests->getPendingRequests($user_id);
 }
@@ -466,7 +466,7 @@ function executeQuery($query, $params = []) {
             
             <!-- Notifications List -->
             <div class="list-group">
-                <?php if ($user && $user['role_id'] == 4): ?>
+                <?php if ($user && ($user['role_id'] == 4 || $user['role_id'] == 6)): ?>
                     <?php foreach ($coach_requests as $request): ?>
                         <div class="list-group-item list-group-item-primary list-group-item-action flex-column align-items-start" 
                              data-bs-toggle="modal" 
@@ -534,7 +534,7 @@ function executeQuery($query, $params = []) {
                     <?php endforeach; ?>
                 <?php endif; ?>
 
-                <?php if (empty($all_notifications) && (!$user || $user['role_id'] != 4 || empty($coach_requests))): ?>
+                <?php if (empty($all_notifications) && (!$user || $user['role_id'] != 4 || $user['role_id'] != 6 || empty($coach_requests))): ?>
                     <div class="list-group-item text-center">
                         <p>You have no notifications at this time.</p>
                     </div>
