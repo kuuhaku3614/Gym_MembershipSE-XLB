@@ -94,12 +94,23 @@
     <?php include('../coach.nav.php'); ?>
 
     <div id="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4>MEMBERS</h4>
+                <div>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-calendar-day"></i> <?php echo date('F d, Y l'); ?>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="container">
+            <div class="card mb-4">
                         <div class="card-header">
-                            <h4 class="card-title">Program Members</h4>
+                           <i class="fas fa-users"></i> Program Members
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -198,8 +209,6 @@
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -369,7 +378,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+        
     }
+});
         function handlePayment(memberId) {
             const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal' + memberId));
             paymentModal.show();
@@ -449,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButton.innerHTML = '<i class="fas fa-check me-1"></i>Confirm Payment';
             }
         }
-    });
+
     </script>
 </body>
 </html>

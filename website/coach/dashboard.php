@@ -27,7 +27,7 @@
     <div class="dashboard-header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h4><i class="fas fa-chart-line"></i> Coaching Dashboard</h4>
+                <h4>DASHBOARD</h4>
                 <div>
                     <span class="badge bg-light text-dark">
                         <i class="fas fa-calendar-day"></i> <?php echo date('F d, Y l'); ?>
