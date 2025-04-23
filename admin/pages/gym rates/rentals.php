@@ -53,19 +53,19 @@ try {
         </div>
 <div class="card">
 <div class="card-body">
-    <table id="rentalsTable" class="table table-striped table-bordered">
-        <thead>
+    <table id="rentalsTable" class="table table-hovered">
+        <thead class="table-light border">
             <tr>
-                <th>Image</th>
-                <th>No.</th>
-                <th>Service Name</th>
-                <th>Duration</th>
-                <th>Price</th>
-                <th>Total Slots</th>
-                <th>Available Slots</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th class="border">Image</th>
+                <th class="border">No.</th>
+                <th class="border">Service Name</th>
+                <th class="border">Duration</th>
+                <th class="border">Price</th>
+                <th class="border">Total Slots</th>
+                <th class="border">Available Slots</th>
+                <th class="border">Description</th>
+                <th class="border">Status</th>
+                <th class="border">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -114,7 +114,7 @@ try {
                                     data-id="<?= $rental['id'] ?>" data-status="<?= $rental['status'] ?>">
                                 <?= $toggleBtnText ?>
                             </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>">Edit</button>
+                            <button class="btn btn-sm btn-primary edit-btn" data-id="<?= $rental['id'] ?>"><i class='fas fa-power-off'></i></button>
                             <button class="btn btn-sm btn-danger remove-btn" data-id="<?= $rental['id'] ?>">Remove</button>
                         </div>
                     </td>
@@ -157,8 +157,8 @@ try {
                                 <div class="input-group">
                                     <span class="input-group-text">₱</span>
                                     <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                                    <div class="invalid-feedback"></div>
                                 </div>
-                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
                         <!-- Right Column -->
@@ -239,8 +239,8 @@ try {
                                 <div class="input-group">
                                     <span class="input-group-text">₱</span>
                                     <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
+                                    <div class="invalid-feedback"></div>
                                 </div>
-                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
                         <!-- Right Column -->
@@ -308,17 +308,42 @@ try {
     });
     });
 $(document).ready(function () {
-    
-    $('#saveServiceBtn').click(function () {
+    // Prevent native form submit
+    $('#addServiceForm').on('submit', function(e) {
+        e.preventDefault();
+    });
+
+    // Ensure only one handler
+    $('#saveServiceBtn').off('click').on('click', function () {
     $('.is-invalid').removeClass('is-invalid');
     $('.invalid-feedback').text('');
 
     const isValid = 
         validateField('serviceName', 'Service name is required') &
-        validateField('price', 'Price must be greater than 0') &
+        validatePriceField() &
         validateField('totalSlots', 'Number of slots must be greater than 0') &
         validateField('duration', 'Duration must be greater than 0') &
         validateField('durationType', 'Duration type must be selected');
+
+    // Custom validation for price to allow 0, disallow negative
+    function validatePriceField() {
+        const field = $('#price');
+        const value = field.val().trim();
+        const feedback = field.closest('.input-group').find('.invalid-feedback');
+        if (value === '' || isNaN(value)) {
+            field.addClass('is-invalid');
+            feedback.text('Price is required');
+            return false;
+        } else if (parseFloat(value) < 0) {
+            field.addClass('is-invalid');
+            feedback.text('Price cannot be negative');
+            return false;
+        } else {
+            field.removeClass('is-invalid');
+            feedback.text('');
+            return true;
+        }
+    }
 
     if (!isValid) {
         return false;
@@ -339,6 +364,9 @@ $(document).ready(function () {
         formData.append('rentalImage', imageFile);
     }
 
+    // Disable button to prevent double submit
+    $('#saveServiceBtn').prop('disabled', true);
+
     // Send AJAX request
     $.ajax({
         url: '../admin/pages/gym rates/functions/save_rentals.php',
@@ -358,6 +386,8 @@ $(document).ready(function () {
                     location.reload();
                 }, 2000);
             } else {
+                // Re-enable button on error
+                $('#saveServiceBtn').prop('disabled', false);
                 if (response.debug) {
                     console.error('Error details:', response.debug);
                 }
@@ -375,6 +405,8 @@ $(document).ready(function () {
             }
         },
         error: function(xhr, status, error) {
+            // Re-enable button on AJAX error
+            $('#saveServiceBtn').prop('disabled', false);
             console.error("AJAX Error:", status, error);
             console.log("Response:", xhr.responseText);
             try {
@@ -440,10 +472,30 @@ $('#updateServiceBtn').click(function () {
     // Validate all required fields
     const isValid =
         validateField('editServiceName', 'Service name is required') &
-        validateField('editPrice', 'Price must be greater than 0') &
+        validateEditPriceField() &
         validateField('editTotalSlots', 'Number of slots must be greater than 0') &
         validateField('editDuration', 'Duration must be greater than 0') &
         validateField('editDurationType', 'Duration type must be selected');
+
+    // Custom validation for edit price to allow 0, disallow negative
+    function validateEditPriceField() {
+        const field = $('#editPrice');
+        const value = field.val().trim();
+        const feedback = field.closest('.input-group').find('.invalid-feedback');
+        if (value === '' || isNaN(value)) {
+            field.addClass('is-invalid');
+            feedback.text('Price is required');
+            return false;
+        } else if (parseFloat(value) < 0) {
+            field.addClass('is-invalid');
+            feedback.text('Price cannot be negative');
+            return false;
+        } else {
+            field.removeClass('is-invalid');
+            feedback.text('');
+            return true;
+        }
+    }
 
     // If any validation fails, stop submission
     if (!isValid) {

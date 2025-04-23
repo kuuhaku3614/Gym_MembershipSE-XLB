@@ -141,7 +141,7 @@ body {
 }
 
 /* Table Styling */
-#announcementsTable {
+/* #announcementsTable {
     border-radius: 16px;
     overflow: hidden;
     box-shadow: var(--box-shadow-light);
@@ -165,7 +165,7 @@ body {
     vertical-align: middle;
     padding: 1.25rem;
     border-bottom: 1px solid var(--border-color);
-}
+} */
 
 .remove-btn {
     background-color: #fff0f0;
@@ -285,20 +285,23 @@ body {
     
     <!-- Manage Announcements Section -->
     <div class="table-responsive">
-        <div class="mt-4">
+        <div class="mt-4 mb-3">
             <button type="button" class="btn btn-secondary" id="showPreviousBtn">
                 <i class="fas fa-history me-2"></i>View Previous Announcements
             </button>
         </div>
-        <table id="announcementsTable" class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Type</th>
-                    <th>Message</th>
-                    <th>Action</th>
-                </tr>
+        <div class="card">
+        <div class="card-body pt-0">
+        <div class="table-responsive">
+        <table id="announcementsTable" class="table table-hovered">
+            <thead class="table-light border">
+            <tr>
+                <th class="border">Date</th>
+                <th class="border">Time</th>
+                <th class="border">Type</th>
+                <th class="border">Message</th>
+                <th class="border">Action</th>
+            </tr>
             </thead>
             <tbody>
                 <?php foreach ($announcements as $announcement): ?>
@@ -316,6 +319,8 @@ body {
                 <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
+     </div>
     </div>
 
     <!-- Previous Announcements Modal -->
