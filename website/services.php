@@ -183,16 +183,6 @@
         <div class="content-wrapper">
 
             <div class="container text-center mb-4 button-shortcuts">
-                <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
-                    <div class="row justify-content-between">
-                        <div class="mb-2">
-                            <button class="btn scroll-btn py-4" style="background-color: black" data-target="#Teach-Programs">
-                                <i class="fas fa-stopwatch-20 me-2 text-white" style="font-size: 1.4rem;"></i>
-                                <span class="text-white">Teach Programs</span>
-                            </button>
-                        </div>
-                    </div>
-                <?php endif; ?>
                 <div class="row justify-content-between">
                     <div class="col-md-4 mb-2">
                         <button class="btn scroll-btn py-4" data-target="#Gym-Rates">
@@ -215,7 +205,7 @@
                 </div>
             </div>
             
-    <?php if (isset($_SESSION['personal_details']['role_name']) && $_SESSION['personal_details']['role_name'] === 'coach'): ?>
+    <?php if (isset($_SESSION['personal_details']['role_name']) && ($_SESSION['personal_details']['role_name'] === 'coach' || $_SESSION['personal_details']['role_name'] === 'coach/staff')): ?>
         <!-- Coach Section -->
         <h2 class="section-heading">Teach Programs</h2>
         <div class="row g-4 mb-4">

@@ -175,8 +175,7 @@ function generateProgramCard($program) {
         }
         .phase {
             overflow-y: auto;
-            max-height: calc(100vh - 400px); /* Adjust height accounting for headers and footer */
-            padding: 0 20px 20px 20px;
+            padding: 0 20px 200px 20px;
         }
         #phase4{
             max-height: 100vh;
@@ -195,6 +194,7 @@ function generateProgramCard($program) {
             border-top: 1px solid #ddd;
             height: 200px;
             overflow-y: auto;
+            z-index: 999;
         }
         .membership-summary h5 {
             font-size: 14px;
@@ -601,13 +601,12 @@ function generateProgramCard($program) {
 
                     <!-- Phase 2: Membership Plan -->
                     <div id="phase2" class="phase" style="display: none;">
-                        <h4 class="mb-4">Select Your Membership Plan</h4>
                         <!-- Filter & Search Controls -->
                         <div class="row mb-3 align-items-center g-2">
                             <div class="col-auto d-flex gap-2 align-items-center">
                                 <span class="fw-semibold me-2">Filter:</span>
                                 <button type="button" class="btn btn-outline-secondary btn-sm plan-filter active" data-filter="all">All</button>
-                                <button type="button" class="btn btn-outline-primary btn-sm plan-filter" data-filter="special">Special</button>
+                                <button type="button" class="btn btn-outline-warning btn-sm plan-filter" data-filter="special">Special</button>
                                 <button type="button" class="btn btn-outline-success btn-sm plan-filter" data-filter="regular">Regular</button>
                             </div>
                             <div class="col-auto">
@@ -933,15 +932,24 @@ function generateProgramCard($program) {
     </div>
 
     <!-- Membership Summary Section -->
-    <div class="membership-summary">
-        <div class="container">
+<!-- Floating Minimized Button (hidden by default) -->
+<button id="show-summary-btn" class="btn btn-outline-secondary minimized-summary-btn" type="button" style="display:none; border-width:1px; background:transparent;" aria-label="Show Membership Summary">
+    <span style="font-size: 0.85em; color: #000000;">&#9654;</span>
+</button>
 
+<!-- Membership Summary Section -->
+<div class="membership-summary">
+    <div class="container">
+        <button id="toggle-summary-btn" class="minimize-summary-btn" type="button" aria-label="Minimize Membership Summary">
+    <span id="toggle-summary-icon" style="transition: transform 0.3s; font-size: 1em">&#9660;</span>
+    <span style="font-size: 0.97em; font-weight: 400; color: #000000; vertical-align: middle;">Membership Summary</span>
+</button>
+        <div id="membership-summary-content">
             <div class="summary-row" data-type="registration">
                 <div class="details">
                     <p><strong>Registration Fee:</strong> ₱<?= $memberRegistration->getRegistrationFee() ?></p>
                 </div>
             </div>
-
             <!-- Selected Plan -->
             <div class="summary-row" data-type="membership" style="display: none;">
                 <h5>Membership Plan</h5>
@@ -953,17 +961,14 @@ function generateProgramCard($program) {
                     <p><strong>Price:</strong> ₱<span class="membership-amount">0.00</span></p>
                 </div>
             </div>
-
             <!-- Selected Programs -->
             <div id="selectedProgramsContainer">
                 <!-- Programs will be dynamically added here -->
             </div>
-            
             <!-- Selected Rental Services -->
             <div class="rental-services-summary">
                 <!-- Rental services will be dynamically added here -->
             </div>
-
             <!-- Total Amount -->
             <div class="summary-row mt-3">
                 <div class="d-flex justify-content-between align-items-center">
@@ -973,6 +978,112 @@ function generateProgramCard($program) {
             </div>
         </div>
     </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    var expanded = true;
+    var $summary = $('.membership-summary');
+    var $summaryContent = $('#membership-summary-content');
+    var $toggleIcon = $('#toggle-summary-icon');
+    var $toggleBtn = $('#toggle-summary-btn');
+    var $showBtn = $('#show-summary-btn');
+
+    function setExpanded(state) {
+        expanded = state;
+        if (expanded) {
+            $summary.show();
+            $showBtn.hide();
+            $summaryContent.show();
+            $toggleIcon.css('transform', 'rotate(0deg)');
+        } else {
+            $summary.hide();
+            $showBtn.show();
+        }
+    }
+    // Initial state
+    setExpanded(true);
+    $toggleBtn.on('click', function(e) {
+        setExpanded(false);
+    });
+    $showBtn.on('click', function(e) {
+        setExpanded(true);
+    });
+});
+</script>
+<style>
+.membership-summary {
+    transition: box-shadow 0.3s, border-radius 0.3s, margin 0.3s, padding 0.3s, background 0.3s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    margin: 24px 0;
+    background: white;
+}
+.minimize-summary-btn {
+    background: none;
+    border: none;
+    color: #444;
+    font-weight: 400;
+    font-size: 1em;
+    padding: 2px 6px;
+    margin-bottom: 8px;
+    text-align: left;
+    outline: none;
+    box-shadow: none;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.minimize-summary-btn:hover, .minimize-summary-btn:focus {
+    opacity: 0.95;
+    color: #222;
+    background: none;
+    outline: none;
+}
+
+#toggle-summary-icon {
+    display: inline-block;
+    margin-right: 8px;
+}
+#membership-summary-content {
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.minimized-summary-btn {
+    position: fixed;
+    left: 40px;
+    bottom: 100px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    box-shadow: none;
+    background: transparent;
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    border: 1px solid #bbb;
+    transition: opacity 0.2s, border-color 0.2s;
+    font-size: 1.1em;
+}
+.minimized-summary-btn:focus {
+    outline: 2px solid #bbb;
+    outline-offset: 2px;
+}
+.minimized-summary-btn:hover {
+    opacity: 0.85;
+    border-color: #888;
+}
+
+</style>
 
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
