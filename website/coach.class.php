@@ -43,8 +43,6 @@ class Coach_class {
                             p.program_name, 
                             ' (', 
                             cpt.type,
-                            ' - ',
-                            ps.status,
                             ')'
                         ) SEPARATOR '<br>'
                     ) as programs,
