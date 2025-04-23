@@ -58,7 +58,11 @@ try {
     // Validation checks
     $errors = [];
     if (empty($serviceName)) $errors['serviceName'] = 'Service name is required';
-    if ($price <= 0) $errors['price'] = 'Price must be greater than 0';
+    if ($price === '' || $price === null || !is_numeric($price)) {
+        $errors['price'] = 'Price is required';
+    } else if ($price < 0) {
+        $errors['price'] = 'Price cannot be negative';
+    }
     if ($totalSlots <= 0) $errors['totalSlots'] = 'Total slots must be greater than 0';
     if ($duration <= 0) $errors['duration'] = 'Duration must be greater than 0';
     if ($durationType <= 0) $errors['durationType'] = 'Valid duration type must be selected';
@@ -77,52 +81,53 @@ try {
     }
 
     // Handle image upload
-$uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/cms_img/rentals/';
-if (!is_dir($uploadDir)) {
-    if (!mkdir($uploadDir, 0777, true)) {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to create upload directory']);
-        exit;
-    }
-}
-
-$imagePath = NULL;
-
-if (!empty($_FILES['rentalImage']['name']) && $_FILES['rentalImage']['error'] === 0) {
-    $fileTmpPath = $_FILES['rentalImage']['tmp_name'];
-    $fileName = basename($_FILES['rentalImage']['name']);
-    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-    // Allowed extensions & max size (5MB)
-    $allowedTypes = ['jpg', 'jpeg', 'png'];
-    if (!in_array($fileExt, $allowedTypes)) {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid image format. Only JPG, JPEG, and PNG allowed.']);
-        exit;
-    }
-    if ($_FILES['rentalImage']['size'] > 5 * 1024 * 1024) { // 5MB limit
-        echo json_encode(['status' => 'error', 'message' => 'Image size exceeds 5MB limit.']);
-        exit;
+    $uploadDir = __DIR__ . '/../../../../cms_img/rentals/';
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true)) {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to create upload directory']);
+            exit;
+        }
     }
 
-    // Generate unique filename
-    $newFileName = time() . "_" . $fileName;
-    $filePath = $uploadDir . $newFileName;
-    
-    if (move_uploaded_file($fileTmpPath, $filePath)) {
-        $imagePath = $newFileName;
-    } else {
-        $uploadError = error_get_last();
-        echo json_encode([
-            'status' => 'error', 
-            'message' => 'Error uploading image. ' . ($uploadError ? $uploadError['message'] : ''),
-            'debug' => [
-                'dir' => $uploadDir,
-                'writable' => is_writable($uploadDir),
-                'file_exists' => file_exists($fileTmpPath)
-            ]
-        ]);
-        exit;
+    $imagePath = NULL;
+
+    if (!empty($_FILES['rentalImage']['name']) && $_FILES['rentalImage']['error'] === 0) {
+        $fileTmpPath = $_FILES['rentalImage']['tmp_name'];
+        $originalFilename = basename($_FILES['rentalImage']['name']);
+        $fileExt = strtolower(pathinfo($originalFilename, PATHINFO_EXTENSION));
+
+        // Allowed extensions & max size (5MB)
+        $allowedTypes = ['jpg', 'jpeg', 'png'];
+        if (!in_array($fileExt, $allowedTypes)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid image format. Only JPG, JPEG, and PNG allowed.']);
+            exit;
+        }
+        if ($_FILES['rentalImage']['size'] > 5 * 1024 * 1024) { // 5MB limit
+            echo json_encode(['status' => 'error', 'message' => 'Image size exceeds 5MB limit.']);
+            exit;
+        }
+
+        // Sanitize and prefix filename
+        $sanitizedFilename = preg_replace('/[^a-zA-Z0-9\.]/', '_', $originalFilename);
+        $newFileName = 'rental_' . time() . '_' . $sanitizedFilename;
+        $filePath = $uploadDir . $newFileName;
+
+        if (move_uploaded_file($fileTmpPath, $filePath)) {
+            $imagePath = $newFileName;
+        } else {
+            $uploadError = error_get_last();
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Error uploading image. ' . ($uploadError ? $uploadError['message'] : ''),
+                'debug' => [
+                    'dir' => $uploadDir,
+                    'writable' => is_writable($uploadDir),
+                    'file_exists' => file_exists($fileTmpPath)
+                ]
+            ]);
+            exit;
+        }
     }
-}
 
     // Insert into database
     $stmt = $pdo->prepare(

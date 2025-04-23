@@ -247,7 +247,7 @@ class Services_class{
 
     public function displayRentalServices(){
         $conn = $this->db->connect();
-        $sql = "SELECT rs.id as rental_id, rs.service_name, rs.price,
+        $sql = "SELECT rs.id as rental_id, rs.service_name, rs.price, rs.image,
                 CONCAT(rs.duration, ' ', dt.type_name) as validity,
                 rs.available_slots
                 FROM rental_services rs

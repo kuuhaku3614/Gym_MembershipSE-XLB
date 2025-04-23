@@ -392,8 +392,8 @@
 
                     // Get the image path
                     $imagePath = $defaultImage; // Set default first
-                    if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/program/" . $program['image'])) {
-                        $imagePath = '../cms_img/program/' . $program['image'];
+                    if (!empty($program['image']) && file_exists(__DIR__ . "/../cms_img/programs/" . $program['image'])) {
+                        $imagePath = '../cms_img/programs/' . $program['image'];
                     }
                     
                     // Format available types
@@ -484,8 +484,8 @@
 
                      // Get the image path
                      $imagePath = $defaultImage; // Set default first
-                     if (!empty($rental['image']) && file_exists(__DIR__ . "/../cms_img/rental/" . $rental['image'])) {
-                         $imagePath = '../cms_img/rental/' . $rental['image'];
+                     if (!empty($rental['image']) && file_exists(__DIR__ . "/../cms_img/rentals/" . $rental['image'])) {
+                         $imagePath = '../cms_img/rentals/' . $rental['image'];
                      }  
                     ?>
                     <div class="col-sm-6 col-md-6 col-lg-3">
