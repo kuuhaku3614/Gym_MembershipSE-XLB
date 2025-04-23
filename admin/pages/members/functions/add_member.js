@@ -1203,7 +1203,42 @@ $(document).ready(function () {
     }
   });
 
-  // Handle phase navigation
+  // Membership Summary Minimize/Maximize Logic (mirroring renew_member.js)
+  function setExpanded(state) {
+    const $summary = $('.membership-summary');
+    const $showBtn = $('#show-summary-btn');
+    const $toggleBtn = $('#toggle-summary-btn');
+    const $toggleIcon = $('#toggle-summary-icon');
+    const $summaryContent = $('#membership-summary-content');
+    if (state) {
+      $summary.show();
+      $showBtn.hide();
+      $summaryContent.show();
+      $toggleIcon && $toggleIcon.css('transform', 'rotate(0deg)');
+      localStorage.setItem('summaryMinimized', 'false');
+    } else {
+      $summary.hide();
+      $showBtn.show();
+      localStorage.setItem('summaryMinimized', 'true');
+    }
+  }
+
+  function restoreSummaryState() {
+    const minimized = localStorage.getItem('summaryMinimized');
+    setExpanded(minimized !== 'true');
+  }
+
+  $('#toggle-summary-btn').on('click', function() {
+    setExpanded(false);
+  });
+  $('#show-summary-btn').on('click', function() {
+    setExpanded(true);
+  });
+  // Always show summary as open on page load (match renew_member.js)
+  localStorage.setItem('summaryMinimized', 'false');
+  restoreSummaryState();
+
+// Handle phase navigation
   function showPhase(phaseNumber) {
     // Hide all phases
     $(".phase").hide();
@@ -1225,9 +1260,10 @@ $(document).ready(function () {
       generateDefaultCredentials();
       // Hide the membership summary section in phase 4
       $(".membership-summary").hide();
+      $('#show-summary-btn').hide();
     } else {
-      // Show the membership summary section in other phases
-      $(".membership-summary").show();
+      // Restore summary minimized/maximized state from localStorage
+      restoreSummaryState();
     }
 
     // Update buttons

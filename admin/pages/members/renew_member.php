@@ -520,8 +520,6 @@ function generateProgramCard($program) {
         }
         .rental-option {
             border: 1px solid #e9ecef;
-            padding: 15px;
-            margin-bottom: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
@@ -700,6 +698,9 @@ function generateProgramCard($program) {
     opacity: 0.85;
     border-color: #888;
 }
+.nav-link{
+    pointer-events: none !important;
+}
 </style>
 </head>
 <body>
@@ -865,7 +866,16 @@ function generateProgramCard($program) {
                             ?>
                             <div class="card rental-option">
                                 <div class="card-header text-white text-center" style="background-image: url('<?= $imagePath ?>'); background-size: cover; background-position: center; position: relative; min-height: 120px;">
-                                    <span class="badge rounded-pill plan-badge-indicator bg-warning">Rental</span>
+                                    <span class="badge rounded-pill plan-badge-indicator bg-warning">
+                                        <?php
+                                        if (isset($service['available_slots'])) {
+                                            $slots = (int)$service['available_slots'];
+                                            echo $slots . ' ' . ($slots === 1 ? 'slot' : 'slots');
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                        ?>
+                                    </span>
                                     <div class="overlay-header">
                                         <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($service['rental_name']) ?></h2>
                                     </div>
@@ -874,7 +884,6 @@ function generateProgramCard($program) {
                                 <div class="card-body">
                                     <p class="card-text mb-1">Price: ₱<?= number_format($service['price'], 2) ?></p>
                                     <p class="card-text mb-1">Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?></p>
-                                    <p class="card-text small text-muted" style="min-height:32px;"><?= !empty($service['description']) ? htmlspecialchars($service['description']) : '' ?></p>
                                     <input type="checkbox" 
                                         name="rental_services[]" 
                                         value="<?= $service['id']; ?>"

@@ -459,6 +459,11 @@ function generateProgramCard($program) {
             font-weight: 600;
             color: #212529;
         }
+
+        .nav-link{
+            pointer-events: none !important;
+        }
+
     /* Subtle badge indicator styles */
 .plan-badge-indicator {
     position: absolute;
@@ -810,23 +815,43 @@ function generateProgramCard($program) {
                         <h4 class="mb-4 mt-5">Additional Rental Services</h4>
                         <div class="row">
                             <?php foreach ($rentalServices as $service): ?>
-                            <div class="col-md-4 mb-4">
-                                <div class="card rental-option h-100">
+                            <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+                                <?php
+                                $defaultImage = '../cms_img/default/rental.jpeg';
+                                $imagePath = $defaultImage;
+                                if (!empty($service['image']) && file_exists(__DIR__ . "/../../../cms_img/gym_rates/" . $service['image'])) {
+                                    $imagePath = '../cms_img/gym_rates/' . htmlspecialchars($service['image']);
+                                }
+                                ?>
+                                <div class="card rental-option">
+                                    <div class="card-header text-white text-center" style="background-image: url('<?= $imagePath ?>'); background-size: cover; background-position: center; position: relative; min-height: 120px;">
+                                        <span class="badge rounded-pill plan-badge-indicator bg-warning">
+                                            <?php
+                                            if (isset($service['available_slots'])) {
+                                                $slots = (int)$service['available_slots'];
+                                                echo $slots . ' ' . ($slots === 1 ? 'slot' : 'slots');
+                                            } else {
+                                                echo 'N/A';
+                                            }
+                                            ?>
+                                        </span>
+                                        <div class="overlay-header">
+                                            <h2 class="fw-bold mb-0 service-name"><?= htmlspecialchars($service['rental_name']) ?></h2>
+                                        </div>
+                                        <div class="overlay-darker"></div>
+                                    </div>
                                     <div class="card-body">
-                                        <h5 class="card-title"><?= htmlspecialchars($service['rental_name']) ?></h5>
-                                        <p class="card-text">
-                                            Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?><br>
-                                            Price: ₱<?= number_format($service['price'], 2) ?>
-                                        </p>
+                                        <p class="card-text mb-1">Price: ₱<?= number_format($service['price'], 2) ?></p>
+                                        <p class="card-text mb-1">Duration: <?= htmlspecialchars($service['duration']) ?> <?= htmlspecialchars($service['duration_type']) ?></p>
                                         <input type="checkbox" 
-                                               name="rental_services[]" 
-                                               value="<?= $service['id']; ?>"
-                                               class="rental-service-checkbox"
-                                               data-name="<?= htmlspecialchars($service['rental_name']) ?>"
-                                               data-price="<?= $service['price'] ?>"
-                                               data-duration="<?= htmlspecialchars($service['duration']) ?>"
-                                               data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
-                                               style="display: none;">
+                                            name="rental_services[]" 
+                                            value="<?= $service['id']; ?>"
+                                            class="rental-service-checkbox"
+                                            data-name="<?= htmlspecialchars($service['rental_name']) ?>"
+                                            data-price="<?= $service['price'] ?>"
+                                            data-duration="<?= htmlspecialchars($service['duration']) ?>"
+                                            data-duration-type="<?= htmlspecialchars($service['duration_type']) ?>"
+                                            style="display: none;">
                                     </div>
                                 </div>
                             </div>
@@ -982,37 +1007,7 @@ function generateProgramCard($program) {
     </div>
 </div>
 
-<script>
-$(document).ready(function() {
-    var expanded = true;
-    var $summary = $('.membership-summary');
-    var $summaryContent = $('#membership-summary-content');
-    var $toggleIcon = $('#toggle-summary-icon');
-    var $toggleBtn = $('#toggle-summary-btn');
-    var $showBtn = $('#show-summary-btn');
 
-    function setExpanded(state) {
-        expanded = state;
-        if (expanded) {
-            $summary.show();
-            $showBtn.hide();
-            $summaryContent.show();
-            $toggleIcon.css('transform', 'rotate(0deg)');
-        } else {
-            $summary.hide();
-            $showBtn.show();
-        }
-    }
-    // Initial state
-    setExpanded(true);
-    $toggleBtn.on('click', function(e) {
-        setExpanded(false);
-    });
-    $showBtn.on('click', function(e) {
-        setExpanded(true);
-    });
-});
-</script>
 <style>
 .membership-summary {
     transition: box-shadow 0.3s, border-radius 0.3s, margin 0.3s, padding 0.3s, background 0.3s;
@@ -1131,7 +1126,6 @@ $(document).ready(function() {
             });
         });
     </script>
-    <script src="<?= BASE_URL ?>/admin/pages/members/functions/add_member.js"></script>
 <script>
 // Membership Plan Filter, Search, and Sort Logic
 $(document).ready(function() {
@@ -1213,5 +1207,6 @@ $(document).ready(function() {
     filterAndSortPlans();
 });
 </script>
+<script src="<?= BASE_URL ?>/admin/pages/members/functions/add_member.js"></script>
 </body>
 </html>
