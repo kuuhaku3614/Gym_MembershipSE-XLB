@@ -203,14 +203,15 @@ class Profile_class{
 
         // Fetch upcoming walk-ins (walk-ins on or after today)
         $walkin_query = "SELECT
-            w.id,
-            'walkin' as type,
-            DATE_FORMAT(w.date, '%M %d, %Y') as date,
-            DATE_FORMAT(w.time_in, '%h:%i %p') as time,
-            w.amount as price
+        w.id,
+        'walkin' as type,
+        DATE_FORMAT(w.date, '%M %d, %Y') as date,
+        DATE_FORMAT(w.time_in, '%h:%i %p') as time,
+        w.amount as price,
+        w.status  /* Add this line to select the status field */
         FROM transactions t
         JOIN walk_in_records w ON t.id = w.transaction_id
-        WHERE t.user_id = :user_id AND t.status = 'confirmed' AND w.date >= CURDATE()
+        WHERE t.user_id = :user_id AND w.status = 'pending' AND w.date >= CURDATE()
         ORDER BY w.date ASC"; // Order by date ascending for upcoming
 
         $stmt = $conn->prepare($walkin_query);
@@ -310,7 +311,7 @@ class Profile_class{
                 LEFT JOIN transactions t ON w.transaction_id = t.id
                 WHERE t.user_id = :user_id
                 AND w.date < CURDATE() -- Consider this criteria but keep it simple
-                AND t.status = 'confirmed'
+                AND w.status = 'walked-in'
                 ORDER BY w.date DESC";
 
             $stmt = $conn->prepare($walkin_query);

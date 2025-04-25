@@ -526,9 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 container.style.display = 'block';
             });
         }
-        if (!isFilterActive()) {
-            restoreScrollPosition();
-        }
     }
     
     // Add event listeners to filters
@@ -584,65 +581,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <!-- Add this right after your last <script> tag in services.php -->
 <script>
-    let lastScrollPosition = 0;
   // Set login status based on PHP session
   const userLoggedIn = <?php echo isset($_SESSION['personal_details']) ? 'true' : 'false'; ?>;
-     // Function to save scroll position
-    function saveScrollPosition() {
-    lastScrollPosition = window.scrollY;
-    localStorage.setItem('servicesScrollPosition', lastScrollPosition);
-    }
-    // Function to restore scroll position
-    function restoreScrollPosition() {
-    const savedPosition = localStorage.getItem('servicesScrollPosition');
-    if (savedPosition !== null) {
-        window.scrollTo({
-        top: parseInt(savedPosition),
-        behavior: 'auto' // Use 'auto' instead of 'smooth' for immediate positioning
-        });
-    }
-    }
-    function saveBeforeFilter() {
-    if (isFilterActive()) {
-        saveScrollPosition();
-    }
-    }
-    // Add these event listeners to your existing DOMContentLoaded event
-    document.addEventListener('DOMContentLoaded', function() {
-    // Restore position when page loads
-    window.addEventListener('load', function() {
-        setTimeout(restoreScrollPosition, 50); // Small delay to ensure page is fully rendered
-    });
-    
-    // Save position before filtering
-    const searchInput = document.getElementById('serviceSearch');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const priceFilter = document.getElementById('priceFilter');
-    
-    searchInput.addEventListener('focus', saveBeforeFilter);
-    categoryFilter.addEventListener('focus', saveBeforeFilter);
-    priceFilter.addEventListener('focus', saveBeforeFilter);
-    
-    // Save position before clicking on service cards
-    const programLinks = document.querySelectorAll('.program-link');
-    programLinks.forEach(link => {
-        link.addEventListener('click', saveScrollPosition);
-    });
-    
-    // Save position when using scroll buttons
-    const scrollButtons = document.querySelectorAll('.scroll-btn');
-    scrollButtons.forEach(button => {
-        button.addEventListener('click', saveScrollPosition);
-    });
-    
-    // Save position when opening/closing cart
-    const cartBtn = document.getElementById('showCartBtn');
-    const closeCart = document.getElementById('closeCart');
-    
-    if (cartBtn) cartBtn.addEventListener('click', saveScrollPosition);
-    if (closeCart) closeCart.addEventListener('click', restoreScrollPosition);
-    });
-
+  
   // Function to check if user is logged in and show popup if not
     function checkLoginAndShowPopup(event) {
     if (!userLoggedIn) {

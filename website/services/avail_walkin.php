@@ -122,6 +122,10 @@ function decimalToHex($decimal) {
 
 $primaryHex = isset($color['latitude']) ? decimalToHex($color['latitude']) : '#000000';
 $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) : '#000000';
+
+// Create an RGB version of the primary color for transparency
+$primary_rgb = sscanf($primaryHex, "#%02x%02x%02x");
+$primary_rgb_str = implode(', ', $primary_rgb);
 ?>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -132,6 +136,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 <style>
     :root {
         --primary-color: <?= $primaryHex ?>;
+        --primary-color-rgb: <?= $primary_rgb_str ?>;
         --secondary-color: <?= $secondaryHex ?>;
     }
     .bg-custom-red {
@@ -245,6 +250,69 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         display: none;
     }
 
+    /* Disabled and status-specific day styles */
+    .calendar-day.past {
+        background-color: #f5f5f5;
+        color: #aaa;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.pending-membership {
+        background-color: #fff3cd; /* Light yellow */
+        color: #856404;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.active-membership {
+        background-color: #d4edda; /* Light green */
+        color: #155724;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.pending-walkin {
+        background-color: #f8d7da; /* Light red */
+        color: #721c24;
+        cursor: not-allowed;
+    }
+
+    /* Calendar legend styles */
+    .calendar-legend {
+        border-top: 1px solid #dee2e6;
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-right: 10px;
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+
+    .legend-color {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+        border-radius: 3px;
+    }
+
+    .legend-color.selected {
+        background-color: var(--primary-color);
+    }
+
+    .legend-color.pending-membership {
+        background-color: #fff3cd;
+    }
+
+    .legend-color.active-membership {
+        background-color: #d4edda;
+    }
+
+    .legend-color.pending-walkin {
+        background-color: #f8d7da;
+    }
     
     @media screen and (max-width: 480px) {
         .services-header {
@@ -388,6 +456,28 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                                             <div class="calendar-grid" id="calendar-days">
                                                 <!-- Calendar days will be inserted here -->
                                             </div>
+                                            
+                                            <!-- Calendar legend -->
+                                            <div class="calendar-legend">
+                                                <div class="d-flex flex-wrap justify-content-between">
+                                                    <div class="legend-item">
+                                                        <span class="legend-color selected"></span>
+                                                        <span>Selected Date</span>
+                                                    </div>
+                                                    <div class="legend-item">
+                                                        <span class="legend-color pending-membership"></span>
+                                                        <span>Pending Membership</span>
+                                                    </div>
+                                                    <div class="legend-item">
+                                                        <span class="legend-color active-membership"></span>
+                                                        <span>Active Membership</span>
+                                                    </div>
+                                                    <div class="legend-item">
+                                                        <span class="legend-color pending-walkin"></span>
+                                                        <span>Pending Walk-in</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         
                                         <?php if(!empty($datesErr)): ?>
@@ -433,14 +523,25 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 <script>
 // Array to store selected dates
 let selectedDates = [];
+let disabledDates = {}; // Store disabled dates fetched from server
 const price = <?= $price ?>;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 const duration = <?= $duration ?>;
 const durationType = '<?= strtolower($duration_type) ?>';
 
-// Dictionary to track all disabled dates (for checking overlaps)
-let disabledDateRanges = {};
+// Function to fetch disabled dates from server
+function fetchDisabledDates() {
+    fetch('date_functions/get_disabled_dates.php')
+        .then(response => response.json())
+        .then(data => {
+            disabledDates = data;
+            renderCalendar(); // Re-render calendar with disabled dates
+        })
+        .catch(error => {
+            console.error('Error fetching disabled dates:', error);
+        });
+}
 
 // Format date for display
 function formatDisplayDate(dateStr) {
@@ -463,8 +564,10 @@ function calculateEndDate(startDate) {
         end.setDate(end.getDate() + parseInt(duration) - 1);
     } else if (durationType === 'month' || durationType === 'months') {
         end.setMonth(end.getMonth() + parseInt(duration));
+        end.setDate(end.getDate() - 1); // Last day of the period
     } else if (durationType === 'year' || durationType === 'years') {
         end.setFullYear(end.getFullYear() + parseInt(duration));
+        end.setDate(end.getDate() - 1); // Last day of the period
     }
     
     return end;
@@ -478,60 +581,34 @@ function formatDateYMD(date) {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-// Check if a date is within any of the disabled ranges
-function isDateDisabled(dateToCheck) {
-    const checkDate = new Date(dateToCheck);
+// Check if a date is disabled and why
+function getDateStatus(dateToCheck) {
+    const dateStr = typeof dateToCheck === 'string' ? dateToCheck : formatDateYMD(dateToCheck);
     
     // Check if date is in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (checkDate < today) {
-        return true;
+    if (new Date(dateStr) < today) {
+        return 'past';
     }
     
-    // Check if date is in any of the disabled ranges
-    for (const startDate in disabledDateRanges) {
-        const endDate = disabledDateRanges[startDate];
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        if (checkDate >= start && checkDate <= end) {
-            return true;
-        }
+    // Check if date is in disabledDates array from server
+    if (disabledDates[dateStr]) {
+        return disabledDates[dateStr]; // Will return 'pending-membership', 'active-membership', or 'pending-walkin'
     }
     
-    return false;
+    return null; // Date is not disabled
 }
 
-// Generate disabled date ranges for all selected dates
-function updateDisabledDateRanges() {
-    disabledDateRanges = {}; // Clear existing ranges
-    
-    selectedDates.forEach(startDate => {
-        const endDate = calculateEndDate(startDate);
-        disabledDateRanges[startDate] = formatDateYMD(endDate);
-        
-        // Disable all dates in between start and end
-        const currentDate = new Date(startDate);
-        while (currentDate <= endDate) {
-            const currentDateStr = formatDateYMD(currentDate);
-            if (!disabledDateRanges[currentDateStr]) {
-                disabledDateRanges[currentDateStr] = currentDateStr;
-            }
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-    });
+// Check if a date is within any of the disabled ranges
+function isDateDisabled(dateToCheck) {
+    const status = getDateStatus(dateToCheck);
+    return status !== null;
 }
 
 // Add date to the selection
 function addDate(dateStr) {
     if (!dateStr) {
-        return;
-    }
-    
-    // Check if date is disabled (except if it's already selected)
-    if (isDateDisabled(dateStr) && !selectedDates.includes(dateStr)) {
-        alert('This date is either in the past or conflicts with another walk-in period.');
         return;
     }
     
@@ -541,14 +618,36 @@ function addDate(dateStr) {
         return;
     }
     
+    // Check if date is disabled
+    const status = getDateStatus(dateStr);
+    if (status) {
+        // Show specific error message based on status
+        let message;
+        switch (status) {
+            case 'past':
+                message = 'You cannot select a date in the past.';
+                break;
+            case 'pending-membership':
+                message = 'This date conflicts with a pending membership.';
+                break;
+            case 'active-membership':
+                message = 'This date conflicts with an active membership.';
+                break;
+            case 'pending-walkin':
+                message = 'This date already has a pending walk-in reservation.';
+                break;
+            default:
+                message = 'This date is unavailable.';
+        }
+        alert(message);
+        return;
+    }
+    
     // Add date to array
     selectedDates.push(dateStr);
     
     // Sort dates chronologically
     selectedDates.sort();
-    
-    // Update disabled date ranges
-    updateDisabledDateRanges();
     
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
@@ -564,9 +663,6 @@ function addDate(dateStr) {
 function removeDate(dateToRemove) {
     // Remove the date from selected dates
     selectedDates = selectedDates.filter(date => date !== dateToRemove);
-    
-    // Update disabled date ranges with new selection set
-    updateDisabledDateRanges();
     
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
@@ -632,6 +728,7 @@ function validateForm(event) {
     
     const form = event.target;
     const formData = new FormData(form);
+    formData.set('selected_dates', document.getElementById('hidden_selected_dates').value);
     
     fetch(window.location.href, {
         method: 'POST',
@@ -702,28 +799,32 @@ function renderCalendar() {
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
         dayElement.textContent = day;
         
         // Format date string for comparison
         const dateString = formatDateString(currentYear, currentMonth, day);
         
-        // Check if this date is selected
+        // Add appropriate class based on date status
+        const status = getDateStatus(dateString);
+        if (status) {
+            dayElement.className = `calendar-day ${status}`;
+            // Always disable dates with a status unless they are selected dates
+            if (!selectedDates.includes(dateString)) {
+                dayElement.classList.add('disabled');
+            }
+        } else {
+            dayElement.className = 'calendar-day';
+        }
+        
+        // Highlight selected dates
         if (selectedDates.includes(dateString)) {
             dayElement.classList.add('selected');
         }
         
-        // Check if date is disabled (past or in an existing walk-in period)
-        if (isDateDisabled(dateString) && !selectedDates.includes(dateString)) {
-            dayElement.classList.add('disabled');
-        } else {
-            // Add click event for valid dates
-            dayElement.addEventListener('click', function() {
-                if (!this.classList.contains('disabled') || this.classList.contains('selected')) {
-                    addDate(dateString);
-                }
-            });
-        }
+        // Add click event for all dates (we'll check validity in the click handler)
+        dayElement.addEventListener('click', function() {
+            addDate(dateString);
+        });
         
         daysContainer.appendChild(dayElement);
     }
@@ -755,12 +856,21 @@ function setupCalendarNavigation() {
 window.onload = function() {
     // Initialize the UI components
     renderCalendarWeekdays();
-    renderCalendar();
-    setupCalendarNavigation();
-    updateSelectedDatesUI();
     
     // Set initial hidden dates value
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    
+    // Fetch disabled dates
+    fetchDisabledDates();
+    
+    // Setup calendar navigation
+    setupCalendarNavigation();
+    
+    // Initial render of calendar (will be updated once disabled dates are fetched)
+    renderCalendar();
+    
+    // Initial UI update
+    updateSelectedDatesUI();
 };
 </script>
 

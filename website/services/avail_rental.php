@@ -285,6 +285,98 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         100% {
             border-color: #ced4da;
         }}
+        /* Disabled and status-specific day styles */
+        .calendar-day.past {
+            background-color: #f5f5f5;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.pending-membership {
+            background-color: #fff3cd; /* Light yellow */
+            color: #856404;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.active-membership {
+            background-color: #d4edda; /* Light green */
+            color: #155724;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.pending-walkin {
+            background-color: #f8d7da; /* Light red */
+            color: #721c24;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.paid-active-rental {
+            background-color: #cce5ff; /* Light blue */
+            color: #004085;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.unpaid-active-rental {
+            background-color: #e2e3e5; /* Light gray */
+            color: #383d41;
+            cursor: not-allowed;
+        }
+
+        .calendar-day.selected-range {
+            background-color: rgba(var(--primary-color-rgb), 0.3);
+            color: var(--primary-color);
+        }
+
+        /* Calendar legend styles */
+        .calendar-legend {
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+            border-radius: 3px;
+        }
+
+        .legend-color.selected {
+            background-color: var(--primary-color);
+        }
+
+        .legend-color.pending-membership {
+            background-color: #fff3cd;
+        }
+
+        .legend-color.active-membership {
+            background-color: #d4edda;
+        }
+
+        .legend-color.pending-walkin {
+            background-color: #f8d7da;
+        }
+
+        .legend-color.paid-active-rental {
+            background-color: #cce5ff;
+        }
+
+        .legend-color.unpaid-active-rental {
+            background-color: #e2e3e5;
+        }
+
+        .legend-color.selected-range {
+            background-color: rgba(var(--primary-color-rgb), 0.3);
+        }
 
 @media screen and (max-width: 480px) {
     /* 1. Hide the services-header */
@@ -521,6 +613,8 @@ const durationType = '<?= $duration_type ?>';
 
 // Dictionary to track all disabled dates (for checking overlaps)
 let disabledDateRanges = {};
+// Object to store disabled dates from server
+let disabledDates = {};
 
 // Format date for display
 function formatDisplayDate(dateStr) {
@@ -539,7 +633,13 @@ function calculateEndDate(startDate) {
     const end = new Date(start);
     
     if (durationType === 'days') {
-        end.setDate(end.getDate() + parseInt(duration));
+        if (parseInt(duration) === 1) {
+            // For 1-day rentals, set end date to the same day (end of day)
+            end.setHours(23, 59, 59);
+        } else {
+            // For multi-day rentals, keep the existing behavior
+            end.setDate(end.getDate() + parseInt(duration));
+        }
     } else if (durationType === 'months') {
         end.setMonth(end.getMonth() + parseInt(duration));
     } else if (durationType === 'year') {
@@ -557,66 +657,133 @@ function formatDateYMD(date) {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-// Check if a date is within any of the disabled ranges
-function isDateDisabled(dateToCheck) {
-    const checkDate = new Date(dateToCheck);
+// Function to fetch disabled dates from server - enhanced for rental conflicts
+function fetchDisabledDates() {
+    fetch('date_functions/get_rental_disabled_dates.php')
+        .then(response => response.json())
+        .then(data => {
+            disabledDates = data;
+            renderCalendar(); // Re-render calendar with disabled dates
+        })
+        .catch(error => {
+            console.error('Error fetching disabled dates:', error);
+        });
+}
+
+// Check if a date is disabled and why - enhanced for rental status types
+function getDateStatus(dateToCheck) {
+    const dateStr = typeof dateToCheck === 'string' ? dateToCheck : formatDateYMD(dateToCheck);
     
     // Check if date is in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (checkDate < today) {
-        return true;
+    if (new Date(dateStr) < today) {
+        return 'past';
     }
     
-    // Check if date is in any of the disabled ranges
-    for (const startDate in disabledDateRanges) {
-        const endDate = disabledDateRanges[startDate];
+    // Check if date is in disabledDates array from server
+    if (disabledDates[dateStr]) {
+        // Will return 'pending-membership', 'active-membership', 'pending-walkin',
+        // 'paid-active-rental', or 'unpaid-active-rental'
+        return disabledDates[dateStr]; 
+    }
+    
+    // Check if date is in any of the currently selected date ranges
+    for (const startDate of selectedDates) {
+        const endDate = calculateEndDate(startDate);
         const start = new Date(startDate);
         const end = new Date(endDate);
+        const check = new Date(dateStr);
         
-        if (checkDate >= start && checkDate <= end) {
-            return true;
+        // Skip if this is the startDate we're checking (allow toggling off)
+        if (dateStr === startDate) {
+            continue;
         }
+        
+        if (check >= start && check <= end) {
+            return 'selected-range'; // This date is within a selected rental duration
+        }
+    }
+    
+    return null; // Date is not disabled
+}
+
+// Check if selecting a start date would create overlapping rentals
+function wouldCreateOverlap(startDateStr) {
+    const endDate = calculateEndDate(startDateStr);
+    const endDateStr = formatDateYMD(endDate);
+    
+    // Check each day in the range
+    const currentDate = new Date(startDateStr);
+    while (currentDate <= endDate) {
+        const currentDateStr = formatDateYMD(currentDate);
+        
+        // If it's not the start date and it's already disabled or selected, there's an overlap
+        if (currentDateStr !== startDateStr) {
+            const status = getDateStatus(currentDateStr);
+            if (status && status !== 'selected-range') {
+                return true;
+            }
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
     }
     
     return false;
 }
 
-// Generate disabled date ranges for all selected dates
-function updateDisabledDateRanges() {
-    disabledDateRanges = {}; // Clear existing ranges
-    
-    selectedDates.forEach(startDate => {
-        const endDate = calculateEndDate(startDate);
-        disabledDateRanges[startDate] = formatDateYMD(endDate);
-        
-        // Disable all dates in between start and end
-        const currentDate = new Date(startDate);
-        while (currentDate <= endDate) {
-            const currentDateStr = formatDateYMD(currentDate);
-            if (!disabledDateRanges[currentDateStr]) {
-                disabledDateRanges[currentDateStr] = currentDateStr;
-            }
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-    });
-}
-
-// Add date to the selection
+// Add date to the selection - with enhanced validation
 function addDate(dateStr) {
     if (!dateStr) {
         return;
     }
     
-    // Check if date is disabled (except if it's already selected)
-    if (isDateDisabled(dateStr) && !selectedDates.includes(dateStr)) {
-        alert('This date is either in the past or conflicts with another rental period.');
+    // Check if date is already selected (toggle off)
+    if (selectedDates.includes(dateStr)) {
+        removeDate(dateStr);
         return;
     }
     
-    // If already selected, toggle off (remove it)
-    if (selectedDates.includes(dateStr)) {
-        removeDate(dateStr);
+    // Check if date is disabled
+    const status = getDateStatus(dateStr);
+    if (status) {
+        // Don't allow selecting dates within a rental duration
+        if (status === 'selected-range') {
+            alert('This date falls within the duration of an already selected rental. Please choose a different date.');
+            return;
+        }
+        
+        // Show specific error message based on status
+        let message;
+        switch (status) {
+            case 'past':
+                message = 'You cannot select a date in the past.';
+                break;
+            case 'pending-membership':
+                message = 'This date conflicts with a pending membership.';
+                break;
+            case 'active-membership':
+                message = 'This date conflicts with an active membership.';
+                break;
+            case 'pending-walkin':
+                message = 'This date has a pending walk-in reservation.';
+                break;
+            case 'paid-active-rental':
+                message = 'This date is already reserved for an active rental.';
+                break;
+            case 'unpaid-active-rental':
+                message = 'This date is already reserved for a pending rental.';
+                break;
+            default:
+                message = 'This date is unavailable.';
+        }
+        alert(message);
+        return;
+    }
+    
+    // Check if selecting this date would create overlapping rentals
+    if (wouldCreateOverlap(dateStr)) {
+        alert('The rental period from this start date would overlap with existing rentals or reservations.');
         return;
     }
     
@@ -625,9 +792,6 @@ function addDate(dateStr) {
     
     // Sort dates chronologically
     selectedDates.sort();
-    
-    // Update disabled date ranges
-    updateDisabledDateRanges();
     
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
@@ -655,6 +819,26 @@ function removeDate(dateToRemove) {
     
     // Update calendar to reflect the removal
     renderCalendar();
+}
+
+// Update disabled date ranges for all selected dates
+function updateDisabledDateRanges() {
+    disabledDateRanges = {}; // Clear existing ranges
+    
+    selectedDates.forEach(startDate => {
+        const endDate = calculateEndDate(startDate);
+        disabledDateRanges[startDate] = formatDateYMD(endDate);
+        
+        // Disable all dates in between start and end
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const currentDateStr = formatDateYMD(currentDate);
+            if (!disabledDateRanges[currentDateStr]) {
+                disabledDateRanges[currentDateStr] = currentDateStr;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+    });
 }
 
 // Format number for display (similar to PHP's number_format)
@@ -748,6 +932,14 @@ function validateForm(event) {
     return false;
 }
 
+// Format date string from year, month, day
+function formatDateString(year, month, day) {
+    // Ensure month and day are two digits
+    const formattedMonth = (month + 1).toString().padStart(2, '0');
+    const formattedDay = day.toString().padStart(2, '0');
+    return `${year}-${formattedMonth}-${formattedDay}`;
+}
+
 // Calendar functions
 function renderCalendarWeekdays() {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -760,13 +952,6 @@ function renderCalendarWeekdays() {
         dayElement.textContent = day;
         weekdaysContainer.appendChild(dayElement);
     });
-}
-
-function formatDateString(year, month, day) {
-    // Ensure month and day are two digits
-    const formattedMonth = (month + 1).toString().padStart(2, '0');
-    const formattedDay = day.toString().padStart(2, '0');
-    return `${year}-${formattedMonth}-${formattedDay}`;
 }
 
 function renderCalendar() {
@@ -792,31 +977,63 @@ function renderCalendar() {
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
         dayElement.textContent = day;
         
         // Format date string for comparison
         const dateString = formatDateString(currentYear, currentMonth, day);
         
-        // Check if this date is selected
+        // Add appropriate class based on date status
+        const status = getDateStatus(dateString);
+        if (status) {
+            dayElement.className = `calendar-day ${status}`;
+            // Always disable dates with a status unless they are selected dates
+            // that can be toggled off
+            if (!selectedDates.includes(dateString)) {
+                dayElement.classList.add('disabled');
+            }
+        } else {
+            dayElement.className = 'calendar-day';
+        }
+        
+        // Highlight selected dates
         if (selectedDates.includes(dateString)) {
             dayElement.classList.add('selected');
         }
         
-        // Check if date is disabled (past or in an existing rental period)
-        if (isDateDisabled(dateString) && !selectedDates.includes(dateString)) {
-            dayElement.classList.add('disabled');
-        } else {
-            // Add click event for valid dates
-            dayElement.addEventListener('click', function() {
-                if (!this.classList.contains('disabled') || this.classList.contains('selected')) {
-                    addDate(dateString);
-                }
-            });
-        }
+        // Add click event for all dates (we'll check validity in the click handler)
+        dayElement.addEventListener('click', function() {
+            addDate(dateString);
+        });
         
         daysContainer.appendChild(dayElement);
     }
+}
+
+// Enhanced function to render calendar legend with all relevant statuses
+function renderCalendarLegend() {
+    // Create legend container
+    const legendContainer = document.createElement('div');
+    legendContainer.className = 'calendar-legend mt-3';
+    legendContainer.innerHTML = `
+        <div class="d-flex flex-wrap justify-content-between">
+            <div class="legend-item">
+                <span class="legend-color selected"></span>
+                <span>Selected Date</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color paid-active-rental"></span>
+                <span>Active Rental</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color unpaid-active-rental"></span>
+                <span>Pending Rental</span>
+            </div>
+        </div>
+    `;
+    
+    // Insert the legend after the calendar
+    const calendarContainer = document.querySelector('.calendar-container');
+    calendarContainer.appendChild(legendContainer);
 }
 
 function setupCalendarNavigation() {
@@ -848,6 +1065,10 @@ window.onload = function() {
     renderCalendar();
     setupCalendarNavigation();
     updateSelectedDatesUI();
+    renderCalendarLegend();
+    
+    // Fetch disabled dates from server
+    fetchDisabledDates();
     
     // Set initial hidden dates value
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);

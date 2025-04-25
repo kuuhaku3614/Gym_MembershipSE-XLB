@@ -223,7 +223,8 @@
                                                 <div>
                                                     <h6 class="mb-0">Walk-in</h6>
                                                 </div>
-                                                <span class="badge bg-success">Active</span>
+                                                <span class="badge <?= $service['status'] === 'walked-in' ? 'bg-success' : ($service['status'] === 'pending' ? 'bg-primary' : 'bg-warning') ?>">
+                                                    <?= htmlspecialchars($service['status']) ?></span>
                                             </div>
                                             <div>
                                                 <p class="text-muted mb-1"><small><i class="fas fa-calendar-alt me-1"></i> Date: <?= htmlspecialchars($service['date']) ?></small></p>

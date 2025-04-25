@@ -280,7 +280,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'verify') {
     try {
         $pdo->beginTransaction();
 
-        if (!isset($_SESSION['registration_data'])) {
+        if (!isset($_SESSION['registration_data']) || !isset($_SESSION['profile_photo'])) {
             throw new Exception("Registration session expired. Please start over.");
         }
 
@@ -313,27 +313,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'verify') {
             mkdir('../uploads', 0777, true);
         }
         
-        // Check if we have a file in current request or use session data
-        if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-            $photoInfo = $_FILES['profile_photo'];
-        } else if (isset($_SESSION['profile_photo'])) {
-            // This might not work directly - just a fallback
-            $photoInfo = $_SESSION['profile_photo'];
-        } else {
-            throw new Exception("Profile photo is missing.");
-        }
-        
+        $photoInfo = $_SESSION['profile_photo'];
         $extension = pathinfo($photoInfo['name'], PATHINFO_EXTENSION);
         $newFileName = 'profile_' . $userId . '_' . uniqid() . '.' . $extension;
         $uploadPath = '../uploads/' . $newFileName;
         $dbPath = 'uploads/' . $newFileName;
 
-        if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-            if (!move_uploaded_file($_FILES['profile_photo']['tmp_name'], $uploadPath)) {
-                throw new Exception("Failed to save profile photo.");
-            }
-        } else {
-            throw new Exception("Error processing profile photo.");
+        if (!move_uploaded_file($_FILES['profile_photo']['tmp_name'], $uploadPath)) {
+            throw new Exception("Failed to save profile photo.");
         }
 
         // Insert into personal_details
@@ -364,28 +351,24 @@ if (isset($_POST['action']) && $_POST['action'] === 'verify') {
         // AUTO-LOGIN THE USER AFTER REGISTRATION
         // Fetch user data for session
         $stmt = $pdo->prepare("
-            SELECT u.id, u.username, u.role_id, r.role_name as role, 
-                   pp.photo_path
+            SELECT u.id, u.username, u.role_id, r.role_name, 
+                   pd.first_name, pd.last_name, pd.middle_name
             FROM users u
+            JOIN personal_details pd ON u.id = pd.user_id
             JOIN roles r ON u.role_id = r.id
-            LEFT JOIN profile_photos pp ON u.id = pp.user_id AND pp.is_active = 1
             WHERE u.id = ?
         ");
         $stmt->execute([$userId]);
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Set session variables exactly like loginUser() function does
+        // Set session variables for logged-in user
         $_SESSION['user_id'] = $userData['id'];
-        $_SESSION['username'] = $userData['username']; 
-        $_SESSION['user_photo'] = $userData['photo_path'] ?? '../cms_img/user.png';
-        $_SESSION['role'] = $userData['role'];
+        $_SESSION['username'] = $userData['username'];
         $_SESSION['role_id'] = $userData['role_id'];
-        
-        // Initialize notification session data
-        // First verify the function is available
-        if (function_exists('initializeNotificationSession')) {
-            initializeNotificationSession($database, $userData['id']);
-        }
+        $_SESSION['role_name'] = $userData['role_name'];
+        $_SESSION['first_name'] = $userData['first_name'];
+        $_SESSION['last_name'] = $userData['last_name'];
+        $_SESSION['logged_in'] = true;
         
         // Clear the registration session data
         unset($_SESSION['registration_data']);
@@ -395,7 +378,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'verify') {
         $pdo->commit();
         echo json_encode([
             'success' => true, 
-            'redirect' => '../website/website.php'
+            'redirect' => '../website/website.php'  // Add redirect URL
         ]);
         
     } catch (Exception $e) {
@@ -408,6 +391,5 @@ if (isset($_POST['action']) && $_POST['action'] === 'verify') {
             'message' => $e->getMessage()
         ]);
     }
-    exit;
 }
 ?>
