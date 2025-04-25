@@ -173,7 +173,6 @@ class Profile_class{
         $stmt->execute();
         $result['memberships'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Updated rental query based on provided query
         $rental_query = "SELECT 
             rs.id,
             'rental' as type,
