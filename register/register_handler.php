@@ -395,7 +395,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'verify') {
         $pdo->commit();
         echo json_encode([
             'success' => true, 
-            'redirect' => '../website/website.php'
+            'redirect' => '../website/services.php'
         ]);
         
     } catch (Exception $e) {

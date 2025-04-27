@@ -90,7 +90,7 @@ require_once '../website/includes/loadingScreen.php';
                                         <option value="" selected disabled>Select</option>
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
-                                        <option value="NA">NA</option>
+                                        <option value="NA">Prefer not to say</option>
                                     </select>
                                     <label for="sex">Sex</label>
                                     <div id="sexError" class="error-message">Sex is required</div>

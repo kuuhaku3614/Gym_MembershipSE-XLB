@@ -1,0 +1,753 @@
+2025-04-27 20:00:00 - Request received
+2025-04-27 20:00:00 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:00:13 - Request received
+2025-04-27 20:00:13 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:00:13 - Request received
+2025-04-27 20:00:13 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:01:08 - Request received
+2025-04-27 20:01:08 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:01:21 - Request received
+2025-04-27 20:01:21 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:02:22 - Request received
+2025-04-27 20:02:22 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:02:22 - Request received
+2025-04-27 20:02:22 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:02:30 - Request received
+2025-04-27 20:02:30 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:03:32 - Request received
+2025-04-27 20:03:32 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:10:11 - Request received
+2025-04-27 20:10:11 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:10:27 - Request received
+2025-04-27 20:10:27 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:11:16 - Request received
+2025-04-27 20:11:16 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:11:16 - Request received
+2025-04-27 20:11:16 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:11:24 - Request received
+2025-04-27 20:11:24 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby1231
+)
+
+2025-04-27 20:11:24 - Request received
+2025-04-27 20:11:24 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:11:24 - Request received
+2025-04-27 20:11:24 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby1231
+)
+
+2025-04-27 20:20:31 - Request received
+2025-04-27 20:20:31 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:20:31 - Request received
+2025-04-27 20:20:31 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:21:05 - Request received
+2025-04-27 20:21:05 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby12356
+)
+
+2025-04-27 20:21:05 - Request received
+2025-04-27 20:21:05 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby12356
+)
+
+2025-04-27 20:21:31 - Request received
+2025-04-27 20:21:31 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:21:31 - Request received
+2025-04-27 20:21:31 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:21:37 - Request received
+2025-04-27 20:21:37 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby12356
+)
+
+2025-04-27 20:21:37 - Request received
+2025-04-27 20:21:37 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby12356
+)
+
+2025-04-27 20:21:43 - Request received
+2025-04-27 20:21:43 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:21:43 - Request received
+2025-04-27 20:21:43 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:21:53 - Request received
+2025-04-27 20:21:53 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:22:09 - Request received
+2025-04-27 20:22:09 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:22:41 - Request received
+2025-04-27 20:22:41 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:22:47 - Request received
+2025-04-27 20:22:47 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby12356
+)
+
+2025-04-27 20:22:47 - Request received
+2025-04-27 20:22:47 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby12356
+)
+
+2025-04-27 20:22:51 - Request received
+2025-04-27 20:22:51 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:22:51 - Request received
+2025-04-27 20:22:51 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 20:23:01 - Request received
+2025-04-27 20:23:01 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 20:23:49 - Request received
+2025-04-27 20:23:49 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 20:23:49 - Error: Unknown column 'u.first_name' in 'field list'
+2025-04-27 20:23:50 - Request received
+2025-04-27 20:23:50 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 20:23:50 - Error: Unknown column 'u.first_name' in 'field list'
+2025-04-27 20:54:50 - Request received
+2025-04-27 20:54:50 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 20:54:50 - Error: Table 'gym_managementdb.user_details' doesn't exist
+2025-04-27 20:55:34 - Request received
+2025-04-27 20:55:34 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 20:55:34 - Error: Unknown column 'ud.phone' in 'field list'
+2025-04-27 20:57:17 - Request received
+2025-04-27 20:57:17 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:05:35 - Request received
+2025-04-27 21:05:35 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:06:01 - Request received
+2025-04-27 21:06:01 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:06:06 - Request received
+2025-04-27 21:06:06 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:06:12 - Request received
+2025-04-27 21:06:12 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:22:54 - Request received
+2025-04-27 21:22:54 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:23:03 - Request received
+2025-04-27 21:23:03 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:23:04 - Request received
+2025-04-27 21:23:04 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:23:37 - Request received
+2025-04-27 21:23:37 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 21:23:44 - Request received
+2025-04-27 21:23:44 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:24:23 - Request received
+2025-04-27 21:24:23 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerbys
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:24:29 - Request received
+2025-04-27 21:24:29 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:24:35 - Request received
+2025-04-27 21:24:35 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => 
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:24:39 - Request received
+2025-04-27 21:24:39 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:29:18 - Request received
+2025-04-27 21:29:18 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:20 - Request received
+2025-04-27 21:29:20 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:22 - Request received
+2025-04-27 21:29:22 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:22 - Request received
+2025-04-27 21:29:22 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:23 - Request received
+2025-04-27 21:29:23 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:28 - Request received
+2025-04-27 21:29:28 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:30 - Request received
+2025-04-27 21:29:30 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:31 - Request received
+2025-04-27 21:29:31 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:31 - Request received
+2025-04-27 21:29:31 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:31 - Request received
+2025-04-27 21:29:31 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:32 - Request received
+2025-04-27 21:29:32 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:32 - Request received
+2025-04-27 21:29:32 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:32 - Request received
+2025-04-27 21:29:32 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:33 - Request received
+2025-04-27 21:29:33 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:29:44 - Request received
+2025-04-27 21:29:44 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Female
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:29:55 - Request received
+2025-04-27 21:29:55 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 21:30:27 - Request received
+2025-04-27 21:30:27 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:30:28 - Request received
+2025-04-27 21:30:28 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:30:34 - Request received
+2025-04-27 21:30:34 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 21:30:36 - Request received
+2025-04-27 21:30:36 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:30:47 - Request received
+2025-04-27 21:30:47 - POST data: Array
+(
+    [action] => update_photo
+)
+
+2025-04-27 21:30:50 - Request received
+2025-04-27 21:30:50 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:31:00 - Request received
+2025-04-27 21:31:00 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:31:02 - Request received
+2025-04-27 21:31:02 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:31:20 - Request received
+2025-04-27 21:31:20 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:31:24 - Request received
+2025-04-27 21:31:24 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Female
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:31:24 - Request received
+2025-04-27 21:31:24 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:31:26 - Request received
+2025-04-27 21:31:26 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307645
+)
+
+2025-04-27 21:31:27 - Request received
+2025-04-27 21:31:27 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:32:40 - Request received
+2025-04-27 21:32:40 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:32:59 - Request received
+2025-04-27 21:32:59 - POST data: Array
+(
+    [action] => update_password
+    [current_password] => Gerby123
+    [new_password] => Crystalice06
+)
+
+2025-04-27 21:33:06 - Request received
+2025-04-27 21:33:06 - POST data: Array
+(
+    [action] => update_password
+    [current_password] => Gerby123
+    [new_password] => Crystalice06
+)
+
+2025-04-27 21:36:12 - Request received
+2025-04-27 21:36:12 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307646
+)
+
+2025-04-27 21:36:13 - Request received
+2025-04-27 21:36:13 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:36:36 - Request received
+2025-04-27 21:36:36 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307649
+)
+
+2025-04-27 21:36:36 - Request received
+2025-04-27 21:36:36 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:49:24 - Request received
+2025-04-27 21:49:24 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:49:27 - Request received
+2025-04-27 21:49:27 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:49:32 - Request received
+2025-04-27 21:49:32 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 095623076494
+)
+
+2025-04-27 21:49:33 - Request received
+2025-04-27 21:49:33 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:49:38 - Request received
+2025-04-27 21:49:38 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307646
+)
+
+2025-04-27 21:49:38 - Error: A user with the same phone number already exists. Please use a different phone number.
+2025-04-27 21:49:45 - Request received
+2025-04-27 21:49:45 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307649
+)
+
+2025-04-27 21:49:46 - Request received
+2025-04-27 21:49:46 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:52:33 - Request received
+2025-04-27 21:52:33 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:52:35 - Request received
+2025-04-27 21:52:35 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307649123
+)
+
+2025-04-27 21:52:35 - Error: Please enter a valid Philippine phone number (e.g., 09123456789 or +639123456789).
+2025-04-27 21:52:46 - Request received
+2025-04-27 21:52:46 - POST data: Array
+(
+    [action] => update_personal_details
+    [first_name] => Gerby
+    [last_name] => Hallasgo
+    [sex] => Male
+    [birthdate] => 2002-11-26
+    [phone_number] => 09562307644
+)
+
+2025-04-27 21:52:46 - Request received
+2025-04-27 21:52:46 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:52:58 - Request received
+2025-04-27 21:52:58 - POST data: Array
+(
+    [action] => check_username
+    [username] => Crystalice06
+)
+
+2025-04-27 21:52:58 - Request received
+2025-04-27 21:52:58 - POST data: Array
+(
+    [action] => update_username
+    [username] => Crystalice06
+)
+
+2025-04-27 21:52:59 - Request received
+2025-04-27 21:52:59 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:57:25 - Request received
+2025-04-27 21:57:25 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:57:47 - Request received
+2025-04-27 21:57:47 - POST data: Array
+(
+    [action] => check_username
+    [username] => Gerby123
+)
+
+2025-04-27 21:57:47 - Request received
+2025-04-27 21:57:47 - POST data: Array
+(
+    [action] => update_username
+    [username] => Gerby123
+)
+
+2025-04-27 21:57:47 - Request received
+2025-04-27 21:57:47 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-27 21:57:50 - Request received
+2025-04-27 21:57:50 - POST data: Array
+(
+    [action] => get_profile_data
+)
+

@@ -8,9 +8,7 @@ body {
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
-.home-navbar {
-  border-radius: 0;
-}
+
 /* Profile header styling */
 .profile-header {
   background-color: #fff;
@@ -36,6 +34,8 @@ body {
   grid-template-columns: 2fr 1fr;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+  max-width: 100%; /* Ensure grid doesn't exceed viewport width */
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 /* Availed services card styling */
@@ -74,21 +74,56 @@ body {
 #serviceTabs {
   border-bottom: 1px solid #e9ecef;
   flex-shrink: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin; /* For Firefox */
+  -ms-overflow-style: none; /* For Internet Explorer/Edge */
+}
+
+#serviceTabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+#serviceTabs::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
 }
 
 #serviceTabsContent {
   flex-grow: 1; /* Takes remaining vertical space */
   overflow-y: auto; /* Enables vertical scrolling */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  width: 100%;
+}
+
+#serviceTabs, #profileTabs {
+  min-height: 42px; /* Set a fixed minimum height for tab container */
+  height: auto; /* Allow the tab container to adjust based on content */
+}
+
+#serviceTabs .nav-link, #profileTabs .nav-link {
+  padding: 0.5rem 1rem; /* Reduce padding slightly to fit better */
+  height: 40px; /* Set a consistent height for all tabs */
+  display: flex;
+  align-items: center;
+}
+
+/* Adjust the tab content area to account for the fixed tab height */
+#serviceTabsContent, #profileTabsContent {
+  height: calc(100% - 42px); /* Subtract the tab height from the container */
 }
 
 .tab-content {
   height: 100%;
+  width: 100%;
 }
 
 .tab-pane {
   height: 100%;
+  width: 100%; /* Ensure tab panes don't exceed container width */
   display: flex;
   flex-direction: column;
+  padding-right: 0.5rem; /* Add some padding for the scrollbar */
 }
 
 #serviceTabs .nav-link {
@@ -112,6 +147,7 @@ body {
 .service-list {
   padding-top: 1rem;
   overflow-y: auto; /* Scroll within each tab pane */
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 .service-item {
@@ -165,7 +201,6 @@ body {
 }
 
 /* Fix for walkins display */
-/* Updated walk-in styling to ensure left alignment */
 #walkins .service-item .card-body {
   padding: 1rem;
 }
@@ -179,14 +214,12 @@ body {
   margin-left: auto;
 }
 
-/* Add a subtle divider below header */
 #walkins .service-item .d-flex {
   border-bottom: 1px solid rgba(0,0,0,0.05);
   padding-bottom: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
-/* Ensure consistent spacing for all items */
 #walkins .service-item .text-muted {
   display: flex;
   align-items: center;
@@ -197,8 +230,6 @@ body {
   text-align: center;
   margin-right: 0.5rem;
 }
-
-
 
 /* Fix for expired services display */
 .expired-card .card-body {
@@ -245,6 +276,7 @@ body {
 
 .attendance-list {
   overflow-y: auto; /* Enables scrolling */
+  overflow-x: hidden; /* Prevent horizontal scroll */
   padding-right: 0.5rem; /* Optional: Space for scrollbar */
   flex-grow: 1;    /* Take up remaining space */
 }
@@ -268,40 +300,197 @@ body {
   padding: 0.4em 0.6em;
 }
 
-.badge-personal {
+/* Profile Settings CSS - Updated to match design patterns */
+.profile-settings-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+  height: 600px; /* Match height with other cards */
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / -1; /* Make it span all columns */
+}
+
+.profile-settings-card .card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.profile-settings-card .card-title {
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Profile settings tabs styling */
+#profileTabs {
+  border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+  margin-bottom: 1.5rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin; /* For Firefox */
+  -ms-overflow-style: none; /* For Internet Explorer/Edge */
+}
+
+#profileTabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+#profileTabs::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+#profileTabs .nav-link {
+  color: #495057;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+#profileTabs .nav-link:hover {
+  color: #007bff;
+}
+
+#profileTabs .nav-link.active {
+  color: #007bff;
+  border-bottom: 2px solid #007bff;
+}
+
+#profileTabsContent {
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  width: 100%;
+}
+
+/* Profile photo styling */
+.profile-photo-container {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1.5rem;
+  position: relative;
+}
+
+#profilePhotoPreview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.photo-upload-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
   background-color: #007bff;
   color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
-.badge-group {
-  background-color: #28a745;
-  color: white;
+/* Form styling */
+.form-label {
+  font-weight: 500;
+  color: #495057;
 }
 
+.form-control, .form-select {
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  width: 100%;
+  max-width: 100%; /* Ensure inputs don't exceed their containers */
+}
+
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
 
 /* Media queries for responsive design */
 @media (max-width: 992px) {
   .dashboard-grid {
-      grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
   
-  .availed-services-card, .attendance-log-card {
-      height: 500px;
+  .availed-services-card, 
+  .attendance-log-card,
+  .profile-settings-card {
+    height: 500px;
   }
 }
 
 @media (max-width: 768px) {
-  #serviceTabs {
-      overflow-x: auto;
-      flex-wrap: nowrap;
-      white-space: nowrap;
+  #serviceTabs,
+  #profileTabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
+  
   #walkins .service-item .d-flex {
     flex-direction: row;
     align-items: center;
   }
   
-  .availed-services-card, .attendance-log-card {
-      height: 450px;
+  .availed-services-card, 
+  .attendance-log-card,
+  .profile-settings-card {
+    height: 450px;
+  }
+  
+  .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .col-md-6, .col-md-9, .col-md-3, .col-md-8 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  /* Fix for profile tabs on small screens */
+  #profileTabs .nav-link {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  #serviceTabs .nav-link, #profileTabs .nav-link {
+    height: 36px; /* Slightly smaller height on mobile */
+  }
+  
+  #serviceTabsContent, #profileTabsContent {
+    height: calc(100% - 38px); /* Adjust for smaller tabs */
   }
 }

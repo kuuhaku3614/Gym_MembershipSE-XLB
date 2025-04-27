@@ -390,7 +390,6 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                             <span class="notification-badge"><?php echo $unreadNotificationsCount; ?></span>
                         <?php endif; ?>
                     </a>
-                    <a href="" class="edit-profile-link" role="menuitem"> <i class="fas fa-user-edit pe-3"></i> Edit Profile</a>
                     <a href="#" onclick="showLogoutConfirmation(event)" role="menuitem"> <i class="fas fa-sign-out-alt pe-3"></i> Logout</a>
                 </div>
             </div>
@@ -432,61 +431,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     }
 }
 </style>
-                    
-<!-- Profile Edit Modal -->
-<div id="profileEditModal" class="profile-modal" style="display: none;">
-    <div class="profile-modal-content">
-        <div class="modal-header">
-            <h2>Edit Profile</h2>
-            <button class="close-modal" aria-label="Close modal">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="profile-edit-container">
-            <!-- Notifications will be inserted here -->
-            
-            <div class="profile-content-wrapper">
-                <div class="profile-photo-section">
-                    <div class="photo-wrapper">
-                        <img src="<?php echo $basePath; ?><?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : 'cms_img/user.png'; ?>" 
-                             alt="Profile Photo" 
-                             id="profilePhoto">
-                        <div class="photo-edit-overlay">
-                            <label for="photoInput" class="photo-edit-button">
-                                <i class="fas fa-camera"></i>
-                                <span>Change Photo</span>
-                            </label>
-                            <input type="file" 
-                                   id="photoInput" 
-                                   accept="image/jpeg,image/png,image/gif" 
-                                   style="display: none;">
-                        </div>
-                    </div>
-                    <p class="photo-hint">Max file size: 5MB</p>
-                </div>
-                
-                <div class="profile-info-section">
-                    <div class="input-group">
-                        <label for="usernameInput">Username</label>
-                        <div class="input-wrapper">
-                            <input type="text" 
-                                   id="usernameInput" 
-                                   value="<?php echo $_SESSION['username'] ?? ''; ?>" 
-                                   placeholder="Enter username"
-                                   class="form-control">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-footer">
-                <button id="cancelChanges" class="btn btn-secondary">Cancel</button>
-                <button id="saveChanges" class="btn btn-primary" disabled>Save Changes</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 <!-- Membership Renewal Popup -->
 <div id="membershipRenewalPopup" class="membership-popup" style="display: none;">
     <div class="membership-popup-content">
@@ -505,64 +450,63 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 </div>
 
 <script>
-
 function showLogoutConfirmation(event) {
-                            event.preventDefault();
-                            document.getElementById('logoutModal').style.display = 'block';
-                        }
-                        
-                        function closeLogoutModal() {
-                            document.getElementById('logoutModal').style.display = 'none';
-                        }
-                        
-                        window.onclick = function(event) {
-                            let modal = document.getElementById('logoutModal');
-                            if (event.target == modal) {
-                                modal.style.display = 'none';
-                            }
-                        }
-                        
-    // Update cart count on page load
-    document.addEventListener("DOMContentLoaded", function() {
-        let cartCount = localStorage.getItem("cartTotal") || 0;
-        const cartCountElement = document.getElementById("cartCount");
-            if (cartCountElement) {
-                cartCountElement.textContent = cartCount;
-            }
-    });
+    event.preventDefault();
+    document.getElementById('logoutModal').style.display = 'block';
+}
 
+function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+}
 
-    document.addEventListener('DOMContentLoaded', function() {
-  const hamburger = document.querySelector('.hamburger-menu');
-  const navLinks = document.querySelector('.nav-links');
-  const overlay = document.querySelector('.overlay');
-  
-  hamburger.addEventListener('click', function() {
-    hamburger.classList.toggle('active');
-    navLinks.classList.toggle('active');
-    overlay.classList.toggle('active');
-    document.body.classList.toggle('no-scroll');
-  });
-  
-  // Close menu when clicking on overlay
-  overlay.addEventListener('click', function() {
-    hamburger.classList.remove('active');
-    navLinks.classList.remove('active');
-    overlay.classList.remove('active');
-    document.body.classList.remove('no-scroll');
-  });
-  
-  // Close menu when clicking on a link
-  const links = document.querySelectorAll('.nav-links a');
-  links.forEach(link => {
-    link.addEventListener('click', function() {
-      hamburger.classList.remove('active');
-      navLinks.classList.remove('active');
-      overlay.classList.remove('active');
-      document.body.classList.remove('no-scroll');
-    });
-  });
+window.onclick = function(event) {
+    let modal = document.getElementById('logoutModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Update cart count on page load
+document.addEventListener("DOMContentLoaded", function() {
+    let cartCount = localStorage.getItem("cartTotal") || 0;
+    const cartCountElement = document.getElementById("cartCount");
+        if (cartCountElement) {
+            cartCountElement.textContent = cartCount;
+        }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.querySelector('.hamburger-menu');
+    const navLinks = document.querySelector('.nav-links');
+    const overlay = document.querySelector('.overlay');
+  
+    hamburger.addEventListener('click', function() {
+        hamburger.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        overlay.classList.toggle('active');
+        document.body.classList.toggle('no-scroll');
+    });
+  
+    // Close menu when clicking on overlay
+    overlay.addEventListener('click', function() {
+        hamburger.classList.remove('active');
+        navLinks.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.classList.remove('no-scroll');
+    });
+  
+    // Close menu when clicking on a link
+    const links = document.querySelectorAll('.nav-links a');
+    links.forEach(link => {
+        link.addEventListener('click', function() {
+            hamburger.classList.remove('active');
+            navLinks.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+        });
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Show membership renewal popup if needed
     <?php if ($showMembershipPopup && $membershipDetails): ?>
@@ -615,5 +559,4 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endif; ?>
 });
 </script>
-<script src="<?php echo $isCoachFolder ? '../../website/js/edit_profile.js' : 'js/edit_profile.js'; ?>"></script>
 <script src="<?php echo $isCoachFolder ? '../../website/js/dropdown.js' : 'js/dropdown.js'; ?>"></script>

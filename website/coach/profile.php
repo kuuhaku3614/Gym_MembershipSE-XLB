@@ -1,14 +1,16 @@
 <?php
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
     session_start();
-    require_once 'user_account/profile.class.php';
+    require_once '../coach.class.php';
+    require_once __DIR__ . '/../../config.php';
 
-    // Redirect if user is not logged in
     if (!isset($_SESSION['user_id'])) {
-        header('Location: ../login/login.php');
+        header('Location: ../../login/login.php');
         exit();
     }
+
+    include('../coach.nav.php');
+    require_once 'dashboard.class.php';
+    require_once 'functions/profile.class.php';
 
     $profile = new Profile_class();
 
@@ -44,19 +46,14 @@
     $searchDate = isset($_GET['search_date']) ? $_GET['search_date'] : null;
     $attendance_log = $profile->fetchAttendanceLog($searchDate);
     $program_schedules = $profile->fetchProgramSchedules($_SESSION['user_id']); 
-    // Include header
-    include('includes/header.php');
-
-    // Note: Removed the executeQuery function as it was unused in the original profile.php
-    // If it's needed elsewhere, keep it in a utility file or the class.
 ?>
 
 <link rel="stylesheet" href="../css/browse_services.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="profile.css">
 <!-- Add this link to include the new CSS -->
-<link rel="stylesheet" href="../css/profile.css">
-
+<div class="content-wrapper">
 <section class="main-content container py-4">
     <header class="profile-header">
         <div class="d-flex justify-content-between align-items-center">
@@ -300,141 +297,142 @@
                 </div>
             </div>
         </div>
-<!-- profile -->
-<div class="card profile-settings-card">
-    <div class="card-body">
-        <h4 class="card-title">Profile Settings</h4>
-        <!-- Add notification containers outside the card to ensure they're always visible -->
-        <div class="profile-edit-container">
-            <div class="profile-success-message" style="display:none;"></div>
-            <div class="profile-error-message" style="display:none;"></div>
-        </div>
-        <ul class="nav nav-tabs" id="profileTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="personal-info-tab" data-bs-toggle="tab" data-bs-target="#personal-info" type="button" role="tab" aria-controls="personal-info" aria-selected="true">
-                <i class="fas fa-user-circle me-2"></i>Personal Information
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-content" type="button" role="tab" aria-controls="security-content" aria-selected="false">
-                <i class="fas fa-shield-alt me-2"></i>Security
-                </button>
-            </li>
-        </ul>
-        
-        <div class="tab-content mt-3" id="profileTabsContent">
-            <!-- Personal Information Tab -->
-            <div class="tab-pane fade show active" id="personal-info" role="tabpanel" aria-labelledby="personal-info-tab">
-                <div class="row">
-                    <div class="col-md-3 text-center mb-4">
-                        <div class="position-relative mb-3 mx-auto" style="width: 120px; height: 120px;">
-                            <!-- Database-driven profile photo -->
-                            <img src="../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" alt="Profile Photo" id="profilePhoto" class="img-fluid rounded-circle">
-                            <label for="photoInput" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2" style="cursor: pointer;">
-                                <i class="fas fa-camera"></i>
-                            </label>
-                            <input type="file" id="photoInput" name="profile_photo" class="d-none" accept="image/jpeg,image/png,image/gif">
+        <!-- profile -->
+        <div class="card profile-settings-card">
+            <div class="card-body">
+                <h4 class="card-title">Profile Settings</h4>
+                <!-- Add notification containers outside the card to ensure they're always visible -->
+                <div class="profile-edit-container">
+                    <div class="profile-success-message" style="display:none;"></div>
+                    <div class="profile-error-message" style="display:none;"></div>
+                </div>
+                <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="personal-info-tab" data-bs-toggle="tab" data-bs-target="#personal-info" type="button" role="tab" aria-controls="personal-info" aria-selected="true">
+                        <i class="fas fa-user-circle me-2"></i>Personal Information
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-content" type="button" role="tab" aria-controls="security-content" aria-selected="false">
+                        <i class="fas fa-shield-alt me-2"></i>Security
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="profileTabsContent">
+                    <!-- Personal Information Tab -->
+                    <div class="tab-pane fade show active" id="personal-info" role="tabpanel" aria-labelledby="personal-info-tab">
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-4">
+                                <div class="position-relative mb-3 mx-auto" style="width: 120px; height: 120px;">
+                                    <!-- Database-driven profile photo -->
+                                    <img src="../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" alt="Profile Photo" id="profilePhoto" class="img-fluid rounded-circle">
+                                    <label for="photoInput" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2" style="cursor: pointer;">
+                                        <i class="fas fa-camera"></i>
+                                    </label>
+                                    <input type="file" id="photoInput" name="profile_photo" class="d-none" accept="image/jpeg,image/png,image/gif">
+                                </div>
+                                <!-- Database-driven full name -->
+                                <h5 class="mb-1" id="profile-full-name"><?php echo isset($_SESSION['first_name']) && isset($_SESSION['last_name']) ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] : 'User Name'; ?></h5>
+                                <!-- Database-driven username -->
+                                <small class="mb-1" id="profile-username">@<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : 'username'; ?></small>
+                            </div>
+                            
+                            <div class="col-md-9">
+                                <div class="mb-3">
+                                    <label for="usernameInput" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="usernameInput" value="<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : ''; ?>">
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="first-name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first-name" value="<?php echo isset($_SESSION['first_name']) ? $_SESSION['first_name'] : ''; ?>">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="last-name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last-name" value="<?php echo isset($_SESSION['last_name']) ? $_SESSION['last_name'] : ''; ?>">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="phone_number" value="<?php echo isset($_SESSION['phone_number']) ? $_SESSION['phone_number'] : ''; ?>">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="birthdate" class="form-label">Birth Date</label>
+                                    <input type="date" class="form-control" id="birthdate" value="<?php echo isset($_SESSION['birthdate']) ? $_SESSION['birthdate'] : ''; ?>">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="sex" class="form-label">Sex</label>
+                                    <select class="form-select" id="sex">
+                                        <option value="" <?php echo (isset($_SESSION['sex']) && $_SESSION['sex'] == '') ? 'selected' : ''; ?>>Prefer not to say</option>
+                                        <option value="Male" <?php echo (isset($_SESSION['sex']) && $_SESSION['sex'] == 'Male') ? 'selected' : ''; ?>>Male</option>
+                                        <option value="Female" <?php echo (isset($_SESSION['sex']) && $_SESSION['sex'] == 'Female') ? 'selected' : ''; ?>>Female</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button type="button" id="saveChanges" class="btn btn-primary px-4">Save Changes</button>
+                                    <button type="button" id="cancelChanges" class="btn btn-outline-secondary px-4 ms-2">Cancel</button>
+                                </div>
+                            </div>
                         </div>
-                        <!-- Database-driven full name -->
-                        <h5 class="mb-1" id="profile-full-name"><?php echo isset($_SESSION['first_name']) && isset($_SESSION['last_name']) ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] : 'User Name'; ?></h5>
-                        <!-- Database-driven username -->
-                        <small class="mb-1" id="profile-username">@<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : 'username'; ?></small>
                     </div>
                     
-                    <div class="col-md-9">
-                        <div class="mb-3">
-                            <label for="usernameInput" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="usernameInput" value="<?php echo isset($_SESSION['username']) ? $_SESSION['username'] : ''; ?>">
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="first-name" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="first-name" value="<?php echo isset($_SESSION['first_name']) ? $_SESSION['first_name'] : ''; ?>">
+                    <!-- Security Tab -->
+                    <div class="tab-pane fade" id="security-content" role="tabpanel" aria-labelledby="security-tab">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="current-password" class="form-label">Current Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="current-password">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="current-password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="new-password" class="form-label">New Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="new-password">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="new-password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confirm-password" class="form-label">Confirm New Password</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="confirm-password">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirm-password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button type="button" id="updateSecurity" class="btn btn-primary px-4">Update Security Settings</button>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="last-name" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="last-name" value="<?php echo isset($_SESSION['last_name']) ? $_SESSION['last_name'] : ''; ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="phone_number" class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="phone_number" value="<?php echo isset($_SESSION['phone_number']) ? $_SESSION['phone_number'] : ''; ?>">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="birthdate" class="form-label">Birth Date</label>
-                            <input type="date" class="form-control" id="birthdate" value="<?php echo isset($_SESSION['birthdate']) ? $_SESSION['birthdate'] : ''; ?>">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="sex" class="form-label">Sex</label>
-                            <select class="form-select" id="sex">
-                                <option value="" <?php echo (isset($_SESSION['sex']) && $_SESSION['sex'] == '') ? 'selected' : ''; ?>>Prefer not to say</option>
-                                <option value="Male" <?php echo (isset($_SESSION['sex']) && $_SESSION['sex'] == 'Male') ? 'selected' : ''; ?>>Male</option>
-                                <option value="Female" <?php echo (isset($_SESSION['sex']) && $_SESSION['sex'] == 'Female') ? 'selected' : ''; ?>>Female</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <button type="button" id="saveChanges" class="btn btn-primary px-4">Save Changes</button>
-                            <button type="button" id="cancelChanges" class="btn btn-outline-secondary px-4 ms-2">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Security Tab -->
-            <div class="tab-pane fade" id="security-content" role="tabpanel" aria-labelledby="security-tab">
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <div class="mb-3">
-                            <label for="current-password" class="form-label">Current Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="current-password">
-                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="current-password">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="new-password" class="form-label">New Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="new-password">
-                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="new-password">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="confirm-password" class="form-label">Confirm New Password</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="confirm-password">
-                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirm-password">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <button type="button" id="updateSecurity" class="btn btn-primary px-4">Update Security Settings</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-</div>
-</section>
+            </div>
+        </section>
+    </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Include the edit_profile.js file -->
-<script src="user_account/edit_profile.js"></script>
+<script src="functions/edit_profile.js"></script>
 
 <script>
 $(document).ready(function() {
@@ -552,6 +550,3 @@ $(document).ready(function() {
     });
 });
 </script>
-
-</body>
-</html>

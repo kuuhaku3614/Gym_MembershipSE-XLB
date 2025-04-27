@@ -301,6 +301,13 @@
                     Transactions
                 </div>
             </a>
+
+            <a href="profile.php" id="profile-link" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'profile.php' ? 'active' : '' ?>">
+                <div class="nav-item-content">
+                    <i class="fas fa-user"></i>
+                    Profile
+                </div>
+            </a>
         </nav>
     </div>
 
