@@ -124,14 +124,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // Get initial data for the form
+// Get initial data for the form
 require_once(__DIR__ . "/functions/member_registration.class.php");
 $memberRegistration = new MemberRegistration();
 $programs = $memberRegistration->getPrograms();
 $rentalServices = $memberRegistration->getRentalServices();
-$registrationFee = $memberRegistration->getRegistrationFee();
+// $registrationFee = $memberRegistration->getRegistrationFee(); // Old line - remove or comment out
+
+// Fetch the details array
+$registrationDetails = $memberRegistration->getRegistrationFee();
+// Extract the numeric fee
+$registrationFee = $registrationDetails['fee'];
+// You might also need duration details if you display them on the renew page
+$registrationDuration = $registrationDetails['duration'];
+$registrationDurationType = $registrationDetails['duration_type'];
 
 // Get member ID from GET or fallback
 $memberId = isset($_GET['member_id']) ? intval($_GET['member_id']) : '';
+
 
 // Helper function to generate coach options
 function generateCoachOptions($coaches) {
@@ -999,7 +1009,11 @@ function generateProgramCard($program) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         window.BASE_URL = '<?= BASE_URL ?>';
-        window.registrationFee = <?= number_format($memberRegistration->getRegistrationFee(), 2, '.', '') ?>;
+        // Corrected line: Use the $registrationFee variable
+        window.registrationFee = <?= number_format($registrationFee, 2, '.', '') ?>;
+        // Optionally pass duration info if needed in renew_member.js
+        window.registrationDuration = <?= json_encode($registrationDuration) ?>;
+        window.registrationDurationType = <?= json_encode($registrationDurationType) ?>;
         function calculateEndDate(startDate, duration, durationType = 'months') {
             if (!startDate || !duration) return '';
             const date = new Date(startDate);

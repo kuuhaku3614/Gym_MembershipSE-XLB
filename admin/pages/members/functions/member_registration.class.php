@@ -93,12 +93,26 @@ class MemberRegistration {
 
     public function getRegistrationFee() {
         try {
-            $sql = "SELECT membership_fee FROM registration WHERE id = 1";
+            // Fetch fee, duration, and duration type name
+            $sql = "SELECT r.membership_fee, r.duration, dt.type_name as duration_type
+                    FROM registration r
+                    LEFT JOIN duration_types dt ON r.duration_type_id = dt.id
+                    WHERE r.id = 1"; // Assuming ID 1 is the main registration fee config
             $stmt = $this->pdo->query($sql);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $result ? floatval($result['membership_fee']) : 0;
+    
+            if ($result) {
+                return [
+                    'fee' => floatval($result['membership_fee']),
+                    'duration' => (int)$result['duration'],
+                    'duration_type' => $result['duration_type'] // e.g., 'months', 'year'
+                ];
+            }
+            return ['fee' => 0, 'duration' => 0, 'duration_type' => null]; // Default if not found
+    
         } catch (Exception $e) {
-            return 0;
+             error_log("Error fetching registration fee details: " . $e->getMessage()); // Log error
+            return ['fee' => 0, 'duration' => 0, 'duration_type' => null];
         }
     }
 
@@ -218,21 +232,57 @@ class MemberRegistration {
             }
 
             try {
-                
-                $registrationFee = $this->getRegistrationFee();
-                $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount, is_paid) 
-                        VALUES (:transaction_id, 1, :amount, 0)";
-                $stmt = $this->pdo->prepare($sql);
-                $result = $stmt->execute([
-                    ':transaction_id' => $transactionId,
-                    ':amount' => $registrationFee
-                ]);
-                if (!$result) {
-                    throw new Exception("Failed to create registration record");
-                }
-            } catch (PDOException $e) {
-                throw new Exception("Database error while creating registration record");
+            // Fetch registration fee details including duration
+            $registrationDetails = $this->getRegistrationFee();
+            if ($registrationDetails['fee'] <= 0) {
+                // Optionally handle the case where the fee is zero or couldn't be fetched
+                // For now, we'll proceed, but you might want to throw an exception
+                // throw new Exception("Registration fee is not configured properly.");
+                error_log("Warning: Registration fee is zero or could not be fetched.");
             }
+
+            $registrationFee = $registrationDetails['fee'];
+            $duration = $registrationDetails['duration'];
+            $durationType = $registrationDetails['duration_type']; // Get type name (e.g., 'months')
+
+            // Calculate validity dates only if duration is set
+            $validFrom = null;
+            $validUntil = null;
+            if ($duration > 0 && $durationType) {
+                $validFrom = date('Y-m-d H:i:s'); // Set valid_from to now
+                try {
+                    $startDateForCalc = date('Y-m-d');
+                    $validUntilDate = $this->calculateEndDate($startDateForCalc, $duration, $durationType);
+                    $validUntil = $validUntilDate . ' ' . date('H:i:s');
+                } catch (Exception $e) {
+                    error_log("Error calculating registration fee end date: " . $e->getMessage());
+                    $validFrom = null; // Reset dates if calculation failed
+                    $validUntil = null;
+                }
+            }
+
+            // Insert registration record WITH validity dates
+            $sql = "INSERT INTO registration_records
+                        (transaction_id, registration_id, amount, is_paid, valid_from, valid_until, created_at)
+                    VALUES (:transaction_id, 1, :amount, 0, :valid_from, :valid_until, NOW())"; // Added created_at explicitly
+            $stmt = $this->pdo->prepare($sql);
+            $result = $stmt->execute([
+                ':transaction_id' => $transactionId,
+                ':amount' => $registrationFee,
+                // Bind the calculated dates (will be NULL if duration wasn't set or calculation failed)
+                ':valid_from' => $validFrom, // Value is bound here
+                ':valid_until' => $validUntil // Value is bound here
+            ]);
+            if (!$result) {
+                throw new Exception("Failed to create registration record");
+            }
+        } catch (PDOException $e) {
+            error_log("DB Error creating registration record: " . $e->getMessage()); // Log specific DB error
+            throw new Exception("Database error while creating registration record");
+        } catch (Exception $e) { // Catch calculation errors specifically if needed
+            error_log("Error processing registration fee: " . $e->getMessage());
+            throw $e; // Re-throw to be caught by the main handler
+        }
 
             if (!empty($data['membership_plan'])) {
                 try {
@@ -365,15 +415,23 @@ class MemberRegistration {
 
     public function calculateEndDate($startDate, $duration, $durationType) {
         $start = new DateTime($startDate);
-        switch ($durationType) {
-            case 'days':
+        $duration = (int)$duration; // Ensure duration is an integer
+    
+        // Normalize duration type string (lowercase, handle plurals)
+        $durationTypeNormalized = strtolower(rtrim($durationType, 's'));
+    
+        switch ($durationTypeNormalized) {
+            case 'day':
                 return $start->modify("+{$duration} days")->format('Y-m-d');
-            case 'months':
+            case 'week':
+                 return $start->modify("+{$duration} weeks")->format('Y-m-d');
+            case 'month':
                 return $start->modify("+{$duration} months")->format('Y-m-d');
             case 'year':
-                return $start->modify("+{$duration} year")->format('Y-m-d');
+                return $start->modify("+{$duration} years")->format('Y-m-d');
             default:
-                throw new Exception("Invalid duration type");
+                // Throw an exception if the type is unknown or unhandled
+                throw new Exception("Invalid or unsupported duration type: " . $durationType);
         }
     }
 
