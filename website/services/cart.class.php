@@ -118,21 +118,25 @@ class Cart_Class {
         try {
             $db = new Database();
             $conn = $db->connect();
-            
-            // Get registration fee from database
-            $sql = "SELECT membership_fee FROM registration WHERE id = 1";
+    
+            // Get registration fee, duration, and duration type from database
+            $sql = "SELECT membership_fee, duration, duration_type_id FROM registration WHERE id = 1";
             $stmt = $conn->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetch();
-            
+    
             $fee = $result ? floatval($result['membership_fee']) : 150.00; // Default to 150 if not found
-            
+            $duration = $result ? intval($result['duration']) : 0;
+            $durationTypeId = $result ? intval($result['duration_type_id']) : null;
+    
             $_SESSION['cart']['registration_fee'] = [
                 'name' => 'Registration Fee',
                 'price' => $fee,
-                'type' => 'registration'
+                'type' => 'registration',
+                'duration' => $duration, // Store duration
+                'duration_type_id' => $durationTypeId // Store duration type id
             ];
-            
+    
             $this->updateTotal();
             return true;
         } catch (Exception $e) {

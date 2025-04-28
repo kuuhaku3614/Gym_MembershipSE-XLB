@@ -68,6 +68,88 @@ function showAlert(type, message) {
   }, 5000);
 }
 
+// Function to fetch registration fee details
+function fetchRegistrationFeeDetails() {
+  return fetch("services/registration_fee_handler.php", {
+    method: "GET",
+    headers: {
+      "Cache-Control": "no-cache",
+    },
+    credentials: "same-origin",
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.success) {
+        return data.data.registration;
+      } else {
+        console.error("Error fetching registration fee:", data.data.message);
+        return null;
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching registration fee details:", error);
+      return null;
+    });
+}
+
+// Function to format duration text based on duration and type
+function formatDuration(duration, durationType) {
+  if (!duration || !durationType) return "";
+  
+  // Convert duration type ID to readable text
+  let typeText = "";
+  switch (durationType) {
+    case 1:
+      typeText = duration > 1 ? "days" : "day";
+      break;
+    case 2:
+      typeText = duration > 1 ? "months" : "month";
+      break;
+    case 3:
+      typeText = duration > 1 ? "years" : "year";
+      break;
+    default:
+      typeText = "unknown";
+  }
+  
+  return `${duration} ${typeText}`;
+}
+
+// Function to update the registration fee section in the cart display
+function updateRegistrationFeeDisplay(cart, registrationDetails) {
+  // Only update if there's a registration fee in the cart
+  if (!cart.registration_fee || !registrationDetails) return "";
+  
+  const durationText = formatDuration(
+    registrationDetails.duration, 
+    registrationDetails.duration_type_id
+  );
+  
+  return `
+    <div class="cart-section">
+      <h6 class="fw-bold mb-3">One-time Fees</h6>
+      <div class="cart-item">
+        <div class="item-details">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <p class="mb-1">${cart.registration_fee.name}</p>
+              <p class="price mb-1">₱${parseFloat(cart.registration_fee.price).toFixed(2)}</p>
+              <p class="text-muted mb-0">One-time registration fee for new members</p>
+              ${durationText ? `<p class="text-muted mb-0">Valid for: ${durationText}</p>` : ""}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Updated updateCartDisplay function to incorporate registration fee details
 function updateCartDisplay(cart) {
   const cartBody = document.querySelector(".cart-body");
   if (!cartBody) {
@@ -75,213 +157,186 @@ function updateCartDisplay(cart) {
     return;
   }
 
-  let html = "";
-
-  // Walk-in section
-  if (cart.walkins && cart.walkins.length > 0) {
-    cart.walkins.forEach((walkin, index) => {
-      html += `
-                <div class="cart-item">
-                    <div class="item-details">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Walk-in Service</h6>
-                                <p class="price mb-1 fw">₱${parseFloat(
-                                  walkin.price
-                                ).toFixed(2)}</p>
-                                <p class="text-muted small mb-0">Date: ${formatDate(
-                                  walkin.date
-                                )}</p>
-                            </div>
-                            <button class="remove-item" 
-                                    onclick="removeFromCart('walkin', ${index})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
+  // First fetch registration fee details if needed
+  if (cart.registration_fee) {
+    fetchRegistrationFeeDetails().then(registrationDetails => {
+      renderCartWithRegistrationDetails(cart, registrationDetails);
     });
-    html += "</div>";
+  } else {
+    renderCartWithRegistrationDetails(cart, null);
   }
+  
+  function renderCartWithRegistrationDetails(cart, registrationDetails) {
+    let html = "";
 
-  // Memberships section
-  if (cart.memberships && cart.memberships.length > 0) {
-    cart.memberships.forEach((membership, index) => {
-      html += `
-                <div class="cart-item">
-                    <div class="item-details">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="mb-1">${membership.name}</p>
-                                <p class="price mb-1">₱${parseFloat(
-                                  membership.price
-                                ).toFixed(2)}</p>
-                                <p class="text-muted mb-0">Validity: ${
-                                  membership.validity
-                                }</p>
-                                <p class="text-muted mb-0">Start: ${formatDate(
-                                  membership.start_date
-                                )}</p>
-                                <p class="text-muted mb-0">End: ${formatDate(
-                                  membership.end_date
-                                )}</p>
-                            </div>
-                            <button class="remove-item" 
-                                    onclick="removeFromCart('membership', ${index})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
+    // Walk-in section
+    if (cart.walkins && cart.walkins.length > 0) {
+      cart.walkins.forEach((walkin, index) => {
+        html += `
+          <div class="cart-item">
+            <div class="item-details">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">Walk-in Service</h6>
+                  <p class="price mb-1 fw">₱${parseFloat(walkin.price).toFixed(2)}</p>
+                  <p class="text-muted small mb-0">Date: ${formatDate(walkin.date)}</p>
                 </div>
-            `;
-    });
-  }
-
-  // Programs section (grouped by schedule)
-  if (cart.programs && cart.programs.length > 0) {
-    // Group program sessions by shared schedule properties
-    const groupedPrograms = {};
-    cart.programs.forEach((program, index) => {
-      // Use a composite key of schedule properties except date
-      const key = [
-        program.program_id,
-        program.program_name,
-        program.coach_id,
-        program.coach_name,
-        program.day,
-        program.start_time,
-        program.end_time,
-        program.price
-      ].join('|');
-      if (!groupedPrograms[key]) {
-        groupedPrograms[key] = {
-          ...program,
-          session_dates: [],
-          indices: [],
-          groupKey: key
-        };
-      }
-      groupedPrograms[key].session_dates.push(program.session_date);
-      groupedPrograms[key].indices.push(index);
-    });
-
-    // Render each group as one card with all dates listed
-    Object.values(groupedPrograms).forEach((group) => {
-      html += `
-        <div class="cart-item">
-          <div class="item-details">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <p class="mb-1">${group.program_name}</p>
-                <p class="price mb-1">₱${parseFloat(group.price).toFixed(2)}</p>
-                <p class="text-muted mb-0">Coach: ${group.coach_name}</p>
-                <p class="text-muted mb-0">Day: ${group.day}</p>
-                <p class="text-muted mb-0">Time: ${group.start_time} - ${group.end_time}</p>
-                <div class="mt-2">
-                  <span class="fw-bold">Session Dates:</span>
-                  <ul class="mb-1 ps-4">
-                    ${group.session_dates.map((date, i) => `
-                      <li class="d-flex align-items-center justify-content-between">
-                        <span>${formatDate(date)}</span>
-                        <button class="btn btn-sm btn-link text-danger p-0 ms-2" title="Remove this session" onclick="removeFromCart('program', ${group.indices[i]})"><i class="fas fa-times"></i></button>
-                      </li>
-                    `).join('')}
-                  </ul>
-                </div>
+                <button class="remove-item" 
+                  onclick="removeFromCart('walkin', ${index})">
+                  <i class="fas fa-times"></i>
+                </button>
               </div>
-              <button class="remove-item ms-3" title="Remove all sessions in this schedule"
-                onclick="removeProgramGroupFromCart('${group.groupKey}')">
-                <i class="fas fa-trash"></i>
-              </button>
             </div>
           </div>
-        </div>
-      `;
-    });
-  }
-
-  // Rentals section
-  if (cart.rentals && cart.rentals.length > 0) {
-    cart.rentals.forEach((rental, index) => {
-      html += `
-                <div class="cart-item">
-                    <div class="item-details">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="mb-1">${rental.name}</p>
-                                <p class="price mb-1">₱${parseFloat(
-                                  rental.price
-                                ).toFixed(2)}</p>
-                                <p class="text-muted mb-0">Start: ${formatDate(
-                                  rental.start_date
-                                )}</p>
-                                <p class="text-muted mb-0">End: ${formatDate(
-                                  rental.end_date
-                                )}</p>
-                            </div>
-                            <button class="remove-item" 
-                                    onclick="removeFromCart('rental', ${index})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-    });
-  }
-
-  // Registration Fee section
-  if (cart.registration_fee) {
-    html += `
-            <div class="cart-section">
-                <h6 class="fw-bold mb-3">One-time Fees</h6>
-                <div class="cart-item">
-                    <div class="item-details">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="mb-1">${
-                                  cart.registration_fee.name
-                                }</p>
-                                <p class="price mb-1">₱${parseFloat(
-                                  cart.registration_fee.price
-                                ).toFixed(2)}</p>
-                                <p class="text-muted mb-0">One-time registration fee for new members</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         `;
-  }
+      });
+    }
 
-  // Cart summary
-  html += `
-        <div class="cart-summary mt-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="fw">Total:</span>
-                <span class="fw">₱${parseFloat(cart.total).toFixed(2)}</span>
-            </div>
-            ${
-              cart.total > 0
-                ? `
-                <div class="d-grid gap-2 mt-3">
-                    <button class="btn btn-primary" onclick="availServices()">
-                        Avail Services
-                    </button>
-                    <button class="btn btn-outline-secondary" onclick="clearCart()">
-                        Clear Cart
-                    </button>
+    // Memberships section
+    if (cart.memberships && cart.memberships.length > 0) {
+      cart.memberships.forEach((membership, index) => {
+        html += `
+          <div class="cart-item">
+            <div class="item-details">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="mb-1">${membership.name}</p>
+                  <p class="price mb-1">₱${parseFloat(membership.price).toFixed(2)}</p>
+                  <p class="text-muted mb-0">Validity: ${membership.validity}</p>
+                  <p class="text-muted mb-0">Start: ${formatDate(membership.start_date)}</p>
+                  <p class="text-muted mb-0">End: ${formatDate(membership.end_date)}</p>
                 </div>
-            `
-                : `
-                <p class="text-center text-muted mt-3">Your cart is empty</p>
-            `
-            }
+                <button class="remove-item" 
+                  onclick="removeFromCart('membership', ${index})">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Programs section (grouped by schedule)
+    if (cart.programs && cart.programs.length > 0) {
+      // Group program sessions by shared schedule properties
+      const groupedPrograms = {};
+      cart.programs.forEach((program, index) => {
+        // Use a composite key of schedule properties except date
+        const key = [
+          program.program_id,
+          program.program_name,
+          program.coach_id,
+          program.coach_name,
+          program.day,
+          program.start_time,
+          program.end_time,
+          program.price
+        ].join('|');
+        if (!groupedPrograms[key]) {
+          groupedPrograms[key] = {
+            ...program,
+            session_dates: [],
+            indices: [],
+            groupKey: key
+          };
+        }
+        groupedPrograms[key].session_dates.push(program.session_date);
+        groupedPrograms[key].indices.push(index);
+      });
+
+      // Render each group as one card with all dates listed
+      Object.values(groupedPrograms).forEach((group) => {
+        html += `
+          <div class="cart-item">
+            <div class="item-details">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="mb-1">${group.program_name}</p>
+                  <p class="price mb-1">₱${parseFloat(group.price).toFixed(2)}</p>
+                  <p class="text-muted mb-0">Coach: ${group.coach_name}</p>
+                  <p class="text-muted mb-0">Day: ${group.day}</p>
+                  <p class="text-muted mb-0">Time: ${group.start_time} - ${group.end_time}</p>
+                  <div class="mt-2">
+                    <span class="fw-bold">Session Dates:</span>
+                    <ul class="mb-1 ps-4">
+                      ${group.session_dates.map((date, i) => `
+                        <li class="d-flex align-items-center justify-content-between">
+                          <span>${formatDate(date)}</span>
+                          <button class="btn btn-sm btn-link text-danger p-0 ms-2" title="Remove this session" onclick="removeFromCart('program', ${group.indices[i]})"><i class="fas fa-times"></i></button>
+                        </li>
+                      `).join('')}
+                    </ul>
+                  </div>
+                </div>
+                <button class="remove-item ms-3" title="Remove all sessions in this schedule"
+                  onclick="removeProgramGroupFromCart('${group.groupKey}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Rentals section
+    if (cart.rentals && cart.rentals.length > 0) {
+      cart.rentals.forEach((rental, index) => {
+        html += `
+          <div class="cart-item">
+            <div class="item-details">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="mb-1">${rental.name}</p>
+                  <p class="price mb-1">₱${parseFloat(rental.price).toFixed(2)}</p>
+                  <p class="text-muted mb-0">Start: ${formatDate(rental.start_date)}</p>
+                  <p class="text-muted mb-0">End: ${formatDate(rental.end_date)}</p>
+                </div>
+                <button class="remove-item" 
+                  onclick="removeFromCart('rental', ${index})">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Registration Fee section with updated duration information
+    if (cart.registration_fee) {
+      html += updateRegistrationFeeDisplay(cart, registrationDetails);
+    }
+
+    // Cart summary
+    html += `
+      <div class="cart-summary mt-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw">Total:</span>
+          <span class="fw">₱${parseFloat(cart.total).toFixed(2)}</span>
         </div>
+        ${
+          cart.total > 0
+            ? `
+            <div class="d-grid gap-2 mt-3">
+              <button class="btn btn-primary" onclick="availServices()">
+                Avail Services
+              </button>
+              <button class="btn btn-outline-secondary" onclick="clearCart()">
+                Clear Cart
+              </button>
+            </div>
+          `
+            : `
+            <p class="text-center text-muted mt-3">Your cart is empty</p>
+          `
+        }
+      </div>
     `;
 
-  cartBody.innerHTML = html;
+    cartBody.innerHTML = html;
+  }
 }
 
 function removeFromCart(type, id) {

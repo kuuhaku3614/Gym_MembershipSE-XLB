@@ -1807,3 +1807,15 @@
     [action] => get_profile_data
 )
 
+2025-04-28 19:44:31 - Request received
+2025-04-28 19:44:31 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-28 20:04:01 - Request received
+2025-04-28 20:04:01 - POST data: Array
+(
+    [action] => get_profile_data
+)
+

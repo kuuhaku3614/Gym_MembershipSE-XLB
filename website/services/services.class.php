@@ -68,7 +68,7 @@ class Services_class{
      * Get all schedules for a coach_program_type (group and personal)
      *
      * Used in:
-     *   - teach_program_backend.php (lines 33, 47)
+     * - teach_program_backend.php (lines 33, 47)
      */
     public function getSchedulesByCoachProgramType($coach_program_type_id, $type) {
         $conn = $this->db->connect();
@@ -163,7 +163,7 @@ class Services_class{
     public $start_date = '';
     public $end_date = '';
     public $total_amount = '';
-    
+
     // Properties for rental
     public $rental_id = '';
     public $rental_price = '';
@@ -183,11 +183,11 @@ class Services_class{
         $conn = $this->db->connect();
         try {
             // Check for current or future active memberships
-            $sql = "SELECT m.*, t.user_id 
+            $sql = "SELECT m.*, t.user_id
                     FROM memberships m
                     JOIN transactions t ON m.transaction_id = t.id
-                    WHERE t.user_id = ? 
-                    AND m.status = 'active' 
+                    WHERE t.user_id = ?
+                    AND m.status = 'active'
                     AND m.end_date >= CURDATE()
                     AND m.is_paid = 1
                     ORDER BY m.start_date ASC
@@ -206,7 +206,7 @@ class Services_class{
                 CONCAT(mp.duration, ' ', dt.type_name) as validity
                 FROM membership_plans mp
                 LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
-                WHERE mp.status = 'active' 
+                WHERE mp.status = 'active'
                 AND (mp.plan_type = 'standard' OR mp.plan_type = 'walk-in')
                 ORDER BY mp.price";
         $stmt = $conn->prepare($sql);
@@ -229,7 +229,7 @@ class Services_class{
 
     public function displayProgramServices() {
         $conn = $this->db->connect();
-        $sql = "SELECT DISTINCT 
+        $sql = "SELECT DISTINCT
                 p.id as program_id,
                 p.program_name,
                 p.description,
@@ -273,9 +273,9 @@ class Services_class{
     public function fetchGymrate($membership_plan_id) {
         $conn = $this->db->connect();
         try {
-            $sql = "SELECT mp.*, dt.type_name as duration_type 
+            $sql = "SELECT mp.*, dt.type_name as duration_type
                     FROM membership_plans mp
-                    LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                    LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
                     WHERE mp.id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$membership_plan_id]);
@@ -289,7 +289,7 @@ class Services_class{
     public function saveMembership($user_id, $membership_plan_id, $start_date, $end_date, $total_amount) {
         $conn = $this->db->connect();
         try {
-            $sql = "INSERT INTO memberships (user_id, membership_plan_id, start_date, end_date, 
+            $sql = "INSERT INTO memberships (user_id, membership_plan_id, start_date, end_date,
                     total_amount, status) VALUES (?, ?, ?, ?, ?, 'active')";
             $stmt = $conn->prepare($sql);
             $stmt->execute([
@@ -307,9 +307,9 @@ class Services_class{
 
     public function fetchRental($rental_id) {
         $conn = $this->db->connect();
-        $sql = "SELECT rs.*, dt.type_name as duration_type 
+        $sql = "SELECT rs.*, dt.type_name as duration_type
                 FROM rental_services rs
-                LEFT JOIN duration_types dt ON rs.duration_type_id = dt.id 
+                LEFT JOIN duration_types dt ON rs.duration_type_id = dt.id
                 WHERE rs.id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$rental_id]);
@@ -326,21 +326,21 @@ class Services_class{
             $stmt = $conn->prepare($check_slots);
             $stmt->execute([$rental_id]);
             $result = $stmt->fetch();
-            
+
             if ($result['available_slots'] < 1) {
                 return false;
             }
 
             // Insert rental subscription
             $sql = "INSERT INTO rental_subscriptions (membership_id, rental_service_id,
-                    start_date, end_date, price, status) 
+                    start_date, end_date, price, status)
                     VALUES (?, ?, ?, ?, ?, 'active')";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$membership_id, $rental_id, $start_date, $end_date, $price]);
 
             // Update available slots
-            $update_sql = "UPDATE rental_services 
-                          SET available_slots = available_slots - 1 
+            $update_sql = "UPDATE rental_services
+                          SET available_slots = available_slots - 1
                           WHERE id = ?";
             $stmt = $conn->prepare($update_sql);
             $stmt->execute([$rental_id]);
@@ -356,9 +356,9 @@ class Services_class{
 
     public function fetchMembership($plan_id) {
         $conn = $this->db->connect();
-        $sql = "SELECT mp.*, dt.type_name as duration_type 
+        $sql = "SELECT mp.*, dt.type_name as duration_type
                 FROM membership_plans mp
-                LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id 
+                LEFT JOIN duration_types dt ON mp.duration_type_id = dt.id
                 WHERE mp.id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$plan_id]);
@@ -390,7 +390,7 @@ class Services_class{
             $stmt = $conn->prepare($sql);
             $stmt->execute([$user_id]);
             $result = $stmt->fetch();
-            
+
             // Check if user is a member (role_id = 4) or a coach (role_id = 3)
             return $result['role_id'] == 4 || $result['role_id'] == 3;
         } catch (Exception $e) {
@@ -420,10 +420,10 @@ class Services_class{
                     SELECT coach_program_type_id, 'personal' as schedule_type
                     FROM coach_personal_schedule
                 ) schedules ON cpt.id = schedules.coach_program_type_id
-                WHERE p.status = 'active' 
+                WHERE p.status = 'active'
                 AND p.is_removed = 0
-                AND u.is_active = 1 
-                AND u.is_banned = 0 
+                AND u.is_active = 1
+                AND u.is_banned = 0
                 AND u.role_id = 4
                 AND schedules.coach_program_type_id IS NOT NULL";
 
@@ -477,7 +477,7 @@ class Services_class{
     public function getPersonalScheduleById($scheduleId) {
         try {
             $sql = "SELECT id, day, TIME_FORMAT(time, '%H:%i') as time, duration
-                    FROM coach_personal_schedule 
+                    FROM coach_personal_schedule
                     WHERE id = ? AND is_removed = 0";
             $stmt = $this->db->connect()->prepare($sql);
             $stmt->execute([$scheduleId]);
@@ -491,7 +491,7 @@ class Services_class{
     public function getGroupScheduleById($scheduleId) {
         try {
             $sql = "SELECT id, day, TIME_FORMAT(time, '%H:%i') as time, capacity
-                    FROM coach_group_schedule 
+                    FROM coach_group_schedule
                     WHERE id = ?";
             $stmt = $this->db->connect()->prepare($sql);
             $stmt->execute([$scheduleId]);
@@ -511,13 +511,13 @@ class Services_class{
                     JOIN programs p ON cpt.program_id = p.id
                     JOIN users u ON cpt.coach_id = u.id
                     JOIN personal_details pd ON u.id = pd.user_id
-                    WHERE cpt.id = :id 
+                    WHERE cpt.id = :id
                     AND cpt.status = 'active'
                     AND p.status = 'active'
                     AND p.is_removed = 0
                     AND u.is_active = 1
                     AND u.is_banned = 0";
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':id', $coachProgramTypeId);
             $stmt->execute();
@@ -546,22 +546,22 @@ class Services_class{
                 WHERE ps.status IN ('active', 'pending')
                 AND cps.coach_program_type_id = :coach_program_type_id
                 AND pss.coach_personal_schedule_id IS NOT NULL";
-            
+
             $stmt = $conn->prepare($bookedSlotsQuery);
             $stmt->bindParam(':coach_program_type_id', $coachProgramTypeId);
             $stmt->execute();
             $bookedSlots = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             // Create a map of booked slots by day and schedule ID
             $bookedSlotsMap = [];
             foreach ($bookedSlots as $slot) {
                 $day = $slot['day'];
                 $scheduleId = $slot['coach_personal_schedule_id'];
-                
+
                 if (!isset($bookedSlotsMap[$scheduleId])) {
                     $bookedSlotsMap[$scheduleId] = [];
                 }
-                
+
                 // Store the time range and day
                 $bookedSlotsMap[$scheduleId][] = [
                     'start' => strtotime($slot['start_time']),
@@ -571,7 +571,7 @@ class Services_class{
             }
 
             // Get available schedules
-            $sql = "SELECT 
+            $sql = "SELECT
                     cps.id,
                     cps.day,
                     TIME_FORMAT(cps.start_time, '%h:%i %p') as start_time,
@@ -584,12 +584,12 @@ class Services_class{
                 WHERE cps.coach_program_type_id = :coach_program_type_id
                 ORDER BY FIELD(cps.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
                 cps.start_time";
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':coach_program_type_id', $coachProgramTypeId);
             $stmt->execute();
             $rawSchedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             if (empty($rawSchedules)) {
                 return ['message' => 'No personal training schedules available for this coach'];
             }
@@ -601,30 +601,30 @@ class Services_class{
                 $startTime = strtotime($schedule['start_time']);
                 $endTime = strtotime($schedule['end_time']);
                 $duration = $schedule['duration_rate']; // in minutes
-                
+
                 // Calculate number of slots
                 $totalMinutes = ($endTime - $startTime) / 60;
                 $numSlots = floor($totalMinutes / $duration);
-                
+
                 // Create slots
                 for ($i = 0; $i < $numSlots; $i++) {
                     $slotStart = $startTime + ($i * $duration * 60);
                     $slotEnd = $slotStart + ($duration * 60);
-                    
+
                     // Check if this time slot overlaps with any booked slot
                     $isBooked = false;
                     if (isset($bookedSlotsMap[$scheduleId])) {
                         foreach ($bookedSlotsMap[$scheduleId] as $bookedSlot) {
                             // Check for overlap on the same day
-                            if ($schedule['day'] === $bookedSlot['day'] && 
-                                $slotStart < $bookedSlot['end'] && 
+                            if ($schedule['day'] === $bookedSlot['day'] &&
+                                $slotStart < $bookedSlot['end'] &&
                                 $slotEnd > $bookedSlot['start']) {
                                 $isBooked = true;
                                 break;
                             }
                         }
                     }
-                    
+
                     // Only add the slot if it's not booked
                     if (!$isBooked) {
                         $processedSchedules[] = [
@@ -639,7 +639,7 @@ class Services_class{
                     }
                 }
             }
-            
+
             return $processedSchedules;
         } catch (Exception $e) {
             error_log("Error in getCoachPersonalSchedule: " . $e->getMessage());
@@ -650,7 +650,7 @@ class Services_class{
     public function getCoachGroupSchedule($coachProgramTypeId) {
         $conn = $this->db->connect();
         try {
-            $sql = "SELECT 
+            $sql = "SELECT
                     cgs.id,
                     cgs.day,
                     TIME_FORMAT(cgs.start_time, '%h:%i %p') as start_time,
@@ -666,7 +666,7 @@ class Services_class{
                         WHERE pss.coach_group_schedule_id = cgs.id
                         AND ps.status IN ('active', 'pending')
                     ) as current_members,
-                    CASE 
+                    CASE
                         WHEN (
                             SELECT COUNT(DISTINCT ps.id)
                             FROM program_subscription_schedule pss
@@ -680,16 +680,16 @@ class Services_class{
                     WHERE cgs.coach_program_type_id = :id
                     ORDER BY FIELD(cgs.day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
                     cgs.start_time";
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':id', $coachProgramTypeId);
             $stmt->execute();
             $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
+
             if (empty($schedules)) {
                 return ['message' => 'No group training schedules available for this coach'];
             }
-            
+
             return $schedules;
         } catch (Exception $e) {
             error_log("Error in getCoachGroupSchedule: " . $e->getMessage());
@@ -709,4 +709,56 @@ class Services_class{
         }
     }
 
+    /**
+     * Checks the registration status for a given user based on the latest paid registration record.
+     *
+     * @param int $userId The ID of the user to check.
+     * @return string 'valid' if registration is current or lifetime, 'expired' if expired, 'required' if no paid record found.
+     */
+    public function checkRegistrationStatus($userId) {
+        $conn = $this->db->connect();
+        try {
+            // Find the latest paid registration record for the user
+            $sql = "SELECT valid_until FROM registration_records rr
+                    JOIN transactions t ON rr.transaction_id = t.id
+                    WHERE t.user_id = ? AND rr.is_paid = 1
+                    ORDER BY rr.payment_date DESC LIMIT 1";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([$userId]);
+            $record = $stmt->fetch();
+
+            if (!$record) {
+                // No paid registration found
+                return 'required';
+            }
+
+            $validUntil = $record['valid_until'];
+
+            if ($validUntil === null) {
+                // Lifetime registration
+                return 'valid';
+            }
+
+            $currentDate = new DateTime();
+            $expirationDate = new DateTime($validUntil);
+
+            if ($currentDate > $expirationDate) {
+                // Registration expired
+                return 'expired';
+            } else {
+                // Registration is still valid
+                return 'valid';
+            }
+        } catch (Exception $e) {
+            // Log the error or handle it appropriately
+            error_log("Error checking registration status for user ID {$userId}: " . $e->getMessage());
+            // Depending on your application's error handling, you might
+            // return a specific error status or re-throw the exception.
+            // For this example, we'll assume an error means the status is
+            // unknown or cannot be verified, and perhaps treat it as required
+            // to be safe, or log and return false/null. Returning 'required'
+            // is a safe default in case of database issues preventing lookup.
+            return 'required';
+        }
+    }
 }
