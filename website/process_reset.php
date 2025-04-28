@@ -28,11 +28,10 @@ function performReset($pdo) {
         ";
         $pdo->exec($resetAttendanceRecordsSql);
         
-        // Update the last reset timestamp
+        // Update the last reset timestamp - use REPLACE instead of INSERT to ensure it's updated
         $updateResetTimeSql = "
-            INSERT INTO system_controls (key_name, value) 
+            REPLACE INTO system_controls (key_name, value) 
             VALUES ('last_attendance_reset', :timestamp)
-            ON DUPLICATE KEY UPDATE value = :timestamp
         ";
         $stmt = $pdo->prepare($updateResetTimeSql);
         $stmt->execute([
@@ -56,6 +55,11 @@ try {
     $pdo = $database->connect();
     
     if (performReset($pdo)) {
+        // Set a session flag indicating reset just happened
+        $_SESSION['attendance_reset_completed'] = true;
+        
+        // Log reset success and details
+        error_log("Attendance reset successfully executed at " . date('Y-m-d H:i:s'));
         echo json_encode(['status' => 'success']);
         exit;
     } else {
