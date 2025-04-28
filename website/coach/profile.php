@@ -1,35 +1,16 @@
 <?php
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
     session_start();
-    require_once '../coach.class.php';
-    require_once __DIR__ . '/../../config.php';
+    require_once 'functions/profile.class.php';
 
+    // Redirect if user is not logged in
     if (!isset($_SESSION['user_id'])) {
-        header('Location: ../../login/login.php');
+        header('Location: ../login/login.php');
         exit();
     }
 
-    include('../coach.nav.php');
-    require_once 'dashboard.class.php';
-    require_once 'functions/profile.class.php';
-
     $profile = new Profile_class();
-
-    // Fetch user details and store in session
-    $userDetails = $profile->getUserDetails($_SESSION['user_id']);
-    if ($userDetails !== false && !empty($userDetails)) {
-        $_SESSION['personal_details'] = $userDetails;
-        $_SESSION['is_admin'] = ($userDetails['role_name'] === 'admin' || $userDetails['role_name'] === 'administrator');
-    } else {
-        // Handle the error case - user not found in DB despite session
-        // This might indicate a data inconsistency or require logging out the user
-        // For now, set default guest details
-        $_SESSION['personal_details'] = array('name' => 'Guest', 'role_name' => '', 'role_id' => '');
-        $_SESSION['is_admin'] = false;
-        // Optionally, destroy session and redirect to login
-        // session_destroy();
-        // header('Location: ../login/login.php');
-        // exit();
-    }
 
     // Handle AJAX request for expired services
     if(isset($_GET['fetch_expired'])) {
@@ -39,7 +20,8 @@
         exit; // Stop further PHP execution for AJAX requests
     }
 
-    // --- Non-AJAX request: Render the main profile page ---
+    include('../coach.nav.php');
+    require_once 'dashboard.class.php';
 
     // Fetch initial data for active services and attendance log
     $active_services = $profile->fetchAvailedServices();
@@ -47,6 +29,7 @@
     $attendance_log = $profile->fetchAttendanceLog($searchDate);
     $program_schedules = $profile->fetchProgramSchedules($_SESSION['user_id']); 
 ?>
+
 
 <link rel="stylesheet" href="../css/browse_services.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -225,7 +208,6 @@
                                             </div>
                                             <div>
                                                 <p class="text-muted mb-1"><small><i class="fas fa-calendar-alt me-1"></i> Date: <?= htmlspecialchars($service['date']) ?></small></p>
-                                                <p class="text-muted mb-1"><small><i class="fas fa-clock me-1"></i> Time: <?= htmlspecialchars($service['time']) ?></small></p>
                                                 <?php if (isset($service['amount'])) { ?>
                                                     <p class="text-muted mb-1"><small><i class="fas fa-tag me-1"></i> ₱<?= number_format($service['amount'], 2) ?></small></p>
                                                 <?php } ?>
@@ -326,7 +308,7 @@
                             <div class="col-md-3 text-center mb-4">
                                 <div class="position-relative mb-3 mx-auto" style="width: 120px; height: 120px;">
                                     <!-- Database-driven profile photo -->
-                                    <img src="../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" alt="Profile Photo" id="profilePhoto" class="img-fluid rounded-circle">
+                                    <img src="../../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../../cms_img/user.png'; ?>" alt="Profile Photo" id="profilePhoto" class="img-fluid rounded-circle">
                                     <label for="photoInput" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2" style="cursor: pointer;">
                                         <i class="fas fa-camera"></i>
                                     </label>

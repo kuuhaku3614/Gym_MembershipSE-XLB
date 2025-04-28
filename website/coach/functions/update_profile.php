@@ -209,7 +209,7 @@ try {
                 // Corrected query to use proper table structure - fetch from both users and personal_details tables
                 $stmt = $conn->prepare("
                     SELECT u.id, u.username, pd.first_name, pd.last_name, pd.sex, pd.birthdate, pd.phone_number,
-                           IFNULL(p.photo_path, '../cms_img/user.png') as photo_path, u.last_password_change
+                        IFNULL(CONCAT('../../', p.photo_path), '../cms_img/user.png') as photo_path, u.last_password_change
                     FROM users u
                     LEFT JOIN personal_details pd ON u.id = pd.user_id
                     LEFT JOIN profile_photos p ON u.id = p.user_id AND p.is_active = 1

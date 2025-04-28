@@ -205,12 +205,11 @@ class Profile_class{
         w.id,
         'walkin' as type,
         DATE_FORMAT(w.date, '%M %d, %Y') as date,
-        DATE_FORMAT(w.time_in, '%h:%i %p') as time,
         w.amount as price,
         w.status  /* Add this line to select the status field */
         FROM transactions t
         JOIN walk_in_records w ON t.id = w.transaction_id
-        WHERE t.user_id = :user_id AND w.status = 'pending' AND w.date >= CURDATE()
+        WHERE t.user_id = :user_id AND w.status = 'pending' AND w.is_paid = 0 AND w.date >= CURDATE()
         ORDER BY w.date ASC"; // Order by date ascending for upcoming
 
         $stmt = $conn->prepare($walkin_query);

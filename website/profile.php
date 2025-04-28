@@ -16,7 +16,7 @@
     $userDetails = $profile->getUserDetails($_SESSION['user_id']);
     if ($userDetails !== false && !empty($userDetails)) {
         $_SESSION['personal_details'] = $userDetails;
-        $_SESSION['is_admin'] = ($userDetails['role_name'] === 'admin' || $userDetails['role_name'] === 'administrator');
+        $_SESSION['is_admin'] = ($userDetails['role_name'] === 'admin' || $userDetails['role_name'] === 'coach' || $userDetails['role_name'] === 'staff' || $userDetails['role_name'] === 'coach/staff');
     } else {
         // Handle the error case - user not found in DB despite session
         // This might indicate a data inconsistency or require logging out the user
@@ -228,7 +228,6 @@
                                             </div>
                                             <div>
                                                 <p class="text-muted mb-1"><small><i class="fas fa-calendar-alt me-1"></i> Date: <?= htmlspecialchars($service['date']) ?></small></p>
-                                                <p class="text-muted mb-1"><small><i class="fas fa-clock me-1"></i> Time: <?= htmlspecialchars($service['time']) ?></small></p>
                                                 <?php if (isset($service['amount'])) { ?>
                                                     <p class="text-muted mb-1"><small><i class="fas fa-tag me-1"></i> ₱<?= number_format($service['amount'], 2) ?></small></p>
                                                 <?php } ?>
@@ -329,7 +328,7 @@
                     <div class="col-md-3 text-center mb-4">
                         <div class="position-relative mb-3 mx-auto" style="width: 120px; height: 120px;">
                             <!-- Database-driven profile photo -->
-                            <img src="../<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" alt="Profile Photo" id="profilePhoto" class="img-fluid rounded-circle">
+                            <img src="<?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : '../cms_img/user.png'; ?>" alt="Profile Photo" id="profilePhoto" class="img-fluid rounded-circle">
                             <label for="photoInput" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2" style="cursor: pointer;">
                                 <i class="fas fa-camera"></i>
                             </label>
