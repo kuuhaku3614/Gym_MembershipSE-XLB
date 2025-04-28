@@ -105,7 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // Get initial data for the form
 $programs = $memberRegistration->getPrograms();
 $rentalServices = $memberRegistration->getRentalServices();
-$registrationFee = $memberRegistration->getRegistrationFee();
+// $registrationFee = $memberRegistration->getRegistrationFee(); // Old way
+$registrationDetails = $memberRegistration->getRegistrationFee(); // Fetches the array
+$registrationFee = $registrationDetails['fee']; // Extracts the numeric fee
+$registrationDuration = $registrationDetails['duration'];
+$registrationDurationType = $registrationDetails['duration_type'];
 
 // Helper function to generate coach options
 function generateCoachOptions($coaches) {
@@ -538,7 +542,16 @@ function generateProgramCard($program) {
                                             <option value="">-- Select Walk-in Member --</option>
                                             <?php
                                             // Fetch walk-in records from the database
-                                            $walkInSql = "SELECT id, first_name, middle_name, last_name, phone_number FROM walk_in_records ORDER BY last_name, first_name";
+                                            $walkInSql = "SELECT 
+                                                            id, 
+                                                            first_name, 
+                                                            middle_name, 
+                                                            last_name, 
+                                                            phone_number,
+                                                            CONCAT(last_name, ', ', first_name, CASE WHEN middle_name IS NOT NULL AND middle_name != '' THEN CONCAT(' ', middle_name) ELSE '' END) AS full_name
+                                                        FROM walk_in_records 
+                                                        GROUP BY full_name
+                                                        ORDER BY last_name, first_name";
                                             $walkInStmt = $pdo->prepare($walkInSql);
                                             $walkInStmt->execute();
                                             $walkInRecords = $walkInStmt->fetchAll();
@@ -973,8 +986,17 @@ function generateProgramCard($program) {
         <div id="membership-summary-content">
             <div class="summary-row" data-type="registration">
                 <div class="details">
-                    <p><strong>Registration Fee:</strong> ₱<?= $memberRegistration->getRegistrationFee() ?></p>
+                    <?php
+                    $durationText = '';
+                    if ($registrationDuration > 0 && $registrationDurationType) {
+                        // Make singular if duration is 1
+                        $durationTypeDisplay = ($registrationDuration === 1) ? rtrim($registrationDurationType, 's') : $registrationDurationType;
+                        $durationText = " (" . htmlspecialchars($registrationDuration) . " " . ucfirst(htmlspecialchars($durationTypeDisplay)) . ")";
+                    }
+                    ?>
+                    <p><strong>Registration Fee<?= $durationText ?>:</strong> <span class="registration-fee-amount">₱<?= number_format($registrationFee, 2) ?></span></p>
                 </div>
+            </div>>
             </div>
             <!-- Selected Plan -->
             <div class="summary-row" data-type="membership" style="display: none;">
@@ -1086,9 +1108,12 @@ function generateProgramCard($program) {
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Initialize PHP variables for JavaScript
-        window.BASE_URL = '<?= BASE_URL ?>';
-        window.registrationFee = <?= number_format($memberRegistration->getRegistrationFee(), 2, '.', '') ?>;
+            // Initialize PHP variables for JavaScript
+            window.BASE_URL = '<?= BASE_URL ?>';
+        // Corrected line: Use the $registrationFee variable which holds the numeric value
+        window.registrationFee = <?= number_format($registrationFee, 2, '.', '') ?>;
+        window.registrationDuration = <?= json_encode($registrationDuration) ?>;
+        window.registrationDurationType = <?= json_encode($registrationDurationType) ?>;
         
         // Function to calculate end date
         function calculateEndDate(startDate, duration, durationType = 'months') {
