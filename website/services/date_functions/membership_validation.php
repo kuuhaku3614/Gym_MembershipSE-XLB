@@ -197,7 +197,7 @@ class MembershipValidation {
 
         // Check walk_in_records (if not the table being excluded)
         if ($exclude_table !== 'walk_in_records') {
-            $query = "SELECT COUNT(*) FROM walk_in_records WHERE transaction_id = :transaction_id AND is_paid = 0 AND status = 'pending'";
+            $query = "SELECT COUNT(*) FROM walk_in_records WHERE transaction_id = :transaction_id AND (is_paid = 0 OR is_paid = 1) AND status = 'pending'";
             $stmt = $this->pdo->prepare($query);
             $stmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -206,7 +206,7 @@ class MembershipValidation {
 
         // Check memberships (if not the table being excluded)
         if ($exclude_table !== 'memberships') {
-            $query = "SELECT COUNT(*) FROM memberships WHERE transaction_id = :transaction_id AND is_paid = 0 AND status = 'active'"; // Assuming 'active' means not cancelled, even if pending payment
+            $query = "SELECT COUNT(*) FROM memberships WHERE transaction_id = :transaction_id AND (is_paid = 0 OR is_paid = 1) AND status = 'active'"; // Assuming 'active' means not cancelled, even if pending payment
             $stmt = $this->pdo->prepare($query);
             $stmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -215,7 +215,7 @@ class MembershipValidation {
 
         // Check rental_subscriptions (if not the table being excluded)
         if ($exclude_table !== 'rental_subscriptions') {
-            $query = "SELECT COUNT(*) FROM rental_subscriptions WHERE transaction_id = :transaction_id AND status = 'active' AND is_paid = 0"; // Assuming 'pending' status for rentals
+            $query = "SELECT COUNT(*) FROM rental_subscriptions WHERE transaction_id = :transaction_id AND status = 'active' AND (is_paid = 0 OR is_paid = 1)"; // Assuming 'pending' status for rentals
             $stmt = $this->pdo->prepare($query);
             $stmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
             $stmt->execute();
