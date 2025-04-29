@@ -546,9 +546,30 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     </div>
 </div>
 
+<!-- conflict modal -->
+<div class="modal fade" id="conflictModal" tabindex="-1" aria-labelledby="conflictModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="conflictModalLabel">Membership Conflict Detected</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="conflictMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning" id="appendMembershipBtn">Append After Pending</button>
+        <button type="button" class="btn btn-danger" id="replaceMembershipBtn">Replace Pending</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Array to store selected dates
-let disabledDates = {};
+let disabledDates = {}; // Will now store objects: { status: '...', endDate: '...', transactionId: ... }
 const price = <?= $membership['price'] ?>;
 let selectedDates = [];
 let currentMonth = new Date().getMonth();
@@ -556,26 +577,45 @@ let currentYear = new Date().getFullYear();
 const duration = <?= $membership['duration'] ?>;
 const durationType = '<?= strtolower($membership['duration_type']) ?>';
 
-// Dictionary to track all disabled dates (for checking overlaps)
+// Dictionary to track all disabled date ranges (no change needed here)
 let disabledDateRanges = {};
+
+// Store data for the modal
+let modalConflictData = null;
+
 
 // Function to fetch disabled dates from server
 function fetchDisabledDates() {
-    fetch('date_functions/get_disabled_dates.php')
-        .then(response => response.json())
+    // Add cache-busting query parameter to prevent stale data
+    const url = `date_functions/get_disabled_dates.php?t=${new Date().getTime()}`;
+    return fetch(url) // Modified URL
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log("Fetched disabled dates:", data); // Debugging
             disabledDates = data;
-            renderCalendar(); // Re-render calendar with disabled dates
+            renderCalendar(); // Re-render calendar with updated disabled dates
         })
         .catch(error => {
             console.error('Error fetching disabled dates:', error);
+            // Optionally show an error message to the user
+            alert('Could not load availability information. Please try again later.');
         });
 }
 
 // Format date for display
 function formatDisplayDate(dateStr) {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
+    // Adjust for potential timezone offset issues if needed when creating the date object
+    // This ensures the date isn't shifted by timezone differences
+    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
+
+    return adjustedDate.toLocaleDateString('en-US', {
         weekday: 'short',
         year: 'numeric',
         month: 'short',
@@ -586,18 +626,35 @@ function formatDisplayDate(dateStr) {
 // Calculate end date based on start date and duration
 function calculateEndDate(startDate) {
     const start = new Date(startDate);
-    const end = new Date(start);
-    
-    if (durationType === 'day' || durationType === 'days') {
-        end.setDate(end.getDate() + parseInt(duration) - 1); // Subtract 1 to match the PHP behavior
-    } else if (durationType === 'month' || durationType === 'months') {
-        end.setMonth(end.getMonth() + parseInt(duration));
-        end.setDate(end.getDate() - 1); // Last day of the membership period
-    } else if (durationType === 'year' || durationType === 'years') {
-        end.setFullYear(end.getFullYear() + parseInt(duration));
-        end.setDate(end.getDate() - 1); // Last day of the membership period
+    // Adjust for potential timezone offset issues
+    const userTimezoneOffset = start.getTimezoneOffset() * 60000;
+    const adjustedStart = new Date(start.getTime() + userTimezoneOffset);
+
+    const end = new Date(adjustedStart);
+
+    // Ensure duration is treated as a number
+    const numDuration = parseInt(duration);
+    if (isNaN(numDuration)) {
+        console.error("Invalid duration:", duration);
+        return start; // Return start date if duration is invalid
     }
-    
+
+
+    if (durationType === 'day' || durationType === 'days') {
+         // For daily, add duration days. + (duration - 1) days total.
+        end.setDate(end.getDate() + (numDuration - 1));
+    } else if (durationType === 'month' || durationType === 'months') {
+        end.setMonth(end.getMonth() + numDuration);
+         // Go to the day *before* the start date in the end month.
+        end.setDate(end.getDate() - 1);
+    } else if (durationType === 'year' || durationType === 'years') {
+        end.setFullYear(end.getFullYear() + numDuration);
+        // Go to the day *before* the start date in the end year.
+        end.setDate(end.getDate() - 1);
+    } else {
+         console.error("Unknown duration type:", durationType);
+    }
+
     return end;
 }
 
@@ -609,39 +666,55 @@ function formatDateYMD(date) {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-// Check if a date is disabled and why
-function getDateStatus(dateToCheck) {
+// Check if a date is disabled and get its status object
+function getDateStatusInfo(dateToCheck) {
     const dateStr = typeof dateToCheck === 'string' ? dateToCheck : formatDateYMD(dateToCheck);
-    
+
     // Check if date is in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (new Date(dateStr) < today) {
-        return 'past';
+    const checkDate = new Date(dateStr);
+     // Adjust checkDate for timezone to compare correctly with today
+    const userTimezoneOffset = checkDate.getTimezoneOffset() * 60000;
+    const adjustedCheckDate = new Date(checkDate.getTime() + userTimezoneOffset);
+
+
+    if (adjustedCheckDate < today) {
+        return { status: 'past' }; // Return object for consistency
     }
-    
-    // Check if date is in disabledDates array from server
-    if (disabledDates[dateStr]) {
-        return disabledDates[dateStr]; // Will return 'pending-membership', 'active-membership', or 'pending-walkin'
+
+    // Check if date is in disabledDates object from server
+    if (disabledDates && disabledDates[dateStr]) {
+         console.log(`Date ${dateStr} has disabled info:`, disabledDates[dateStr]); // Debug
+        return disabledDates[dateStr]; // Returns the object like { status: 'pending-membership', endDate: '...', transactionId: ... } or { status: 'active-membership' }
     }
-    
+
     // Check if date is in any of the currently selected date ranges
     for (const startDate of selectedDates) {
         const endDate = calculateEndDate(startDate);
         const start = new Date(startDate);
         const end = new Date(endDate);
         const check = new Date(dateStr);
-        
+
+         // Adjust dates for timezone before comparison
+        const tzOffsetStart = start.getTimezoneOffset() * 60000;
+        const adjStart = new Date(start.getTime() + tzOffsetStart);
+        const tzOffsetEnd = end.getTimezoneOffset() * 60000;
+        const adjEnd = new Date(end.getTime() + tzOffsetEnd);
+        const tzOffsetCheck = check.getTimezoneOffset() * 60000;
+        const adjCheck = new Date(check.getTime() + tzOffsetCheck);
+
+
         // Skip if this is the startDate we're checking (allow toggling off)
         if (dateStr === startDate) {
             continue;
         }
-        
-        if (check >= start && check <= end) {
-            return 'selected-range'; // This date is within a selected membership duration
+
+        if (adjCheck >= adjStart && adjCheck <= adjEnd) {
+            return { status: 'selected-range' }; // Date is within a selected membership duration
         }
     }
-    
+
     return null; // Date is not disabled
 }
 
@@ -649,23 +722,33 @@ function getDateStatus(dateToCheck) {
 function wouldCreateOverlap(startDateStr) {
     const endDate = calculateEndDate(startDateStr);
     const endDateStr = formatDateYMD(endDate);
-    
+
     // Check each day in the range
     const currentDate = new Date(startDateStr);
-    while (currentDate <= endDate) {
-        const currentDateStr = formatDateYMD(currentDate);
-        
+     // Adjust for timezone
+    const userTimezoneOffset = currentDate.getTimezoneOffset() * 60000;
+    const adjustedStartDate = new Date(currentDate.getTime() + userTimezoneOffset);
+    const adjustedEndDate = new Date(endDate.getTime() + userTimezoneOffset); // Use calculated end date adjusted
+
+    let checkDate = new Date(adjustedStartDate);
+
+
+    while (checkDate <= adjustedEndDate) { // Use adjusted end date
+        const currentDateStr = formatDateYMD(checkDate);
+
         // If it's not the start date and it's already disabled or selected, there's an overlap
         if (currentDateStr !== startDateStr) {
-            const status = getDateStatus(currentDateStr);
-            if (status && status !== 'selected-range') {
+            const statusInfo = getDateStatusInfo(currentDateStr);
+            // Check if statusInfo exists and its status is not 'selected-range'
+            if (statusInfo && statusInfo.status && statusInfo.status !== 'selected-range') {
+                 console.log(`Overlap detected for ${startDateStr}: Date ${currentDateStr} has status ${statusInfo.status}`); // Debug
                 return true;
             }
         }
-        
-        currentDate.setDate(currentDate.getDate() + 1);
+
+        checkDate.setDate(checkDate.getDate() + 1);
     }
-    
+
     return false;
 }
 
@@ -697,52 +780,87 @@ function isDateDisabled(dateToCheck) {
 // Generate disabled date ranges for all selected dates
 function updateDisabledDateRanges() {
     disabledDateRanges = {}; // Clear existing ranges
-    
+
     selectedDates.forEach(startDate => {
         const endDate = calculateEndDate(startDate);
         disabledDateRanges[startDate] = formatDateYMD(endDate);
-        
+
         // Disable all dates in between start and end
         const currentDate = new Date(startDate);
-        while (currentDate <= endDate) {
-            const currentDateStr = formatDateYMD(currentDate);
+        const userTimezoneOffset = currentDate.getTimezoneOffset() * 60000;
+        let loopDate = new Date(currentDate.getTime() + userTimezoneOffset);
+        const adjustedEndDate = new Date(endDate.getTime() + userTimezoneOffset);
+
+        while (loopDate <= adjustedEndDate) {
+            const currentDateStr = formatDateYMD(loopDate);
             if (!disabledDateRanges[currentDateStr]) {
-                disabledDateRanges[currentDateStr] = currentDateStr;
+                // Just mark the date string as part of a range for checking, value doesn't matter much here
+                disabledDateRanges[currentDateStr] = true;
             }
-            currentDate.setDate(currentDate.getDate() + 1);
+            loopDate.setDate(loopDate.getDate() + 1);
         }
     });
+     // console.log("Updated disabled ranges based on selection:", disabledDateRanges); // Debug
 }
 
 // Add date to the selection
-function addDate(dateStr) {
+async function addDate(dateStr) { // Make async to handle await for fetch
     if (!dateStr) {
         return;
     }
-    
+
     // Check if date is already selected (toggle off)
     if (selectedDates.includes(dateStr)) {
         removeDate(dateStr);
         return;
     }
-    
+
     // Check if date is disabled
-    const status = getDateStatus(dateStr);
-    if (status) {
-        // Don't allow selecting dates within a membership duration
+    const statusInfo = getDateStatusInfo(dateStr);
+    if (statusInfo && statusInfo.status) {
+        const status = statusInfo.status;
+
+        // Handle pending membership conflict
+        if (status === 'pending-membership') {
+            const transactionId = statusInfo.transactionId;
+            const pendingEndDateStr = statusInfo.endDate;
+            const clickedDate = dateStr; // Store the date the user actually clicked
+
+             if (!transactionId || !pendingEndDateStr || !clickedDate) {
+                 alert('Error: Cannot identify the pending membership or clicked date. Please refresh and try again.');
+                 return;
+             }
+
+            // Store conflict data for modal button handlers
+            modalConflictData = {
+                transactionId: transactionId,
+                pendingEndDateStr: pendingEndDateStr,
+                clickedDate: clickedDate // Store the date the user clicked
+            };
+
+            // Update modal message
+            document.getElementById('conflictMessage').innerText =
+                `This date conflicts with a pending membership ending ${formatDisplayDate(pendingEndDateStr)}.\n\n` +
+                `Choose an action:`;
+
+            // Show the modal
+            const conflictModal = new bootstrap.Modal(document.getElementById('conflictModal'));
+            conflictModal.show();
+
+            return; // Stop further processing here, wait for modal interaction
+        }
+
+        // Don't allow selecting dates within another selected membership's duration
         if (status === 'selected-range') {
-            alert('This date falls within the duration of an already selected membership. Please choose a different date.');
+            alert('This date falls within the duration of an already selected membership. Please choose a different start date.');
             return;
         }
-        
-        // Show specific error message based on status
+
+        // Show specific error message based on other statuses
         let message;
         switch (status) {
             case 'past':
                 message = 'You cannot select a date in the past.';
-                break;
-            case 'pending-membership':
-                message = 'This date conflicts with a pending membership.';
                 break;
             case 'active-membership':
                 message = 'This date conflicts with an active membership.';
@@ -756,40 +874,158 @@ function addDate(dateStr) {
         alert(message);
         return;
     }
-    
+
     // Check if selecting this date would create overlapping memberships
     if (wouldCreateOverlap(dateStr)) {
         alert('The membership period from this start date would overlap with existing memberships or reservations.');
         return;
     }
-    
-    // Add date to array
+
+    // ---- If checks pass, add date to array ----
     selectedDates.push(dateStr);
-    
+
     // Sort dates chronologically
     selectedDates.sort();
-    
+
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-    
+
     // Update UI
     updateSelectedDatesUI();
-    
+
     // Update calendar to reflect the selection
     renderCalendar();
+}
+
+// Function to handle "Replace Pending" action
+async function handleReplacePending() {
+    if (!modalConflictData || !modalConflictData.transactionId || !modalConflictData.clickedDate) {
+         alert('Error: Missing conflict data. Please try again.');
+         return;
+    }
+
+    const { transactionId, clickedDate } = modalConflictData;
+
+    // Close the modal
+    const conflictModal = bootstrap.Modal.getInstance(document.getElementById('conflictModal'));
+    conflictModal.hide();
+
+    console.log(`User chose to replace pending transaction ID: ${transactionId}`);
+
+    // Call backend to delete the pending transaction
+    try {
+        const formData = new FormData();
+        formData.append('transactionId', transactionId);
+
+        const response = await fetch('date_functions/delete_pending_membership.php', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            alert('Pending membership removed.');
+            // Refresh disabled dates from server BEFORE attempting to add the new date
+            await fetchDisabledDates(); // Wait for refresh
+
+            // Now, attempt to add the originally clicked date again, AFTER refreshing disabled dates
+            // Need to re-check potential overlaps after deletion
+            if (wouldCreateOverlap(clickedDate)) {
+                 alert('The membership period from this start date would overlap with other existing memberships or reservations even after removing the pending one.');
+                 return;
+            }
+            if(getDateStatusInfo(clickedDate)){ // Check if still disabled for other reasons
+                alert('This date is still unavailable after attempting to remove the pending membership.');
+                return;
+            }
+            // Proceed to add the date if no longer conflicting
+            selectedDates.push(clickedDate);
+            selectedDates.sort();
+            document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+            updateSelectedDatesUI();
+            renderCalendar(); // Re-render with the new selection
+
+        } else {
+            alert(`Failed to remove pending membership: ${result.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error deleting pending membership:', error);
+        alert('An error occurred while trying to remove the pending membership.');
+    } finally {
+        modalConflictData = null; // Clear data after handling
+    }
+}
+
+// Function to handle "Append After Pending" action
+async function handleAppendAfterPending() {
+     if (!modalConflictData || !modalConflictData.pendingEndDateStr) {
+         alert('Error: Missing conflict data. Please try again.');
+         return;
+     }
+
+    const { pendingEndDateStr } = modalConflictData;
+
+    // Close the modal
+    const conflictModal = bootstrap.Modal.getInstance(document.getElementById('conflictModal'));
+    conflictModal.hide();
+
+    console.log(`User chose to append after pending end date: ${pendingEndDateStr}`);
+
+    if (!pendingEndDateStr) {
+         alert('Error: Cannot determine when the pending membership ends. Please refresh and try again.');
+         return;
+    }
+
+    // Calculate the day *after* the pending membership ends
+    const pendingEndDate = new Date(pendingEndDateStr);
+    const userTimezoneOffset = pendingEndDate.getTimezoneOffset() * 60000;
+    const appendStartDate = new Date(pendingEndDate.getTime() + userTimezoneOffset);
+
+    appendStartDate.setDate(appendStartDate.getDate() + 1); // Add one day
+    const appendStartDateStr = formatDateYMD(appendStartDate);
+
+    console.log(`Attempting to add appended date: ${appendStartDateStr}`);
+
+     // Check if the *appended* date is valid before adding
+     const appendStatusInfo = getDateStatusInfo(appendStartDateStr);
+     if (appendStatusInfo && appendStatusInfo.status) {
+         alert(`Cannot append: The day after the pending membership (${formatDisplayDate(appendStartDateStr)}) is also unavailable (Status: ${appendStatusInfo.status}).`);
+         modalConflictData = null; // Clear data
+         return;
+     }
+     if (wouldCreateOverlap(appendStartDateStr)) {
+        alert(`Cannot append: The membership period starting the day after the pending one (${formatDisplayDate(appendStartDateStr)}) would overlap with other reservations.`);
+        modalConflictData = null; // Clear data
+        return;
+     }
+     if (selectedDates.includes(appendStartDateStr)) {
+          alert(`Cannot append: The date ${formatDisplayDate(appendStartDateStr)} is already selected.`);
+          modalConflictData = null; // Clear data
+         return;
+     }
+
+
+    // Add the calculated append date instead of the clicked date
+    selectedDates.push(appendStartDateStr);
+    selectedDates.sort();
+    document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    updateSelectedDatesUI();
+    renderCalendar();
+
+    modalConflictData = null; // Clear data after handling
 }
 
 // Remove date from selection
 function removeDate(dateToRemove) {
     // Remove the date from selected dates
     selectedDates = selectedDates.filter(date => date !== dateToRemove);
-    
+
     // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-    
+
     // Update UI
     updateSelectedDatesUI();
-    
+
     // Update calendar to reflect the removal
     renderCalendar();
 }
@@ -798,47 +1034,50 @@ function removeDate(dateToRemove) {
 function updateSelectedDatesUI() {
     const container = document.getElementById('dates-container');
     const endDatesInfo = document.getElementById('end-dates-info');
-    
+
     // Clear containers
     container.innerHTML = '';
     endDatesInfo.innerHTML = '';
-    
+
     if (selectedDates.length === 0) {
         const noDateMessage = document.createElement('p');
         noDateMessage.id = 'no-dates-message';
         noDateMessage.textContent = 'No dates selected';
         container.appendChild(noDateMessage);
-        
-        document.getElementById('total_price').textContent = number_format(price, 2);
+
+        document.getElementById('total_price').textContent = number_format(price, 2); // Update price display
         endDatesInfo.innerHTML = '<p class="text-muted">No membership periods selected</p>';
         return;
     }
-    
+
     // Add date chips for each selected date
-    selectedDates.forEach(date => {
+    selectedDates.forEach(dateStr => {
         const dateChip = document.createElement('div');
         dateChip.className = 'date-chip';
         dateChip.innerHTML = `
-            ${formatDisplayDate(date)}
-            <span class="remove-date" onclick="removeDate('${date}')">
+            ${formatDisplayDate(dateStr)}
+            <span class="remove-date" onclick="removeDate('${dateStr}')" style="cursor: pointer;">
                 <i class="bi bi-x-circle"></i>
             </span>
         `;
         container.appendChild(dateChip);
-        
+
         // Add end date information
-        const endDate = calculateEndDate(date);
+        const endDate = calculateEndDate(dateStr);
         const endDateInfo = document.createElement('div');
-        endDateInfo.className = 'mb-2';
+        endDateInfo.className = 'mb-1'; // Reduced margin
+        endDateInfo.style.fontSize = '0.9em'; // Slightly smaller font
         endDateInfo.innerHTML = `
-            <strong>Membership Period:</strong> ${formatDisplayDate(date)} to ${formatDisplayDate(endDate)}
+            <small><strong>Period:</strong> ${formatDisplayDate(dateStr)} to ${formatDisplayDate(endDate)}</small>
         `;
         endDatesInfo.appendChild(endDateInfo);
     });
-    
+
     // Update total price
     const totalPrice = (price * selectedDates.length).toFixed(2);
-    document.getElementById('total_price').textContent = number_format(totalPrice, 2);
+    document.getElementById('total_price').textContent = number_format(totalPrice, 2); // Update price display
+
+
 }
 
 // Format number for display (similar to PHP's number_format)
@@ -851,39 +1090,70 @@ function number_format(number, decimals) {
 
 // Validate form before submission
 function validateForm(event) {
-    event.preventDefault();
-    
+    event.preventDefault(); // Prevent default form submission
+
     if (selectedDates.length === 0) {
         alert('Please select at least one start date for your membership.');
-        return false;
+        return false; // Stop submission
     }
-    
+
     const form = event.target;
     const formData = new FormData(form);
-    
-    fetch(window.location.href, {
+
+    // Ensure the hidden input has the latest selected dates
+     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+     formData.set('selected_dates', JSON.stringify(selectedDates)); // Explicitly set it for FormData
+
+
+    // Display loading state (optional)
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+
+
+    fetch(window.location.href, { // Post to the same page (avail_membership.php)
         method: 'POST',
         body: formData
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            window.location.href = data.redirect;
+        // Check if response is JSON, otherwise handle potential HTML errors
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            return response.json().then(data => ({ ok: response.ok, status: response.status, data }));
         } else {
-            alert(data.message || 'Failed to add to cart');
+            return response.text().then(text => { throw new Error(`Unexpected response format: ${text.substring(0, 100)}...`) });
+        }
+    })
+    .then(({ ok, status, data }) => { // Destructure the object
+        if (ok && data.success) {
+             // Success: Redirect or show success message
+            // alert('Successfully added to cart!'); // Optional alert
+             if (data.redirect) {
+                 window.location.href = data.redirect;
+             } else {
+                 // Handle case where redirect URL isn't provided (e.g., refresh or update UI)
+                 console.log("Success, but no redirect URL provided.");
+                 // Maybe refresh disabled dates?
+                 fetchDisabledDates();
+             }
+        } else {
+             // Handle failure: Show specific error message from server if available
+             alert(data.message || `Failed to add to cart (Status: ${status})`);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        console.error('Error submitting form:', error);
+        alert(`An error occurred: ${error.message}. Please check the console and try again.`);
+    })
+    .finally(() => {
+         // Restore button state
+         submitButton.disabled = false;
+         submitButton.innerHTML = originalButtonText;
     });
-    
-    return false;
+
+
+    return false; // Prevent default form submission behaviour
 }
 
 // Calendar functions
@@ -891,7 +1161,7 @@ function renderCalendarWeekdays() {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const weekdaysContainer = document.getElementById('calendar-weekdays');
     weekdaysContainer.innerHTML = '';
-    
+
     weekdays.forEach(day => {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-weekday';
@@ -908,58 +1178,101 @@ function formatDateString(year, month, day) {
 }
 
 function renderCalendar() {
-    // Update month-year header
+    // Update month-year header (no change)
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     document.getElementById('calendar-month-year').textContent = `${monthNames[currentMonth]} ${currentYear}`;
-    
-    // Get first day of the month and total days in month
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+    // Get first day of the month and total days in month (no change)
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); // 0=Sun, 1=Mon,...
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    
+
+
     // Clear calendar days container
     const daysContainer = document.getElementById('calendar-days');
     daysContainer.innerHTML = '';
-    
-    // Add empty slots for days before the first day of month
-    for (let i = 0; i < firstDay; i++) {
+
+     // Add empty slots for days before the first day of month
+    for (let i = 0; i < firstDayOfMonth; i++) {
         const emptyDay = document.createElement('div');
         emptyDay.className = 'calendar-day empty';
         daysContainer.appendChild(emptyDay);
     }
-    
+
+
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
         dayElement.textContent = day;
-        
+
         // Format date string for comparison
         const dateString = formatDateString(currentYear, currentMonth, day);
-        
-        // Add appropriate class based on date status
-        const status = getDateStatus(dateString);
-        if (status) {
-            dayElement.className = `calendar-day ${status}`;
-            // Always disable dates with a status unless they are selected dates
-            // that can be toggled off
-            if (!selectedDates.includes(dateString)) {
-                dayElement.classList.add('disabled');
+
+        // Get status info for the date
+        const statusInfo = getDateStatusInfo(dateString);
+        let statusClass = '';
+        let isDisabled = false;
+
+        if (statusInfo && statusInfo.status) {
+            statusClass = statusInfo.status; // e.g., 'past', 'pending-membership', 'selected-range'
+             // Determine if the day should be visually disabled (not clickable/greyed out)
+            // Allow clicking pending-membership dates to trigger the prompt.
+            // Allow clicking selected dates to toggle them off.
+            // Other statuses are generally not clickable.
+            if (statusClass !== 'pending-membership' && statusClass !== 'selected' && !selectedDates.includes(dateString)) {
+                 // Also check if it's part of a selected range but *not* the start date
+                 if(statusClass === 'selected-range' && !selectedDates.includes(dateString)) {
+                     isDisabled = true;
+                 } else if (statusClass !== 'selected-range') {
+                      isDisabled = true;
+                 }
             }
-        } else {
-            dayElement.className = 'calendar-day';
         }
-        
-        // Highlight selected dates
+
+
+         dayElement.className = `calendar-day ${statusClass}`;
+
+
+        // Highlight selected start dates explicitly
         if (selectedDates.includes(dateString)) {
             dayElement.classList.add('selected');
+             isDisabled = false; // Ensure selected start dates are clickable to deselect
         }
-        
-        // Add click event for all dates (we'll check validity in the click handler)
-        dayElement.addEventListener('click', function() {
-            addDate(dateString);
-        });
-        
+
+        // Add tooltip for disabled dates (optional)
+        if (statusInfo && statusInfo.status && statusInfo.status !== 'selected-range' && !selectedDates.includes(dateString)) {
+             let title = 'Unavailable';
+             switch(statusInfo.status) {
+                 case 'past': title = 'Date is in the past'; break;
+                 case 'pending-membership': title = `Conflicts with a pending membership ending ${formatDisplayDate(statusInfo.endDate)}. Click to resolve.`; break;
+                 case 'active-membership': title = 'Conflicts with an active membership'; break;
+                 case 'pending-walkin': title = 'Conflicts with a pending walk-in'; break;
+             }
+             dayElement.setAttribute('title', title);
+        }
+
+
+        if (isDisabled) {
+            dayElement.classList.add('disabled'); // Add generic disabled style
+             // Remove event listener if it's truly disabled (not pending or selected)
+              if (statusClass !== 'pending-membership' && !selectedDates.includes(dateString)) {
+                 // Don't add click listener
+             } else {
+                 // Add listener for pending/selected dates
+                  dayElement.addEventListener('click', function() {
+                     addDate(dateString); // Let addDate handle logic
+                 });
+              }
+        } else {
+             // Add click event for selectable/pending dates
+             dayElement.addEventListener('click', function() {
+                 addDate(dateString); // Let addDate handle logic
+             });
+        }
+
         daysContainer.appendChild(dayElement);
     }
+     // After rendering days, ensure the internal disabled ranges reflect the current selection
+    updateDisabledDateRanges();
 }
 
 function renderCalendarLegend() {
@@ -967,29 +1280,68 @@ function renderCalendarLegend() {
     const legendContainer = document.createElement('div');
     legendContainer.className = 'calendar-legend mt-3';
     legendContainer.innerHTML = `
-        <div class="d-flex flex-wrap justify-content-between">
-            <div class="legend-item">
-                <span class="legend-color selected"></span>
-                <span>Selected Date</span>
+        <div class="d-flex flex-wrap justify-content-start"> <div class="legend-item me-3 mb-1"> <span class="legend-color selected" style="border: 1px solid #ccc;"></span> <span>Selected Start Date</span>
             </div>
-            <div class="legend-item">
-                <span class="legend-color pending-membership"></span>
+            <div class="legend-item me-3 mb-1">
+                <span class="legend-color pending-membership" style="border: 1px solid #ccc;"></span>
                 <span>Pending Membership</span>
             </div>
-            <div class="legend-item">
-                <span class="legend-color active-membership"></span>
+            <div class="legend-item me-3 mb-1">
+                <span class="legend-color active-membership" style="border: 1px solid #ccc;"></span>
                 <span>Active Membership</span>
             </div>
-            <div class="legend-item">
-                <span class="legend-color pending-walkin"></span>
+            <div class="legend-item me-3 mb-1">
+                <span class="legend-color pending-walkin" style="border: 1px solid #ccc;"></span>
                 <span>Pending Walk-in</span>
             </div>
+            <div class="legend-item me-3 mb-1">
+                <span class="legend-color past" style="background-color: #f5f5f5; border: 1px solid #ccc;"></span>
+                <span>Past/Unavailable</span>
+            </div>
         </div>
+         <style>
+             /* Add styles for legend colors if not already defined */
+            .legend-color { display: inline-block; width: 16px; height: 16px; margin-right: 5px; border-radius: 3px; vertical-align: middle; }
+            /* Ensure legend item text is aligned */
+            .legend-item span:last-child { vertical-align: middle; }
+         </style>
     `;
-    
-    // Insert the legend after the calendar
-    const calendarContainer = document.querySelector('.calendar-container');
-    calendarContainer.appendChild(legendContainer);
+
+    // Insert the legend after the calendar grid container
+    const calendarDaysContainer = document.getElementById('calendar-days');
+     // Check if legend already exists to prevent duplicates
+     const existingLegend = calendarDaysContainer.parentNode.querySelector('.calendar-legend');
+     if (existingLegend) {
+         existingLegend.remove();
+     }
+
+    calendarDaysContainer.parentNode.insertBefore(legendContainer, calendarDaysContainer.nextSibling);
+
+    // -- Add Primary Color RGB definition ---
+     // Get primary color from CSS variable
+    const primaryColorHex = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+
+    // Function to convert hex to RGB
+    function hexToRgb(hex) {
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    const rgb = hexToRgb(primaryColorHex);
+    if (rgb) {
+        // Define the --primary-color-rgb CSS variable
+        document.documentElement.style.setProperty('--primary-color-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+        console.log("Set --primary-color-rgb:", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    } else {
+         console.error("Could not parse primary color:", primaryColorHex);
+         // Fallback RGB color
+         document.documentElement.style.setProperty('--primary-color-rgb', '255, 0, 0'); // Default red
+    }
+
 }
 
 function setupCalendarNavigation() {
@@ -1002,7 +1354,7 @@ function setupCalendarNavigation() {
         }
         renderCalendar();
     });
-    
+
     // Next month
     document.getElementById('next-month').addEventListener('click', function() {
         currentMonth++;
@@ -1015,18 +1367,52 @@ function setupCalendarNavigation() {
 }
 
 // Initialize UI on page load
-window.onload = function() {
+window.onload = async function() { // Make async
     // Initialize the UI components
     renderCalendarWeekdays();
-    renderCalendarLegend();
-    
+    renderCalendarLegend(); // Call legend render here
+
     // Set initial hidden dates value
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-    
-    // Fetch disabled dates
-    fetchDisabledDates();
-    
+
+    // Fetch disabled dates and wait for it to complete before first render
+    await fetchDisabledDates(); // Wait here
+
+    // Initial calendar render (now uses fetched data)
+    // renderCalendar(); // This is called inside fetchDisabledDates now
+
     // Setup calendar navigation
     setupCalendarNavigation();
+
+    // Setup modal button event listeners
+    document.getElementById('replaceMembershipBtn').addEventListener('click', handleReplacePending);
+    document.getElementById('appendMembershipBtn').addEventListener('click', handleAppendAfterPending);
+
 };
+
+// Generate disabled date ranges for all selected dates
+function updateDisabledDateRanges() {
+    disabledDateRanges = {}; // Clear existing ranges
+
+    selectedDates.forEach(startDate => {
+        const endDate = calculateEndDate(startDate);
+        disabledDateRanges[startDate] = formatDateYMD(endDate);
+
+        // Disable all dates in between start and end
+        const currentDate = new Date(startDate);
+        const userTimezoneOffset = currentDate.getTimezoneOffset() * 60000;
+        let loopDate = new Date(currentDate.getTime() + userTimezoneOffset);
+        const adjustedEndDate = new Date(endDate.getTime() + userTimezoneOffset);
+
+        while (loopDate <= adjustedEndDate) {
+            const currentDateStr = formatDateYMD(loopDate);
+            if (!disabledDateRanges[currentDateStr]) {
+                // Just mark the date string as part of a range for checking, value doesn't matter much here
+                disabledDateRanges[currentDateStr] = true;
+            }
+            loopDate.setDate(loopDate.getDate() + 1);
+        }
+    });
+     // console.log("Updated disabled ranges based on selection:", disabledDateRanges); // Debug
+}
 </script>
