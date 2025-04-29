@@ -34,6 +34,10 @@
   border-left-color: #ffc107; /* Yellow for expiring */
 }
 
+.notification-overdue {
+  border-left-color: #7a7a7a; /* Orange for overdue pending */
+}
+
 /* Unread notification styles */
 .notification-unread {
   background-color: rgba(13, 110, 253, 0.05);
@@ -101,6 +105,11 @@
   color: #212529;
 }
 
+.overdue-indicator {
+  background-color: #7a7a7a;
+  color: white;
+}
+
 /* Notification counts summary */
 .notification-counts {
   display: flex;
@@ -139,6 +148,10 @@
 
 .count-expiring {
   border-left: 4px solid #ffc107;
+}
+
+.count-overdue {
+  border-left: 4px solid #7a7a7a;
 }
 
 .unread-badge {

@@ -20,7 +20,8 @@ class ExpiryNotifications {
             $this->getExpiringMemberships(),
             $this->getExpiredMemberships(),
             $this->getExpiringRentals(),
-            $this->getExpiredRentals()
+            $this->getExpiredRentals(),
+            $this->getOverduePendingTransactions()
         );
         
         // Sort notifications by date (newest first)
@@ -409,6 +410,82 @@ class ExpiryNotifications {
             }
         }
         
+        return $notifications;
+    }
+
+    /**
+     * Get overdue pending transactions (unpaid memberships/walk-ins at least 1 day overdue)
+     * @return array Array of overdue pending notifications
+     */
+    private function getOverduePendingTransactions() {
+        $notifications = [];
+        // Overdue memberships (pending transaction, is_paid=0, start_date <= yesterday)
+        $membershipQuery = "SELECT m.id AS membership_id, m.transaction_id, m.start_date, m.end_date, m.amount, mp.plan_name, u.id AS user_id, u.username, pd.first_name, pd.last_name, t.created_at
+            FROM memberships m
+            JOIN membership_plans mp ON m.membership_plan_id = mp.id
+            JOIN transactions t ON m.transaction_id = t.id
+            JOIN users u ON t.user_id = u.id
+            JOIN personal_details pd ON u.id = pd.user_id
+            WHERE t.status = 'pending' AND m.is_paid = 0 AND m.start_date <= DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+        $stmt = $this->pdo->query($membershipQuery);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $daysOverdue = (strtotime(date('Y-m-d')) - strtotime($row['start_date'])) / (60 * 60 * 24);
+            $daysOverdue = floor($daysOverdue);
+            $timestamp = date('F d, Y, h:i a', strtotime($row['created_at']));
+            $notifications[] = [
+                'id' => 'm_' . $row['membership_id'],
+                'type' => 'overdue_pending_membership',
+                'title' => 'Overdue Unpaid Membership',
+                'message' => $row['first_name'] . ' ' . $row['last_name'] . "'s " . $row['plan_name'] . " membership is unpaid and overdue by $daysOverdue days.",
+                'timestamp' => $timestamp,
+                'is_read' => false,
+                'details' => [
+                    'membership_id' => $row['membership_id'],
+                    'transaction_id' => $row['transaction_id'],
+                    'user_id' => $row['user_id'],
+                    'member_name' => $row['first_name'] . ' ' . $row['last_name'],
+                    'username' => $row['username'],
+                    'plan_name' => $row['plan_name'],
+                    'start_date' => $row['start_date'],
+                    'end_date' => $row['end_date'],
+                    'amount' => $row['amount'],
+                    'days_overdue' => $daysOverdue
+                ]
+            ];
+        }
+        // Overdue walk-ins (pending transaction, is_paid=0, date <= yesterday)
+        $walkinQuery = "SELECT w.id AS walkin_id, w.transaction_id, w.date, w.amount, u.id AS user_id, u.username, pd.first_name, pd.last_name, t.created_at
+            FROM walk_in_records w
+            JOIN transactions t ON w.transaction_id = t.id
+            JOIN users u ON t.user_id = u.id
+            JOIN personal_details pd ON u.id = pd.user_id
+            WHERE t.status = 'pending' AND w.is_paid = 0 AND w.date <= DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+        $stmt = $this->pdo->query($walkinQuery);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $daysOverdue = (strtotime(date('Y-m-d')) - strtotime($row['date'])) / (60 * 60 * 24);
+            $daysOverdue = floor($daysOverdue);
+            $timestamp = date('F d, Y, h:i a', strtotime($row['created_at']));
+            $notifications[] = [
+                'id' => 'w_' . $row['walkin_id'],
+                'type' => 'overdue_pending_walkin',
+                'title' => 'Overdue Unpaid Walk-in',
+                'message' => $row['first_name'] . ' ' . $row['last_name'] . "'s walk-in is unpaid and overdue by $daysOverdue days.",
+                'timestamp' => $timestamp,
+                'is_read' => false,
+                'details' => [
+                    'walkin_id' => $row['walkin_id'],
+                    'transaction_id' => $row['transaction_id'],
+                    'user_id' => $row['user_id'],
+                    'member_name' => $row['first_name'] . ' ' . $row['last_name'],
+                    'username' => $row['username'],
+                    'plan_name' => 'Walk-in',
+                    'start_date' => $row['date'],
+                    'end_date' => '',
+                    'amount' => $row['amount'],
+                    'days_overdue' => $daysOverdue
+                ]
+            ];
+        }
         return $notifications;
     }
 }

@@ -14,14 +14,21 @@
     // Split notifications by type
     $expiringNotifications = [];
     $expiredNotifications = [];
+    $overduePendingNotifications = [];
     
     // Count for unread notifications
     $unreadExpiring = 0;
     $unreadExpired = 0;
+    $unreadOverdue = 0;
     
-    // Separate notifications by type (expired or expiring)
+    // Separate notifications by type (expired, expiring, overdue pending)
     foreach ($allExpiryNotifications as $notification) {
-        if (strpos($notification['type'], 'expiring') !== false) {
+        if (strpos($notification['type'], 'overdue_pending') !== false) {
+            $overduePendingNotifications[] = $notification;
+            if (!$notification['is_read']) {
+                $unreadOverdue++;
+            }
+        } elseif (strpos($notification['type'], 'expiring') !== false) {
             // Fix messages with "-0 days" or "0 days" to say "today" instead
             if (strpos($notification['message'], 'expires in -0 days') !== false) {
                 $notification['message'] = str_replace('expires in -0 days', 'expires today', $notification['message']);
@@ -47,11 +54,12 @@
     // Count notifications by type
     $expiringCount = count($expiringNotifications);
     $expiredCount = count($expiredNotifications);
-    $totalCount = $expiringCount + $expiredCount;
-    $unreadTotal = $unreadExpiring + $unreadExpired;
+    $overdueCount = count($overduePendingNotifications);
+    $totalCount = $expiringCount + $expiredCount + $overdueCount;
+    $unreadTotal = $unreadExpiring + $unreadExpired + $unreadOverdue;
     
-    // Combine lists with expired notifications first
-    $combinedNotifications = array_merge($expiredNotifications, $expiringNotifications);
+    // Combine lists: Overdue Pending first, then expired, then expiring
+    $combinedNotifications = array_merge($overduePendingNotifications, $expiredNotifications, $expiringNotifications);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,6 +83,13 @@
 
         <!-- Notification counts summary -->
         <div class="notification-counts">
+            <div class="count-box count-overdue">
+                <strong>Overdue Pending:</strong>
+                <span><?php echo $overdueCount; ?></span>
+                <?php if ($unreadOverdue > 0): ?>
+                    <span class="unread-badge"><?php echo $unreadOverdue; ?></span>
+                <?php endif; ?>
+            </div>
             <div class="count-box count-expired">
                 <strong>Expired:</strong>
                 <span><?php echo $expiredCount; ?></span>
@@ -98,10 +113,19 @@
             <?php else: ?>
                 <?php foreach ($combinedNotifications as $notification): ?>
                     <?php 
-                        $isExpired = strpos($notification['type'], 'expired') !== false;
-                        $statusClass = $isExpired ? 'notification-expired' : 'notification-expiring';
-                        $statusLabel = $isExpired ? 'Expired' : 'Expiring Soon';
-                        $statusIndicatorClass = $isExpired ? 'expired-indicator' : 'expiring-indicator';
+                        if (strpos($notification['type'], 'overdue_pending') !== false) {
+                            $statusClass = 'notification-overdue';
+                            $statusLabel = 'Overdue Pending';
+                            $statusIndicatorClass = 'overdue-indicator';
+                        } elseif (strpos($notification['type'], 'expired') !== false) {
+                            $statusClass = 'notification-expired';
+                            $statusLabel = 'Expired';
+                            $statusIndicatorClass = 'expired-indicator';
+                        } else {
+                            $statusClass = 'notification-expiring';
+                            $statusLabel = 'Expiring Soon';
+                            $statusIndicatorClass = 'expiring-indicator';
+                        }
                         $unreadClass = !$notification['is_read'] ? 'notification-unread' : '';
                         
                         // For animation, add new notification class if needed
@@ -110,7 +134,7 @@
                         // This is just a placeholder - you would need to implement the logic
                         // based on your timestamp format and current time
                     ?>
-                    <div class="notification-card <?php echo $statusClass; ?> <?php echo $unreadClass; ?> <?php echo $newNotificationClass; ?>"
+                    <div class="notification-card <?php echo $statusClass; ?> <?php echo $unreadClass; ?> <?php echo $newNotificationClass; ?>" data-id="<?php echo htmlspecialchars($notification['id'] ?? $notification['transaction_id'] ?? ''); ?>" data-type="<?php echo htmlspecialchars($notification['type']); ?>"
                          data-id="<?php echo htmlspecialchars($notification['id']); ?>"
                          data-type="<?php echo htmlspecialchars($notification['type']); ?>"
                          onclick="showExpiryDetails(<?php echo htmlspecialchars(json_encode($notification['details'])); ?>, 
@@ -164,9 +188,11 @@
                         <p><strong>Amount:</strong> ₱ <span id="expiryAmount"></span></p>
                         <p id="expiryRemainingRow"><strong>Days Remaining:</strong> <span id="expiryDaysRemaining"></span></p>
                         <p id="expirySinceRow"><strong>Days Since Expiry:</strong> <span id="expiryDaysSince"></span></p>
+                        <p id="expiryOverdueRow" style="display:none;"><strong>Days Overdue:</strong> <span id="expiryDaysOverdue"></span></p>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="cancelOverdueBtn" style="display:none;">Cancel</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -194,12 +220,56 @@
             }
             
             document.getElementById('expiryStartDate').textContent = details.start_date;
-            document.getElementById('expiryEndDate').textContent = details.end_date;
             document.getElementById('expiryAmount').textContent = details.amount;
-            // Show days remaining or days since based on notification type
-            if (notificationType.includes('expiring')) {
+            // Hide end date for walk-in
+            var endDateRow = document.getElementById('expiryEndDate').parentElement;
+            if ((details.plan_name && details.plan_name === 'Walk-in') || (details.service_name && details.service_name === 'Walk-in')) {
+                endDateRow.style.display = 'none';
+            } else {
+                document.getElementById('expiryEndDate').textContent = details.end_date;
+                endDateRow.style.display = '';
+            }
+            // Show/hide Cancel button for overdue pending
+            var cancelBtn = document.getElementById('cancelOverdueBtn');
+            if (notificationType.includes('overdue_pending')) {
+                cancelBtn.style.display = '';
+                cancelBtn.onclick = function() {
+                    if (confirm('Are you sure you want to cancel and delete this overdue pending transaction?')) {
+                        fetch('pages/notification/functions/delete-overdue-pending.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'transaction_id=' + encodeURIComponent(details.transaction_id) + '&type=' + encodeURIComponent(notificationType)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Remove notification card from UI
+                                var card = document.querySelector('.notification-card[data-id="' + notificationId + '"][data-type="' + notificationType + '"]');
+                                if (card) card.remove();
+                                // Hide modal
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('expiryModal'));
+                                if (modal) modal.hide();
+                            } else {
+                                alert('Failed to delete: ' + data.error);
+                            }
+                        })
+                        .catch(err => alert('Error: ' + err));
+                    }
+                };
+            } else {
+                cancelBtn.style.display = 'none';
+                cancelBtn.onclick = null;
+            }
+            // Show days remaining, days since expiry, or days overdue based on notification type
+            if (notificationType.includes('overdue_pending')) {
+                document.getElementById('expiryRemainingRow').style.display = 'none';
+                document.getElementById('expirySinceRow').style.display = 'none';
+                document.getElementById('expiryOverdueRow').style.display = '';
+                document.getElementById('expiryDaysOverdue').textContent = details.days_overdue;
+            } else if (notificationType.includes('expiring')) {
                 document.getElementById('expiryRemainingRow').style.display = '';
                 document.getElementById('expirySinceRow').style.display = 'none';
+                document.getElementById('expiryOverdueRow').style.display = 'none';
                 // Update the display for 0 days remaining
                 if (details.days_remaining == 0) {
                     document.getElementById('expiryDaysRemaining').textContent = 'Today';
@@ -209,6 +279,7 @@
             } else {
                 document.getElementById('expiryRemainingRow').style.display = 'none';
                 document.getElementById('expirySinceRow').style.display = '';
+                document.getElementById('expiryOverdueRow').style.display = 'none';
                 document.getElementById('expiryDaysSince').textContent = details.days_since;
             }
             
