@@ -28,16 +28,32 @@ if (isset($_POST['action']) && $_POST['action'] === 'pay_transaction' && isset($
     if (is_numeric($transactionId)) {
         $result = $notificationsObj->markTransactionPaid($transactionId);
         if ($result === true) {
-            // Fetch full name for logging
-            $stmt = $pdo->prepare("SELECT CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) as full_name
+            // Fetch user_id and full name for logging
+            $stmt = $pdo->prepare("SELECT u.id as user_id, CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) as full_name
                                    FROM transactions t
                                    LEFT JOIN users u ON t.user_id = u.id
                                    LEFT JOIN personal_details pd ON u.id = pd.user_id
                                    WHERE t.id = ?");
             $stmt->execute([$transactionId]);
             $fullName = '';
+            $userId = null;
             if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $fullName = trim(preg_replace('/\s+/', ' ', $row['full_name']));
+                $userId = $row['user_id'];
+            }
+            // Check if there is a registration record for this transaction
+            $hasRegistration = false;
+            if (!empty($userId)) {
+                $stmtReg = $pdo->prepare("SELECT id FROM registration_records WHERE transaction_id = ? LIMIT 1");
+                $stmtReg->execute([$transactionId]);
+                if ($stmtReg->fetch(PDO::FETCH_ASSOC)) {
+                    $hasRegistration = true;
+                }
+            }
+            // If there is a registration record, update role_id to 3
+            if ($hasRegistration) {
+                $update = $pdo->prepare("UPDATE users SET role_id = 3 WHERE id = ?");
+                $update->execute([$userId]);
             }
             // Log staff activity with full name
             logStaffActivity('Confirm Transaction', 'Confirm pending request and marked as paid - ' . $fullName);
@@ -60,7 +76,15 @@ if (isset($_POST['transaction_id'])) {
     if (is_numeric($_POST['transaction_id'])) {
         try {
             $details = $notificationsObj->getTransactionDetails($_POST['transaction_id']);
-            if ($details !== null) {
+            // Check if there are memberships or walk-ins left
+            $hasMemberships = !empty($details['memberships']);
+            $hasWalkins = !empty($details['walkins']);
+            if (!$hasMemberships && !$hasWalkins) {
+                // Delete the transaction
+                $stmtDel = $pdo->prepare("DELETE FROM transactions WHERE id = ?");
+                $stmtDel->execute([$_POST['transaction_id']]);
+                echo json_encode(['success' => false, 'deleted' => true]);
+            } else if ($details !== null) {
                 echo json_encode(['success' => true, 'data' => $details]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Transaction details not found.']);
@@ -505,7 +529,7 @@ $(document).on('click', '.clickable-card', function() {
 function showNotificationDetailsAjax(transactionId) {
     // Clear previous content
     $('#modalName, #modalPhone, #modalSex, #modalBirthdate, #modalAge').text('');
-    $('#modalProfilePic').attr('src', BASE_URL + '/assets/images/default-profile.png');
+    $('#modalProfilePic').attr('src', BASE_URL + '/../../../cms_img/user.png');
     $('#modalServices').empty();
 
     $.ajax({
@@ -514,6 +538,11 @@ function showNotificationDetailsAjax(transactionId) {
         data: { transaction_id: transactionId },
         dataType: 'json',
         success: function(json) {
+            if (json.deleted) {
+                showSuccessToast('Transaction no longer exists and has been removed.');
+                setTimeout(function() { location.reload(); }, 1500);
+                return;
+            }
             if (!json.success) {
                 // Show error in modal body
                 $('#modalServices').html('<div class="alert alert-danger">' + (json.message || 'Failed to load details.') + '</div>');

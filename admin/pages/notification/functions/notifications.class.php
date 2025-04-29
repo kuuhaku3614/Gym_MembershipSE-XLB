@@ -11,21 +11,21 @@ class Notifications {
     public function markTransactionPaid($transactionId) {
         try {
             $this->db->beginTransaction();
-            // 1. Update memberships
-            $stmt1 = $this->db->prepare("UPDATE memberships SET is_paid = 1 WHERE transaction_id = ?");
+            // 1. Update memberships (set is_paid and payment_date)
+            $stmt1 = $this->db->prepare("UPDATE memberships SET is_paid = 1, payment_date = NOW() WHERE transaction_id = ?");
             $stmt1->execute([$transactionId]);
-            // 2. Update registration_records
-            $stmt2 = $this->db->prepare("UPDATE registration_records SET is_paid = 1 WHERE transaction_id = ?");
+            // 2. Update registration_records (set is_paid and payment_date)
+            $stmt2 = $this->db->prepare("UPDATE registration_records SET is_paid = 1, payment_date = NOW() WHERE transaction_id = ?");
             $stmt2->execute([$transactionId]);
-            // 3. Update rental_subscriptions
-            $stmt3 = $this->db->prepare("UPDATE rental_subscriptions SET is_paid = 1 WHERE transaction_id = ?");
+            // 3. Update rental_subscriptions (set is_paid and payment_date)
+            $stmt3 = $this->db->prepare("UPDATE rental_subscriptions SET is_paid = 1, payment_date = NOW() WHERE transaction_id = ?");
             $stmt3->execute([$transactionId]);
-            // 4. Update walk_in_records
+            // 4. Update walk_in_records (set is_paid and payment_date)
             $stmt4 = $this->db->prepare("UPDATE walk_in_records SET is_paid = 1 WHERE transaction_id = ?");
-            $stmt3->execute([$transactionId]);
-            // 4. Update transaction status
-            $stmt4 = $this->db->prepare("UPDATE transactions SET status = 'confirmed' WHERE id = ?");
             $stmt4->execute([$transactionId]);
+            // 5. Update transaction status and payment_date
+            $stmt5 = $this->db->prepare("UPDATE transactions SET status = 'confirmed' WHERE id = ?");
+            $stmt5->execute([$transactionId]);
             $this->db->commit();
             return true;
         } catch (PDOException $e) {
