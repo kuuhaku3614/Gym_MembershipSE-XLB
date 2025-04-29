@@ -37,6 +37,7 @@ $offersContent = executeQuery("SELECT * FROM website_content WHERE section = 'of
 $aboutUsContent = executeQuery("SELECT * FROM website_content WHERE section = 'about_us'")[0] ?? [];
 // Fetch contact details with latitude and longitude
 $contactContent = executeQuery("SELECT * FROM website_content WHERE section = 'contact'")[0] ?? [];
+$termsConentent = executeQuery("SELECT * FROM website_content WHERE section = 'terms_conditions'")[0] ?? [];
 
 // Get coordinates, use default if not set
 $latitude = $contactContent['latitude'] ?? 6.913126;
@@ -651,6 +652,92 @@ $longitude = $contactContent['longitude'] ?? 122.072516;
     </div>
 
     <div class="copyright">
+    <?php if (!empty(trim($termsConentent['description'] ?? ''))): ?>
+    <p><a href="#" id="terms-link">Terms & Conditions</a></p>
+
+    <!-- Terms and Conditions Modal -->
+    <div id="terms-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Terms and Conditions</h2>
+            <div class="terms-content">
+                <?php echo nl2br(htmlspecialchars($termsConentent['description'])); ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        background-color: #f4f4f4;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 5px;
+        width: 80%;
+        max-width: 700px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .close-modal {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .terms-content {
+        margin-top: 15px;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 95%;
+            margin: 5% auto;
+            padding: 15px;
+        }
+    }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('terms-modal');
+        const termsLink = document.getElementById('terms-link');
+        const closeBtn = document.querySelector('.close-modal');
+        
+        termsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        });
+        
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    });
+    </script>
         Copyright © XLB. All Rights Reserved.
     </div>
 </footer>

@@ -555,6 +555,22 @@ color: #f8f8f8;
     </div>
 </div>
 
+<!-- Terms and Conditions Section -->
+<div class="card mb-3" data-section="terms-and-conditions">
+    <div class="card-header">
+        <h2>Terms and Conditions</h2>
+        <button class="btn update-terms-btn">Update</button>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Terms and Conditions:</label>
+                <textarea class="form-control" name="terms_conditions" readonly><?php echo htmlspecialchars(getDynamicContent('terms_conditions')['description'] ?? ''); ?></textarea>
+            </div>
+        </form>
+    </div>
+</div>
+
 </div>
 <script>
    $(document).ready(function() {
@@ -991,6 +1007,23 @@ color: #f8f8f8;
             error: function(xhr, status, error) {
                 console.log("Error details:", xhr, status, error);
                 alert("Error loading the schedule modal.");
+            }
+        });
+    });
+
+    // Terms and Conditions Section
+    $('.update-terms-btn').on('click', function() {
+        $.ajax({
+            type: "GET",
+            url: "pages/website settings/modals/terms_conditions.modal.php",
+            dataType: "html",
+            success: function(response) {
+                $("body").append(response);
+                $("#termsConditionsModal").modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.log("Error details:", xhr, status, error);
+                alert("Error loading the terms and conditions modal.");
             }
         });
     });

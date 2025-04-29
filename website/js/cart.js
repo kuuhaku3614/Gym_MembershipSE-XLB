@@ -29,9 +29,10 @@ function removeProgramGroupFromCart(groupKey) {
         }
       } else {
         loadCart();
-        const message = data.data && data.data.message
-          ? data.data.message
-          : "Failed to remove program group";
+        const message =
+          data.data && data.data.message
+            ? data.data.message
+            : "Failed to remove program group";
         console.error("Server error:", message);
       }
     })
@@ -100,7 +101,7 @@ function fetchRegistrationFeeDetails() {
 // Function to format duration text based on duration and type
 function formatDuration(duration, durationType) {
   if (!duration || !durationType) return "";
-  
+
   // Convert duration type ID to readable text
   let typeText = "";
   switch (durationType) {
@@ -116,7 +117,7 @@ function formatDuration(duration, durationType) {
     default:
       typeText = "unknown";
   }
-  
+
   return `${duration} ${typeText}`;
 }
 
@@ -124,12 +125,12 @@ function formatDuration(duration, durationType) {
 function updateRegistrationFeeDisplay(cart, registrationDetails) {
   // Only update if there's a registration fee in the cart
   if (!cart.registration_fee || !registrationDetails) return "";
-  
+
   const durationText = formatDuration(
-    registrationDetails.duration, 
+    registrationDetails.duration,
     registrationDetails.duration_type_id
   );
-  
+
   return `
     <div class="cart-section">
       <h6 class="fw-bold mb-3">One-time Fees</h6>
@@ -138,9 +139,15 @@ function updateRegistrationFeeDisplay(cart, registrationDetails) {
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <p class="mb-1">${cart.registration_fee.name}</p>
-              <p class="price mb-1">₱${parseFloat(cart.registration_fee.price).toFixed(2)}</p>
+              <p class="price mb-1">₱${parseFloat(
+                cart.registration_fee.price
+              ).toFixed(2)}</p>
               <p class="text-muted mb-0">One-time registration fee for new members</p>
-              ${durationText ? `<p class="text-muted mb-0">Valid for: ${durationText}</p>` : ""}
+              ${
+                durationText
+                  ? `<p class="text-muted mb-0">Valid for: ${durationText}</p>`
+                  : ""
+              }
             </div>
           </div>
         </div>
@@ -153,19 +160,19 @@ function updateRegistrationFeeDisplay(cart, registrationDetails) {
 function updateCartDisplay(cart) {
   const cartBody = document.querySelector(".cart-body");
   if (!cartBody) {
-    console.error("Cart body element not found");
+    console.error("Checkout-list body element not found");
     return;
   }
 
   // First fetch registration fee details if needed
   if (cart.registration_fee) {
-    fetchRegistrationFeeDetails().then(registrationDetails => {
+    fetchRegistrationFeeDetails().then((registrationDetails) => {
       renderCartWithRegistrationDetails(cart, registrationDetails);
     });
   } else {
     renderCartWithRegistrationDetails(cart, null);
   }
-  
+
   function renderCartWithRegistrationDetails(cart, registrationDetails) {
     let html = "";
 
@@ -178,8 +185,12 @@ function updateCartDisplay(cart) {
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <h6 class="mb-1">Walk-in Service</h6>
-                  <p class="price mb-1 fw">₱${parseFloat(walkin.price).toFixed(2)}</p>
-                  <p class="text-muted small mb-0">Date: ${formatDate(walkin.date)}</p>
+                  <p class="price mb-1 fw">₱${parseFloat(walkin.price).toFixed(
+                    2
+                  )}</p>
+                  <p class="text-muted small mb-0">Date: ${formatDate(
+                    walkin.date
+                  )}</p>
                 </div>
                 <button class="remove-item" 
                   onclick="removeFromCart('walkin', ${index})">
@@ -201,10 +212,18 @@ function updateCartDisplay(cart) {
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <p class="mb-1">${membership.name}</p>
-                  <p class="price mb-1">₱${parseFloat(membership.price).toFixed(2)}</p>
-                  <p class="text-muted mb-0">Validity: ${membership.validity}</p>
-                  <p class="text-muted mb-0">Start: ${formatDate(membership.start_date)}</p>
-                  <p class="text-muted mb-0">End: ${formatDate(membership.end_date)}</p>
+                  <p class="price mb-1">₱${parseFloat(membership.price).toFixed(
+                    2
+                  )}</p>
+                  <p class="text-muted mb-0">Validity: ${
+                    membership.validity
+                  }</p>
+                  <p class="text-muted mb-0">Start: ${formatDate(
+                    membership.start_date
+                  )}</p>
+                  <p class="text-muted mb-0">End: ${formatDate(
+                    membership.end_date
+                  )}</p>
                 </div>
                 <button class="remove-item" 
                   onclick="removeFromCart('membership', ${index})">
@@ -231,14 +250,14 @@ function updateCartDisplay(cart) {
           program.day,
           program.start_time,
           program.end_time,
-          program.price
-        ].join('|');
+          program.price,
+        ].join("|");
         if (!groupedPrograms[key]) {
           groupedPrograms[key] = {
             ...program,
             session_dates: [],
             indices: [],
-            groupKey: key
+            groupKey: key,
           };
         }
         groupedPrograms[key].session_dates.push(program.session_date);
@@ -253,19 +272,29 @@ function updateCartDisplay(cart) {
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <p class="mb-1">${group.program_name}</p>
-                  <p class="price mb-1">₱${parseFloat(group.price).toFixed(2)}</p>
+                  <p class="price mb-1">₱${parseFloat(group.price).toFixed(
+                    2
+                  )}</p>
                   <p class="text-muted mb-0">Coach: ${group.coach_name}</p>
                   <p class="text-muted mb-0">Day: ${group.day}</p>
-                  <p class="text-muted mb-0">Time: ${group.start_time} - ${group.end_time}</p>
+                  <p class="text-muted mb-0">Time: ${group.start_time} - ${
+          group.end_time
+        }</p>
                   <div class="mt-2">
                     <span class="fw-bold">Session Dates:</span>
                     <ul class="mb-1 ps-4">
-                      ${group.session_dates.map((date, i) => `
+                      ${group.session_dates
+                        .map(
+                          (date, i) => `
                         <li class="d-flex align-items-center justify-content-between">
                           <span>${formatDate(date)}</span>
-                          <button class="btn btn-sm btn-link text-danger p-0 ms-2" title="Remove this session" onclick="removeFromCart('program', ${group.indices[i]})"><i class="fas fa-times"></i></button>
+                          <button class="btn btn-sm btn-link text-danger p-0 ms-2" title="Remove this session" onclick="removeFromCart('program', ${
+                            group.indices[i]
+                          })"><i class="fas fa-times"></i></button>
                         </li>
-                      `).join('')}
+                      `
+                        )
+                        .join("")}
                     </ul>
                   </div>
                 </div>
@@ -289,9 +318,15 @@ function updateCartDisplay(cart) {
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <p class="mb-1">${rental.name}</p>
-                  <p class="price mb-1">₱${parseFloat(rental.price).toFixed(2)}</p>
-                  <p class="text-muted mb-0">Start: ${formatDate(rental.start_date)}</p>
-                  <p class="text-muted mb-0">End: ${formatDate(rental.end_date)}</p>
+                  <p class="price mb-1">₱${parseFloat(rental.price).toFixed(
+                    2
+                  )}</p>
+                  <p class="text-muted mb-0">Start: ${formatDate(
+                    rental.start_date
+                  )}</p>
+                  <p class="text-muted mb-0">End: ${formatDate(
+                    rental.end_date
+                  )}</p>
                 </div>
                 <button class="remove-item" 
                   onclick="removeFromCart('rental', ${index})">
@@ -324,12 +359,12 @@ function updateCartDisplay(cart) {
                 Avail Services
               </button>
               <button class="btn btn-outline-secondary" onclick="clearCart()">
-                Clear Cart
+                Clear Checkout-list
               </button>
             </div>
           `
             : `
-            <p class="text-center text-muted mt-3">Your cart is empty</p>
+            <p class="text-center text-muted mt-3">Your checkout-list is empty</p>
           `
         }
       </div>
@@ -343,7 +378,7 @@ function removeFromCart(type, id) {
   const formData = new URLSearchParams();
   formData.append("action", "remove");
   formData.append("type", type);
-  formData.append("index", id.toString());  // Already fixed from your previous change
+  formData.append("index", id.toString()); // Already fixed from your previous change
 
   fetch("services/cart_handler.php", {
     method: "POST",
@@ -361,8 +396,8 @@ function removeFromCart(type, id) {
       return response.json();
     })
     .then((data) => {
-      console.log("Response from removeFromCart:", data);  // Debug logging
-      
+      console.log("Response from removeFromCart:", data); // Debug logging
+
       // Check if we need to load the cart manually regardless of success
       if (data.success) {
         // If there's cart data in the response, use it
@@ -374,13 +409,16 @@ function removeFromCart(type, id) {
         }
       } else {
         // Even on error, try reloading the cart
-        console.warn("Server reported error but attempting to reload cart anyway");
+        console.warn(
+          "Server reported error but attempting to reload cart anyway"
+        );
         loadCart();
-        
+
         // Also show the error
-        const message = data.data && data.data.message 
-          ? data.data.message 
-          : "Failed to remove item";
+        const message =
+          data.data && data.data.message
+            ? data.data.message
+            : "Failed to remove item";
         console.error("Server error:", message);
       }
     })
@@ -468,11 +506,11 @@ function clearCart() {
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-0">
           <div class="modal-header bg-danger text-white">
-            <h5 class="modal-title" id="clearCartModalLabel">Confirm Clear Cart</h5>
+            <h5 class="modal-title" id="clearCartModalLabel">Confirm Clear Checkout</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            Are you sure you want to clear your cart?
+            Are you sure you want to clear your checkout-list?
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -542,35 +580,37 @@ function checkWalkInAgainstMembership(walkIns, activeMembership) {
   // If no active membership or no walk-ins, no conflict exists
   if (!activeMembership || !walkIns || walkIns.length === 0) {
     return {
-      conflict: false
+      conflict: false,
     };
   }
-  
+
   // Convert membership dates to Date objects
   const membershipStart = new Date(activeMembership.start_date);
   const membershipEnd = new Date(activeMembership.end_date);
-  
+
   // Find any walk-in dates that fall within the active membership period
-  const conflictingDates = walkIns.filter(walkin => {
+  const conflictingDates = walkIns.filter((walkin) => {
     const walkinDate = new Date(walkin.date);
     return walkinDate >= membershipStart && walkinDate <= membershipEnd;
   });
-  
+
   return {
     conflict: conflictingDates.length > 0,
     dates: conflictingDates,
     membershipStart: activeMembership.start_date,
-    membershipEnd: activeMembership.end_date
+    membershipEnd: activeMembership.end_date,
   };
 }
 
 // Function to show membership-walkin conflict warning
 function showMembershipWalkinConflictWarning(conflictData) {
   // Format the dates for display
-  const formattedDates = conflictData.dates.map(item => formatDate(item.date)).join(", ");
+  const formattedDates = conflictData.dates
+    .map((item) => formatDate(item.date))
+    .join(", ");
   const membershipStart = formatDate(conflictData.membershipStart);
   const membershipEnd = formatDate(conflictData.membershipEnd);
-  
+
   // Create the warning modal HTML
   const warningModalHTML = `
     <div class="modal fade" id="membershipWalkinConflictModal" tabindex="-1" aria-labelledby="membershipWalkinConflictModalLabel" aria-hidden="true">
@@ -612,7 +652,7 @@ function showMembershipWalkinConflictWarning(conflictData) {
 function availServices() {
   // First check if there are any pending transactions
   checkPendingTransactions()
-    .then(hasPendingTransactions => {
+    .then((hasPendingTransactions) => {
       if (hasPendingTransactions) {
         // If there are pending transactions, show warning and stop
         showPendingTransactionWarning();
@@ -627,40 +667,47 @@ function availServices() {
           body: "action=get",
           credentials: "same-origin",
         })
-          .then(response => response.json())
-          .then(cartResponse => {
+          .then((response) => response.json())
+          .then((cartResponse) => {
             if (cartResponse.success && cartResponse.data.cart) {
               const cart = cartResponse.data.cart;
-              
+
               // Check if the cart contains a membership plan
-              const hasMembershipInCart = cart.memberships && cart.memberships.length > 0;
+              const hasMembershipInCart =
+                cart.memberships && cart.memberships.length > 0;
               // Check if the cart contains a walk-in service
               const hasWalkinInCart = cart.walkins && cart.walkins.length > 0;
-              
+
               // First check for active membership regardless of what's in the cart
               checkActiveMembership()
-                .then(activeMembershipData => {
+                .then((activeMembershipData) => {
                   // If there are walk-ins in the cart and the user has an active membership,
                   // check for conflicts between walk-in dates and membership period
                   if (hasWalkinInCart && activeMembershipData) {
-                    const conflictResult = checkWalkInAgainstMembership(cart.walkins, activeMembershipData);
-                    
+                    const conflictResult = checkWalkInAgainstMembership(
+                      cart.walkins,
+                      activeMembershipData
+                    );
+
                     if (conflictResult.conflict) {
                       // There's a conflict, show warning and stop
                       showMembershipWalkinConflictWarning(conflictResult);
                       return;
                     }
                   }
-                  
+
                   // Continue with existing validation logic
                   if (hasWalkinInCart) {
                     // Check if the user already has a walk-in for the dates in cart
                     checkWalkInRecords(cart.walkins)
-                      .then(walkInCheckResult => {
+                      .then((walkInCheckResult) => {
                         if (walkInCheckResult.duplicate) {
                           // User has an existing walk-in for at least one date, show warning
                           showDuplicateWalkInWarning(walkInCheckResult.dates);
-                        } else if (hasMembershipInCart && activeMembershipData) {
+                        } else if (
+                          hasMembershipInCart &&
+                          activeMembershipData
+                        ) {
                           // No duplicate walk-ins, but user is adding new membership while having active one
                           showActiveMembershipWarning(activeMembershipData);
                         } else {
@@ -668,7 +715,7 @@ function availServices() {
                           validateAndProceed();
                         }
                       })
-                      .catch(error => {
+                      .catch((error) => {
                         console.error("Error checking walk-in records:", error);
                         if (hasMembershipInCart && activeMembershipData) {
                           showActiveMembershipWarning(activeMembershipData);
@@ -684,19 +731,19 @@ function availServices() {
                     validateAndProceed();
                   }
                 })
-                .catch(error => {
+                .catch((error) => {
                   console.error("Error checking active membership:", error);
                   // Proceed with regular validation if membership check fails
                   if (hasWalkinInCart) {
                     checkWalkInRecords(cart.walkins)
-                      .then(walkInCheckResult => {
+                      .then((walkInCheckResult) => {
                         if (walkInCheckResult.duplicate) {
                           showDuplicateWalkInWarning(walkInCheckResult.dates);
                         } else {
                           validateAndProceed();
                         }
                       })
-                      .catch(error => {
+                      .catch((error) => {
                         console.error("Error checking walk-in records:", error);
                         validateAndProceed();
                       });
@@ -710,13 +757,13 @@ function availServices() {
               validateAndProceed();
             }
           })
-          .catch(error => {
+          .catch((error) => {
             console.error("Error getting cart:", error);
             validateAndProceed();
           });
       }
     })
-    .catch(error => {
+    .catch((error) => {
       console.error("Error checking pending transactions:", error);
       validateAndProceed();
     });
@@ -725,18 +772,18 @@ function availServices() {
 // Function to check for existing walk-in records for dates in cart
 function checkWalkInRecords(walkIns) {
   // Store all the dates we need to check
-  const dates = walkIns.map(walkin => walkin.date);
-  
+  const dates = walkIns.map((walkin) => walkin.date);
+
   // If no dates, return immediately
   if (!dates.length) {
     return Promise.resolve({ duplicate: false });
   }
-  
+
   // Create an array of promises for each date check
-  const checkPromises = dates.map(date => {
+  const checkPromises = dates.map((date) => {
     const formData = new URLSearchParams();
     formData.append("date", date);
-    
+
     return fetch("services/walkin_check.php", {
       method: "POST",
       headers: {
@@ -745,39 +792,40 @@ function checkWalkInRecords(walkIns) {
       body: formData.toString(),
       credentials: "same-origin",
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      return {
-        date: date,
-        hasWalkinForDate: data.data.hasWalkinForDate,
-        walkInRecord: data.data.walkInRecord
-      };
-    });
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        return {
+          date: date,
+          hasWalkinForDate: data.data.hasWalkinForDate,
+          walkInRecord: data.data.walkInRecord,
+        };
+      });
   });
-  
+
   // Check all dates and return the result
-  return Promise.all(checkPromises)
-    .then(results => {
-      // Find any dates with existing walk-ins
-      const duplicateDates = results.filter(result => result.hasWalkinForDate);
-      
-      return {
-        duplicate: duplicateDates.length > 0,
-        dates: duplicateDates
-      };
-    });
+  return Promise.all(checkPromises).then((results) => {
+    // Find any dates with existing walk-ins
+    const duplicateDates = results.filter((result) => result.hasWalkinForDate);
+
+    return {
+      duplicate: duplicateDates.length > 0,
+      dates: duplicateDates,
+    };
+  });
 }
 
 // Function to show duplicate walk-in warning
 function showDuplicateWalkInWarning(duplicateDates) {
   // Format the dates for display
-  const formattedDates = duplicateDates.map(item => formatDate(item.date)).join(", ");
-  
+  const formattedDates = duplicateDates
+    .map((item) => formatDate(item.date))
+    .join(", ");
+
   // Create the warning modal HTML
   const warningModalHTML = `
     <div class="modal fade" id="duplicateWalkInModal" tabindex="-1" aria-labelledby="duplicateWalkInModalLabel" aria-hidden="true">
@@ -824,13 +872,13 @@ function checkActiveMembership() {
     },
     credentials: "same-origin",
   })
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`Network response was not ok: ${response.status}`);
       }
       return response.json();
     })
-    .then(data => {
+    .then((data) => {
       console.log("Active membership check:", data);
       return data.data; // Return the membership data if exists
     });
@@ -851,7 +899,9 @@ function showActiveMembershipWarning(membershipData) {
             <div class="d-flex align-items-center mb-3">
               <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 2rem;"></i>
               <div>
-                <p class="mb-1">You already have an active membership that expires on ${formatDate(membershipData.end_date)}.</p>
+                <p class="mb-1">You already have an active membership that expires on ${formatDate(
+                  membershipData.end_date
+                )}.</p>
                 <p class="mb-0">Purchasing a new membership now will only be valid after your current membership expires.</p>
               </div>
             </div>
@@ -891,13 +941,13 @@ function checkPendingTransactions() {
     },
     credentials: "same-origin",
   })
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`Network response was not ok: ${response.status}`);
       }
       return response.json();
     })
-    .then(data => {
+    .then((data) => {
       console.log("Pending transaction check:", data);
       return data.hasPendingTransactions;
     });
@@ -951,7 +1001,8 @@ function validateAndProceed() {
         proceedWithAvailing();
       } else {
         alert(
-          data.data.message || "An error occurred while validating your cart."
+          data.data.message ||
+            "An error occurred while validating your checkout-list."
         );
       }
     })
