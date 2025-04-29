@@ -356,18 +356,23 @@ $(document).ready(function() {
         contentType: false,
         success: function(response) {
             if (response.status === 'success') {
-                // Force close any open modals first
+                // First hide the modal
                 $('#addProgramModal').modal('hide');
-                // Small timeout to ensure modal is hidden
-                setTimeout(function() {
-                    // Update success message and show the success modal
-                    $('#successModal .modal-body').html('<p>' + (response.message || 'Program created successfully!') + '</p>');
-                    $('#successModal').modal('show');
-                    // Reload page after displaying success
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000);
-                }, 300);
+                
+                // Create and show a styled success banner
+                const alertBanner = `
+                    <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                        ${response.message || 'Program created successfully!'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('body').append(alertBanner);
+                
+                // Auto-dismiss after 2 seconds and reload the page
+                setTimeout(() => {
+                    $('.alert').alert('close');
+                    location.reload();
+                }, 2000);
             } else {
                 displaySanitizedError(response.message || 'An unknown error occurred');
             }
@@ -423,11 +428,23 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if (response.success) {
+                    // First hide the modal
                     $('#editProgramModal').modal('hide');
-                    $('#updateSuccessModal').modal('show');
-                    $('#updateSuccessModal').on('hidden.bs.modal', function() {
+                    
+                    // Create and show a styled success banner
+                    const alertBanner = `
+                        <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                            ${response.message || 'Program updated successfully!'}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    $('body').append(alertBanner);
+                    
+                    // Auto-dismiss after 2 seconds and reload the page
+                    setTimeout(() => {
+                        $('.alert').alert('close');
                         location.reload();
-                    });
+                    }, 2000);
                 } else {
                     displaySanitizedError(response.message || 'An unknown error occurred');
                 }

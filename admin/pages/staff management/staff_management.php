@@ -359,10 +359,23 @@ $(document).ready(function() {
         dataType: 'json',  // Explicitly parse as JSON
         success: function(response) {
             if (response.success) {
-                alert(response.message);  // Show success message
+                // First hide the modal
                 addStaffModal.hide();
-                $('#addStaffForm')[0].reset();
-                location.reload();
+                
+                // Create and show a styled success banner
+                const alertBanner = `
+                    <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                        ${response.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('body').append(alertBanner);
+                
+                // Auto-dismiss after 2 seconds
+                setTimeout(() => {
+                    $('.alert').alert('close');
+                    location.reload();
+                }, 2000);
             } else {
                 // Show specific error message
                 alert('Error: ' + response.message);
@@ -378,26 +391,58 @@ $(document).ready(function() {
 });
 
     // Handle delete
+    // Add delete confirmation modal to the document
+    $('body').append(`
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this staff member? This action cannot be undone.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+    // Store staff ID for deletion
+    let staffIdToDelete;
+
+    // Handle delete button click
     $('.delete-btn').click(function() {
-        if (confirm('Are you sure you want to delete this staff member?')) {
-            const staffId = $(this).data('id');
-            
-            $.ajax({
-                url: '../admin/pages/staff management/functions/delete_staff.php',
-                type: 'POST',
-                data: { id: staffId },
-                success: function(response) {
-                    if (response.success) {
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                },
-                error: function() {
-                    alert('An error occurred while deleting the staff member.');
+        staffIdToDelete = $(this).data('id');
+        $('#deleteModal').modal('show');
+    });
+
+    // Handle confirmation of deletion
+    $('#confirmDelete').click(function() {
+        $.ajax({
+            url: '../admin/pages/staff management/functions/delete_staff.php',
+            type: 'POST',
+            data: { id: staffIdToDelete },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#deleteModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
                 }
-            });
-        }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+                console.log("Response Text:", xhr.responseText);
+                alert('An error occurred while deleting the staff member.');
+            }
+        });
     });
 
     // Handle modal close reset
@@ -462,9 +507,23 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    alert(response.message);
+                    // First hide the modal
                     editStaffModal.hide();
-                    location.reload();
+                    
+                    // Create and show a styled success banner
+                    const alertBanner = `
+                        <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                            ${response.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    $('body').append(alertBanner);
+                    
+                    // Auto-dismiss after 3 seconds
+                    setTimeout(() => {
+                        $('.alert').alert('close');
+                        location.reload();
+                    }, 2000);
                 } else {
                     alert('Error: ' + response.message);
                 }
@@ -530,12 +589,26 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    alert(response.message);
+                    // First hide the modal
                     adminSettingsModal.hide();
-                    // Reload only if username was changed
-                    if ($('#current_username').val() !== $('#new_username').val()) {
-                        location.reload();
-                    }
+                    
+                    // Create and show a styled success banner
+                    const alertBanner = `
+                        <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                            ${response.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    $('body').append(alertBanner);
+                    
+                    // Auto-dismiss after 2 seconds
+                    setTimeout(() => {
+                        $('.alert').alert('close');
+                        // Reload only if username was changed
+                        // if ($('#current_username').val() !== $('#new_username').val()) {
+                            location.reload();
+                        // }
+                    }, 2000);
                 } else {
                     alert('Error: ' + response.message);
                 }

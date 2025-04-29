@@ -13,12 +13,12 @@ try {
     $pdo->beginTransaction();
 
     // Validate required fields
-    $requiredFields = ['id', 'username', 'role', 'first_name', 'last_name', 'phone_number', 'sex', 'birthdate'];
-    foreach ($requiredFields as $field) {
-        if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
-            throw new PDOException("Missing or empty required field: $field");
-        }
-    }
+    // $requiredFields = ['id', 'username', 'role', 'first_name', 'last_name', 'phone_number', 'sex', 'birthdate'];
+    // foreach ($requiredFields as $field) {
+    //     if (!isset($_POST[$field]) || trim($_POST[$field]) === '') {
+    //         throw new PDOException("Missing or empty required field: $field");
+    //     }
+    // }
 
     // Check if username exists (excluding current user)
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ? AND id != ?");

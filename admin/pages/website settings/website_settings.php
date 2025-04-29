@@ -175,7 +175,7 @@ $galleryImages = fetchExistingContent('gallery_images');
     /* CSS */
 .update-logo-btn, .update-color-palette-btn, .update-welcome-btn, .update-offers-btn, .update-gym-offers-btn, 
 .update-about-us-btn, .update-contact-btn, .update-products-btn, .update-staff-btn, .update-gallery-btn,
-.update-staff-member-btn, .update-product-btn, .update-offer-btn {
+.update-staff-member-btn, .update-product-btn, .update-offer-btn, .update-terms-btn, .update-schedule-btn {
     color: white; /* Set the text color */
     border: none; /* Remove border */
     padding: 10px 20px; /* Add padding */
@@ -199,7 +199,9 @@ $galleryImages = fetchExistingContent('gallery_images');
 .update-gallery-btn:hover,
 .update-staff-member-btn:hover,
 .update-product-btn:hover,
-.update-offer-btn:hover {
+.update-offer-btn:hover, 
+.update-terms-btn:hover,
+.update-schedule-btn:hover {
     background-color: #45a049; /* Slightly darker green */
     cursor: pointer;
     transition: background-color 0.3s ease;

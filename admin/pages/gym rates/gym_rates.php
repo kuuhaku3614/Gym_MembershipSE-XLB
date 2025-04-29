@@ -467,12 +467,23 @@ $('#saveGymRateBtn').click(function() {
         contentType: false,   // Important for file upload
         success: function(response) {
             if (response.trim() === "success") {
+                // First hide the modal
                 $('#addGymRateModal').modal('hide');
-                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                successModal.show();
-                $('#successModal').on('hidden.bs.modal', function () {
+                
+                // Create and show a styled success banner
+                const alertBanner = `
+                    <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                        Gym rate added successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('body').append(alertBanner);
+                
+                // Auto-dismiss after 2 seconds
+                setTimeout(() => {
+                    $('.alert').alert('close');
                     location.reload();
-                });
+                }, 2000);
             } else {
                 alert("Error: " + response);
             }
@@ -624,18 +635,23 @@ $('#updateGymRateBtn').click(function() {
             const data = JSON.parse(response);
             if (data.status === 'success') {
                 // Update the modal body with the success message
-                $('#updateSuccessModal .modal-body p').text(response.message || "Updated successfully!");
-                    
-                    // Show the success modal
-                    $('#updateSuccessModal').modal('show');
-                    
-                    // Hide the edit modal
-                    $('#editGymRateModal').modal('hide');
-                    
-                    // Reload the page after the modal is hidden
-                    $('#updateSuccessModal').on('hidden.bs.modal', function () {
-                        location.reload();
-                    });
+                // Hide the edit modal
+                $('#editGymRateModal').modal('hide');
+                
+                // Create and show a styled success banner
+                const alertBanner = `
+                    <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('body').append(alertBanner);
+                
+                // Auto-dismiss after 2 seconds and reload the page
+                setTimeout(() => {
+                    $('.alert').alert('close');
+                    location.reload();
+                }, 2000);
             } else {
                 alert('Error: ' + data.message);
             }
