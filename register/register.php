@@ -14,6 +14,7 @@ function executeQuery($query, $params = []) {
 // Fetch specific content for sections
 $welcomeContent = executeQuery("SELECT * FROM website_content WHERE section = 'welcome'")[0] ?? [];
 $logo = executeQuery("SELECT * FROM website_content WHERE section = 'logo'")[0] ?? [];
+$termsContent = executeQuery("SELECT * FROM website_content WHERE section = 'terms_conditions'")[0] ?? [];
 require_once '../website/includes/loadingScreen.php';
 ?>
 <!DOCTYPE html>
@@ -134,7 +135,83 @@ require_once '../website/includes/loadingScreen.php';
                             </button>
                             <div id="confirmPasswordError" class="error-message">Passwords do not match</div>
                         </div>
+
+                    <?php if (!empty($termsContent['description'])): ?>
+                    <!-- Terms checkbox -->
+                    <div class="form-check terms-check">
+                        <input class="form-check-input" type="checkbox" id="termsCheck" name="terms_accepted">
+                        <label class="form-check-label" for="termsCheck">
+                            I agree to the <a href="#" id="terms-link">Terms and Conditions</a>
+                        </label>
+                        <div id="termsError" class="error-message">You must accept the terms and conditions</div>
                     </div>
+
+                    <!-- Terms and Conditions Modal -->
+                    <div id="terms-modal" class="modal">
+                        <div class="modal-content">
+                            <h2>Terms and Conditions <span class="close-modal">&times;</span></h2>
+                            <div class="terms-content">
+                                <?php echo nl2br(htmlspecialchars($termsContent['description'] ?? 'Terms and conditions not available.')); ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- CSS Styles -->
+                    <style>
+                    .modal {
+                        display: none;
+                        position: fixed;
+                        z-index: 1000;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0,0,0,0.7);
+                        overflow-y: auto;
+                    }
+
+                    .modal-content {
+                        background-color: #f4f4f4;
+                        margin: 10% auto;
+                        padding: 20px;
+                        border-radius: 5px;
+                        width: 80%;
+                        max-width: 700px;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                    }
+
+                    .close-modal {
+                        color: #aaa;
+                        float: right;
+                        font-size: 28px;
+                        font-weight: bold;
+                        cursor: pointer;
+                    }
+
+                    .terms-content {
+                        margin-top: 15px;
+                        line-height: 1.6;
+                    }
+
+                    .error-message {
+                        color: #dc3545;
+                        font-size: 0.875rem;
+                        margin-top: 5px;
+                        display: none;
+                    }
+
+                    @media (max-width: 768px) {
+                        .modal-content {
+                            width: 95%;
+                            margin: 5% auto;
+                            padding: 15px;
+                        }
+                    }
+                    </style>
+
+                    <!-- JavaScript -->
                 </div>
 
                 <div class="form-buttons">
@@ -179,6 +256,46 @@ require_once '../website/includes/loadingScreen.php';
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+                    $(document).ready(function() {
+                        // Terms modal functionality
+                        const modal = document.getElementById('terms-modal');
+                        const termsLink = document.getElementById('terms-link');
+                        const closeBtn = document.querySelector('.close-modal');
+                        
+                        termsLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            modal.style.display = 'block';
+                            document.body.style.overflow = 'hidden';
+                        });
+                        
+                        closeBtn.addEventListener('click', function() {
+                            modal.style.display = 'none';
+                            document.body.style.overflow = 'auto';
+                        });
+                        
+                        window.addEventListener('click', function(e) {
+                            if (e.target === modal) {
+                                modal.style.display = 'none';
+                                document.body.style.overflow = 'auto';
+                            }
+                        });
+
+                        // Validate terms checkbox
+                        $('#termsCheck').on('change', function() {
+                            $('#termsError').toggle(!this.checked);
+                        });
+
+                        // Add terms validation to form submission
+                        $('#registrationForm').on('submit', function(e) {
+                            if (!$('#termsCheck').is(':checked')) {
+                                $('#termsError').show();
+                                e.preventDefault();
+                                return false;
+                            }
+                        });
+                    });
+                    </script>
     <script>
     $(document).ready(function() {
         // Validation functions
