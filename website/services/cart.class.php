@@ -81,7 +81,7 @@ class Cart_Class {
             $this->updateTotal();
             return true;
         } catch (Exception $e) {
-            throw new Exception("Failed to add membership to cart: " . $e->getMessage());
+            throw new Exception("Failed to add membership to checkout-list: " . $e->getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ class Cart_Class {
             $this->updateTotal();
             return true;
         } catch (Exception $e) {
-            throw new Exception("Failed to add rental to cart");
+            throw new Exception("Failed to add rental to checkout-list");
         }
     }
 
@@ -136,7 +136,7 @@ class Cart_Class {
             $this->updateTotal();
             return true;
         } catch (Exception $e) {
-            throw new Exception("Failed to add registration fee to cart");
+            throw new Exception("Failed to add registration fee to checkout-list");
         }
     }
 
@@ -146,7 +146,7 @@ class Cart_Class {
             $this->updateTotal();
             return true;
         } catch (Exception $e) {
-            throw new Exception("Failed to remove registration fee from cart");
+            throw new Exception("Failed to remove registration fee from checkout-list");
         }
     }
 
@@ -288,7 +288,7 @@ class Cart_Class {
                 empty($_SESSION['cart']['programs']) && 
                 empty($_SESSION['cart']['rentals']) && 
                 empty($_SESSION['cart']['walkins'])) {
-                throw new Exception('Cart is empty');
+                throw new Exception('Checkout-list is empty');
             }
 
             return true;
@@ -483,7 +483,7 @@ class Cart_Class {
             }
             return false;
         } catch (Exception $e) {
-            error_log("Failed to remove program from cart: " . $e->getMessage());
+            error_log("Failed to remove program from checkout-list: " . $e->getMessage());
             return false;
         }
     }

@@ -96,12 +96,14 @@ body {
   width: 100%;
 }
 
-#serviceTabs, #profileTabs {
+#serviceTabs,
+#profileTabs {
   min-height: 42px; /* Set a fixed minimum height for tab container */
   height: auto; /* Allow the tab container to adjust based on content */
 }
 
-#serviceTabs .nav-link, #profileTabs .nav-link {
+#serviceTabs .nav-link,
+#profileTabs .nav-link {
   padding: 0.5rem 1rem; /* Reduce padding slightly to fit better */
   height: 40px; /* Set a consistent height for all tabs */
   display: flex;
@@ -109,7 +111,8 @@ body {
 }
 
 /* Adjust the tab content area to account for the fixed tab height */
-#serviceTabsContent, #profileTabsContent {
+#serviceTabsContent,
+#profileTabsContent {
   height: calc(100% - 42px); /* Subtract the tab height from the container */
 }
 
@@ -215,7 +218,7 @@ body {
 }
 
 #walkins .service-item .d-flex {
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding-bottom: 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -278,7 +281,7 @@ body {
   overflow-y: auto; /* Enables scrolling */
   overflow-x: hidden; /* Prevent horizontal scroll */
   padding-right: 0.5rem; /* Optional: Space for scrollbar */
-  flex-grow: 1;    /* Take up remaining space */
+  flex-grow: 1; /* Take up remaining space */
 }
 
 .attendance-item {
@@ -403,13 +406,19 @@ body {
   cursor: pointer;
 }
 
+.alert-info {
+  background-color: #f8d7da;
+  border: 1px solid #e53e3e;
+}
+
 /* Form styling */
 .form-label {
   font-weight: 500;
   color: #495057;
 }
 
-.form-control, .form-select {
+.form-control,
+.form-select {
   border-radius: 8px;
   padding: 0.75rem 1rem;
   border: 1px solid #ced4da;
@@ -443,8 +452,8 @@ body {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
-  
-  .availed-services-card, 
+
+  .availed-services-card,
   .attendance-log-card,
   .profile-settings-card {
     height: 500px;
@@ -458,39 +467,44 @@ body {
     flex-wrap: nowrap;
     white-space: nowrap;
   }
-  
+
   #walkins .service-item .d-flex {
     flex-direction: row;
     align-items: center;
   }
-  
-  .availed-services-card, 
+
+  .availed-services-card,
   .attendance-log-card,
   .profile-settings-card {
     height: 450px;
   }
-  
+
   .row {
     margin-left: 0;
     margin-right: 0;
   }
-  
-  .col-md-6, .col-md-9, .col-md-3, .col-md-8 {
+
+  .col-md-6,
+  .col-md-9,
+  .col-md-3,
+  .col-md-8 {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
-  
+
   /* Fix for profile tabs on small screens */
   #profileTabs .nav-link {
     padding: 0.5rem;
     font-size: 0.9rem;
   }
-  
-  #serviceTabs .nav-link, #profileTabs .nav-link {
+
+  #serviceTabs .nav-link,
+  #profileTabs .nav-link {
     height: 36px; /* Slightly smaller height on mobile */
   }
-  
-  #serviceTabsContent, #profileTabsContent {
+
+  #serviceTabsContent,
+  #profileTabsContent {
     height: calc(100% - 38px); /* Adjust for smaller tabs */
   }
 }

@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         $cart = $Cart->getCart();
         if (empty($cart)) {
-            throw new Exception('Cart is empty');
+            throw new Exception('Checkout-list is empty');
         }
 
         $db = new Database();

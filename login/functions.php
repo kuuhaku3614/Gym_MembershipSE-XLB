@@ -124,7 +124,7 @@ function loginUser($username, $password) {
             }
         }
 
-        return ['success' => false, 'message' => 'Invalid username or password.'];
+        return ['success' => false, 'message' => 'Invalid username or password. Try signing-up.'];
     } catch (PDOException $e) {
         error_log("Login error: " . $e->getMessage());
         return ['success' => false, 'message' => 'Database error occurred. Please try again later.'];

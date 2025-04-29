@@ -76,7 +76,7 @@ try {
             try {
                 $cart = $Cart->getCart();
                 if (!is_array($cart)) {
-                    handle_error('Invalid cart data');
+                    handle_error('Invalid checkout-list data');
                 }
                 send_json_response(['cart' => $cart]);
             } catch (Exception $e) {
@@ -90,7 +90,7 @@ try {
                     $newCart = $Cart->getCart();
                     send_json_response(['cart' => $newCart]);
                 } else {
-                    handle_error('Failed to clear cart');
+                    handle_error('Failed to clear checkout-list');
                 }
             } catch (Exception $e) {
                 handle_error($e->getMessage());
@@ -186,7 +186,7 @@ try {
 
             // Check if user is logged in
             if (!isset($_SESSION['user_id'])) {
-                send_json_response(['message' => 'Please log in to add programs to cart.'], false);
+                send_json_response(['message' => 'Please log in to add programs to checkout-list.'], false);
             }
 
             // Check for active membership or membership in cart
@@ -197,7 +197,7 @@ try {
             // Determine if this is a personal schedule by passed type
             $isPersonal = (isset($data['program_type']) && $data['program_type'] === 'personal');
             if (!$activeMembership && !$hasMembershipInCart) {
-                send_json_response(['message' => 'You need to have an active membership or include a membership plan in your cart to avail this program.'], false);
+                send_json_response(['message' => 'You need to have an active membership or include a membership plan in your checkout-list to avail this program.'], false);
             }
 
             // Add membership start date to item for program date calculation
@@ -223,9 +223,9 @@ try {
 
             try {
                 if ($Cart->addProgramSchedule($item)) {
-                    send_json_response(['message' => 'Schedule added to cart']);
+                    send_json_response(['message' => 'Schedule added to checkout-list']);
                 } else {
-                    send_json_response(['message' => 'Failed to add schedule to cart'], false);
+                    send_json_response(['message' => 'Failed to add schedule to checkout-list'], false);
                 }
             } catch (Exception $e) {
                 send_json_response(['message' => $e->getMessage()], false);
