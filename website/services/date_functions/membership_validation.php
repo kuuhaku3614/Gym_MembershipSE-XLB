@@ -36,8 +36,11 @@ class MembershipValidation {
         // Add dates from pending walk-ins
         $pendingWalkins = $this->getPendingWalkins($user_id);
         foreach ($pendingWalkins as $walkin) {
-            // You might want to include walkin transaction ID here too if needed later
-             $disabledDates[$walkin['date']] = ['status' => 'pending-walkin'];
+            // Include walkin transaction ID here
+             $disabledDates[$walkin['date']] = [
+                 'status' => 'pending-walkin',
+                 'transactionId' => $walkin['transaction_id'] // Include transaction ID here
+             ];
         }
 
         return $disabledDates;
@@ -155,12 +158,11 @@ class MembershipValidation {
      * @return array - Array of pending walk-ins
      */
     private function getPendingWalkins($user_id) {
-        // No changes needed here for this feature
         $query = "
             SELECT
                 w.id AS walk_in_record_id,
-                w.date
-                -- t.id as transaction_id -- Optionally fetch transaction ID if needed later
+                w.date,
+                t.id as transaction_id -- Fetch the transaction ID
             FROM
                 walk_in_records w
             JOIN
@@ -183,21 +185,136 @@ class MembershipValidation {
         }
     }
 
-    // --- NEW FUNCTION ---
     /**
-     * Delete a pending membership transaction.
+     * Checks if a transaction has other pending items associated with it in specified tables.
+     *
+     * @param int $transaction_id The ID of the transaction.
+     * @param string $exclude_table The table from which an item is being deleted (e.g., 'walk_in_records', 'memberships').
+     * @return bool True if other pending items exist, false otherwise.
+     */
+    private function hasOtherPendingItems($transaction_id, $exclude_table) {
+        $count = 0;
+
+        // Check walk_in_records (if not the table being excluded)
+        if ($exclude_table !== 'walk_in_records') {
+            $query = "SELECT COUNT(*) FROM walk_in_records WHERE transaction_id = :transaction_id AND is_paid = 0 AND status = 'pending'";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $count += $stmt->fetchColumn();
+        }
+
+        // Check memberships (if not the table being excluded)
+        if ($exclude_table !== 'memberships') {
+            $query = "SELECT COUNT(*) FROM memberships WHERE transaction_id = :transaction_id AND is_paid = 0 AND status = 'active'"; // Assuming 'active' means not cancelled, even if pending payment
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $count += $stmt->fetchColumn();
+        }
+
+        // Check rental_subscriptions (if not the table being excluded)
+        if ($exclude_table !== 'rental_subscriptions') {
+            $query = "SELECT COUNT(*) FROM rental_subscriptions WHERE transaction_id = :transaction_id AND status = 'active' AND is_paid = 0"; // Assuming 'pending' status for rentals
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $count += $stmt->fetchColumn();
+        }
+
+        // You can add checks for other tables if needed (e.g., programs)
+
+        return $count > 0;
+    }
+
+
+    /**
+     * Delete a pending walk-in record and potentially the transaction if no other pending items exist.
      *
      * @param int $user_id The ID of the user.
-     * @param int $transaction_id The ID of the transaction to delete.
+     * @param int $transaction_id The ID of the transaction associated with the walk-in.
+     * @return bool True on success, false on failure.
+     */
+    public function deletePendingWalkinTransaction($user_id, $transaction_id) {
+        // First, verify the walk-in belongs to the user and is pending
+        $checkQuery = "
+            SELECT w.id
+            FROM walk_in_records w
+            JOIN transactions t ON w.transaction_id = t.id
+            WHERE w.transaction_id = :transaction_id
+              AND t.user_id = :user_id
+              AND t.status = 'pending'
+              AND w.is_paid = 0";
+
+        try {
+            $checkStmt = $this->pdo->prepare($checkQuery);
+            $checkStmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+            $checkStmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+            $checkStmt->execute();
+
+            if ($checkStmt->rowCount() == 0) {
+                error_log("Attempt to delete non-existent or non-pending walk-in transaction ID: {$transaction_id} for user ID: {$user_id}");
+                return false;
+            }
+
+            // Start a transaction for safety
+            $this->pdo->beginTransaction();
+
+            // Delete from walk_in_records table
+            $deleteWalkinQuery = "DELETE FROM walk_in_records WHERE transaction_id = :transaction_id";
+            $deleteWalkinStmt = $this->pdo->prepare($deleteWalkinQuery);
+            $deleteWalkinStmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+            $walkinDeleted = $deleteWalkinStmt->execute();
+
+            if (!$walkinDeleted) {
+                $this->pdo->rollBack();
+                error_log("Failed to delete walk-in record for transaction ID: {$transaction_id}.");
+                return false;
+            }
+
+            // Check if there are any other pending items associated with this transaction
+            if (!$this->hasOtherPendingItems($transaction_id, 'walk_in_records')) {
+                // No other pending items, delete the transaction
+                $deleteTransactionQuery = "DELETE FROM transactions WHERE id = :transaction_id";
+                $deleteTransactionStmt = $this->pdo->prepare($deleteTransactionQuery);
+                $deleteTransactionStmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+                $transactionDeleted = $deleteTransactionStmt->execute();
+
+                if ($transactionDeleted) {
+                     $this->pdo->commit();
+                     return true; // Both walk-in and transaction deleted
+                } else {
+                     $this->pdo->rollBack();
+                     error_log("Failed to delete transaction ID: {$transaction_id} after deleting walk-in.");
+                     return false;
+                }
+            } else {
+                // Other pending items exist, only walk-in was deleted
+                $this->pdo->commit();
+                return true; // Only walk-in deleted
+            }
+
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            error_log('Error deleting pending walk-in record or transaction: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Delete a pending membership record and potentially the transaction if no other pending items exist.
+     *
+     * @param int $user_id The ID of the user.
+     * @param int $transaction_id The ID of the transaction associated with the membership.
      * @return bool True on success, false on failure.
      */
     public function deletePendingMembershipTransaction($user_id, $transaction_id) {
-        // First, verify the transaction belongs to the user and is actually a pending membership
+        // First, verify the membership belongs to the user and is pending
         $checkQuery = "
-            SELECT t.id
-            FROM transactions t
-            JOIN memberships m ON t.id = m.transaction_id
-            WHERE t.id = :transaction_id
+            SELECT m.id
+            FROM memberships m
+            JOIN transactions t ON m.transaction_id = t.id
+            WHERE m.transaction_id = :transaction_id
               AND t.user_id = :user_id
               AND t.status = 'pending'
               AND m.is_paid = 0";
@@ -208,40 +325,50 @@ class MembershipValidation {
             $checkStmt->execute();
 
             if ($checkStmt->rowCount() == 0) {
-                error_log("Attempt to delete non-existent or non-pending/non-membership transaction ID: {$transaction_id} for user ID: {$user_id}");
-                return false; // Transaction not found, doesn't belong to user, or isn't a pending membership
+                error_log("Attempt to delete non-existent or non-pending membership transaction ID: {$transaction_id} for user ID: {$user_id}");
+                return false;
             }
 
-            // Proceed with deletion (adjust based on your schema, might need to delete from memberships first or handle foreign keys)
-            // This assumes ON DELETE CASCADE or similar is set up, or you delete related records manually.
             // Start a transaction for safety
             $this->pdo->beginTransaction();
 
-            // Delete from memberships table first if no cascade delete
+            // Delete from memberships table
             $deleteMembershipQuery = "DELETE FROM memberships WHERE transaction_id = :transaction_id";
             $deleteMembershipStmt = $this->pdo->prepare($deleteMembershipQuery);
             $deleteMembershipStmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
             $membershipDeleted = $deleteMembershipStmt->execute();
 
-            // Then delete from transactions table
-            $deleteTransactionQuery = "DELETE FROM transactions WHERE id = :transaction_id";
-            $deleteTransactionStmt = $this->pdo->prepare($deleteTransactionQuery);
-            $deleteTransactionStmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
-            $transactionDeleted = $deleteTransactionStmt->execute();
-
-
-            if ($membershipDeleted && $transactionDeleted) {
-                 $this->pdo->commit();
-                 return true;
-            } else {
+            if (!$membershipDeleted) {
                  $this->pdo->rollBack();
-                 error_log("Failed to delete transaction ID: {$transaction_id}. Membership delete status: {$membershipDeleted}, Transaction delete status: {$transactionDeleted}");
+                 error_log("Failed to delete membership record for transaction ID: {$transaction_id}.");
                  return false;
+            }
+
+            // Check if there are any other pending items associated with this transaction
+            if (!$this->hasOtherPendingItems($transaction_id, 'memberships')) {
+                // No other pending items, delete the transaction
+                $deleteTransactionQuery = "DELETE FROM transactions WHERE id = :transaction_id";
+                $deleteTransactionStmt = $this->pdo->prepare($deleteTransactionQuery);
+                $deleteTransactionStmt->bindParam(':transaction_id', $transaction_id, PDO::PARAM_INT);
+                $transactionDeleted = $deleteTransactionStmt->execute();
+
+                 if ($transactionDeleted) {
+                     $this->pdo->commit();
+                     return true; // Both membership and transaction deleted
+                } else {
+                     $this->pdo->rollBack();
+                     error_log("Failed to delete transaction ID: {$transaction_id} after deleting membership.");
+                     return false;
+                }
+            } else {
+                // Other pending items exist, only membership was deleted
+                $this->pdo->commit();
+                return true; // Only membership deleted
             }
 
         } catch (PDOException $e) {
             $this->pdo->rollBack();
-            error_log('Error deleting pending membership transaction: ' . $e->getMessage());
+            error_log('Error deleting pending membership record or transaction: ' . $e->getMessage());
             return false;
         }
     }

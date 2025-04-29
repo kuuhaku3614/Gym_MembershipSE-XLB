@@ -817,6 +817,9 @@ async function addDate(dateStr) { // Make async to handle await for fetch
 
     // Check if date is disabled
     const statusInfo = getDateStatusInfo(dateStr);
+    const conflictModalElement = document.getElementById('conflictModal');
+    const conflictModal = new bootstrap.Modal(conflictModalElement);
+
     if (statusInfo && statusInfo.status) {
         const status = statusInfo.status;
 
@@ -833,21 +836,55 @@ async function addDate(dateStr) { // Make async to handle await for fetch
 
             // Store conflict data for modal button handlers
             modalConflictData = {
+                type: 'membership', // Add type
                 transactionId: transactionId,
                 pendingEndDateStr: pendingEndDateStr,
                 clickedDate: clickedDate // Store the date the user clicked
             };
 
-            // Update modal message
+            // Update modal message and show/hide buttons for membership
+            document.getElementById('conflictModalLabel').innerText = 'Membership Conflict Detected'; // Set modal title
             document.getElementById('conflictMessage').innerText =
                 `This date conflicts with a pending membership ending ${formatDisplayDate(pendingEndDateStr)}.\n\n` +
                 `Choose an action:`;
+            document.getElementById('appendMembershipBtn').style.display = ''; // Show Append button
+            document.getElementById('replaceMembershipBtn').style.display = ''; // Show Replace button
 
-            // Show the modal
-            const conflictModal = new bootstrap.Modal(document.getElementById('conflictModal'));
             conflictModal.show();
-
             return; // Stop further processing here, wait for modal interaction
+
+        } else if (status === 'pending-walkin') { // Handle pending walk-in conflict
+             const transactionId = statusInfo.transactionId;
+             const clickedDate = dateStr; // Store the date the user actually clicked
+
+             if (!transactionId || !clickedDate) {
+                 alert('Error: Cannot identify the pending walk-in or clicked date. Please refresh and try again.');
+                 return;
+             }
+
+            // Store conflict data for modal button handlers
+             modalConflictData = {
+                type: 'walkin', // Add type
+                transactionId: transactionId,
+                clickedDate: clickedDate // Store the date the user clicked
+            };
+
+            // Update modal message and show/hide buttons for walk-in
+            document.getElementById('conflictModalLabel').innerText = 'Walk-in Conflict Detected'; // Set modal title
+            document.getElementById('conflictMessage').innerText =
+                `This date has a pending walk-in reservation (${formatDisplayDate(clickedDate)}).\n\n` +
+                `Do you want to remove the pending walk-in to book this membership?`;
+
+            document.getElementById('appendMembershipBtn').style.display = 'none'; // Hide Append button for walk-in
+            // The 'replaceMembershipBtn' will be repurposed as 'Remove Walk-in'
+            document.getElementById('replaceMembershipBtn').style.display = '';
+            document.getElementById('replaceMembershipBtn').innerText = 'Remove Walk-in'; // Change button text
+            document.getElementById('replaceMembershipBtn').classList.remove('btn-danger'); // Optional: adjust button color if needed
+            document.getElementById('replaceMembershipBtn').classList.add('btn-warning'); // Example: use warning color
+
+            conflictModal.show();
+            return; // Stop further processing here, wait for modal interaction
+
         }
 
         // Don't allow selecting dates within another selected membership's duration
@@ -856,7 +893,7 @@ async function addDate(dateStr) { // Make async to handle await for fetch
             return;
         }
 
-        // Show specific error message based on other statuses
+        // Show specific error message based on other statuses (past, active-membership)
         let message;
         switch (status) {
             case 'past':
@@ -865,9 +902,7 @@ async function addDate(dateStr) { // Make async to handle await for fetch
             case 'active-membership':
                 message = 'This date conflicts with an active membership.';
                 break;
-            case 'pending-walkin':
-                message = 'This date has a pending walk-in reservation.';
-                break;
+             // pending-walkin case is handled above
             default:
                 message = 'This date is unavailable.';
         }
@@ -895,6 +930,70 @@ async function addDate(dateStr) { // Make async to handle await for fetch
 
     // Update calendar to reflect the selection
     renderCalendar();
+}
+
+// Add the new function to handle walk-in removal
+async function handleRemoveWalkin() {
+    if (!modalConflictData || modalConflictData.type !== 'walkin' || !modalConflictData.transactionId || !modalConflictData.clickedDate) {
+         alert('Error: Missing walk-in conflict data. Please try again.');
+         return;
+    }
+
+    const { transactionId, clickedDate } = modalConflictData;
+
+    // Close the modal
+    const conflictModal = bootstrap.Modal.getInstance(document.getElementById('conflictModal'));
+    conflictModal.hide();
+
+    console.log(`User chose to remove pending walk-in transaction ID: ${transactionId}`);
+
+    // Call backend to delete the pending walk-in transaction
+    try {
+        const formData = new FormData();
+        formData.append('transactionId', transactionId);
+
+        // Use the new endpoint for deleting walk-ins
+        const response = await fetch('date_functions/delete_pending_walkin.php', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            alert('Pending walk-in reservation removed.');
+            // Refresh disabled dates from server BEFORE attempting to add the new date
+            await fetchDisabledDates(); // Wait for refresh
+
+            // Now, attempt to add the originally clicked date again, AFTER refreshing disabled dates
+            // Need to re-check potential overlaps after deletion
+            if (wouldCreateOverlap(clickedDate)) {
+                 alert('The membership period from this start date would overlap with other existing memberships or reservations even after removing the walk-in.');
+                 return;
+            }
+             if(getDateStatusInfo(clickedDate)){ // Check if still disabled for other reasons
+                alert('This date is still unavailable after attempting to remove the pending walk-in.');
+                return;
+            }
+            // Proceed to add the date if no longer conflicting
+            selectedDates.push(clickedDate);
+            selectedDates.sort();
+            document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+            updateSelectedDatesUI();
+            renderCalendar(); // Re-render with the new selection
+
+        } else {
+            alert(`Failed to remove pending walk-in: ${result.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error deleting pending walk-in:', error);
+        alert('An error occurred while trying to remove the pending walk-in.');
+    } finally {
+        modalConflictData = null; // Clear data after handling
+         // Reset modal buttons and text for next time
+        document.getElementById('replaceMembershipBtn').innerText = 'Replace Pending';
+        document.getElementById('replaceMembershipBtn').classList.remove('btn-warning');
+        document.getElementById('replaceMembershipBtn').classList.add('btn-danger');
+    }
 }
 
 // Function to handle "Replace Pending" action
@@ -1213,29 +1312,23 @@ function renderCalendar() {
         let isDisabled = false;
 
         if (statusInfo && statusInfo.status) {
-            statusClass = statusInfo.status; // e.g., 'past', 'pending-membership', 'selected-range'
-             // Determine if the day should be visually disabled (not clickable/greyed out)
-            // Allow clicking pending-membership dates to trigger the prompt.
-            // Allow clicking selected dates to toggle them off.
-            // Other statuses are generally not clickable.
-            if (statusClass !== 'pending-membership' && statusClass !== 'selected' && !selectedDates.includes(dateString)) {
-                 // Also check if it's part of a selected range but *not* the start date
-                 if(statusClass === 'selected-range' && !selectedDates.includes(dateString)) {
-                     isDisabled = true;
-                 } else if (statusClass !== 'selected-range') {
-                      isDisabled = true;
-                 }
+            statusClass = statusInfo.status;
+            if (statusClass !== 'pending-membership' && statusClass !== 'pending-walkin' && statusClass !== 'selected' && !selectedDates.includes(dateString)) {
+                // Also check if it's part of a selected range but *not* the start date
+                if(statusClass === 'selected-range' && !selectedDates.includes(dateString)) {
+                    isDisabled = true;
+                } else if (statusClass !== 'selected-range') {
+                    isDisabled = true;
+                }
             }
         }
 
-
-         dayElement.className = `calendar-day ${statusClass}`;
-
+        dayElement.className = `calendar-day ${statusClass}`;
 
         // Highlight selected start dates explicitly
         if (selectedDates.includes(dateString)) {
             dayElement.classList.add('selected');
-             isDisabled = false; // Ensure selected start dates are clickable to deselect
+            isDisabled = false; // Ensure selected start dates are clickable to deselect
         }
 
         // Add tooltip for disabled dates (optional)
@@ -1253,20 +1346,16 @@ function renderCalendar() {
 
         if (isDisabled) {
             dayElement.classList.add('disabled'); // Add generic disabled style
-             // Remove event listener if it's truly disabled (not pending or selected)
-              if (statusClass !== 'pending-membership' && !selectedDates.includes(dateString)) {
-                 // Don't add click listener
-             } else {
-                 // Add listener for pending/selected dates
-                  dayElement.addEventListener('click', function() {
-                     addDate(dateString); // Let addDate handle logic
-                 });
-              }
+            if (statusClass === 'pending-membership' || statusClass === 'pending-walkin' || selectedDates.includes(dateString)) {
+                dayElement.addEventListener('click', function() {
+                    addDate(dateString); // Let addDate handle logic
+                });
+            }
         } else {
-             // Add click event for selectable/pending dates
-             dayElement.addEventListener('click', function() {
-                 addDate(dateString); // Let addDate handle logic
-             });
+            // Add click event for selectable/pending dates
+            dayElement.addEventListener('click', function() {
+                addDate(dateString); // Let addDate handle logic
+            });
         }
 
         daysContainer.appendChild(dayElement);
@@ -1383,12 +1472,25 @@ window.onload = async function() { // Make async
 
     // Setup calendar navigation
     setupCalendarNavigation();
-
     // Setup modal button event listeners
-    document.getElementById('replaceMembershipBtn').addEventListener('click', handleReplacePending);
-    document.getElementById('appendMembershipBtn').addEventListener('click', handleAppendAfterPending);
+    document.getElementById('replaceMembershipBtn').addEventListener('click', function() {
+        if (modalConflictData && modalConflictData.type === 'membership') {
+            handleReplacePending(); // Existing logic for membership
+        } else if (modalConflictData && modalConflictData.type === 'walkin') {
+            handleRemoveWalkin(); // New logic for walk-in
+        }
+    });
+
+    // Modify the append button listener to only work for memberships
+    document.getElementById('appendMembershipBtn').addEventListener('click', function() {
+        if (modalConflictData && modalConflictData.type === 'membership') {
+            handleAppendAfterPending(); // Existing logic for membership
+        }
+        // Do nothing if type is 'walkin' or null
+    });
 
 };
+
 
 // Generate disabled date ranges for all selected dates
 function updateDisabledDateRanges() {
