@@ -37,12 +37,48 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    Current Registration Fee: ₱<span id="currentRegistrationFee">0.00</span>
+                    <div>Current Registration Fee: ₱<span id="currentRegistrationFee">0.00</span></div>
+                    <div>Current Duration: <span id="currentDuration">N/A</span></div>
                 </div>
                 <form id="updateRegistrationForm">
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="newRegistrationFee">New Registration Fee</label>
                         <input type="number" class="form-control" id="newRegistrationFee" name="newRegistrationFee" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label>Duration Validity</label>
+                        <div class="d-flex">
+                            <div class="form-check me-3">
+                                <input class="form-check-input" type="radio" name="durationType" id="durationSpecific" value="specific" checked>
+                                <label class="form-check-label" for="durationSpecific">
+                                    Specific Period
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="durationType" id="durationLifetime" value="lifetime">
+                                <label class="form-check-label" for="durationLifetime">
+                                    Lifetime
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="specificDurationFields">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="durationValue">Duration</label>
+                                <input type="number" class="form-control" id="durationValue" name="durationValue" min="1" value="1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="durationType">Period</label>
+                                <select class="form-select" id="durationTypeSelect" name="durationTypeSelect">
+                                    <option value="1">Days</option>
+                                    <option value="2" selected>Months</option>
+                                    <option value="3">Years</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -649,6 +685,14 @@ $(document).on('click', '.remove-btn', function() {
     });
 });
 
+$('input[name="durationType"]').change(function() {
+    if ($(this).val() === 'specific') {
+        $('#specificDurationFields').show();
+    } else {
+        $('#specificDurationFields').hide();
+    }
+});
+
 // Save new registration fee
 $('#saveRegistrationFeeBtn').click(function() {
     // Clear previous error messages
@@ -665,13 +709,33 @@ $('#saveRegistrationFeeBtn').click(function() {
         return;
     }
 
+    // Get duration data
+    var durationType = $('input[name="durationType"]:checked').val();
+    var durationData = {
+        newRegistrationFee: newFee,
+        durationType: durationType
+    };
+    
+    if (durationType === 'specific') {
+        var durationValue = $('#durationValue').val();
+        var durationTypeId = $('#durationTypeSelect').val();
+        
+        // Validate duration value
+        if (!durationValue || durationValue <= 0) {
+            $('#durationValue').addClass('is-invalid');
+            $('#durationValue').after('<div class="invalid-feedback">Please enter a valid duration</div>');
+            return;
+        }
+        
+        durationData.durationValue = durationValue;
+        durationData.durationTypeId = durationTypeId;
+    }
+
     // Send AJAX request
     $.ajax({
         url: '../admin/pages/gym rates/functions/update_registration_fee.php',
         type: 'POST',
-        data: {
-            newRegistrationFee: newFee
-        },
+        data: durationData,
         success: function(response) {
             if (response.trim() === 'success') {
                 // Update the modal body with success message
@@ -704,16 +768,34 @@ function fetchCurrentRegistrationFee() {
         url: '../admin/pages/gym rates/functions/update_registration_fee.php',
         type: 'GET',
         success: function(response) {
-            if (!response.startsWith('Error:')) {
-                $('#currentRegistrationFee').text(parseFloat(response).toFixed(2));
-            } else {
-                alert(response);
+            try {
+                const data = JSON.parse(response);
+                if (data.status === 'success') {
+                    $('#currentRegistrationFee').text(parseFloat(data.fee).toFixed(2));
+                    
+                    // Display duration information
+                    if (data.durationType === 'lifetime') {
+                        $('#currentDuration').text('Lifetime');
+                    } else if (data.duration > 0) {
+                        $('#currentDuration').text(data.duration + ' ' + data.durationTypeName);
+                    } else {
+                        $('#currentDuration').text('N/A');
+                    }
+                } else {
+                    alert(data.message);
+                    $('#currentRegistrationFee').text('N/A');
+                    $('#currentDuration').text('N/A');
+                }
+            } catch (e) {
+                console.error('Error parsing response:', e);
                 $('#currentRegistrationFee').text('N/A');
+                $('#currentDuration').text('N/A');
             }
         },
         error: function(xhr, status, error) {
             console.log('Error:', error);
             $('#currentRegistrationFee').text('N/A');
+            $('#currentDuration').text('N/A');
         }
     });
 }

@@ -55,11 +55,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$_SESSION['user_id']]);
         $transaction_id = $conn->lastInsertId();
 
-        // If there's a registration fee, record it
+        // If there's a registration fee, record it and calculate validity dates
         if (isset($cart['registration_fee']) && $cart['registration_fee'] !== null) {
-            $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount) VALUES (?, 1, ?)";
+            $registrationFee = $cart['registration_fee'];
+            $duration = $registrationFee['duration'];
+            $durationTypeId = $registrationFee['duration_type_id'];
+            $paymentDate = date('Y-m-d H:i:s');
+            $validFrom = $paymentDate;
+            $validUntil = null;
+
+            // Calculate valid_until date based on duration and duration_type_id
+            if ($duration > 0 && $durationTypeId !== null) {
+                // Fetch duration type name (e.g., 'days', 'months', 'year')
+                $sqlDurationType = "SELECT type_name FROM duration_types WHERE id = ?";
+                $stmtDurationType = $conn->prepare($sqlDurationType);
+                $stmtDurationType->execute([$durationTypeId]);
+                $durationType = $stmtDurationType->fetchColumn();
+
+                if ($durationType) {
+                    $date = new DateTime($paymentDate);
+                    switch ($durationType) {
+                        case 'days':
+                            $date->modify("+{$duration} days");
+                            break;
+                        case 'months':
+                            $date->modify("+{$duration} months");
+                            break;
+                        case 'year':
+                            $date->modify("+{$duration} years");
+                            break;
+                        case 'lifetime':
+                            // Lifetime registration has no expiration
+                            $validUntil = null;
+                            break;
+                    }
+                    if ($durationType !== 'lifetime') {
+                        $validUntil = $date->format('Y-m-d H:i:s');
+                    }
+                }
+            }
+
+            $sql = "INSERT INTO registration_records (transaction_id, registration_id, amount, is_paid, payment_date, valid_from, valid_until) VALUES (?, 1, ?, 1, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->execute([$transaction_id, $cart['registration_fee']['price']]);
+            $stmt->execute([$transaction_id, $registrationFee['price'], $paymentDate, $validFrom, $validUntil]);
         }
         
         // Then create membership records

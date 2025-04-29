@@ -53,12 +53,55 @@ function checkAndRecordMissedAttendance($pdo) {
     }
 }
 
+// In checkResetStatus function
 function checkResetStatus($pdo) {
     try {
         // Get current time in the server's timezone
         $currentDateTime = new DateTime('now');
         $currentDate = $currentDateTime->format('Y-m-d');
-        $resetTime = new DateTime($currentDate . ' 05:00:00'); // Today's reset time
+        
+        // First, fetch the opening time from website_content table
+        $scheduleQuery = "SELECT hours FROM website_content WHERE section = 'schedule'";
+        $scheduleStmt = $pdo->prepare($scheduleQuery);
+        $scheduleStmt->execute();
+        $scheduleHours = $scheduleStmt->fetchColumn();
+        
+        // Parse the opening hours (format is expected to be like "05:30 AM - 10:00 PM")
+        $openingTime = null;
+        if ($scheduleHours) {
+            $hoursParts = explode('-', $scheduleHours);
+            if (count($hoursParts) >= 1) {
+                $openingTimePart = trim($hoursParts[0]);
+                // Create a DateTime object with the opening time
+                try {
+                    $openingTime = DateTime::createFromFormat('h:i A', $openingTimePart);
+                    if ($openingTime) {
+                        // Set to today's date with the opening time
+                        $resetTime = new DateTime($currentDate . ' ' . $openingTime->format('H:i:s'));
+                    } else {
+                        // Fallback to default 5:00 AM if parsing fails
+                        $resetTime = new DateTime($currentDate . ' 05:00:00');
+                        error_log("Failed to parse opening time: {$openingTimePart}, using default 05:00:00");
+                    }
+                } catch (Exception $e) {
+                    // Fallback to default 5:00 AM if an exception occurs
+                    $resetTime = new DateTime($currentDate . ' 05:00:00');
+                    error_log("Exception parsing opening time: " . $e->getMessage() . ", using default 05:00:00");
+                }
+            } else {
+                // Fallback to default if the format is unexpected
+                $resetTime = new DateTime($currentDate . ' 05:00:00');
+                error_log("Unexpected schedule hours format: {$scheduleHours}, using default 05:00:00");
+            }
+        } else {
+            // If no schedule found, use default 5:00 AM
+            $resetTime = new DateTime($currentDate . ' 05:00:00');
+            error_log("No schedule found in website_content, using default 05:00:00");
+        }
+        
+        // Store the calculated reset time for display
+        global $calculatedResetTime;
+        $calculatedResetTime = $resetTime->format('h:i A');
         
         // Get the last reset date from the database
         $checkResetSql = "SELECT value FROM system_controls WHERE key_name = 'last_attendance_reset'";
@@ -73,6 +116,14 @@ function checkResetStatus($pdo) {
             $lastResetDate = new DateTime($lastResetTimestamp);
             $lastResetDateOnly = $lastResetDate->format('Y-m-d');
             
+            // Check if the reset was very recent (within last 60 seconds)
+            $timeSinceReset = $currentDateTime->getTimestamp() - $lastResetDate->getTimestamp();
+            if ($timeSinceReset < 60) {
+                // Reset was just performed, don't show the button
+                return false;
+            }
+            
+            // Reset is needed if the last reset was on a previous day and current time is after reset time
             return ($lastResetDateOnly !== $currentDate && $currentDateTime >= $resetTime);
         }
     } catch (Exception $e) {
@@ -82,6 +133,7 @@ function checkResetStatus($pdo) {
 }
 
 date_default_timezone_set('Asia/Manila');
+$calculatedResetTime = ""; // Initialize the global variable
 
 try {
     // Initialize database
@@ -92,7 +144,15 @@ try {
     $resetNeeded = checkResetStatus($pdo);
     $resetButtonVisible = false;
 
-    if ($resetNeeded) {
+    // Check if a reset was just completed
+    $resetJustCompleted = isset($_SESSION['attendance_reset_completed']) && $_SESSION['attendance_reset_completed'] === true;
+
+    // Clear the session flag if it exists
+    if ($resetJustCompleted) {
+        unset($_SESSION['attendance_reset_completed']);
+    }
+
+    if ($resetNeeded && !$resetJustCompleted) {
         // Record missed attendance first
         checkAndRecordMissedAttendance($pdo);
         $resetButtonVisible = true;
@@ -102,6 +162,12 @@ try {
     $currentDateTime = new DateTime('now');
     $currentDate = $currentDateTime->format('Y-m-d');
     $currentTime = $currentDateTime->format('h:i A');
+    
+    // Get gym schedule for display
+    $scheduleQuery = "SELECT hours FROM website_content WHERE section = 'schedule'";
+    $scheduleStmt = $pdo->prepare($scheduleQuery);
+    $scheduleStmt->execute();
+    $gymHours = $scheduleStmt->fetchColumn() ?: "Not set";
 
     // Rest of your existing attendance query
     $attendanceQuery = "SELECT u.id AS user_id, 
@@ -162,6 +228,17 @@ try {
             background-color: #ffffcc !important;
             transition: background-color 1.5s ease;
         }
+        .gym-info {
+            font-size: 0.85rem;
+            background-color: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .reset-time {
+            font-weight: bold;
+            color: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -186,6 +263,12 @@ try {
             </div>
         </div>
         <div class="card-body d-flex flex-column overflow-hidden">
+            <!-- Gym Schedule & Reset Info -->
+            <div class="gym-info">
+                <div><strong>Gym Hours:</strong> <?= htmlspecialchars($gymHours) ?></div>
+                <div><strong>Daily Reset Time:</strong> <span class="reset-time"><?= htmlspecialchars($calculatedResetTime) ?></span></div>
+            </div>
+            
             <!-- Check-in Form -->
             <div class="row flex-grow-1">
                 <div class="col-md-6 mx-auto my-auto">
@@ -524,6 +607,7 @@ $(document).ready(function() {
                 success: function(response) {
                     if (response.status === 'success') {
                         alert('Attendance reset successful!');
+                        // Hide the button immediately after successful reset
                         $('#resetButton').hide();
                         window.location.reload();
                     } else {

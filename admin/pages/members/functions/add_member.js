@@ -48,8 +48,20 @@ $(document).ready(function () {
 
     // Update totals in both summary and review
     $(".totalAmount").text("₱" + total.toFixed(2));
-    $("#review-total-amount").text("₱" + total.toFixed(2));
-    $(".review-programs-fee").text("₱" + totalProgramsFee.toFixed(2));
+    // Also update the registration fee display in the review section
+   $(".review-registration-fee").text("₱ " + window.registrationFee.toFixed(2)); // Update review display
+   // Update the total in the review section too
+   $("#review-total-amount").text("₱" + total.toFixed(2));
+    $(".review-programs-fee").text("₱" + totalProgramsFee.toFixed(2)); // Already present
+   // Update rental fee display in review
+    let totalRentalsFeeReview = 0;
+    $('input[name="rental_services[]"]:checked').each(function() {
+        totalRentalsFeeReview += parseFloat($(this).data('price')) || 0;
+    });
+    $('.review-rentals-fee').text("₱" + totalRentalsFeeReview.toFixed(2)); // Already present, ensure it's updated
+
+    // Ensure registration fee amount in summary is correct (in case it changes dynamically later)
+    $('.registration-fee-amount').text('₱' + window.registrationFee.toFixed(2));
     totalAmount = total;
   }
 
@@ -769,10 +781,13 @@ $(document).ready(function () {
       $('input[name="rental_services[]"]:checked').length > 0
     );
 
-    // Update registration fee and total
-    $(".review-registration-fee").text(
-      "₱ " + window.registrationFee.toFixed(2)
-    );
+    let registrationReviewText = "₱ " + window.registrationFee.toFixed(2);
+     if (window.registrationDuration > 0 && window.registrationDurationType) {
+        let durationTypeDisplay = (window.registrationDuration === 1) ? window.registrationDurationType.replace(/s$/, '') : window.registrationDurationType;
+        registrationReviewText += ` (${window.registrationDuration} ${durationTypeDisplay})`;
+     }
+     // Update all places showing registration fee in review
+     $('.review-registration-fee').text(registrationReviewText);
     updateTotalAmount();
   }
 

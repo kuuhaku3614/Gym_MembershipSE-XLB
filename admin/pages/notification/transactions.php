@@ -1,413 +1,635 @@
 <?php
+// --- AJAX handler for transaction details (must be first!) ---
+if (isset($_POST['action']) && $_POST['action'] === 'pay_transaction' && isset($_POST['transaction_id'])) {
     require_once(__DIR__ . '/../../../config.php');
     require_once(__DIR__ . '/functions/notifications.class.php');
-    require_once(__DIR__ . '/functions/activity_logger.php');
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    $current_user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0; 
     $notificationsObj = new Notifications();
-    
-    // Handle AJAX requests
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        header('Content-Type: application/json');
-        
+    header('Content-Type: application/json');
+    $transactionId = $_POST['transaction_id'];
+    if (is_numeric($transactionId)) {
+        $result = $notificationsObj->markTransactionPaid($transactionId);
+        if ($result === true) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => $result ?: 'Failed to update payment.']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid transaction ID.']);
+    }
+    exit;
+}
+
+// --- AJAX handler for transaction details (must be first!) ---
+if (isset($_POST['transaction_id'])) {
+    require_once(__DIR__ . '/../../../config.php');
+    require_once(__DIR__ . '/functions/notifications.class.php');
+    $notificationsObj = new Notifications();
+    header('Content-Type: application/json');
+    if (is_numeric($_POST['transaction_id'])) {
         try {
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (!$data || !isset($data['action'])) {
-                throw new Exception('Invalid request');
-            }
-            
-            switch ($data['action']) {
-                case 'confirm':
-                    if (empty($data['transactionId'])) {
-                        throw new Exception('Invalid transaction');
-                    }
-                    
-                    $userId = isset($data['userId']) ? $data['userId'] : null;
-                    
-                    // Get transaction details to include username in log
-                    $transaction = $notificationsObj->getTransactionDetails($data['transactionId']);
-                    $username = $transaction['requester_name'] ?? 'Admin';
-                    
-                    if ($notificationsObj->confirmTransaction($data['transactionId'], $userId)) {
-                        // Log the staff activity with username
-                        logStaffActivity('confirm_transaction', 'Confirmed transaction #' . $data['transactionId'] . ' - ' . $username);
-                        echo json_encode(['success' => true]);
-                        exit;
-                    }
-                    throw new Exception('Failed to process');
-                    
-                case 'cancel':
-                    if (empty($data['transactionId'])) {
-                        throw new Exception('Invalid transaction');
-                    }
-                    
-                    // Get transaction details to include username in log
-                    $transaction = $notificationsObj->getTransactionDetails($data['transactionId']);
-                    $username = $transaction['requester_name'] ?? 'Unknown';
-                    
-                    if ($notificationsObj->cancelTransaction($data['transactionId'])) {
-                        // Log the staff activity with username
-                        logStaffActivity('cancel_transaction', 'Cancelled transaction #' . $data['transactionId'] . ' - ' . $username);
-                        echo json_encode(['success' => true]);
-                        exit;
-                    }
-                    throw new Exception('Failed to process');
+            $details = $notificationsObj->getTransactionDetails($_POST['transaction_id']);
+            if ($details !== null) {
+                echo json_encode(['success' => true, 'data' => $details]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Transaction details not found.']);
             }
         } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'Exception: ' . $e->getMessage()]);
+        }
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid transaction ID.']);
+    }
+    exit;
+}
+
+// --- Dynamic Color Palette CSS Variables Injection ---
+require_once(__DIR__ . '/../../../config.php');
+function getDynamicPaletteColors($pdo) {
+    $query = "SELECT * FROM website_content WHERE section = 'color'";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    $colorContent = $stmt->fetch(PDO::FETCH_ASSOC);
+    $primaryColor = '#4CAF50';
+    $secondaryColor = '#2196F3';
+    if ($colorContent) {
+        if (isset($colorContent['latitude'])) {
+            $primaryColor = '#' . str_pad(dechex(abs(floor($colorContent['latitude'] * 16777215))), 6, '0', STR_PAD_LEFT);
+        }
+        if (isset($colorContent['longitude'])) {
+            $secondaryColor = '#' . str_pad(dechex(abs(floor($colorContent['longitude'] * 16777215))), 6, '0', STR_PAD_LEFT);
         }
     }
-
-    $transactionNotifications = $notificationsObj->getAllNotifications();
-    
-    // Get current user ID from session (assuming it's stored in $_SESSION['user_id'])
-    $currentUserId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+    return [
+        'primary' => $primaryColor,
+        'secondary' => $secondaryColor
+    ];
+}
+$palette = getDynamicPaletteColors($pdo);
+echo '<style>:root { --primary-color: ' . htmlspecialchars($palette['primary']) . '; --secondary-color: ' . htmlspecialchars($palette['secondary']) . '; }</style>';
+require_once(__DIR__ . '/functions/notifications.class.php');
+$notificationsObj = new Notifications();
+$pendingRequests = $notificationsObj->getAllPendingRequests();
 ?>
 <link rel="stylesheet" href="css/notification.css">
 <div class="container mt-4">
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Transaction Requests</h2>
-    <div>
-    <span class="badge bg-danger me-2">
-        <?php 
-            // Count only unread notifications
-            $unreadCount = 0;
-            
-            // Count unread transaction notifications
-            $unreadCount += count($transactionNotifications);
-            
-            echo $unreadCount; 
-        ?> Unread
-    </span>
+    <h2>Pending Requests</h2>
+    <div class="notification-container">
+        <?php if (!empty($pendingRequests)): ?>
+            <?php foreach ($pendingRequests as $request): ?>
+                <div class="notification-card mb-3 clickable-card" data-transaction-id="<?= htmlspecialchars($request['transaction_id']) ?>">
+                    <div class="notification-content d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">
+                                <span class="text-primary">#<?= htmlspecialchars($request['transaction_id']) ?></span>
+                                <?= htmlspecialchars($request['full_name']) ?>
+                            </h5>
+                            <p class="mb-0 text-muted"><small><?= htmlspecialchars($request['created_at']) ?></small></p>
+                        </div>
+
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="alert alert-info">No pending transaction requests.</div>
+        <?php endif; ?>
     </div>
 </div>
 
-        <!-- Transaction Notifications Tab -->
-        <div class="tab-pane fade show active" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
-            <div class="notification-container">
-                <?php if (empty($transactionNotifications)): ?>
-                    <div class="alert alert-info">No new transaction requests</div>
-                <?php else: ?>
-                    <?php foreach ($transactionNotifications as $notification): ?>
-                        <div class="notification-card" onclick="showNotificationDetails(<?php echo htmlspecialchars(json_encode($notification['details'])); ?>)">
-                            <div class="notification-header">
-                                <h5 class="notification-title">
-                                    <span class="new-badge">New</span>
-                                    <?php echo htmlspecialchars($notification['title']); ?>
-                                </h5>
-                                <span class="notification-time"><?php echo htmlspecialchars($notification['timestamp']); ?></span>
-                            </div>
-                            <div class="notification-body">
-                                <?php echo htmlspecialchars($notification['message']); ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
+<style>
+/* Modern Modal Styles */
+#notificationModal .modal-content {
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    background: #f8fafd;
+    border: none;
+}
+#notificationModal .modal-header {
+    background: linear-gradient(90deg, var(--primary-color, #4e73df) 0%, var(--secondary-color, #1cc88a) 100%);
+    color: #fff;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    border-bottom: none;
+    padding-bottom: 0.5rem;
+}
+#notificationModal .modal-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#notificationModal .profile-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+#notificationModal .profile-pic-lg {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 3px solid #e3e3e3;
+    background: #fff;
+}
+#notificationModal .profile-details {
+    flex: 1;
+    min-width: 200px;
+}
+#notificationModal .profile-details h4 {
+    margin-bottom: 0.3rem;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+#notificationModal .profile-details .info-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 1rem;
+    color: #5a5c69;
+}
+#notificationModal .section-card {
+    background: #fff;
+    border-radius: 0.7rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.03);
+    border: 1px solid var(--secondary-color, #e9ecef);
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.3rem;
+}
+#notificationModal .section-title {
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--primary-color, #4e73df);
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+#notificationModal .section-title i {
+    font-size: 1.1em;
+    color: var(--secondary-color, #1cc88a);
+}
+#notificationModal .list-group-item {
+    border-radius: 0.5rem;
+    margin-bottom: 0.3rem;
+    background: #f8fafd;
+}
+@media (max-width: 767.98px) {
+    #notificationModal .modal-dialog {
+        max-width: 97vw;
+        margin: 1rem auto;
+    }
+    #notificationModal .profile-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.7rem;
+    }
+}
+</style>
+<!-- Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<!-- Success Toast -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 11000">
+  <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="2000">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="bi bi-check-circle-fill me-2"></i><span id="successToastMsg">Success!</span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
 </div>
 
-<!-- Transaction Details Modal -->
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmPayModal" tabindex="-1" aria-labelledby="confirmPayModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="confirmPayModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Payment</h5>
+      </div>
+      <div class="modal-body text-center">
+        <div class="alert alert-warning mb-0" role="alert">
+          Are you sure you want to <strong>confirm this transaction</strong> and mark all services as <strong>paid</strong>?
+        </div>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning px-4" id="confirmPayBtn">Yes, Confirm & Mark as Paid</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="notificationModalLabel">Transaction Request Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="notificationModalLabel">
+                    <i class="bi bi-receipt"></i> Transaction Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Hidden fields for IDs -->
-                <input type="hidden" id="transactionId" name="transactionId">
-                <input type="hidden" id="userId" name="userId">
-
-                <!-- Member Information -->
-                <div class="section-card mb-4" id="memberInfoSection">
-                    <h6 class="section-title">Member Information</h6>
-                    <div class="row">
-                        <div class="col-md-3 text-center">
-                            <img id="memberProfilePic" src="" alt="Profile Picture" class="img-fluid rounded-circle profile-pic mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                <div class="profile-section">
+                    <img id="modalProfilePic" src="" alt="Profile Picture" class="profile-pic-lg">
+                    <div class="profile-details">
+                        <h4 id="modalName"></h4>
+                        <div>
+                            <span class="mb-1 text-muted" id="modalSex"></span><span class="text-muted">,</span>
+                            <span class="mb-1 text-muted" id="modalAge"></span>
                         </div>
-                        <div class="col-md-9">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>Name:</strong> <span id="memberName"></span></p>
-                                    <p><strong>Phone:</strong> <span id="phoneNumber"></span></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Sex:</strong> <span id="sex"></span></p>
-                                    <p><strong>Age:</strong> <span id="age"></span></p>
-                                </div>
-                            </div>
+                        <div class="info-row">
+                            <div><strong>Birthdate:</strong> <span id="modalBirthdate"></span></div>
+                            <div><strong>Contact:</strong> <span id="modalPhone"></span></div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Walk-in Information -->
-                <div class="section-card mb-4" id="walkInInfoSection">
-                    <h6 class="section-title">Walk-in Information</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Name:</strong> <span id="walkInName"></span></p>
-                            <p><strong>Phone:</strong> <span id="walkInPhone"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Date:</strong> <span id="walkInDate"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="walkInAmount"></span></p>
-                        </div>
-                    </div>
+                <div id="modalServices">
+                    <!-- Populated dynamically -->
                 </div>
-
-                <!-- Membership Details -->
-                <div id="membershipSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Membership Plan</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Plan:</strong> <span id="planName"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="membershipAmount"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Start Date:</strong> <span id="membershipStart"></span></p>
-                            <p><strong>End Date:</strong> <span id="membershipEnd"></span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Rental Details -->
-                <div id="rentalSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Rental Details</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Service:</strong> <span id="serviceName"></span></p>
-                            <p><strong>Amount:</strong> ₱ <span id="rentalAmount"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Start Date:</strong> <span id="rentalStart"></span></p>
-                            <p><strong>End Date:</strong> <span id="rentalEnd"></span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Registration Fee -->
-                <div id="registrationSection" class="section-card mb-4" style="display: none;">
-                    <h6 class="section-title">Registration</h6>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <p><strong>Registration Fee:</strong> ₱ <span id="registrationFee">0.00</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Total Amount -->
-                <div class="section-card mb-4">
-                    <h6 class="section-title">Total Amount</h6>
-                    <div class="row">
-                        <div class="col-12">
-                            <h4>₱ <span id="totalAmount">0.00</span></h4>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-muted mt-3"><small>Request received: <span id="requestDate"></span></small></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-danger" onclick="cancelTransaction()">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmTransaction()">Confirm</button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
 <script>
-    function showNotificationDetails(details) {
-        // Reset sections visibility
-        document.getElementById('memberInfoSection').style.display = 'none';
-        document.getElementById('walkInInfoSection').style.display = 'none';
-        document.getElementById('membershipSection').style.display = 'none';
-        document.getElementById('rentalSection').style.display = 'none';
-        document.getElementById('registrationSection').style.display = 'none';
+  var BASE_URL = "<?php echo rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\'); ?>";
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+// Show success toast
+function showSuccessToast(msg) {
+    $('#successToastMsg').text(msg || 'Success!');
+    var toastEl = document.getElementById('successToast');
+    var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+    toast.show();
+}
 
-        // Initialize total amount
-        let totalAmount = 0;
-    
-        // Store transaction and user IDs
-        document.getElementById('transactionId').value = details.transaction_id;
-        if (details.user_id) {
-            document.getElementById('userId').value = details.user_id;
-        }
+// Remove confirmation modal
+$('body').append(`
+<div class="modal fade" id="removeConfirmModal" tabindex="-1" aria-labelledby="removeConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="removeConfirmModalLabel"><i class="bi bi-trash me-2"></i>Confirm Removal</h5>
+      </div>
+      <div class="modal-body text-center">
+        <div id="removeConfirmMessage" class="alert alert-danger mb-0" role="alert"></div>
+        <div id="removeRentalWarning" class="alert alert-warning mt-2 d-none" role="alert"></div>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger px-4" id="removeConfirmBtn">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+`);
 
-        // Handle button states based on transaction status
-        const confirmBtn = document.querySelector('.modal-footer .btn-danger');
-        const cancelBtn = document.querySelector('.modal-footer .btn-outline-danger');
-        
-        if (details.transaction_status === 'confirmed' || details.transaction_status === 'cancelled') {
-            confirmBtn.disabled = true;
-            cancelBtn.disabled = true;
-        } else {
-            confirmBtn.disabled = false;
-            cancelBtn.disabled = false;
-        }
-    
-        // Show relevant sections based on transaction type
-        if (details.transaction_type === 'membership') {
-            document.getElementById('memberInfoSection').style.display = 'block';
-            // Set member information
-            document.getElementById('memberProfilePic').src = '/../' + details.profile_picture || '/Gym_MembershipSE-XLB/assets/images/default-profile.png';
-            document.getElementById('memberName').textContent = details.member_name;
-            document.getElementById('phoneNumber').textContent = details.phone_number;
-            document.getElementById('sex').textContent = details.sex;
-            document.getElementById('age').textContent = details.age;
-
-            // Only show registration fee section for new members
-            if (details.registration_fee && !details.is_member) {
-                document.getElementById('registrationSection').style.display = 'block';
-                document.getElementById('registrationFee').textContent = details.registration_fee;
-                totalAmount += parseFloat(details.registration_fee.replace(/,/g, '')) || 0;
-            }
-        } else if (details.transaction_type === 'walk-in') {
-            document.getElementById('walkInInfoSection').style.display = 'block';
-            // Set walk-in information
-            document.getElementById('walkInName').textContent = details.walk_in_name;
-            document.getElementById('walkInPhone').textContent = details.walk_in_phone;
-            document.getElementById('walkInDate').textContent = details.walk_in_date;
-            document.getElementById('walkInAmount').textContent = details.walk_in_amount;
-            // Add walk-in amount to total
-            totalAmount += parseFloat(details.walk_in_amount.replace(/,/g, '')) || 0;
-        }
-    
-        // Show membership details if present
-        if (details.membership) {
-            document.getElementById('membershipSection').style.display = 'block';
-            document.getElementById('planName').textContent = details.membership.plan_name;
-            document.getElementById('membershipAmount').textContent = details.membership.amount;
-            document.getElementById('membershipStart').textContent = details.membership.start_date;
-            document.getElementById('membershipEnd').textContent = details.membership.end_date;
-            // Add membership amount to total
-            totalAmount += parseFloat(details.membership.amount.replace(/,/g, '')) || 0;
-        }
-    
-        // Show rental details if present
-        if (details.rental) {
-            document.getElementById('rentalSection').style.display = 'block';
-            document.getElementById('serviceName').textContent = details.rental.service_name;
-            document.getElementById('rentalAmount').textContent = details.rental.amount;
-            document.getElementById('rentalStart').textContent = details.rental.start_date;
-            document.getElementById('rentalEnd').textContent = details.rental.end_date;
-            // Add rental amount to total
-            totalAmount += parseFloat(details.rental.amount.replace(/,/g, '')) || 0;
-        }
-
-        // Update total amount display
-        document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
-    
-        // Show the modal
-        const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
-        modal.show();
+// Remove button click handler (delegated)
+$(document).on('click', '.remove-item-btn', function() {
+    var type = $(this).data('type');
+    var idx = parseInt($(this).data('index'));
+    var recordId = $(this).data('id');
+    var d = window.lastTransactionDetailsData; // store d globally when modal opens
+    if (!d) {
+        alert('Error: Transaction details not loaded. Please try again.');
+        return;
     }
-
-    function confirmTransaction() {
-        if (!confirm('Confirm this transaction?')) {
-            return;
-        }
-
-        const transactionId = document.getElementById('transactionId').value;
-        const userId = document.getElementById('userId').value;
-
-        if (!transactionId) {
-            alert('Transaction details not found.');
-            return;
-        }
-
-        const data = {
-            action: 'confirm',
-            transactionId: transactionId
-        };
-
-        if (userId) {
-            data.userId = userId;
-        }
-
-        fetch('../admin/pages/notification/transactions.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => Promise.reject(err));
+    let msg = '', rentalWarning = '', affectedRentals = [];
+    if (type === 'walkin') {
+        msg = 'Are you sure you want to remove this walk-in record?';
+    } else if (type === 'rental') {
+        msg = 'Are you sure you want to remove this rental?';
+    } else if (type === 'membership') {
+        msg = 'Are you sure you want to remove this membership plan?';
+        // Check for overlapping rentals
+        if (d && d.memberships && d.rentals) {
+            var m = d.memberships[idx];
+            var mStart = m.start_date ? new Date(m.start_date) : null;
+            var mEnd = m.end_date ? new Date(m.end_date) : null;
+            // Helper to format date in words
+            function formatDateWords(dateStr) {
+                if (!dateStr) return '';
+                const dateObj = new Date(dateStr);
+                if (isNaN(dateObj)) return dateStr;
+                return dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert('Transaction confirmed successfully!');
-                location.reload();
+            // Helper to get duration in days
+            function getDurationDays(start, end) {
+                if (!start || !end) return '';
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                if (isNaN(startDate) || isNaN(endDate)) return '';
+                const diffMs = endDate - startDate;
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                return diffDays + ' day' + (diffDays !== 1 ? 's' : '');
+            }
+            d.rentals.forEach(function(r) {
+                var rStart = r.start ? new Date(r.start) : null;
+                var rEnd = r.end ? new Date(r.end) : null;
+                if (mStart && mEnd && rStart && rEnd && rStart <= mEnd && rEnd >= mStart) {
+                    var period = (r.start && r.end) ? `${formatDateWords(r.start)} to ${formatDateWords(r.end)}` : '';
+                    var duration = (r.start && r.end) ? `, Duration: ${getDurationDays(r.start, r.end)}` : '';
+                    affectedRentals.push(`<strong>${r.name || '(Unnamed Rental)'}</strong>${period ? ' (' + period + duration + ')' : ''}`);
+                }
+            });
+            if (affectedRentals.length > 0) {
+                msg += '<br><div class="alert alert-warning mt-2 mb-0">'
+                  + 'Warning: Removing this membership plan will affect the following rental(s) (their period may no longer be valid or covered by a membership). '
+                  + '<ul>' + affectedRentals.map(function(detail) { return '<li>' + detail + '</li>'; }).join('') + '</ul></div>';
+            }
+        }
+    }
+    $('#removeConfirmMessage').html(msg);
+    // Hide the old rental warning area (now merged into main message)
+    $('#removeRentalWarning').addClass('d-none').html('');
+    var removeModal = new bootstrap.Modal(document.getElementById('removeConfirmModal'));
+    removeModal.show();
+    // Remove handler
+    $('#removeConfirmBtn').off('click').on('click', function() {
+        removeModal.hide();
+        // Debug: log values for troubleshooting
+        console.log('Remove Confirm Debug:', {type, idx, recordId, d});
+        // Defensive: check if d and d.transaction_id and recordId are present
+        if (!d) {
+            alert('Error: Transaction details are not loaded.');
+            return;
+        }
+        if (!d.transaction_id) {
+            alert('Error: Transaction ID is missing.');
+            return;
+        }
+        if (!recordId) {
+            alert('Error: Record ID is missing.');
+            return;
+        }
+        // AJAX removal
+        $.post(BASE_URL + '/functions/remove_transaction_item.php', {
+            type: type,
+            transaction_id: d.transaction_id,
+            record_id: recordId
+        }, function(resp) {
+            if (resp.success) {
+                showSuccessToast('Item removed successfully!');
+                // Reload details modal data (simulate click on card to refresh)
+                if (typeof window.reloadTransactionDetails === 'function') {
+                    window.reloadTransactionDetails(d.transaction_id);
+                } else {
+                    // Fallback: re-show the modal if reloadTransactionDetails is not defined
+                    showNotificationDetailsAjax(d.transaction_id);
+                }
             } else {
-                throw new Error(data.message || 'Failed to confirm transaction');
+                alert('Failed to remove item: ' + (resp.error || 'Unknown error'));
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message || 'An error occurred while processing the transaction');
+        }, 'json').fail(function(xhr) {
+            alert('Failed to remove item: ' + xhr.statusText);
         });
-    }
-
-    function cancelTransaction() {
-        if (!confirm('This request will be cancelled')) {
-            return;
-        }
-
-        const transactionId = document.getElementById('transactionId').value;
-
-        if (!transactionId) {
-            alert('Transaction details not found.');
-            return;
-        }
-
-        fetch('../admin/pages/notification/transactions.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'cancel',
-                transactionId: transactionId
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => Promise.reject(err));
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert('Transaction cancelled successfully!');
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Failed to cancel transaction');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(error.message || 'An error occurred while processing the transaction');
-        });
-    }
-
-// Initialize tooltips and other UI elements
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
+
+// Make cards clickable
+$(document).on('click', '.clickable-card', function() {
+    var transactionId = $(this).data('transaction-id');
+    showNotificationDetailsAjax(transactionId);
+});
+
+function showNotificationDetailsAjax(transactionId) {
+    // Clear previous content
+    $('#modalName, #modalPhone, #modalSex, #modalBirthdate, #modalAge').text('');
+    $('#modalProfilePic').attr('src', BASE_URL + '/assets/images/default-profile.png');
+    $('#modalServices').empty();
+
+    $.ajax({
+        type: 'POST',
+        url: BASE_URL + '/transactions.php',
+        data: { transaction_id: transactionId },
+        dataType: 'json',
+        success: function(json) {
+            if (!json.success) {
+                // Show error in modal body
+                $('#modalServices').html('<div class="alert alert-danger">' + (json.message || 'Failed to load details.') + '</div>');
+                // Optionally disable remove buttons
+                $('.remove-item-btn').prop('disabled', true);
+                // Clear global variable to prevent accidental actions
+                window.lastTransactionDetailsData = null;
+                return;
+            }
+            var d = json.data;
+            // Set global variable for transaction details
+            window.lastTransactionDetailsData = d;
+            $('#modalName').text(d.full_name || '');
+            $('#modalPhone').text(d.phone_number || '');
+            $('#modalSex').text(d.sex || '');
+            // Format birthday in words
+            let birthdateText = '';
+            if (d.birthdate) {
+                const dateObj = new Date(d.birthdate);
+                if (!isNaN(dateObj.getTime())) {
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    birthdateText = dateObj.toLocaleDateString(undefined, options);
+                } else {
+                    birthdateText = d.birthdate;
+                }
+            }
+            $('#modalBirthdate').text(birthdateText);
+            $('#modalAge').text(d.age || '');
+            let photoPath = d.profile_picture || 'uploads/default.jpg';
+            let imgSrc = '../' + photoPath;
+            $('#modalProfilePic')
+                .attr('src', imgSrc)
+                .attr('onerror', "this.src='../uploads/default.jpg'");
+
+            // Structure modal into sections: Walk-in, Membership Plan, Rentals, Registration Fee
+            let servicesHtml = '';
+
+            // Helper to format date in words
+            function formatDateWords(dateStr) {
+                if (!dateStr) return '';
+                const dateObj = new Date(dateStr);
+                if (isNaN(dateObj)) return dateStr;
+                return dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            // Helper to get duration in days
+            function getDurationDays(start, end) {
+                if (!start || !end) return '';
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                if (isNaN(startDate) || isNaN(endDate)) return '';
+                const diffMs = endDate - startDate;
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                return diffDays + ' day' + (diffDays !== 1 ? 's' : '');
+            }
+
+            // Walk-in section (array)
+            if (Array.isArray(d.walkins) && d.walkins.length > 0) {
+                servicesHtml += '<div class="section-card">'
+                    + '<div class="section-title"><i class="bi bi-person-walking"></i> Walk-in</div>'
+                    + '<ul class="list-group">';
+                d.walkins.forEach(function(walkin, i) {
+                    servicesHtml += '<li class="list-group-item d-flex justify-content-between align-items-start">';
+                    servicesHtml += '<div>';
+                    if (walkin.date) servicesHtml += '<strong>Date:</strong> ' + formatDateWords(walkin.date) + '<br>';
+                    if (walkin.time_in) servicesHtml += '<small>Time In: ' + walkin.time_in + '</small><br>';
+                    if (walkin.amount) servicesHtml += '<small>Amount: ' + walkin.amount + '</small><br>';
+                    if (walkin.start_date && walkin.end_date) {
+                        servicesHtml += '<small>Date Range: ' + formatDateWords(walkin.start_date) + ' - ' + formatDateWords(walkin.end_date) + '</small><br>';
+                        servicesHtml += '<small>Duration: ' + getDurationDays(walkin.start_date, walkin.end_date) + '</small>';
+                    }
+                    servicesHtml += '</div>';
+                    servicesHtml += '<button class="btn btn-sm btn-danger ms-2 remove-item-btn" data-type="walkin" data-index="' + i + '" data-id="' + (walkin.id || '') + '" title="Remove"><i class="bi bi-trash"></i></button>';
+                    servicesHtml += '</li>';
+                });
+                servicesHtml += '</ul></div>';
+            }
+
+            // Membership Plan section (array)
+            if (Array.isArray(d.memberships) && d.memberships.length > 0) {
+                servicesHtml += '<div class="section-card">'
+                    + '<div class="section-title"><i class="bi bi-card-checklist"></i> Membership Plans</div>'
+                    + '<ul class="list-group">';
+                d.memberships.forEach(function(m, i) {
+                    servicesHtml += '<li class="list-group-item d-flex justify-content-between align-items-start">';
+                    servicesHtml += '<div>';
+                    if (m.plan_name) servicesHtml += '<strong>Plan:</strong> ' + m.plan_name + '<br>';
+                    if (m.amount) servicesHtml += '<small>Amount: ' + m.amount + '</small><br>';
+                    if (m.start_date && m.end_date) {
+                        servicesHtml += '<small>Period: ' + formatDateWords(m.start_date) + ' - ' + formatDateWords(m.end_date) + '</small><br>';
+                        servicesHtml += '<small>Duration: ' + getDurationDays(m.start_date, m.end_date) + '</small>';
+                    } else if (m.start_date) {
+                        servicesHtml += '<small>Start: ' + formatDateWords(m.start_date) + '</small><br>';
+                    } else if (m.end_date) {
+                        servicesHtml += '<small>End: ' + formatDateWords(m.end_date) + '</small><br>';
+                    }
+                    servicesHtml += '</div>';
+                    servicesHtml += '<button class="btn btn-sm btn-danger ms-2 remove-item-btn" data-type="membership" data-index="' + i + '" data-id="' + (m.id || '') + '" title="Remove"><i class="bi bi-trash"></i></button>';
+                    servicesHtml += '</li>';
+                });
+                servicesHtml += '</ul></div>';
+            }
+
+            // Rentals section (array)
+            if (Array.isArray(d.rentals) && d.rentals.length > 0) {
+                servicesHtml += '<div class="section-card">'
+                    + '<div class="section-title"><i class="bi bi-box-seam"></i> Rentals</div>'
+                    + '<ul class="list-group">';
+                d.rentals.forEach(function(rental, i) {
+                    servicesHtml += '<li class="list-group-item d-flex justify-content-between align-items-start">';
+                    servicesHtml += '<div>';
+                    if (rental.name) servicesHtml += '<strong>' + rental.name + '</strong><br>';
+                    if (rental.amount) servicesHtml += '<small>Amount: ' + rental.amount + '</small><br>';
+                    if (rental.start && rental.end) {
+                        servicesHtml += '<small>Period: ' + formatDateWords(rental.start) + ' - ' + formatDateWords(rental.end) + '</small><br>';
+                        servicesHtml += '<small>Duration: ' + getDurationDays(rental.start, rental.end) + '</small>';
+                    } else if (rental.start) {
+                        servicesHtml += '<small>Start: ' + formatDateWords(rental.start) + '</small><br>';
+                    } else if (rental.end) {
+                        servicesHtml += '<small>End: ' + formatDateWords(rental.end) + '</small><br>';
+                    }
+                    servicesHtml += '</div>';
+                    servicesHtml += '<button class="btn btn-sm btn-danger ms-2 remove-item-btn" data-type="rental" data-index="' + i + '" data-id="' + (rental.id || '') + '" title="Remove"><i class="bi bi-trash"></i></button>';
+                    servicesHtml += '</li>';
+                });
+                servicesHtml += '</ul></div>';
+            }
+
+            // Registration Fee section(s) from registration_records
+            if (Array.isArray(d.registration_records) && d.registration_records.length > 0) {
+                servicesHtml += '<div class="section-card">'
+                    + '<div class="section-title"><i class="bi bi-cash-coin"></i> Registration Fee</div>'
+                    + '<ul class="list-group">';
+                d.registration_records.forEach(function(reg) {
+                    servicesHtml += '<li class="list-group-item">Amount: ' + reg.amount + '</li>';
+                });
+                servicesHtml += '</ul></div>';
+            }
+
+            // Calculate total unpaid amount
+            let totalUnpaid = 0;
+            if (Array.isArray(d.walkins)) {
+                d.walkins.forEach(function(w) { if (w.amount) totalUnpaid += parseFloat(w.amount) || 0; });
+            }
+            if (Array.isArray(d.memberships)) {
+                d.memberships.forEach(function(m) { if (m.amount) totalUnpaid += parseFloat(m.amount) || 0; });
+            }
+            if (Array.isArray(d.rentals)) {
+                d.rentals.forEach(function(r) { if (r.amount) totalUnpaid += parseFloat(r.amount) || 0; });
+            }
+            if (Array.isArray(d.registration_records)) {
+                d.registration_records.forEach(function(reg) { if (reg.amount) totalUnpaid += parseFloat(reg.amount) || 0; });
+            }
+            if (totalUnpaid > 0) {
+                servicesHtml += '<div class="section-card bg-light mb-2">'
+                    + '<div class="section-title"><i class="bi bi-calculator"></i> Total Amount</div>'
+                    + '<div class="fs-4 fw-bold">₱ ' + totalUnpaid.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</div>'
+                    + '</div>';
+            }
+
+            // Add Pay button if not confirmed
+            if (d.transaction_status !== 'confirmed') {
+                servicesHtml += '<div class="d-grid gap-2 mt-3">'
+                    + '<button id="payTransactionBtn" class="btn btn-success btn-lg"><i class="bi bi-credit-card"></i> Comfirm transaction & Mark as Paid</button>'
+                    + '</div>';
+            }
+
+            if (!servicesHtml) {
+                servicesHtml = '<div class="text-muted">No details available.</div>';
+            }
+            $('#modalServices').html(servicesHtml);
+
+            // Pay button handler
+            if (d.transaction_status !== 'confirmed') {
+                $('#payTransactionBtn').off('click').on('click', function() {
+                    // Hide the transaction modal first
+                    var notifModal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
+                    if (notifModal) notifModal.hide();
+                    // Wait for the modal to be fully hidden before showing the confirm modal
+                    $('#notificationModal').one('hidden.bs.modal', function() {
+                        var confirmModal = new bootstrap.Modal(document.getElementById('confirmPayModal'));
+                        confirmModal.show();
+                        // When confirmed, run AJAX
+                        $('#confirmPayBtn').off('click').on('click', function() {
+                            $('#confirmPayBtn').prop('disabled', true).text('Processing...');
+                            $.ajax({
+                                type: 'POST',
+                                url: BASE_URL + '/transactions.php',
+                                data: { action: 'pay_transaction', transaction_id: d.transaction_id },
+                                dataType: 'json',
+                                success: function(resp) {
+                                    if (resp.success) {
+                                        // Hide confirmation modal, show success toast
+                                        var confirmModalInst = bootstrap.Modal.getInstance(document.getElementById('confirmPayModal'));
+                                        if (confirmModalInst) confirmModalInst.hide();
+                                        // Show success toast
+                                        showSuccessToast('Transaction has been confirmed and marked as paid!');
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 2000);
+                                    } else {
+                                        $('#confirmPayBtn').prop('disabled', false).text('Yes, Confirm & Mark as Paid');
+                                        alert(resp.message || 'Failed to update payment.');
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    $('#confirmPayBtn').prop('disabled', false).text('Yes, Confirm & Mark as Paid');
+                                    alert('AJAX error: ' + error);
+                                }
+                            });
+                        });
+                    });
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error:', error);
+            $('#modalServices').html('<div class="alert alert-danger">Failed to load details.</div>');
+        }
+    });
+    var modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    modal.show();
+}
 </script>
