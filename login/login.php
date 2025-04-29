@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'] ?? '';  // Don't sanitize password before verification
     
     if (empty($username) || empty($password)) {
-        $error = "Please fill in all fields.";
+        $error = "Don't have an account? <a href='../register/register.php'>Sign up here</a>.";
     } else {
         $result = loginUser($username, $password);
         if ($result['success']) {
@@ -99,7 +99,7 @@ $logo = executeQuery("SELECT * FROM website_content WHERE section = ?", ['logo']
     </div>
             <?php if(!empty($error)): ?>
                 <div class="alert alert-danger" role="alert">
-                    <?php echo sanitizeOutput($error); ?>
+                    <?php echo $error; ?> <!-- Not using sanitizeOutput here since we want the HTML links to work -->
                 </div>
             <?php endif; ?>
 
