@@ -384,6 +384,27 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
             background-color: #f5f5f5;
          }
 
+         /* In avail_rental.php <style> tag or your CSS file */
+         .calendar-day.in-cart-rental {
+            border: 2px dashed #0d6efd; /* Blue dashed border */
+            background-color: rgba(13, 110, 253, 0.1); /* Light blue background */
+            color: #0d6efd; /* Blue text */
+            position: relative; /* Needed for icon positioning */
+            cursor: pointer; /* Indicate it's clickable (for modal) */
+        }
+
+        /* Add the cart icon to the top-right corner of the in-cart day */
+        .calendar-day.in-cart-rental::before {
+            content: '\F23F'; /* Bootstrap Icons cart glyph */
+            font-family: 'bootstrap-icons'; /* Make sure Bootstrap Icons font is loaded */
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.7em; /* Adjust icon size */
+            opacity: 0.6; /* Make icon slightly transparent */
+            color: #0d6efd; /* Match text color */
+            line-height: 1; /* Ensure proper vertical alignment */
+        }
 
 @media screen and (max-width: 480px) {
     /* 1. Hide the services-header */
@@ -587,6 +608,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     </div>
 </div>
 
+<!--conflict modal -->
 <div class="modal fade" id="conflictModal" tabindex="-1" aria-labelledby="conflictModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -599,11 +621,13 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" id="replacePendingBtn">Replace Pending Rental</button>
-        </div>
+        <button type="button" class="btn btn-warning" id="replacePendingBtn" style="display: none;">Replace Pending Rental</button>
+        <button type="button" class="btn btn-warning" id="replaceInCartBtn" style="display: none;">Replace In-Cart Rental</button>
+      </div>
     </div>
   </div>
 </div>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -617,6 +641,8 @@ const durationType = '<?= $duration_type ?>';
 
 // Object to store disabled dates from server with their status and info
 let disabledDatesInfo = {};
+// Array to store rental dates from the cart { index: i, startDate: 'YYYY-MM-DD', endDate: 'YYYY-MM-DD' }
+let inCartRentalDates = [];
 
 // Store data for the modal
 let modalConflictData = null;
@@ -642,14 +668,10 @@ function calculateEndDate(startDate) {
     const end = new Date(start);
 
     if (durationType === 'days') {
-        // For 1-day duration, end date is 24 hours from start
-        // So, a 1-day rental on 2023-10-26 ends on 2023-10-27
-        // For multi-day rentals, we add the full number of days
         end.setDate(end.getDate() + parseInt(duration));
     } else if (durationType === 'months') {
         end.setMonth(end.getMonth() + parseInt(duration));
-        // Adjust for end of month issue if needed
-        if (start.getDate() !== end.getDate() && 
+        if (start.getDate() !== end.getDate() &&
             end.getDate() !== new Date(end.getFullYear(), end.getMonth(), 0).getDate()) {
             end.setDate(new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate());
         }
@@ -661,7 +683,7 @@ function calculateEndDate(startDate) {
 }
 
 
-// Format date toYYYY-MM-DD
+// Format date to YYYY-MM-DD
 function formatDateYMD(date) {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -669,433 +691,481 @@ function formatDateYMD(date) {
     return `${yyyy}-${mm}-${dd}`;
 }
 
-// Fetch disabled dates from server for rentals
+// Fetch disabled dates from server for rentals (existing bookings, etc.)
 async function fetchDisabledDates() {
-    // Add cache-busting query parameter
-    const url = `date_functions/get_rental_disabled_dates.php?t=${new Date().getTime()}`; // Assuming this endpoint exists and uses RentalValidation
+    const url = `date_functions/get_rental_disabled_dates.php?t=${new Date().getTime()}`;
     try {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log("Fetched rental disabled dates:", data); // Debugging
+        console.log("Fetched server disabled dates:", data);
         disabledDatesInfo = data; // Store the fetched data
         renderCalendar(); // Re-render calendar with updated disabled dates
     } catch (error) {
-        console.error('Error fetching rental disabled dates:', error);
+        console.error('Error fetching server disabled dates:', error);
         alert('Could not load availability information. Please try again later.');
     }
 }
 
-// Check if a date is disabled and why
+// --- NEW: Fetch rentals currently in the cart ---
+async function fetchInCartRentals() {
+    console.log("Fetching in-cart rentals...");
+    try {
+        // Use cart_handler.php to get cart contents
+        const response = await fetch('cart_handler.php', { // Adjust path if needed
+            method: 'POST', // Assuming POST for action=get
+            headers: {
+                'Content-Type': 'application/json'
+                // Add 'Accept': 'application/json' if needed
+            },
+            body: JSON.stringify({ action: 'get' })
+        });
+
+        if (!response.ok) {
+             // Try to read error message from response body if possible
+             let errorText = `HTTP error! status: ${response.status}`;
+             try {
+                 const errorData = await response.json();
+                 errorText += ` - ${errorData.message || JSON.stringify(errorData)}`;
+             } catch (e) { /* Ignore if response is not JSON */ }
+             throw new Error(errorText);
+        }
+
+        const result = await response.json();
+        console.log("Cart data received:", result);
+
+        if (result.success && result.data && result.data.cart && result.data.cart.rentals) {
+            inCartRentalDates = result.data.cart.rentals.map((item, index) => {
+                 // --- IMPORTANT: Ensure your cart items have 'start_date' and 'end_date' ---
+                 // If 'end_date' is not stored, you MUST calculate it here using duration,
+                 // similar to calculateEndDate function.
+                 if (!item.start_date || !item.end_date) {
+                     console.warn("Cart rental item missing start or end date:", item);
+                     // Attempt to calculate end date if duration is available globally (less ideal)
+                     if(item.start_date && duration && durationType){
+                         const calculatedEnd = calculateEndDate(item.start_date);
+                         item.end_date = formatDateYMD(calculatedEnd);
+                         console.log(`Calculated end date for cart item ${index}: ${item.end_date}`);
+                     } else {
+                         return null; // Skip item if dates are missing and cannot be calculated
+                     }
+                 }
+                 // Ensure dates are in YYYY-MM-DD format
+                return {
+                    index: index, // Store original cart array index for removal
+                    startDate: item.start_date,
+                    endDate: item.end_date,
+                    id: item.id // Store item ID if needed
+                };
+            }).filter(item => item !== null); // Filter out items that couldn't be processed
+
+            console.log("Processed in-cart rental dates:", inCartRentalDates);
+        } else {
+            console.log("No rental items found in cart or failed to fetch cart.");
+            inCartRentalDates = [];
+        }
+    } catch (error) {
+        console.error('Error fetching in-cart rentals:', error);
+        inCartRentalDates = []; // Reset on error
+        // alert('Could not load cart information.'); // Optional user alert
+    }
+     // Re-render the calendar AFTER fetching cart data
+     renderCalendar();
+}
+
+
+// Check if a date is disabled and why (checks past, cart, server, selected)
 function getDateStatusInfo(dateToCheck) {
     const dateStr = typeof dateToCheck === 'string' ? dateToCheck : formatDateYMD(dateToCheck);
-
-    // Check if date is in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-     const checkDate = new Date(dateStr);
-     // Adjust checkDate for timezone
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(dateStr);
     const userTimezoneOffset = checkDate.getTimezoneOffset() * 60000;
     const adjustedCheckDate = new Date(checkDate.getTime() + userTimezoneOffset);
 
-    if (adjustedCheckDate < today) {
-        return { status: 'past' }; // Return object for consistency
+    // 1. Check Past
+    if (adjustedCheckDate < today) return { status: 'past' };
+
+    // 2. Check In-Cart Rentals
+    for (const cartItem of inCartRentalDates) {
+         const cartStartDate = new Date(cartItem.startDate);
+         const cartEndDate = new Date(cartItem.endDate);
+         const adjustedCartStart = new Date(cartStartDate.getTime() + userTimezoneOffset);
+         const adjustedCartEnd = new Date(cartEndDate.getTime() + userTimezoneOffset);
+
+         if (adjustedCheckDate >= adjustedCartStart && adjustedCheckDate <= adjustedCartEnd) {
+              console.log(`Date ${dateStr} conflicts with in-cart rental index ${cartItem.index}`);
+              return {
+                  status: 'in-cart-rental',
+                  cartIndex: cartItem.index,
+                  itemId: cartItem.id,
+                  startDate: cartItem.startDate
+              };
+         }
     }
 
-    // Check if date is in disabledDatesInfo object from server
-    // This object should contain statuses like 'paid-active-rental', 'unpaid-active-rental', etc.
+    // 3. Check Server-Disabled Dates (Pending, Active, etc.)
     if (disabledDatesInfo && disabledDatesInfo[dateStr]) {
-        console.log(`Date ${dateStr} has disabled info:`, disabledDatesInfo[dateStr]); // Debug
-        return disabledDatesInfo[dateStr]; // Returns the object like { status: '...', transactionId: ... }
+        console.log(`Date ${dateStr} has server disabled info:`, disabledDatesInfo[dateStr]);
+        return disabledDatesInfo[dateStr]; // Returns object like { status: '...', transactionId: ... }
     }
 
-    // Check if date is within the range of any currently selected date's rental duration
+    // 4. Check Currently Selected Ranges (by user in this session)
     for (const startDate of selectedDates) {
         const endDate = calculateEndDate(startDate);
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const check = new Date(dateStr);
-
-         // Adjust dates for timezone for accurate comparison
         const adjustedStart = new Date(start.getTime() + userTimezoneOffset);
         const adjustedEnd = new Date(end.getTime() + userTimezoneOffset);
-        const adjustedCheck = new Date(check.getTime() + userTimezoneOffset);
-
 
         // Check if the date falls within the range of a *different* selected date
-        if (dateStr !== startDate && adjustedCheck >= adjustedStart && adjustedCheck <= adjustedEnd) {
-            return { status: 'selected-range' }; // This date is within a selected rental duration
+        if (dateStr !== startDate && adjustedCheckDate >= adjustedStart && adjustedCheckDate <= adjustedEnd) {
+            return { status: 'selected-range' };
         }
     }
 
-    return null; // Date is not disabled by external factors or selected rentals
+    return null; // Date is available
 }
 
 
-// Add date to the selection - with enhanced validation for rental duration conflicts
-async function addDate(dateStr) { // Make async to handle await for fetch
-    if (!dateStr) {
-        return;
-    }
+// Add date to the selection or handle conflicts
+async function addDate(dateStr) {
+    if (!dateStr) return;
 
-    console.log("addDate called for:", dateStr); // Debugging
+    console.log("addDate called for:", dateStr);
 
-    // Check if date is already selected (toggle off)
+    // Toggle off if already selected
     if (selectedDates.includes(dateStr)) {
-        console.log("Date already selected, removing:", dateStr); // Debugging
+        console.log("Date already selected, removing:", dateStr);
         removeDate(dateStr);
         return;
     }
 
-    // Check if date is disabled or conflicts with anything
+    // Check date status for conflicts
     const statusInfo = getDateStatusInfo(dateStr);
     const conflictModalElement = document.getElementById('conflictModal');
     const conflictModal = new bootstrap.Modal(conflictModalElement);
 
-     console.log("Status info for", dateStr, ":", statusInfo); // Debugging
-
+    console.log("Status info for", dateStr, ":", statusInfo);
 
     if (statusInfo && statusInfo.status) {
         const status = statusInfo.status;
 
-        // Handle conflicts with existing pending unpaid rentals
-        if (status === 'unpaid-active-rental') {
-            const transactionId = statusInfo.transactionId;
-            const conflictDate = dateStr; // The date the user clicked, which has a pending rental conflict
+        // Handle In-Cart Conflict
+        if (status === 'in-cart-rental') {
+            const cartIndex = statusInfo.cartIndex;
+            const conflictDate = dateStr;
 
-            if (!transactionId || !conflictDate) {
-                 alert('Error: Cannot identify the pending rental conflict data. Please refresh and try again.');
-                 return;
-             }
-
-            // Store conflict data for modal button handlers
-            modalConflictData = {
-                type: 'rental', // Add type
-                transactionId: transactionId,
-                conflictDate: conflictDate // Store the date the user clicked
-            };
-
-            // Update modal message and show/hide buttons for rental conflict
-            document.getElementById('conflictModalLabel').innerText = 'Rental Conflict Detected'; // Set modal title
-            document.getElementById('conflictMessage').innerText =
-                `Selecting a rental starting on ${formatDisplayDate(conflictDate)} would conflict with a pending rental reservation on this date.` +
-                `\n\nDo you want to replace the pending rental reservation?`; // Adjusted message
-
-            // For rentals, we generally only offer 'Replace' as 'Append' logic is complex with durations.
-            // document.getElementById('appendMembershipBtn').style.display = 'none'; // Ensure Append button is hidden (already hidden in HTML)
-            document.getElementById('replacePendingBtn').style.display = ''; // Ensure Replace button is shown
-            document.getElementById('replacePendingBtn').innerText = 'Replace Pending Rental'; // Change button text
-            document.getElementById('replacePendingBtn').classList.remove('btn-danger'); // Ensure correct style
-            document.getElementById('replacePendingBtn').classList.add('btn-warning'); // Use warning color
-
-
+            if (cartIndex === undefined || !conflictDate) {
+                alert('Error: Cannot identify the in-cart rental conflict data.'); return;
+            }
+            modalConflictData = { type: 'in-cart-rental', cartIndex: cartIndex, conflictDate: conflictDate };
+            document.getElementById('conflictModalLabel').innerText = 'In-Cart Conflict';
+            document.getElementById('conflictMessage').innerText = `Selecting ${formatDisplayDate(conflictDate)} conflicts with a rental in your cart (starting ${formatDisplayDate(statusInfo.startDate)}).\n\nReplace the item in your cart?`;
+            document.getElementById('replacePendingBtn').style.display = 'none';
+            document.getElementById('replaceInCartBtn').style.display = ''; // Show in-cart replace button
             conflictModal.show();
-            console.log("Conflict modal shown for unpaid-active-rental"); // Debugging
-            return; // Stop further processing here, wait for modal interaction
+            console.log("Conflict modal shown for in-cart-rental");
+            return;
         }
-
-        // Handle conflicts with pending memberships or walk-ins or paid rentals/memberships
-        // These are generally not resolvable from the rental page by replacing, so just show an alert.
-        let message;
-        switch (status) {
-            case 'past':
-                message = 'You cannot select a date in the past.';
-                break;
-            case 'pending-membership':
-                 message = `Selecting a rental starting on ${formatDisplayDate(dateStr)} would conflict with a pending membership ending ${formatDisplayDate(statusInfo.endDate)}. You cannot book a rental during a pending membership period. Please choose a different date or resolve the pending membership.`;
-                break;
-            case 'active-membership':
-                 message = `Selecting a rental starting on ${formatDisplayDate(dateStr)} would conflict with an active membership. You cannot book a rental during an active membership period. Please choose a different date.`;
-                break;
-             case 'pending-walkin':
-                 message = `This date conflicts with a pending walk-in reservation on ${formatDisplayDate(dateStr)}. Please select a different date.`;
-                 break;
-             case 'paid-active-rental':
-                 message = `This date falls within an active rental period (${formatDisplayDate(dateStr)}). Please choose a different start date.`;
-                break;
-            case 'selected-range':
-                 // This case should ideally be handled before the `if (statusInfo && statusInfo.status)` block
-                 // by the `selectedDates.includes(dateStr)` check if the click was on a selected start date.
-                 // However, if a date within a selected range is clicked (which is visually highlighted but
-                 // not the start date), getDateStatusInfo will return 'selected-range'. We should prevent
-                 // adding it as a new start date.
-                 message = `This date falls within the duration of a rental you have already selected starting on ${formatDisplayDate(findSelectedStartDateForDate(dateStr))}. Please choose a different start date.`;
-                 break;
-            default:
-                message = 'This date is unavailable.';
+        // Handle Pending Rental Conflict
+        else if (status === 'unpaid-active-rental') {
+            const transactionId = statusInfo.transactionId;
+            const conflictDate = dateStr;
+            if (!transactionId || !conflictDate) {
+                alert('Error: Cannot identify pending rental conflict data.'); return;
+            }
+            modalConflictData = { type: 'rental', transactionId: transactionId, conflictDate: conflictDate };
+            document.getElementById('conflictModalLabel').innerText = 'Rental Conflict Detected';
+            document.getElementById('conflictMessage').innerText = `Selecting ${formatDisplayDate(conflictDate)} conflicts with a pending rental reservation.\n\nReplace the pending rental?`;
+            document.getElementById('replacePendingBtn').style.display = ''; // Show pending replace button
+            document.getElementById('replaceInCartBtn').style.display = 'none';
+            conflictModal.show();
+            console.log("Conflict modal shown for unpaid-active-rental");
+            return;
         }
-        alert(message);
-        console.log("Alert shown for status:", status); // Debugging
-        return;
+        // Handle Other Non-Clickable Conflicts (Past, Active, etc.)
+        else if (['past', 'pending-membership', 'active-membership', 'pending-walkin', 'paid-active-rental', 'selected-range'].includes(status)) {
+            let message;
+            switch (status) {
+                case 'past': message = 'Cannot select a date in the past.'; break;
+                case 'pending-membership': message = `Conflicts with a pending membership. Cannot book rental during this period.`; break;
+                case 'active-membership': message = `Conflicts with an active membership. Cannot book rental during this period.`; break;
+                case 'pending-walkin': message = `Conflicts with a pending walk-in on ${formatDisplayDate(dateStr)}.`; break;
+                case 'paid-active-rental': message = `Conflicts with an active rental on ${formatDisplayDate(dateStr)}.`; break;
+                case 'selected-range': message = `Date falls within another selected rental period. Choose a different start date.`; break;
+                default: message = 'This date is unavailable.';
+            }
+            alert(message);
+            console.log("Alert shown for status:", status);
+            return;
+        }
     }
 
-    // If checks pass, add date to array
-    console.log("Adding date to selectedDates:", dateStr); // Debugging
+    // If no conflicts / resolved, add date
+    console.log("Adding date to selectedDates:", dateStr);
     selectedDates.push(dateStr);
-
-    // Sort dates chronologically
     selectedDates.sort();
-
-    // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-
-    // Update UI
     updateSelectedDatesUI();
-
-    // Update calendar to reflect the selection and ranges
-    renderCalendar();
+    renderCalendar(); // Re-render to show new selection and ranges
 }
 
-// Helper function to find the start date of a selected rental range that a given date falls within
+// Helper to find the start date of a selected range containing a given date
 function findSelectedStartDateForDate(dateToCheckStr) {
     const checkDate = new Date(dateToCheckStr);
      const userTimezoneOffset = checkDate.getTimezoneOffset() * 60000;
      const adjustedCheckDate = new Date(checkDate.getTime() + userTimezoneOffset);
 
-
     for (const startDateStr of selectedDates) {
         const endDate = calculateEndDate(startDateStr);
         const startDate = new Date(startDateStr);
-
         const adjustedStartDate = new Date(startDate.getTime() + userTimezoneOffset);
         const adjustedEndDate = new Date(endDate.getTime() + userTimezoneOffset);
 
-
         if (adjustedCheckDate >= adjustedStartDate && adjustedCheckDate <= adjustedEndDate) {
-            return startDateStr; // Return the start date of the overlapping selected range
+            return startDateStr;
         }
     }
-    return null; // Should not happen if getDateStatusInfo returned 'selected-range' correctly
+    return null;
 }
 
-
-// Function to handle replacing a pending rental
-async function handleReplacePendingRental() {
-    console.log("handleReplacePendingRental called."); // Debugging
-     if (!modalConflictData || modalConflictData.type !== 'rental' || !modalConflictData.transactionId || !modalConflictData.conflictDate) {
-         alert('Error: Missing rental conflict data. Please try again.');
-         console.error("Missing modalConflictData:", modalConflictData); // Debugging
-         return;
+// --- NEW: Handle replacing an item in the cart ---
+async function handleReplaceInCartRental() {
+    console.log("handleReplaceInCartRental called.");
+    if (!modalConflictData || modalConflictData.type !== 'in-cart-rental' || modalConflictData.cartIndex === undefined || !modalConflictData.conflictDate) {
+        alert('Error: Missing in-cart conflict data.');
+        console.error("Missing modalConflictData for in-cart:", modalConflictData);
+        return;
     }
 
-    const { transactionId, conflictDate } = modalConflictData; // conflictDate is the clicked date
-    console.log(`Attempting to replace pending rental with transaction ID: ${transactionId} for date: ${conflictDate}`); // Debugging
+    const { cartIndex, conflictDate } = modalConflictData;
+    console.log(`Attempting to replace in-cart rental index: ${cartIndex} to add date: ${conflictDate}`);
 
-    // Close the modal
     const conflictModal = bootstrap.Modal.getInstance(document.getElementById('conflictModal'));
     conflictModal.hide();
-    console.log("Conflict modal hidden."); // Debugging
+    console.log("Conflict modal hidden.");
 
+    // Call backend (cart_handler.php) to remove the item
+    try {
+        const formData = new FormData();
+        formData.append('action', 'remove');
+        formData.append('type', 'rental');
+        formData.append('index', cartIndex);
 
-    // Call backend to delete the pending rental transaction
+        console.log("Calling cart_handler.php (remove)...");
+        const response = await fetch('cart_handler.php', { method: 'POST', body: formData });
+        const result = await response.json();
+        console.log("Response from cart_handler.php (remove):", result);
+
+        if (response.ok && result.success) {
+            alert('Item removed from cart.');
+            console.log("In-cart rental removed.");
+
+            // Refresh cart data AND server disabled dates
+            console.log("Fetching cart data again...");
+            await fetchInCartRentals(); // Calls renderCalendar
+            console.log("Fetching server disabled dates again...");
+            await fetchDisabledDates(); // Calls renderCalendar again
+
+            // Attempt to add the originally clicked date AFTER refreshes
+            console.log("Re-attempting to add date:", conflictDate);
+            // IMPORTANT: Re-check status *after* removal and refreshes
+            const updatedStatusInfo = getDateStatusInfo(conflictDate);
+            console.log("Status info for", conflictDate, "after removal & refresh:", updatedStatusInfo);
+            // Check if it's clear or if it *still* conflicts (e.g., with a server-side booking)
+             if (updatedStatusInfo && updatedStatusInfo.status && updatedStatusInfo.status !== 'in-cart-rental') {
+                  alert(`Date ${formatDisplayDate(conflictDate)} is still unavailable (${updatedStatusInfo.status}) after removing the cart item.`);
+             } else {
+                 // Proceed to add the date using the main addDate function
+                  console.log("Date should be available, calling addDate again.");
+                 addDate(conflictDate); // Let addDate handle adding to selection
+             }
+
+        } else {
+            alert(`Failed to remove item from cart: ${result.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error removing in-cart rental:', error);
+        alert('An error occurred while trying to remove the item from the cart.');
+    } finally {
+        modalConflictData = null; // Clear data
+        document.getElementById('replacePendingBtn').style.display = 'none';
+        document.getElementById('replaceInCartBtn').style.display = 'none';
+        console.log("Modal data cleared, buttons reset.");
+    }
+}
+
+// Handle replacing a pending rental (from server)
+async function handleReplacePendingRental() {
+    console.log("handleReplacePendingRental called.");
+     if (!modalConflictData || modalConflictData.type !== 'rental' || !modalConflictData.transactionId || !modalConflictData.conflictDate) {
+         alert('Error: Missing pending rental conflict data.'); return;
+    }
+    const { transactionId, conflictDate } = modalConflictData;
+    console.log(`Replacing pending rental ID: ${transactionId} for date: ${conflictDate}`);
+
+    const conflictModal = bootstrap.Modal.getInstance(document.getElementById('conflictModal'));
+    conflictModal.hide();
+
+    // Call backend to delete the pending rental
     try {
         const formData = new FormData();
         formData.append('transactionId', transactionId);
 
-        console.log("Calling delete_pending_rental.php with transactionId:", transactionId); // Debugging
-        const response = await fetch('date_functions/delete_pending_rental.php', { // Use the correct endpoint
-            method: 'POST',
-            body: formData
-        });
+        console.log("Calling delete_pending_rental.php...");
+        const response = await fetch('date_functions/delete_pending_rental.php', { method: 'POST', body: formData });
         const result = await response.json();
-         console.log("Response from delete_pending_rental.php:", result); // Debugging
-
+         console.log("Response from delete_pending_rental.php:", result);
 
         if (response.ok && result.success) {
-            alert('Previous pending rental reservation removed.');
-            console.log("Previous pending rental removed successfully."); // Debugging
-            // Refresh disabled dates from server BEFORE attempting to add the new date
-            console.log("Fetching disabled dates again..."); // Debugging
-            await fetchDisabledDates(); // Wait for refresh
-            console.log("Disabled dates fetched again."); // Debugging
+            alert('Pending rental removed.');
+            // Refresh server disabled dates FIRST
+            console.log("Fetching server disabled dates again...");
+            await fetchDisabledDates(); // Calls renderCalendar
+            console.log("Fetching cart data again (in case needed)..."); // Good practice
+            await fetchInCartRentals(); // Calls renderCalendar again
 
-
-            // Now, attempt to add the originally clicked date again, AFTER refreshing disabled dates
-            // Check if still disabled for other reasons after deletion
+            // Attempt to add the originally clicked date AFTER refreshes
+            console.log("Re-attempting to add date:", conflictDate);
              const updatedStatusInfo = getDateStatusInfo(conflictDate);
-             console.log("Status info for", conflictDate, "after refresh:", updatedStatusInfo); // Debugging
-             if(updatedStatusInfo && updatedStatusInfo.status){
-                alert('This date is still unavailable after attempting to remove the previous pending rental.');
-                return;
-            }
-            // Proceed to add the date if no longer conflicting
-            console.log("Date is now available, calling addDate again for:", conflictDate); // Debugging
-            addDate(conflictDate); // Use addDate to re-run validation and add to selectedDates array
-
+             console.log("Status info for", conflictDate, "after removal & refresh:", updatedStatusInfo);
+              if (updatedStatusInfo && updatedStatusInfo.status && updatedStatusInfo.status !== 'unpaid-active-rental') {
+                  alert(`Date ${formatDisplayDate(conflictDate)} is still unavailable (${updatedStatusInfo.status}) after removing the pending rental.`);
+             } else {
+                  console.log("Date should be available, calling addDate again.");
+                 addDate(conflictDate);
+             }
         } else {
-            alert(`Failed to remove previous pending rental: ${result.message || 'Unknown error'}`);
-            console.error("Failed to remove pending rental:", result.message); // Debugging
+            alert(`Failed to remove pending rental: ${result.message || 'Unknown error'}`);
         }
     } catch (error) {
         console.error('Error deleting pending rental:', error);
         alert('An error occurred while trying to remove the pending rental.');
     } finally {
-        modalConflictData = null; // Clear data after handling
-         // Reset modal buttons and text for next time
-        document.getElementById('replacePendingBtn').innerText = 'Replace Pending Rental';
-        document.getElementById('replacePendingBtn').classList.remove('btn-warning');
-        document.getElementById('replacePendingBtn').classList.add('btn-danger');
-         // document.getElementById('appendBtn').style.display = 'none'; // Ensure append is hidden
-         console.log("Modal data cleared and button reset."); // Debugging
+        modalConflictData = null;
+        document.getElementById('replacePendingBtn').style.display = 'none';
+        document.getElementById('replaceInCartBtn').style.display = 'none';
+         console.log("Modal data cleared, buttons reset.");
     }
 }
 
 
 // Remove date from selection
 function removeDate(dateToRemove) {
-    console.log("Removing date from selectedDates:", dateToRemove); // Debugging
-    // Remove the date from selected dates
+    console.log("Removing date from selectedDates:", dateToRemove);
     selectedDates = selectedDates.filter(date => date !== dateToRemove);
-
-    // Update the hidden input with JSON string of selected dates
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-
-    // Update UI
     updateSelectedDatesUI();
-
-    // Update calendar to reflect the removal and re-evaluate ranges
-    renderCalendar();
+    renderCalendar(); // Re-render to update ranges
 }
 
-// Format number for display (similar to PHP's number_format)
+// Format number for display
 function number_format(number, decimals) {
-    return new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-    }).format(number);
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(number);
 }
 
-// Update the UI to show selected dates and calculated end dates
+// Update UI for selected dates chips and total price
 function updateSelectedDatesUI() {
     const container = document.getElementById('dates-container');
     const endDatesInfo = document.getElementById('end-dates-info');
-
-    // Clear containers
     container.innerHTML = '';
     endDatesInfo.innerHTML = '';
 
     if (selectedDates.length === 0) {
-        const noDateMessage = document.createElement('p');
-        noDateMessage.id = 'no-dates-message';
-        noDateMessage.textContent = 'No dates selected';
-        container.appendChild(noDateMessage);
-
+        container.innerHTML = '<p id="no-dates-message">No dates selected</p>';
         document.getElementById('total_price').textContent = '0.00';
         endDatesInfo.innerHTML = '<p class="text-muted">No rental periods selected</p>';
         return;
     }
 
-    // Add date chips and end date info for each selected date
     selectedDates.forEach(date => {
         const dateChip = document.createElement('div');
         dateChip.className = 'date-chip';
-        dateChip.innerHTML = `
-            ${formatDisplayDate(date)}
-            <span class="remove-date" onclick="removeDate('${date}')" style="cursor: pointer;">
-                <i class="bi bi-x-circle"></i>
-            </span>
-        `;
+        dateChip.innerHTML = `${formatDisplayDate(date)} <span class="remove-date" onclick="removeDate('${date}')" style="cursor: pointer;"><i class="bi bi-x-circle"></i></span>`;
         container.appendChild(dateChip);
 
-        // Add end date information
         const endDate = calculateEndDate(date);
-        const endDateInfo = document.createElement('div');
-        endDateInfo.className = 'mb-2';
-        endDateInfo.innerHTML = `
-            <strong>Rental Period:</strong> ${formatDisplayDate(date)} to ${formatDisplayDate(endDate)}
-        `;
-        endDatesInfo.appendChild(endDateInfo);
+        const endDateInfoP = document.createElement('p');
+        endDateInfoP.className = 'mb-1'; // Smaller margin
+        endDateInfoP.innerHTML = `<strong>Period:</strong> ${formatDisplayDate(date)} to ${formatDisplayDate(endDate)}`;
+        endDatesInfo.appendChild(endDateInfoP);
     });
 
-    // Update total price
     const totalPrice = (price * selectedDates.length).toFixed(2);
     document.getElementById('total_price').textContent = number_format(totalPrice, 2);
 }
 
+// Validate form before submitting (Add to Cart)
 function validateForm(event) {
-    event.preventDefault();
+    event.preventDefault(); // Prevent default POST
 
     if (selectedDates.length === 0) {
-        alert('Please select at least one start date for your rental.');
+        alert('Please select at least one start date.');
         return false;
     }
 
     const form = event.target;
     const formData = new FormData(form);
+    document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
+    formData.set('selected_dates', JSON.stringify(selectedDates)); // Ensure FormData has it too
 
-    // Ensure the hidden input has the latest selected dates
-     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
-     formData.set('selected_dates', JSON.stringify(selectedDates)); // Explicitly set it for FormData
-
-
-    // Display loading state (optional)
     const submitButton = form.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.innerHTML;
     submitButton.disabled = true;
     submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
 
-
-    fetch(window.location.href, { // Post to the same page (avail_rental.php)
-        method: 'POST',
-        body: formData
-    })
+    fetch(window.location.href, { method: 'POST', body: formData })
     .then(response => {
-        // Check if response is JSON, otherwise handle potential HTML errors
         const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
+        if (contentType && contentType.includes("application/json")) {
             return response.json().then(data => ({ ok: response.ok, status: response.status, data }));
         } else {
-            return response.text().then(text => { throw new Error(`Unexpected response format: ${text.substring(0, 100)}...`) });
+            return response.text().then(text => { throw new Error(`Unexpected response: ${text.substring(0, 200)}...`) });
         }
     })
-    .then(({ ok, status, data }) => { // Destructure the object
+    .then(({ ok, status, data }) => {
         if (ok && data.success) {
-             // Success: Redirect or show success message
-            // alert('Successfully added to cart!'); // Optional alert
-             if (data.redirect) {
-                 window.location.href = data.redirect;
-             } else {
-                 // Handle case where redirect URL isn't provided (e.g., refresh or update UI)
-                 console.log("Success, but no redirect URL provided.");
-                 // Maybe refresh disabled dates?
-                 fetchDisabledDates();
-             }
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message || 'Successfully added to cart!');
+                // Optionally clear selection and refresh data after adding
+                // selectedDates = [];
+                // updateSelectedDatesUI();
+                // fetchInCartRentals(); // Refresh cart view on calendar
+                // fetchDisabledDates(); // Refresh server dates
+            }
         } else {
-             // Handle failure: Show specific error message from server if available
-             alert(data.message || `Failed to add to cart (Status: ${status})`);
+            alert(data.message || `Failed to add to cart (Status: ${status})`);
         }
     })
     .catch(error => {
         console.error('Error submitting form:', error);
-        alert(`An error occurred: ${error.message}. Please check the console and try again.`);
+        alert(`An error occurred: ${error.message}. Please try again.`);
     })
     .finally(() => {
-         // Restore button state
          submitButton.disabled = false;
          submitButton.innerHTML = originalButtonText;
     });
 
-
-    return false; // Prevent default form submission behaviour
+    return false; // Prevent default form submission again just in case
 }
 
 
 // Format date string from year, month, day
 function formatDateString(year, month, day) {
-    // Ensure month and day are two digits
     const formattedMonth = (month + 1).toString().padStart(2, '0');
     const formattedDay = day.toString().padStart(2, '0');
     return `${year}-${formattedMonth}-${formattedDay}`;
 }
 
-// Calendar functions
+// Render calendar weekdays header
 function renderCalendarWeekdays() {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const weekdaysContainer = document.getElementById('calendar-weekdays');
     weekdaysContainer.innerHTML = '';
-
     weekdays.forEach(day => {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-weekday';
@@ -1104,270 +1174,217 @@ function renderCalendarWeekdays() {
     });
 }
 
+// Main calendar rendering function
 function renderCalendar() {
-    console.log("Rendering calendar..."); // Debugging
-    // Update month-year header
+    console.log("Rendering calendar...");
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     document.getElementById('calendar-month-year').textContent = `${monthNames[currentMonth]} ${currentYear}`;
 
-    // Get first day of the month and total days in month
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); // 0=Sun, 1=Mon,...
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-
-    // Clear calendar days container
     const daysContainer = document.getElementById('calendar-days');
-    daysContainer.innerHTML = '';
+    daysContainer.innerHTML = ''; // Clear previous days
 
-     // Add empty slots for days before the first day of month
+    // Add empty slots before the first day
     for (let i = 0; i < firstDayOfMonth; i++) {
-        const emptyDay = document.createElement('div');
-        emptyDay.className = 'calendar-day empty';
-        daysContainer.appendChild(emptyDay);
+        daysContainer.appendChild(document.createElement('div')).className = 'calendar-day empty';
     }
 
-
-    // Add days of the month
+    // Add actual days
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
         dayElement.textContent = day;
-
-        // Format date string for comparison
         const dateString = formatDateString(currentYear, currentMonth, day);
+        dayElement.setAttribute('data-date', dateString); // Set data attribute
 
-        // Get status info for the date
         const statusInfo = getDateStatusInfo(dateString);
         let statusClass = '';
-        let isDisabled = false;
+        let isDisabled = false; // Is the day completely unclickable?
+        let isClickableConflict = false; // Is it a conflict that needs modal?
         let tooltipText = '';
 
         if (statusInfo && statusInfo.status) {
             statusClass = statusInfo.status;
-             // Dates with these statuses are truly disabled and cannot be clicked
-            if (statusClass === 'past' || statusClass === 'active-membership' || statusClass === 'paid-active-rental' || statusClass === 'pending-membership' || statusClass === 'pending-walkin') {
-                 isDisabled = true;
+            if (['past', 'active-membership', 'paid-active-rental', 'pending-membership', 'pending-walkin'].includes(statusClass)) {
+                 isDisabled = true; // These are hard blocks
+                 // Add specific tooltips for disabled reasons
                  switch(statusClass) {
-                     case 'past': tooltipText = 'Date is in the past'; break;
-                     case 'active-membership': tooltipText = 'Conflicts with an active membership. Cannot book rental during this period.'; break;
-                     case 'paid-active-rental': tooltipText = 'This date is already reserved for an active rental.'; break;
-                     case 'pending-membership': tooltipText = `Conflicts with a pending membership ending ${formatDisplayDate(statusInfo.endDate)}. Cannot book rental during this period.`; break;
-                     case 'pending-walkin': tooltipText = 'Conflicts with a pending walk-in reservation. Cannot book rental on this date.'; break;
+                     case 'past': tooltipText = 'Past date'; break;
+                     case 'active-membership': tooltipText = 'Conflicts with active membership'; break;
+                     case 'paid-active-rental': tooltipText = 'Date reserved (Active Rental)'; break;
+                     case 'pending-membership': tooltipText = 'Conflicts with pending membership'; break;
+                     case 'pending-walkin': tooltipText = 'Conflicts with pending walk-in'; break;
                  }
-             } else if (statusClass === 'unpaid-active-rental') {
-                 // Pending rentals are NOT disabled to allow clicking for the modal
-                 tooltipText = 'This date conflicts with a pending rental reservation. Click to resolve.';
-             } else if (statusClass === 'selected-range') {
-                 // Dates within a selected range are not disabled to allow clicking the start date
-                 // but we visually style them differently and prevent adding them as *new* start dates in addDate.
-                 // We will handle preventing clicks on these using pointer-events in CSS if needed,
-                 // but the addDate logic is the primary guard.
-                  tooltipText = `Within selected rental starting ${formatDisplayDate(findSelectedStartDateForDate(dateString))}`;
-             }
-        }
-
-        dayElement.className = `calendar-day ${statusClass}`;
-        if(isDisabled) {
-             dayElement.classList.add('disabled'); // Add generic disabled style if truly disabled
-        }
-
-
-        // Highlight selected dates and their ranges explicitly
-        if (selectedDates.includes(dateString)) {
-            dayElement.classList.add('selected');
-             // Ensure selected start dates are clickable to deselect
-             isDisabled = false; // Override if marked disabled by a status below
-             dayElement.classList.remove('disabled'); // Remove the disabled class if it was added
-
-             // Add tooltip for the selected start date itself if no other status provided one
-             if (!tooltipText) {
-                  tooltipText = 'Selected start date';
-             }
-
-
-            // Also highlight the range of this selected rental
-            const endDate = calculateEndDate(dateString);
-            const currentDate = new Date(dateString);
-             const userTimezoneOffset = currentDate.getTimezoneOffset() * 60000;
-
-            // Iterate from the day *after* the start date up to the end date
-            currentDate.setDate(currentDate.getDate() + 1);
-
-            while (true) {
-                 const currentDateStr = formatDateYMD(currentDate);
-                 const adjustedCurrentDate = new Date(currentDate.getTime() + userTimezoneOffset);
-                 const adjustedEndDate = new Date(endDate.getTime() + userTimezoneOffset);
-
-
-                 if (adjustedCurrentDate > adjustedEndDate) break; // Stop if past end date
-
-                 // Find the element for this date string in the current render cycle
-                 // This is a bit inefficient, but necessary to modify elements
-                 // after they've been added to the container.
-                 const rangeDayElement = daysContainer.querySelector(`.calendar-day[data-date="${currentDateStr}"]`);
-                 if (rangeDayElement && !rangeDayElement.classList.contains('selected')) {
-                      rangeDayElement.classList.add('selected-range');
-                       // Add tooltip for range dates if no other status provided one
-                       if (!rangeDayElement.getAttribute('title')) { // Avoid overwriting existing status tooltips
-                           rangeDayElement.setAttribute('title', `Within selected rental starting ${formatDisplayDate(dateString)}`);
-                       }
-                       // Dates within a selected range are not selectable as *new* start dates,
-                       // and we should prevent their click events if they don't have another clickable status.
-                       // The addDate logic prevents adding them as new start dates.
-                       // We don't add the 'disabled' class here to allow clicks if they have
-                       // a status like 'unpaid-active-rental' that *should* be clickable for the modal.
-                 }
-                 currentDate.setDate(currentDate.getDate() + 1);
+            } else if (statusClass === 'unpaid-active-rental' || statusClass === 'in-cart-rental') {
+                 isClickableConflict = true; // These trigger modal
+                 tooltipText = statusClass === 'in-cart-rental'
+                     ? `Conflicts with item in cart (starts ${formatDisplayDate(statusInfo.startDate)}). Click to resolve.`
+                     : 'Conflicts with pending rental. Click to resolve.';
+            } else if (statusClass === 'selected-range') {
+                // Visually distinct, but click handled by addDate checking start date
+                 tooltipText = `Within selected rental starting ${formatDisplayDate(findSelectedStartDateForDate(dateString))}`;
+                 // Technically not disabled, but addDate prevents adding it as a new start
             }
         }
 
+        dayElement.className = `calendar-day ${statusClass}`; // Apply status class (e.g., 'in-cart-rental', 'past')
+        if (isDisabled) dayElement.classList.add('disabled'); // Add generic disabled style
 
-         // Add a data attribute to easily find the element by date string later
-        dayElement.setAttribute('data-date', dateString);
-
-
-        // Add tooltip if generated
-        if (tooltipText) {
-             dayElement.setAttribute('title', tooltipText);
+        // Highlight selected start dates
+        if (selectedDates.includes(dateString)) {
+            dayElement.classList.add('selected');
+            isDisabled = false; // Ensure selected start date is clickable for removal
+            isClickableConflict = false; // Override conflict status if it's the selected start date itself
+            dayElement.classList.remove('disabled'); // Ensure not disabled
+            tooltipText = tooltipText ? `${tooltipText} (Selected)` : 'Selected start date'; // Append or set tooltip
         }
 
+        if (tooltipText) dayElement.setAttribute('title', tooltipText);
 
-        // Add click event for all dates (we'll check validity in the click handler)
-        // BUT only if it's NOT a truly disabled date.
+        // Add click listener ONLY if not strictly disabled
         if (!isDisabled) {
-             dayElement.addEventListener('click', function() {
-                 addDate(dateString); // Let addDate handle logic, including modal for pending conflicts
-             });
+             dayElement.addEventListener('click', function() { addDate(dateString); });
         } else {
-            // For truly disabled dates, optionally add pointer-events: none; via CSS or inline
-             dayElement.style.pointerEvents = 'none';
+            dayElement.style.pointerEvents = 'none'; // Make visually unclickable
         }
-
 
         daysContainer.appendChild(dayElement);
     }
-    console.log("Calendar rendered."); // Debugging
+
+     // After adding days, highlight ranges for selected dates
+     highlightSelectedRanges(daysContainer);
+
+    console.log("Calendar rendered.");
 }
 
-// Enhanced function to render calendar legend with only relevant statuses
+// Helper function to highlight the duration range for selected dates
+function highlightSelectedRanges(daysContainer) {
+    const userTimezoneOffset = new Date().getTimezoneOffset() * 60000;
+    selectedDates.forEach(startDateStr => {
+        const endDate = calculateEndDate(startDateStr);
+        let currentDate = new Date(startDateStr);
+        currentDate.setDate(currentDate.getDate() + 1); // Start highlighting from the day AFTER start date
+
+        while (true) {
+            const currentDateStr = formatDateYMD(currentDate);
+             const adjustedCurrentDate = new Date(currentDate.getTime() + userTimezoneOffset);
+             const adjustedEndDate = new Date(endDate.getTime() + userTimezoneOffset);
+
+             if (adjustedCurrentDate > adjustedEndDate) break; // Stop if past calculated end date
+
+             const rangeDayElement = daysContainer.querySelector(`.calendar-day[data-date="${currentDateStr}"]`);
+             if (rangeDayElement && !rangeDayElement.classList.contains('selected') && !rangeDayElement.classList.contains('selected-range')) {
+                 // Only add 'selected-range' if it's not already a selected start date itself or already marked
+                  rangeDayElement.classList.add('selected-range');
+                  // Optionally add a tooltip if it doesn't have one already
+                  if (!rangeDayElement.getAttribute('title')) {
+                       rangeDayElement.setAttribute('title', `Within selected rental starting ${formatDisplayDate(startDateStr)}`);
+                  }
+                  // Ensure it's not clickable as a *new* start date (addDate handles this)
+             }
+            currentDate.setDate(currentDate.getDate() + 1); // Move to next day
+        }
+    });
+}
+
+
+// Render calendar legend
 function renderCalendarLegend() {
-    // Create legend container
     const legendContainer = document.createElement('div');
     legendContainer.className = 'calendar-legend mt-3';
     legendContainer.innerHTML = `
-        <div class="d-flex flex-wrap justify-content-start">
-            <div class="legend-item me-3 mb-1">
-                <span class="legend-color selected" style="border: 1px solid #ccc;"></span>
-                <span>Selected Start Date</span>
+        <div class="d-flex flex-wrap justify-content-start align-items-center">
+            <div class="legend-item me-3 mb-1"><span class="legend-color selected"></span><span>Selected Start</span></div>
+            <div class="legend-item me-3 mb-1"><span class="legend-color in-cart-rental"></span><span>In Cart</span></div>
+            <div class="legend-item me-3 mb-1"><span class="legend-color unpaid-active-rental"></span><span>Pending Rental</span></div>
+            <div class="legend-item me-3 mb-1"><span class="legend-color paid-active-rental"></span><span>Active Rental</span></div>
+            <div class="legend-item me-3 mb-1"><span class="legend-color past"></span><span>Past/Unavailable</span></div>
             </div>
-            <div class="legend-item me-3 mb-1">
-                <span class="legend-color paid-active-rental" style="border: 1px solid #ccc;"></span>
-                <span>Active Rental</span>
-            </div>
-            <div class="legend-item me-3 mb-1">
-                <span class="legend-color unpaid-active-rental" style="border: 1px solid #ccc;"></span>
-                <span>Pending Rental</span>
-            </div>
-            <div class="legend-item me-3 mb-1">
-                <span class="legend-color past" style="background-color: #f5f5f5; border: 1px solid #ccc;"></span>
-                <span>Past/Unavailable</span>
-            </div>
-        </div>
-         <style>
-             /* Add styles for legend colors if not already defined */
-            .legend-color { display: inline-block; width: 16px; height: 16px; margin-right: 5px; border-radius: 3px; vertical-align: middle; }
-            /* Ensure legend item text is aligned */
-            .legend-item span:last-child { vertical-align: middle; }
-         </style>
-    `;
+        <style>
+            .legend-item { display: inline-flex; align-items: center; font-size: 0.8rem; }
+            .legend-color {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 5px;
+                border-radius: 3px;
+                border: 1px solid #ccc; /* Default border */
+                vertical-align: middle;
+            }
+            .legend-color.selected { background-color: var(--primary-color); color: white; }
+            .legend-color.in-cart-rental {
+                border: 2px dashed #0d6efd; /* Blue dashed border */
+                background-color: rgba(13, 110, 253, 0.1); /* Light blue background */
+            }
+            .legend-color.unpaid-active-rental { background-color: #ffebcc; } /* Light orange */
+            .legend-color.paid-active-rental { background-color: #cce5ff; } /* Light blue */
+            .legend-color.past { background-color: #f5f5f5; }
+            /* Add other status colors if needed (membership, walkin) */
+            .calendar-day.selected-range { background-color: rgba(var(--primary-color-rgb), 0.3); color: var(--primary-color); }
+            .calendar-day.in-cart-rental { background-color: #e2e3e5; color: #495057; cursor: pointer; }
+            .calendar-day.in-cart-rental:hover {
+                background-color: rgba(13, 110, 253, 0.2);
+            }
+        </style>`;
 
-    // Insert the legend after the calendar grid container
     const calendarDaysContainer = document.getElementById('calendar-days');
-     // Check if legend already exists to prevent duplicates
-     const existingLegend = calendarDaysContainer.parentNode.querySelector('.calendar-legend');
-     if (existingLegend) {
-         existingLegend.remove();
-     }
-
+    const existingLegend = calendarDaysContainer.parentNode.querySelector('.calendar-legend');
+    if (existingLegend) existingLegend.remove();
     calendarDaysContainer.parentNode.insertBefore(legendContainer, calendarDaysContainer.nextSibling);
 
-    // -- Add Primary Color RGB definition ---
-     // Get primary color from CSS variable
+    // Define --primary-color-rgb for opacity styles
     const primaryColorHex = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
-
-    // Function to convert hex to RGB
     function hexToRgb(hex) {
         let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : null;
+        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
     }
-
     const rgb = hexToRgb(primaryColorHex);
     if (rgb) {
-        // Define the --primary-color-rgb CSS variable
         document.documentElement.style.setProperty('--primary-color-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-        console.log("Set --primary-color-rgb:", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
     } else {
-         console.error("Could not parse primary color:", primaryColorHex);
-         // Fallback RGB color
-         document.documentElement.style.setProperty('--primary-color-rgb', '255, 0, 0'); // Default red
+         console.error("Could not parse primary color for RGB:", primaryColorHex);
+         document.documentElement.style.setProperty('--primary-color-rgb', '255, 0, 0'); // Fallback red
     }
-
 }
 
+// Setup calendar navigation buttons
 function setupCalendarNavigation() {
-    // Previous month
-    document.getElementById('prev-month').addEventListener('click', function() {
+    document.getElementById('prev-month').addEventListener('click', () => {
         currentMonth--;
-        if (currentMonth < 0) {
-            currentMonth = 11;
-            currentYear--;
-        }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
         renderCalendar();
     });
-
-    // Next month
-    document.getElementById('next-month').addEventListener('click', function() {
+    document.getElementById('next-month').addEventListener('click', () => {
         currentMonth++;
-        if (currentMonth > 11) {
-            currentMonth = 0;
-            currentYear++;
-        }
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
         renderCalendar();
     });
 }
 
 // Initialize UI on page load
-window.onload = async function() { // Make async
-    // Initialize the UI components
+window.onload = async function() {
     renderCalendarWeekdays();
-    renderCalendarLegend(); // Call legend render here
-
-    // Set initial hidden dates value
+    renderCalendarLegend(); // Render legend structure (colors depend on CSS vars defined later)
     document.getElementById('hidden_selected_dates').value = JSON.stringify(selectedDates);
 
-    // Fetch disabled dates and wait for it to complete before first render
-    await fetchDisabledDates(); // Wait here
+    // --- Fetch data and render ---
+    // 1. Fetch server disabled dates (existing bookings etc.)
+    await fetchDisabledDates(); // Calls renderCalendar
+    // 2. Fetch items currently in cart
+    await fetchInCartRentals(); // Calls renderCalendar again with cart info included
 
-    // Initial calendar render (now uses fetched data)
-    // renderCalendar(); // This is called inside fetchDisabledDates now
-
-    // Setup calendar navigation
+    // Setup navigation and modal listeners
     setupCalendarNavigation();
 
-    // Setup modal button event listeners
-    // This button now handles replacing a pending rental
-    document.getElementById('replacePendingBtn').addEventListener('click', function() {
-        console.log("Replace Pending Btn clicked. modalConflictData:", modalConflictData); // Debugging
-        if (modalConflictData && modalConflictData.type === 'rental') {
-            handleReplacePendingRental(); // Handle replacing a pending rental
-        }
-         // Add other types here if needed in the future (e.g., membership, walkin conflicts)
+    // Modal button listeners
+    document.getElementById('replacePendingBtn').addEventListener('click', () => {
+        if (modalConflictData && modalConflictData.type === 'rental') handleReplacePendingRental();
+    });
+    document.getElementById('replaceInCartBtn').addEventListener('click', () => { // Listener for NEW button
+        if (modalConflictData && modalConflictData.type === 'in-cart-rental') handleReplaceInCartRental();
     });
 
-    // The append button is not relevant for rentals due to duration complexity, so its listener is effectively unused here.
+    console.log("Page initialization complete.");
 };
 
 </script>
