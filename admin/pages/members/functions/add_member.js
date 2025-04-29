@@ -711,26 +711,20 @@ $(document).ready(function () {
         program.price
       );
 
-      reviewHtml += `
-                <div class="program-item">
+      reviewHtml += `<div class="program-item d-flex justify-content-between align-items-start mb-2">
+                  <div>
                     <div class="program-title">${program.program}</div>
                     <div class="program-details">
-                        Type: ${
-                          program.type.charAt(0).toUpperCase() +
-                          program.type.slice(1)
-                        } Program<br>
-                        Coach: ${program.coach}<br>
-                        Schedule: Every ${program.day}, ${
-        program.startTime
-      } - ${program.endTime}<br>
-                        Dates: ${schedules
-                          .map((s) => formatDate(s.date))
-                          .join(", ")}<br>
-                        Price: ₱${parseFloat(program.price).toFixed(2)} × ${
-        schedules.length
-      } = ₱${(program.price * schedules.length).toFixed(2)}
+                      Type: ${program.type.charAt(0).toUpperCase() + program.type.slice(1)} Program<br>
+                      Coach: ${program.coach}<br>
+                      Schedule: Every ${program.day}, ${program.startTime} - ${program.endTime}<br>
+                      Dates: ${schedules.map((s) => formatDate(s.date)).join(", ")}<br>
+                      Price: ₱${parseFloat(program.price).toFixed(2)} × ${schedules.length} = ₱${(program.price * schedules.length).toFixed(2)}
                     </div>
-                    <button type="button" class="btn-close remove-program-review" aria-label="Remove program"></button>
+                  </div>
+                  <button type="button" class="btn btn-link text-danger remove-program-review p-0 ms-2 mt-1" title="Remove" style="font-size: 1.2rem; align-self: flex-start;">
+                    <i class="fas fa-times"></i>
+                  </button>
                 </div>
             `;
 
@@ -760,19 +754,21 @@ $(document).ready(function () {
         rental.durationType
       );
 
-      const rentalHtml = `
-                <div class="rental-item review-rental" data-rental-id="${$(
-                  this
-                ).val()}">
-                    <div class="program-title">${rental.name}</div>
-                    <div class="program-details">
-                        Duration: ${rental.duration} ${rental.durationType}<br>
-                        Start Date: ${startDate}<br>
-                        End Date: ${endDate}<br>
-                        Price: ₱${rental.price.toFixed(2)}
+      const rentalHtml = `<div class="rental-item review-rental d-flex justify-content-between align-items-start mb-2" data-rental-id="${$(this).val()}">
+                      <div>
+                        <div class="program-title">${rental.name}</div>
+                        <div class="program-details">
+                          Duration: ${rental.duration} ${rental.durationType}<br>
+                          Start Date: ${startDate}<br>
+                          End Date: ${endDate}<br>
+                          Price: ₱${rental.price.toFixed(2)}
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-link text-danger remove-rental-review p-0 ms-2 mt-1" title="Remove" style="font-size: 1.2rem; align-self: flex-start;">
+                        <i class="fas fa-times"></i>
+                      </button>
                     </div>
-                    <button type="button" class="btn-close remove-rental-review" aria-label="Remove rental"></button>
-                </div>`;
+                  `;
       $("#review-rentals-list").append(rentalHtml);
       totalRentalsFee += rental.price;
     });
@@ -803,21 +799,19 @@ $(document).ready(function () {
       const rentalDurationType = $(this).data("duration-type");
 
       const rentalHtml = `
-                <div class="summary-row" data-type="rental" data-rental-id="${rentalId}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0">${rentalName}</h5>
-                        <button type="button" class="btn btn-link text-danger remove-rental p-0" style="font-size: 1.2rem;">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="details">
-                        <p class="mb-1"><strong>Duration:</strong> ${rentalDuration} ${rentalDurationType}</p>
-                        <p class="mb-1"><strong>Amount:</strong> ₱${rentalPrice.toFixed(
-                          2
-                        )}</p>
-                    </div>
-                </div>
-            `;
+  <div class="summary-row d-flex justify-content-between align-items-start mb-2" data-type="rental" data-rental-id="${rentalId}">
+    <div>
+      <h5 class="mb-0">${rentalName}</h5>
+      <div class="details">
+        <p class="mb-1"><strong>Duration:</strong> ${rentalDuration} ${rentalDurationType}</p>
+        <p class="mb-1"><strong>Amount:</strong> ₱${rentalPrice.toFixed(2)}</p>
+      </div>
+    </div>
+    <button type="button" class="btn btn-link text-danger remove-rental p-0 ms-2 mt-1" style="font-size: 1.2rem; align-self: flex-start;">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+`;
 
       $(".rental-services-summary").append(rentalHtml);
     });
@@ -1367,11 +1361,21 @@ $(document).ready(function () {
           const today = new Date();
           today.setHours(0, 0, 0, 0); // Reset time part for accurate date comparison
 
+          // Calculate the date 15 years ago from today
+          const minBirthdate = new Date(today);
+          minBirthdate.setFullYear(today.getFullYear() - 15);
+
           if (selectedDate >= today) {
             $("#birthdate").addClass("is-invalid");
             $("#birthdate")
               .next(".invalid-feedback")
               .text("Birth date cannot be today or in the future");
+            isValid = false;
+          } else if (selectedDate > minBirthdate) {
+            $("#birthdate").addClass("is-invalid");
+            $("#birthdate")
+              .next(".invalid-feedback")
+              .text("Member must be at least 15 years old");
             isValid = false;
           } else {
             $("#birthdate").removeClass("is-invalid");

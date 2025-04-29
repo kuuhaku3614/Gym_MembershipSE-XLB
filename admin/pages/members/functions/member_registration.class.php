@@ -166,6 +166,8 @@ class MemberRegistration {
     }
 
     public function addMember($data) {
+    // Set is_paid based on checkbox (default to 0 if not set)
+    $isPaid = isset($data['is_paid']) && $data['is_paid'] == '1' ? 1 : 0;
         try {
             $this->pdo->beginTransaction();
 
@@ -264,11 +266,12 @@ class MemberRegistration {
             // Insert registration record WITH validity dates
             $sql = "INSERT INTO registration_records
                         (transaction_id, registration_id, amount, is_paid, valid_from, valid_until, created_at)
-                    VALUES (:transaction_id, 1, :amount, 0, :valid_from, :valid_until, NOW())"; // Added created_at explicitly
+                    VALUES (:transaction_id, 1, :amount, :is_paid, :valid_from, :valid_until, NOW())"; // Added created_at explicitly
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute([
                 ':transaction_id' => $transactionId,
                 ':amount' => $registrationFee,
+                ':is_paid' => $isPaid,
                 // Bind the calculated dates (will be NULL if duration wasn't set or calculation failed)
                 ':valid_from' => $validFrom, // Value is bound here
                 ':valid_until' => $validUntil // Value is bound here
@@ -294,15 +297,17 @@ class MemberRegistration {
                     $startDate = $data['membership_start_date'] ?? date('Y-m-d');
                     $endDate = $this->calculateEndDate($startDate, $planDetails['duration'], $planDetails['duration_type']);
 
-                    $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
-                            VALUES (:transaction_id, :plan_id, :start_date, :end_date, :amount, 'active', 0)";
+                    $sql = "INSERT INTO memberships 
+                            (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) 
+                        VALUES (:transaction_id, :plan_id, :start_date, :end_date, :amount, 'active', :is_paid)";
                     $stmt = $this->pdo->prepare($sql);
                     $result = $stmt->execute([
                         ':transaction_id' => $transactionId,
                         ':plan_id' => $data['membership_plan'],
                         ':start_date' => $startDate,
                         ':end_date' => $endDate,
-                        ':amount' => $planDetails['price']
+                        ':amount' => $planDetails['price'],
+                        ':is_paid' => $isPaid
                     ]);
                     if (!$result) {
                         throw new Exception("Failed to process membership plan");
@@ -325,14 +330,15 @@ class MemberRegistration {
 
                         $sql = "INSERT INTO rental_subscriptions 
                                 (transaction_id, rental_service_id, start_date, end_date, amount, status, is_paid) 
-                                VALUES (:transaction_id, :rental_id, :start_date, :end_date, :amount, 'active', 0)";
+                                VALUES (:transaction_id, :rental_id, :start_date, :end_date, :amount, 'active', :is_paid)";
                         $stmt = $this->pdo->prepare($sql);
                         $result = $stmt->execute([
                             ':transaction_id' => $transactionId,
                             ':rental_id' => $rentalId,
                             ':start_date' => $startDate,
                             ':end_date' => $endDate,
-                            ':amount' => $rentalDetails['price']
+                            ':amount' => $rentalDetails['price'],
+                            ':is_paid' => $isPaid
                         ]);
                         if (!$result) {
                             throw new Exception("Failed to process rental service");

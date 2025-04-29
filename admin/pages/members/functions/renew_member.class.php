@@ -48,15 +48,19 @@ class RenewMember {
 
             if (!$result) throw new Exception('Failed to create registration record');
 
+            // Set is_paid based on checkbox (default to 0 if not set)
+            $isPaid = isset($data['is_paid']) && $data['is_paid'] == '1' ? 1 : 0;
+
             // Insert membership record
-            $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) VALUES (:transaction_id, :plan_id, :start_date, :end_date, :amount, 'active', 0)";
+            $sql = "INSERT INTO memberships (transaction_id, membership_plan_id, start_date, end_date, amount, status, is_paid) VALUES (:transaction_id, :plan_id, :start_date, :end_date, :amount, 'active', :is_paid)";
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute([
                 ':transaction_id' => $transactionId,
                 ':plan_id' => $planId,
                 ':start_date' => $startDate,
                 ':end_date' => $endDate,
-                ':amount' => $planDetails['price']
+                ':amount' => $planDetails['price'],
+                ':is_paid' => $isPaid
             ]);
             if (!$result) throw new Exception('Failed to process membership plan');
 
@@ -85,14 +89,15 @@ class RenewMember {
                 if (!$rentalDetails) throw new Exception('Invalid rental service selected');
                 $rentalStart = date('Y-m-d');
                 $rentalEnd = $memberReg->calculateEndDate($rentalStart, $rentalDetails['duration'], $rentalDetails['duration_type']);
-                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, start_date, end_date, amount, status, is_paid) VALUES (:transaction_id, :rental_id, :start_date, :end_date, :amount, 'active', 0)";
+                $sql = "INSERT INTO rental_subscriptions (transaction_id, rental_service_id, start_date, end_date, amount, status, is_paid) VALUES (:transaction_id, :rental_id, :start_date, :end_date, :amount, 'active', :is_paid)";
                 $stmt = $this->pdo->prepare($sql);
                 $result = $stmt->execute([
                     ':transaction_id' => $transactionId,
                     ':rental_id' => $rentalId,
                     ':start_date' => $rentalStart,
                     ':end_date' => $rentalEnd,
-                    ':amount' => $rentalDetails['price']
+                    ':amount' => $rentalDetails['price'],
+                    ':is_paid' => $isPaid
                 ]);
                 
 

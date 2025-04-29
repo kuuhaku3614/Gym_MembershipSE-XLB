@@ -120,19 +120,24 @@ $(document).ready(function () {
       }
       return program;
     });
-    var data = {
-      action: "renew_member",
-      member_id: $("#member_id").val(),
-      membership_plan: $('input[name="membership_plan"]:checked').val(),
-      membership_start_date: startDate,
-      selected_programs: JSON.stringify(programsWithSchedules),
-      selected_rentals: JSON.stringify(selectedRentals || []),
-    };
+    // Use FormData for AJAX submission
+    var form = $('#renewForm')[0] || document.createElement('form');
+    var formData = new FormData(form);
+    formData.append('action', 'renew_member');
+    formData.append('member_id', $("#member_id").val());
+    formData.append('membership_plan', $('input[name="membership_plan"]:checked').val());
+    formData.append('membership_start_date', startDate);
+    formData.append('selected_programs', JSON.stringify(programsWithSchedules));
+    formData.append('selected_rentals', JSON.stringify(selectedRentals || []));
+    formData.append('is_paid', $('#is_paid').is(':checked') ? '1' : '0');
+
 
     $.ajax({
       url: BASE_URL + "/admin/pages/members/renew_member.php",
       type: "POST",
-      data: data,
+      data: formData,
+      processData: false,
+      contentType: false,
       dataType: "json",
       success: function (response) {
         if (response.success) {
@@ -212,24 +217,22 @@ $(document).ready(function () {
       }
       const total = program.price * numSessions;
       totalPrograms += total;
-      programsHtml += `<div class="program-item mb-2" data-index="${index}">
-                <div class="program-title">${program.program}</div>
-                <div class="program-details">
-                    Coach: ${program.coach}<br>
-                    Schedule: ${program.day} ${program.startTime} - ${
-        program.endTime
-      }<br>
-                    Price per Session: ₱${program.price}<br>
-                    Number of Sessions: ${numSessions}<br>
-                    <strong>Session Dates:</strong> ${
-                      sessionDates.length ? sessionDates.join(", ") : "N/A"
-                    }<br>
-                    Total: ₱${total.toFixed(2)}
-                </div>
-                <button type="button" class="btn btn-link text-danger remove-program-review p-0" title="Remove" style="font-size: 1.2rem;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>`;
+      programsHtml += `<div class="program-item mb-2 d-flex justify-content-between align-items-start" data-index="${index}">
+        <div>
+          <div class="program-title">${program.program}</div>
+          <div class="program-details">
+            Coach: ${program.coach}<br>
+            Schedule: ${program.day} ${program.startTime} - ${program.endTime}<br>
+            Price per Session: ₱${program.price}<br>
+            Number of Sessions: ${numSessions}<br>
+            <strong>Session Dates:</strong> ${sessionDates.length ? sessionDates.join(", ") : "N/A"}<br>
+            Total: ₱${total.toFixed(2)}
+          </div>
+        </div>
+        <button type="button" class="btn btn-link text-danger remove-program-review p-0 ms-2 mt-1" title="Remove" style="font-size: 1.2rem; align-self: flex-start;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>`;
     });
     $("#review-programs-list").html(
       programsHtml || "<p>No programs selected</p>"
@@ -257,18 +260,18 @@ $(document).ready(function () {
       const rentalDuration = $(this).data("duration");
       const rentalDurationType = $(this).data("duration-type");
       totalRentals += rentalPrice;
-      rentalsHtml += `<div class="rental-item review-rental mb-2" data-rental-id="${$(
-        this
-      ).val()}">
-                <div class="program-title">${rentalName}</div>
-                <div class="program-details">
-                    Duration: ${rentalDuration} ${rentalDurationType}<br>
-                    Amount: ₱${rentalPrice.toFixed(2)}
-                </div>
-                <button type="button" class="btn btn-link text-danger remove-rental-review p-0" title="Remove" style="font-size: 1.2rem;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>`;
+      rentalsHtml += `<div class="rental-item review-rental mb-2 d-flex justify-content-between align-items-start" data-rental-id="${$(this).val()}">
+        <div>
+          <div class="program-title">${rentalName}</div>
+          <div class="program-details">
+            Duration: ${rentalDuration} ${rentalDurationType}<br>
+            Amount: ₱${rentalPrice.toFixed(2)}
+          </div>
+        </div>
+        <button type="button" class="btn btn-link text-danger remove-rental-review p-0 ms-2 mt-1" title="Remove" style="font-size: 1.2rem; align-self: flex-start;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>`;
     });
     $("#review-rentals-list").html(rentalsHtml || "<p>No rentals selected</p>");
     $(".review-rentals-fee").text("₱ " + totalRentals.toFixed(2));

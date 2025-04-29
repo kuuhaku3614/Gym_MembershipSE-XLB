@@ -946,7 +946,15 @@ function generateProgramCard($program) {
                                     <p><strong>Plan Amount:</strong><span class="review-price">0.00</span></p>
                                     <p><strong>Programs Fee:</strong><span class="review-programs-fee">0.00</span></p>
                                     <p><strong>Rentals Fee:</strong><span class="review-rentals-fee">0.00</span></p>
-                                    <h4 class="mt-3"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
+                                    <div class="d-flex align-items-center justify-content-between mt-3">
+                                        <h4 class="mb-0"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
+                                        <div class="form-check ms-3">
+                                            <input class="form-check-input" type="checkbox" id="is_paid" name="is_paid" value="1">
+                                            <label class="form-check-label" for="is_paid">
+                                                Pay Now (Mark as Paid)
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="review-actions">

@@ -164,6 +164,8 @@ function generateProgramCard($program) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Member</title>
     <?php include '../../includes/header.php'; ?>
+    <!-- Font Awesome for 'X' icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script>
         const BASE_URL = '<?= BASE_URL ?>';
     </script>
@@ -605,7 +607,10 @@ function generateProgramCard($program) {
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="birthdate" class="form-label">Birth Date</label>
-                                        <input type="date" class="form-control" id="birthdate" name="birthdate">
+                                        <input type="date" class="form-control" id="birthdate" name="birthdate"
+                                        max="<?php echo date('Y-m-d', strtotime('-15 years', strtotime('2025-04-30'))); ?>"
+                                        min="<?php echo date('Y-m-d', strtotime('-100 years', strtotime('2025-04-30'))); ?>">
+
                                         <div class="invalid-feedback">Please enter your birth date</div>
                                     </div>
                                     <div class="col-md-4 mb-3">
@@ -938,7 +943,15 @@ function generateProgramCard($program) {
                                     <p><strong>Plan Amount:</strong><span class="review-price">0.00</span></p>
                                     <p><strong>Programs Fee:</strong><span class="review-programs-fee">0.00</span></p>
                                     <p><strong>Rentals Fee:</strong><span class="review-rentals-fee">0.00</span></p>
-                                    <h4 class="mt-3"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
+                                    <div class="d-flex align-items-center justify-content-between mt-3">
+                                        <h4 class="mt-3"><strong>Total:</strong><span id="review-total-amount">0.00</span></h4>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="is_paid" name="is_paid" value="1">
+                                            <label class="form-check-label" for="is_paid">
+                                                Pay Now (Mark as Paid)
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -996,7 +1009,7 @@ function generateProgramCard($program) {
                     ?>
                     <p><strong>Registration Fee<?= $durationText ?>:</strong> <span class="registration-fee-amount">₱<?= number_format($registrationFee, 2) ?></span></p>
                 </div>
-            </div>>
+            </div>
             </div>
             <!-- Selected Plan -->
             <div class="summary-row" data-type="membership" style="display: none;">
