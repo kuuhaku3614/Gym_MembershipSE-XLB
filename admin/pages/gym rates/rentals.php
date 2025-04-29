@@ -377,12 +377,21 @@ $(document).ready(function () {
         processData: false,  // Prevent jQuery from processing data
         success: function(response) {
             if (response.status === 'success') {
+                // Hide the modal
                 $('#addServiceModal').modal('hide');
-                $('#successModal .modal-body p').text(response.message || 'Service created successfully!');
-                new bootstrap.Modal(document.getElementById('successModal')).show();
-
-                // Reload page after short delay
-                setTimeout(function() {
+                
+                // Create and show a styled success banner
+                const alertBanner = `
+                    <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                        ${response.message || 'Service created successfully!'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('body').append(alertBanner);
+                
+                // Auto-dismiss after 2 seconds and reload page
+                setTimeout(() => {
+                    $('.alert').alert('close');
                     location.reload();
                 }, 2000);
             } else {
@@ -533,19 +542,23 @@ $.ajax({
             const data = (typeof response === "object") ? response : JSON.parse(response);
 
             if (data.status === 'success') {
-                // Update the modal body with the success message
-                $('#updateSuccessModal .modal-body p').text(data.message || "Updated successfully!");
-
-                // Show the success modal
-                $('#updateSuccessModal').modal('show');
-
                 // Hide the edit modal
                 $('#editServiceModal').modal('hide');
-
-                // Reload the page after the modal is hidden
-                $('#updateSuccessModal').on('hidden.bs.modal', function () {
+                
+                // Create and show a styled success banner
+                const alertBanner = `
+                    <div class="alert alert-success alert-dismissible" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+                        ${data.message || 'Service updated successfully!'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('body').append(alertBanner);
+                
+                // Auto-dismiss after 2 seconds and reload page
+                setTimeout(() => {
+                    $('.alert').alert('close');
                     location.reload();
-                });
+                }, 2000);
             } else {
                 // Show an error modal
                 $('#errorModal').modal('show').find('.modal-body').text('Error: ' + (data.message || "Unexpected error occurred."));

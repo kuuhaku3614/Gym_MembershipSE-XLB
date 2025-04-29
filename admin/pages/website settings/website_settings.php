@@ -175,7 +175,7 @@ $galleryImages = fetchExistingContent('gallery_images');
     /* CSS */
 .update-logo-btn, .update-color-palette-btn, .update-welcome-btn, .update-offers-btn, .update-gym-offers-btn, 
 .update-about-us-btn, .update-contact-btn, .update-products-btn, .update-staff-btn, .update-gallery-btn,
-.update-staff-member-btn, .update-product-btn, .update-offer-btn {
+.update-staff-member-btn, .update-product-btn, .update-offer-btn, .update-terms-btn, .update-schedule-btn {
     color: white; /* Set the text color */
     border: none; /* Remove border */
     padding: 10px 20px; /* Add padding */
@@ -199,7 +199,9 @@ $galleryImages = fetchExistingContent('gallery_images');
 .update-gallery-btn:hover,
 .update-staff-member-btn:hover,
 .update-product-btn:hover,
-.update-offer-btn:hover {
+.update-offer-btn:hover, 
+.update-terms-btn:hover,
+.update-schedule-btn:hover {
     background-color: #45a049; /* Slightly darker green */
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -531,7 +533,7 @@ color: #f8f8f8;
 <div class="card mb-3" data-section="schedule">
     <div class="card-header">
         <h2>Operating Schedule</h2>
-        <button class="btn update-schedule-btn">Update</button>
+        <button class="btn update-schedule-btn" style="background-color: #4CAF50;">Update</button>
     </div>
     <div class="card-body">
         <?php
@@ -559,7 +561,7 @@ color: #f8f8f8;
 <div class="card mb-3" data-section="terms-and-conditions">
     <div class="card-header">
         <h2>Terms and Conditions</h2>
-        <button class="btn update-terms-btn">Update</button>
+        <button class="btn update-terms-btn" style="background-color: #4CAF50;">Update</button>
     </div>
     <div class="card-body">
         <form method="post">
