@@ -531,7 +531,7 @@ color: #f8f8f8;
 <div class="card mb-3" data-section="schedule">
     <div class="card-header">
         <h2>Operating Schedule</h2>
-        <button class="btn update-schedule-btn">Update</button>
+        <button class="btn update-schedule-btn" style="background-color: #4CAF50;">Update</button>
     </div>
     <div class="card-body">
         <?php
@@ -559,7 +559,7 @@ color: #f8f8f8;
 <div class="card mb-3" data-section="terms-and-conditions">
     <div class="card-header">
         <h2>Terms and Conditions</h2>
-        <button class="btn update-terms-btn">Update</button>
+        <button class="btn update-terms-btn" style="background-color: #4CAF50;">Update</button>
     </div>
     <div class="card-body">
         <form method="post">
