@@ -652,10 +652,13 @@ function showMembershipWalkinConflictWarning(conflictData) {
 function availServices() {
   // First check if there are any pending transactions
   checkPendingTransactions()
-    .then((hasPendingTransactions) => {
-      if (hasPendingTransactions) {
-        // If there are pending transactions, show warning and stop
-        showPendingTransactionWarning();
+    .then((pendingData) => {
+      if (pendingData.pendingLimitReached) {
+        // If there are 3 or more pending transactions, show warning and stop
+        showPendingTransactionWarning(pendingData);
+      } else if (pendingData.hasPendingTransactions) {
+        // If there are pending transactions but less than 3, show warning with proceed option
+        showPendingTransactionWarning(pendingData);
       } else {
         // No pending transactions, now check cart content
         fetch("services/cart_handler.php", {
@@ -933,6 +936,7 @@ function showActiveMembershipWarning(membershipData) {
     });
 }
 
+// Function to check for pending transactions
 function checkPendingTransactions() {
   return fetch("services/transaction_check.php", {
     method: "POST",
@@ -949,28 +953,47 @@ function checkPendingTransactions() {
     })
     .then((data) => {
       console.log("Pending transaction check:", data);
-      return data.hasPendingTransactions;
+      return {
+        hasPendingTransactions: data.data.hasPendingTransactions,
+        pendingLimitReached: data.data.pendingLimitReached,
+        pendingCount: data.data.pendingCount
+      };
     });
 }
 
-function showPendingTransactionWarning() {
-  // Create the warning modal HTML
+function showPendingTransactionWarning(pendingData) {
+  // Check if limit reached
+  const isLimitReached = pendingData.pendingLimitReached;
+  
+  // Create the warning modal HTML with appropriate message
   const warningModalHTML = `
     <div class="modal fade" id="pendingTransactionModal" tabindex="-1" aria-labelledby="pendingTransactionModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-0">
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title" id="pendingTransactionModalLabel">Pending Transaction</h5>
+          <div class="modal-header bg-${isLimitReached ? 'danger' : 'warning'} text-${isLimitReached ? 'white' : 'dark'}">
+            <h5 class="modal-title" id="pendingTransactionModalLabel">Pending Transaction${isLimitReached ? ' Limit Reached' : ''}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="d-flex align-items-center mb-3">
-              <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 2rem;"></i>
-              <p class="mb-0">You have pending transactions awaiting approval from admin/staff.</p>
+              <i class="bi bi-exclamation-${isLimitReached ? 'circle' : 'triangle'}-fill text-${isLimitReached ? 'danger' : 'warning'} me-3" style="font-size: 2rem;"></i>
+              <div>
+                ${isLimitReached ? 
+                  `<p class="mb-1">You cannot avail additional services at this time.</p>
+                   <p class="mb-2">You already have ${pendingData.pendingCount} pending transactions awaiting approval.</p>
+                   <p class="mb-0">Please wait for your pending transactions to be processed before availing more services.</p>` 
+                  : 
+                  `<p class="mb-0">You have pending transactions awaiting approval from admin/staff.</p>`
+                }
+              </div>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            ${!isLimitReached ? 
+              `<button type="button" class="btn btn-primary" id="proceedAnywayBtn">Proceed Anyway</button>` 
+              : ''
+            }
           </div>
         </div>
       </div>
@@ -985,6 +1008,16 @@ function showPendingTransactionWarning() {
     document.getElementById("pendingTransactionModal")
   );
   warningModal.show();
+
+  // Add event listener to the "Proceed Anyway" button if it exists
+  if (!isLimitReached) {
+    document
+      .getElementById("proceedAnywayBtn")
+      .addEventListener("click", function () {
+        warningModal.hide();
+        validateAndProceed();
+      });
+  }
 }
 
 function validateAndProceed() {

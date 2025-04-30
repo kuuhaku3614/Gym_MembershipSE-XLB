@@ -1,103 +1,41 @@
 <?php
 require_once '../../../config.php';
-session_start();
 $database = new Database();
 $pdo = $database->connect();
 
-// More explicitly handle the POST values with fallbacks
-$start_date = isset($_POST['start_date']) && !empty($_POST['start_date']) ? $_POST['start_date'] : (isset($_SESSION['start_date']) ? $_SESSION['start_date'] : date('Y-m-d', strtotime('-1 year')));
-$end_date = isset($_POST['end_date']) && !empty($_POST['end_date']) ? $_POST['end_date'] : (isset($_SESSION['end_date']) ? $_SESSION['end_date'] : date('Y-m-d'));
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $_SESSION['start_date'] = $start_date;
-    $_SESSION['end_date'] = $end_date;
-}
-
-// Date range filter HTML
-echo '
-<div class="card mb-4">
-    <div class="card-header">
-        <h6 class="m-0 font-weight-bold text-primary">Date Range Filter</h6>
-    </div>
-    <div class="card-body">
-        <form id="dateRangeForm" method="post">
-            <div class="row">
-                <div class="col-md-5">
-                    <div class="form-group">
-                        <label for="start_date">From Date</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" 
-                               value="'.$start_date.'" max="'.date('Y-m-d').'">
-                    </div>
-                </div>
-                <div class="col-md-5">
-                    <div class="form-group">
-                        <label for="end_date">To Date</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" 
-                               value="'.$end_date.'" max="'.date('Y-m-d').'">
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <button type="submit" class="btn btn-primary btn-block">Apply Filter</button>
-                    </div>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-';
-
-// Adding date range conditions to all relevant queries
-$date_condition = " AND (created_at BETWEEN :start_date AND :end_date) ";
-$date_condition_walkins = " AND (date BETWEEN :start_date AND :end_date) ";
-
-// Calculate total members with date filter
+// Calculate total members (using COUNT of users)
 $total_members_sql = "SELECT COALESCE(COUNT(*), 0) AS total
 FROM memberships
-WHERE status IN ('active', 'expired', 'expiring')
-AND (created_at BETWEEN :start_date AND :end_date)";
+WHERE status IN ('active', 'expired', 'expiring');
+";
 $total_members_stmt = $pdo->prepare($total_members_sql);
-$total_members_stmt->bindParam(':start_date', $start_date);
-$total_members_stmt->bindParam(':end_date', $end_date);
 $total_members_stmt->execute();
 $total_members = $total_members_stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-// Calculate total revenue with date filter
+// Calculate total revenue (sum from all sources using your original queries)
 $total_revenue_sql = "
     SELECT 
-        (SELECT COALESCE(SUM(amount), 0) FROM memberships WHERE created_at BETWEEN :start_date1 AND :end_date1) +
-        (SELECT COALESCE(SUM(amount), 0) FROM program_subscription_schedule WHERE created_at BETWEEN :start_date2 AND :end_date2) +
-        (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions WHERE created_at BETWEEN :start_date3 AND :end_date3) +
-        (SELECT COALESCE(SUM(amount), 0) FROM walk_in_records WHERE is_paid = 1 AND date BETWEEN :start_date4 AND :end_date4) as total_revenue";
+        (SELECT COALESCE(SUM(amount), 0) FROM memberships) +
+        (SELECT COALESCE(SUM(amount), 0) FROM program_subscription_schedule) +
+        (SELECT COALESCE(SUM(amount), 0) FROM rental_subscriptions) +
+        (SELECT COALESCE(SUM(amount), 0) FROM walk_in_records WHERE is_paid = 1) as total_revenue";
 $total_revenue_stmt = $pdo->prepare($total_revenue_sql);
-$total_revenue_stmt->bindParam(':start_date1', $start_date);
-$total_revenue_stmt->bindParam(':end_date1', $end_date);
-$total_revenue_stmt->bindParam(':start_date2', $start_date);
-$total_revenue_stmt->bindParam(':end_date2', $end_date);
-$total_revenue_stmt->bindParam(':start_date3', $start_date);
-$total_revenue_stmt->bindParam(':end_date3', $end_date);
-$total_revenue_stmt->bindParam(':start_date4', $start_date);
-$total_revenue_stmt->bindParam(':end_date4', $end_date);
 $total_revenue_stmt->execute();
 $total_revenue = $total_revenue_stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'];
 
-// Calculate average check-ins with date filter
+// Calculate average check-ins from attendance_history
 $avg_checkins_sql = "
     SELECT AVG(total_checkins) as avg_checkins FROM (
         SELECT COUNT(CASE WHEN ah.status = 'checked_in' THEN 1 END) as total_checkins
         FROM attendance_history ah
         JOIN attendance a ON ah.attendance_id = a.id
-        WHERE ah.created_at BETWEEN :start_date AND :end_date
         GROUP BY a.user_id
     ) as user_checkins";
 $avg_checkins_stmt = $pdo->prepare($avg_checkins_sql);
-$avg_checkins_stmt->bindParam(':start_date', $start_date);
-$avg_checkins_stmt->bindParam(':end_date', $end_date);
 $avg_checkins_stmt->execute();
 $avg_checkins = $avg_checkins_stmt->fetch(PDO::FETCH_ASSOC)['avg_checkins'];
 
-// Your attendance query with date filter
+// Your original attendance query
 $attendance_sql = "
     SELECT 
         u.username, 
@@ -109,16 +47,13 @@ $attendance_sql = "
     JOIN attendance a ON ah.attendance_id = a.id
     JOIN users u ON a.user_id = u.id
     JOIN personal_details pd ON u.id = pd.user_id
-    WHERE ah.created_at BETWEEN :start_date AND :end_date
     GROUP BY u.id
     ORDER BY total_check_ins DESC";
 $attendance_stmt = $pdo->prepare($attendance_sql);
-$attendance_stmt->bindParam(':start_date', $start_date);
-$attendance_stmt->bindParam(':end_date', $end_date);
 $attendance_stmt->execute();
 $attendance = $attendance_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Your earnings query with date filter
+// Your original earnings query
 $earnings_sql = "
     SELECT 
         MONTH(created_at) as month,
@@ -126,12 +61,9 @@ $earnings_sql = "
         COUNT(*) as total_memberships,
         SUM(amount) as total_amount
     FROM memberships
-    WHERE created_at BETWEEN :start_date AND :end_date
     GROUP BY month, year
     ORDER BY year, month";
 $earnings_stmt = $pdo->prepare($earnings_sql);
-$earnings_stmt->bindParam(':start_date', $start_date);
-$earnings_stmt->bindParam(':end_date', $end_date);
 $earnings_stmt->execute();
 $earnings = $earnings_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -143,15 +75,15 @@ $formatted_earnings = array_map(function($row) {
     ];
 }, $earnings);
 
-// Member Service Utilization query with date filter
+// Member Service Utilization query
 $utilization_sql = "
     SELECT 
         u.username,
         pd.first_name,
         pd.last_name,
-        COUNT(DISTINCT CASE WHEN m.created_at BETWEEN :start_date1 AND :end_date1 THEN m.id END) as membership_count,
-        COUNT(DISTINCT CASE WHEN ps.created_at BETWEEN :start_date2 AND :end_date2 THEN ps.id END) as program_subscriptions,
-        COUNT(DISTINCT CASE WHEN rs.created_at BETWEEN :start_date3 AND :end_date3 THEN rs.id END) as rental_subscriptions
+        COUNT(DISTINCT m.id) as membership_count,
+        COUNT(DISTINCT ps.id) as program_subscriptions,
+        COUNT(DISTINCT rs.id) as rental_subscriptions
     FROM users u
     JOIN personal_details pd ON u.id = pd.user_id
     LEFT JOIN transactions t ON u.id = t.user_id
@@ -163,16 +95,10 @@ $utilization_sql = "
     GROUP BY u.id
     ORDER BY membership_count DESC";
 $utilization_stmt = $pdo->prepare($utilization_sql);
-$utilization_stmt->bindParam(':start_date1', $start_date);
-$utilization_stmt->bindParam(':end_date1', $end_date);
-$utilization_stmt->bindParam(':start_date2', $start_date);
-$utilization_stmt->bindParam(':end_date2', $end_date);
-$utilization_stmt->bindParam(':start_date3', $start_date);
-$utilization_stmt->bindParam(':end_date3', $end_date);
 $utilization_stmt->execute();
 $utilization = $utilization_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Programs query with date filter
+// Programs query
 $programs_sql = "
     SELECT 
         MONTH(created_at) as month,
@@ -180,16 +106,13 @@ $programs_sql = "
         COUNT(*) as total_subscriptions,
         SUM(amount) as total_amount
     FROM program_subscription_schedule
-    WHERE created_at BETWEEN :start_date AND :end_date
     GROUP BY month, year
     ORDER BY year, month";
 $programs_stmt = $pdo->prepare($programs_sql);
-$programs_stmt->bindParam(':start_date', $start_date);
-$programs_stmt->bindParam(':end_date', $end_date);
 $programs_stmt->execute();
 $programs = $programs_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Rentals query with date filter
+// Rentals query
 $rentals_sql = "
     SELECT 
         MONTH(created_at) as month,
@@ -197,16 +120,13 @@ $rentals_sql = "
         COUNT(*) as total_rentals,
         SUM(amount) as total_amount
     FROM rental_subscriptions
-    WHERE created_at BETWEEN :start_date AND :end_date
     GROUP BY month, year
     ORDER BY year, month";
 $rentals_stmt = $pdo->prepare($rentals_sql);
-$rentals_stmt->bindParam(':start_date', $start_date);
-$rentals_stmt->bindParam(':end_date', $end_date);
 $rentals_stmt->execute();
 $rentals = $rentals_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-function getIncomeExtremes($pdo, $start_date, $end_date) {
+function getIncomeExtremes($pdo) {
     $sql = "
     WITH monthly_revenue AS (
         SELECT 
@@ -214,13 +134,13 @@ function getIncomeExtremes($pdo, $start_date, $end_date) {
             DATE_FORMAT(created_at, '%M %Y') as month_name,
             SUM(amount) as total_amount
         FROM (
-            SELECT created_at, amount FROM memberships WHERE created_at BETWEEN :start_date1 AND :end_date1
+            SELECT created_at, amount FROM memberships
             UNION ALL
-            SELECT created_at, amount FROM program_subscription_schedule WHERE created_at BETWEEN :start_date2 AND :end_date2
+            SELECT created_at, amount FROM program_subscription_schedule
             UNION ALL
-            SELECT created_at, amount FROM rental_subscriptions WHERE created_at BETWEEN :start_date3 AND :end_date3
+            SELECT created_at, amount FROM rental_subscriptions
             UNION ALL
-            SELECT date as created_at, amount FROM walk_in_records WHERE is_paid = 1 AND date BETWEEN :start_date4 AND :end_date4
+            SELECT date as created_at, amount FROM walk_in_records WHERE is_paid = 1
         ) as all_revenue
         GROUP BY month_key, month_name
     )
@@ -239,19 +159,11 @@ function getIncomeExtremes($pdo, $start_date, $end_date) {
     ORDER BY type";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':start_date1', $start_date);
-    $stmt->bindParam(':end_date1', $end_date);
-    $stmt->bindParam(':start_date2', $start_date);
-    $stmt->bindParam(':end_date2', $end_date);
-    $stmt->bindParam(':start_date3', $start_date);
-    $stmt->bindParam(':end_date3', $end_date);
-    $stmt->bindParam(':start_date4', $start_date);
-    $stmt->bindParam(':end_date4', $end_date);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function getServiceExtremes($pdo, $start_date, $end_date) {
+function getServiceExtremes($pdo) {
     $sql = "
     WITH monthly_services AS (
         SELECT 
@@ -259,9 +171,9 @@ function getServiceExtremes($pdo, $start_date, $end_date) {
             DATE_FORMAT(created_at, '%M %Y') as month_name,
             COUNT(*) as total_services
         FROM (
-            SELECT created_at FROM program_subscription_schedule WHERE created_at BETWEEN :start_date1 AND :end_date1
+            SELECT created_at FROM program_subscription_schedule
             UNION ALL
-            SELECT created_at FROM rental_subscriptions WHERE created_at BETWEEN :start_date2 AND :end_date2
+            SELECT created_at FROM rental_subscriptions
         ) as all_services
         GROUP BY month_key, month_name
     )
@@ -280,15 +192,11 @@ function getServiceExtremes($pdo, $start_date, $end_date) {
     ORDER BY type";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':start_date1', $start_date);
-    $stmt->bindParam(':end_date1', $end_date);
-    $stmt->bindParam(':start_date2', $start_date);
-    $stmt->bindParam(':end_date2', $end_date);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function getMembershipExtremes($pdo, $start_date, $end_date) {
+function getMembershipExtremes($pdo) {
     $sql = "
     WITH monthly_memberships AS (
         SELECT 
@@ -296,7 +204,6 @@ function getMembershipExtremes($pdo, $start_date, $end_date) {
             DATE_FORMAT(created_at, '%M %Y') as month_name,
             COUNT(*) as total_memberships
         FROM memberships
-        WHERE created_at BETWEEN :start_date AND :end_date
         GROUP BY month_key, month_name
     )
     SELECT * FROM (
@@ -314,16 +221,14 @@ function getMembershipExtremes($pdo, $start_date, $end_date) {
     ORDER BY type";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':start_date', $start_date);
-    $stmt->bindParam(':end_date', $end_date);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Run the queries to get the extreme values with date filter
-$income_extremes = getIncomeExtremes($pdo, $start_date, $end_date);
-$service_extremes = getServiceExtremes($pdo, $start_date, $end_date);
-$membership_extremes = getMembershipExtremes($pdo, $start_date, $end_date);
+// Run the queries to get the extreme values
+$income_extremes = getIncomeExtremes($pdo);
+$service_extremes = getServiceExtremes($pdo);
+$membership_extremes = getMembershipExtremes($pdo);
 
 // Format the results for display
 function formatExtremes($extremes) {
@@ -353,7 +258,7 @@ $income_data = formatExtremes($income_extremes);
 $service_data = formatExtremes($service_extremes);
 $membership_data = formatExtremes($membership_extremes);
 
-// Gender distribution of memberships with date filter
+// Gender distribution of memberships
 $gender_distribution_sql = "
     SELECT 
         pd.sex,
@@ -363,16 +268,13 @@ $gender_distribution_sql = "
     JOIN transactions t ON m.transaction_id = t.id
     JOIN users u ON t.user_id = u.id
     JOIN personal_details pd ON u.id = pd.user_id
-    WHERE m.created_at BETWEEN :start_date AND :end_date
     GROUP BY pd.sex
     ORDER BY total_memberships DESC";
 $gender_stmt = $pdo->prepare($gender_distribution_sql);
-$gender_stmt->bindParam(':start_date', $start_date);
-$gender_stmt->bindParam(':end_date', $end_date);
 $gender_stmt->execute();
 $gender_distribution = $gender_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Monthly gender distribution of memberships with date filter
+// Monthly gender distribution of memberships
 $monthly_gender_sql = "
     SELECT 
         MONTH(m.created_at) as month,
@@ -384,16 +286,13 @@ $monthly_gender_sql = "
     JOIN transactions t ON m.transaction_id = t.id
     JOIN users u ON t.user_id = u.id
     JOIN personal_details pd ON u.id = pd.user_id
-    WHERE m.created_at BETWEEN :start_date AND :end_date
     GROUP BY year, month, month_name, pd.sex
     ORDER BY year, month, pd.sex";
 $monthly_gender_stmt = $pdo->prepare($monthly_gender_sql);
-$monthly_gender_stmt->bindParam(':start_date', $start_date);
-$monthly_gender_stmt->bindParam(':end_date', $end_date);
 $monthly_gender_stmt->execute();
 $monthly_gender_distribution = $monthly_gender_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Age demographics of memberships with date filter
+// Age demographics of memberships
 $age_distribution_sql = "
     SELECT 
         CASE
@@ -411,7 +310,6 @@ $age_distribution_sql = "
     JOIN transactions t ON m.transaction_id = t.id
     JOIN users u ON t.user_id = u.id
     JOIN personal_details pd ON u.id = pd.user_id
-    WHERE m.created_at BETWEEN :start_date AND :end_date
     GROUP BY age_group
     ORDER BY 
         CASE age_group
@@ -424,12 +322,10 @@ $age_distribution_sql = "
             WHEN '65+' THEN 7
         END";
 $age_stmt = $pdo->prepare($age_distribution_sql);
-$age_stmt->bindParam(':start_date', $start_date);
-$age_stmt->bindParam(':end_date', $end_date);
 $age_stmt->execute();
 $age_distribution = $age_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Monthly age demographics of memberships with date filter
+// Monthly age demographics of memberships
 $monthly_age_sql = "
     SELECT 
         MONTH(m.created_at) as month,
@@ -449,7 +345,6 @@ $monthly_age_sql = "
     JOIN transactions t ON m.transaction_id = t.id
     JOIN users u ON t.user_id = u.id
     JOIN personal_details pd ON u.id = pd.user_id
-    WHERE m.created_at BETWEEN :start_date AND :end_date
     GROUP BY year, month, month_name, age_group
     ORDER BY year, month, 
         CASE age_group
@@ -462,13 +357,11 @@ $monthly_age_sql = "
             WHEN '65+' THEN 7
         END";
 $monthly_age_stmt = $pdo->prepare($monthly_age_sql);
-$monthly_age_stmt->bindParam(':start_date', $start_date);
-$monthly_age_stmt->bindParam(':end_date', $end_date);
 $monthly_age_stmt->execute();
 $monthly_age_distribution = $monthly_age_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Function to get peak months by gender with date filter
-function getPeakMonthsByGender($pdo, $start_date, $end_date) {
+// Function to get peak months by gender
+function getPeakMonthsByGender($pdo) {
     $sql = "
     WITH gender_monthly AS (
         SELECT 
@@ -480,7 +373,6 @@ function getPeakMonthsByGender($pdo, $start_date, $end_date) {
         JOIN transactions t ON m.transaction_id = t.id
         JOIN users u ON t.user_id = u.id
         JOIN personal_details pd ON u.id = pd.user_id
-        WHERE m.created_at BETWEEN :start_date AND :end_date
         GROUP BY pd.sex, month_name
     )
     SELECT sex, month_name, membership_count
@@ -489,14 +381,12 @@ function getPeakMonthsByGender($pdo, $start_date, $end_date) {
     ORDER BY sex";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':start_date', $start_date);
-    $stmt->bindParam(':end_date', $end_date);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Function to get peak months by age group with date filter
-function getPeakMonthsByAge($pdo, $start_date, $end_date) {
+// Function to get peak months by age group
+function getPeakMonthsByAge($pdo) {
     $sql = "
     WITH age_monthly AS (
         SELECT 
@@ -526,7 +416,6 @@ function getPeakMonthsByAge($pdo, $start_date, $end_date) {
         JOIN transactions t ON m.transaction_id = t.id
         JOIN users u ON t.user_id = u.id
         JOIN personal_details pd ON u.id = pd.user_id
-        WHERE m.created_at BETWEEN :start_date AND :end_date
         GROUP BY age_group, month_name
     )
     SELECT age_group, month_name, membership_count
@@ -544,13 +433,11 @@ function getPeakMonthsByAge($pdo, $start_date, $end_date) {
         END";
     
     $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':start_date', $start_date);
-    $stmt->bindParam(':end_date', $end_date);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Walk-ins query with date filter
+// Walk-ins query
 $walkins_sql = "
     SELECT 
         MONTH(date) as month,
@@ -559,21 +446,17 @@ $walkins_sql = "
         SUM(amount) as total_amount
     FROM walk_in_records
     WHERE is_paid = 1
-    AND date BETWEEN :start_date AND :end_date
     GROUP BY year, month
     ORDER BY year, month";
 $walkins_stmt = $pdo->prepare($walkins_sql);
-$walkins_stmt->bindParam(':start_date', $start_date);
-$walkins_stmt->bindParam(':end_date', $end_date);
 $walkins_stmt->execute();
 $walkins = $walkins_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Get the peak months data with date filter
-$peak_months_gender = getPeakMonthsByGender($pdo, $start_date, $end_date);
-$peak_months_age = getPeakMonthsByAge($pdo, $start_date, $end_date);
+// Get the peak months data
+$peak_months_gender = getPeakMonthsByGender($pdo);
+$peak_months_age = getPeakMonthsByAge($pdo);
 
 date_default_timezone_set('Asia/Manila');
-// Add AJAX functionality at the bottom
 ?>
 <link rel="stylesheet" href="css/report.css">
 <body class="bg-light">
@@ -1035,48 +918,8 @@ date_default_timezone_set('Asia/Manila');
                 </div>
             </div>
         </div>
+
     </div>
-
-      <script>
-// Keep basic setup if needed:
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-
-    if (startDateInput) startDateInput.setAttribute('max', today);
-    if (endDateInput) endDateInput.setAttribute('max', today);
-
-    // Basic client-side validation (optional, but good UX)
-    if (startDateInput && endDateInput) {
-        startDateInput.addEventListener('change', function() {
-            if (this.value > endDateInput.value && endDateInput.value !== '') {
-                alert('Start date cannot be after end date!');
-                 // Maybe reset or adjust, depends on desired UX
-            }
-        });
-        endDateInput.addEventListener('change', function() {
-             if (this.value < startDateInput.value && startDateInput.value !== '') {
-                alert('End date cannot be before start date!');
-                 // Maybe reset or adjust
-             }
-        });
-    }
-     // Add the submit validation *without* preventDefault
-     const form = document.getElementById('dateRangeForm');
-     if(form){
-         form.addEventListener('submit', function(e) {
-            const startDate = document.getElementById('start_date').value;
-            const endDate = document.getElementById('end_date').value;
-            if (startDate > endDate) {
-                alert('Start date cannot be after end date!');
-                e.preventDefault(); // Prevent submission ONLY if invalid
-                return false;
-            }
-         });
-     }
-});
-</script>
 
     <script>
 $(document).ready(function() {

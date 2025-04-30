@@ -14,7 +14,7 @@ if ($isLoggedIn) {
     $notificationQueriesPath = __DIR__ . '/../notification_queries.php';
     if (file_exists($notificationQueriesPath)) {
         require_once $notificationQueriesPath;
-        
+
         // Always refresh notification session from DB on login
         $_SESSION['read_notifications'] = [
             'transactions' => [],
@@ -27,8 +27,8 @@ if ($isLoggedIn) {
             'transaction_receipts' => []
         ];
         $pdo = $database->connect();
-        $sql = "SELECT notification_type, notification_id 
-                FROM notification_reads 
+        $sql = "SELECT notification_type, notification_id
+                FROM notification_reads
                 WHERE user_id = ?";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(1, $_SESSION['user_id'], PDO::PARAM_INT);
@@ -42,7 +42,7 @@ if ($isLoggedIn) {
                 $_SESSION['read_notifications'][$type][] = $id;
             }
         }
-        
+
         // Get unread notifications count - use the $database from config.php
         $unreadNotificationsCount = getUnreadNotificationsCount($database, $_SESSION['user_id']);
     }
@@ -51,60 +51,236 @@ if ($isLoggedIn) {
 // Function to update membership statuses
 function updateMembershipStatuses($pdo) {
     // Update expired memberships
-    $expiredQuery = "UPDATE 
+    $expiredQuery = "UPDATE
                 memberships m
-            SET 
+            SET
                 m.status = 'expired'
-            WHERE 
+            WHERE
                 m.status = 'active'
                 AND m.end_date < CURDATE()";
-    
+
     $expiredStmt = $pdo->query($expiredQuery);
     $expiredCount = $expiredStmt ? $expiredStmt->rowCount() : 0;
-    
+
     // Flag expiring memberships (within 7 days)
-    $expiringQuery = "UPDATE 
+    $expiringQuery = "UPDATE
                 memberships m
-            SET 
+            SET
                 m.status = 'expiring'
-            WHERE 
-                m.status = 'active' 
+            WHERE
+                m.status = 'active'
                 AND m.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
-    
+
     $expiringStmt = $pdo->query($expiringQuery);
     $expiringCount = $expiringStmt ? $expiringStmt->rowCount() : 0;
-    
+
     return ['expired' => $expiredCount, 'expiring' => $expiringCount];
 }
 
 // Function to update rental subscription statuses
 function updateRentalStatuses($pdo) {
     // Update expired rental subscriptions
-    $expiredQuery = "UPDATE 
+    $expiredQuery = "UPDATE
                 rental_subscriptions rs
-            SET 
+            SET
                 rs.status = 'expired'
-            WHERE 
+            WHERE
                 rs.status = 'active'
                 AND rs.end_date < CURDATE()";
-    
+
     $expiredStmt = $pdo->query($expiredQuery);
     $expiredCount = $expiredStmt ? $expiredStmt->rowCount() : 0;
-    
+
     // Flag expiring rental subscriptions (within 7 days)
-    $expiringQuery = "UPDATE 
+    $expiringQuery = "UPDATE
                 rental_subscriptions rs
-            SET 
+            SET
                 rs.status = 'expiring'
-            WHERE 
-                rs.status = 'active' 
+            WHERE
+                rs.status = 'active'
                 AND rs.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
-    
+
     $expiringStmt = $pdo->query($expiringQuery);
     $expiringCount = $expiringStmt ? $expiringStmt->rowCount() : 0;
-    
+
     return ['expired' => $expiredCount, 'expiring' => $expiringCount];
 }
+
+/**
+ * Checks for pending transactions (memberships, walk-ins, rentals)
+ * where the start date has passed the current date for a specific user.
+ * Removes only the expired associated services and only removes 
+ * transactions if they have no remaining associated services.
+ *
+ * @param PDO $pdo The database connection object.
+ * @param int $userId The ID of the user to check transactions for.
+ * @return array An array of removed service details.
+ */
+function checkAndRemovePendingTransactions($pdo, $userId) {
+    $removedServices = [];
+    $transactionsToCheck = [];
+    $currentDate = date('Y-m-d');
+
+    // --- Check Memberships ---
+    $sqlMemberships = "SELECT
+                           t.id AS transaction_id,
+                           m.id AS membership_id,
+                           mp.plan_name AS service_name,
+                           m.start_date AS service_start_date,
+                           t.created_at AS transaction_added_date
+                       FROM
+                           transactions t
+                       JOIN
+                           memberships m ON t.id = m.transaction_id
+                       JOIN
+                           membership_plans mp ON m.membership_plan_id = mp.id
+                       WHERE
+                           t.user_id = :userId
+                           AND t.status = 'pending'
+                           AND m.is_paid = 0
+                           AND m.start_date < :currentDate";
+
+    $stmtMemberships = $pdo->prepare($sqlMemberships);
+    $stmtMemberships->bindParam(':userId', $userId, PDO::PARAM_INT);
+    $stmtMemberships->bindParam(':currentDate', $currentDate, PDO::PARAM_STR);
+    $stmtMemberships->execute();
+    $pendingMemberships = $stmtMemberships->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($pendingMemberships as $membership) {
+        // Delete the specific membership
+        $sqlDeleteMembership = "DELETE FROM memberships WHERE id = :membershipId";
+        $stmtDeleteMembership = $pdo->prepare($sqlDeleteMembership);
+        $stmtDeleteMembership->bindParam(':membershipId', $membership['membership_id'], PDO::PARAM_INT);
+        $stmtDeleteMembership->execute();
+        
+        // Add to removed services list
+        $removedServices[] = [
+            'type' => 'Membership',
+            'service_name' => $membership['service_name'],
+            'start_date' => $membership['service_start_date'],
+            'added_date' => $membership['transaction_added_date'],
+            'transaction_id' => $membership['transaction_id']
+        ];
+        
+        // Add transaction to check list
+        $transactionsToCheck[$membership['transaction_id']] = true;
+    }
+
+    // --- Check Walk-in Records ---
+    $sqlWalkins = "SELECT
+                       t.id AS transaction_id,
+                       wr.id AS walkin_id,
+                       'Walk-in' AS service_name,
+                       wr.date AS service_start_date,
+                       t.created_at AS transaction_added_date
+                   FROM
+                       transactions t
+                   JOIN
+                       walk_in_records wr ON t.id = wr.transaction_id
+                   WHERE
+                       t.user_id = :userId
+                       AND t.status = 'pending'
+                       AND wr.is_paid = 0
+                       AND wr.date < :currentDate";
+
+    $stmtWalkins = $pdo->prepare($sqlWalkins);
+    $stmtWalkins->bindParam(':userId', $userId, PDO::PARAM_INT);
+    $stmtWalkins->bindParam(':currentDate', $currentDate, PDO::PARAM_STR);
+    $stmtWalkins->execute();
+    $pendingWalkins = $stmtWalkins->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($pendingWalkins as $walkin) {
+        // Delete the specific walk-in record
+        $sqlDeleteWalkin = "DELETE FROM walk_in_records WHERE id = :walkinId";
+        $stmtDeleteWalkin = $pdo->prepare($sqlDeleteWalkin);
+        $stmtDeleteWalkin->bindParam(':walkinId', $walkin['walkin_id'], PDO::PARAM_INT);
+        $stmtDeleteWalkin->execute();
+        
+        // Add to removed services list
+        $removedServices[] = [
+            'type' => 'Walk-in',
+            'service_name' => $walkin['service_name'],
+            'start_date' => $walkin['service_start_date'],
+            'added_date' => $walkin['transaction_added_date'],
+            'transaction_id' => $walkin['transaction_id']
+        ];
+        
+        // Add transaction to check list
+        $transactionsToCheck[$walkin['transaction_id']] = true;
+    }
+
+    // --- Check Rental Subscriptions ---
+    $sqlRentals = "SELECT
+                        t.id AS transaction_id,
+                        rs.id AS rental_id,
+                        rsrv.service_name AS service_name,
+                        rs.start_date AS service_start_date,
+                        t.created_at AS transaction_added_date
+                    FROM
+                        transactions t
+                    JOIN
+                        rental_subscriptions rs ON t.id = rs.transaction_id
+                    JOIN
+                        rental_services rsrv ON rs.rental_service_id = rsrv.id
+                    WHERE
+                        t.user_id = :userId
+                        AND t.status = 'pending'
+                        AND rs.is_paid = 0
+                        AND rs.start_date < :currentDate";
+
+    $stmtRentals = $pdo->prepare($sqlRentals);
+    $stmtRentals->bindParam(':userId', $userId, PDO::PARAM_INT);
+    $stmtRentals->bindParam(':currentDate', $currentDate, PDO::PARAM_STR);
+    $stmtRentals->execute();
+    $pendingRentals = $stmtRentals->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($pendingRentals as $rental) {
+        // Delete the specific rental subscription
+        $sqlDeleteRental = "DELETE FROM rental_subscriptions WHERE id = :rentalId";
+        $stmtDeleteRental = $pdo->prepare($sqlDeleteRental);
+        $stmtDeleteRental->bindParam(':rentalId', $rental['rental_id'], PDO::PARAM_INT);
+        $stmtDeleteRental->execute();
+        
+        // Add to removed services list
+        $removedServices[] = [
+            'type' => 'Rental Subscription',
+            'service_name' => $rental['service_name'],
+            'start_date' => $rental['service_start_date'],
+            'added_date' => $rental['transaction_added_date'],
+            'transaction_id' => $rental['transaction_id']
+        ];
+        
+        // Add transaction to check list
+        $transactionsToCheck[$rental['transaction_id']] = true;
+    }
+
+    // Now check if any transactions need to be deleted (no remaining services)
+    if (!empty($transactionsToCheck)) {
+        foreach (array_keys($transactionsToCheck) as $transactionId) {
+            // Check if any services are still associated with this transaction
+            $sqlCheckServices = "SELECT 
+                                  (SELECT COUNT(*) FROM memberships WHERE transaction_id = :transId) +
+                                  (SELECT COUNT(*) FROM walk_in_records WHERE transaction_id = :transId) +
+                                  (SELECT COUNT(*) FROM rental_subscriptions WHERE transaction_id = :transId) AS service_count";
+            
+            $stmtCheckServices = $pdo->prepare($sqlCheckServices);
+            $stmtCheckServices->bindParam(':transId', $transactionId, PDO::PARAM_INT);
+            $stmtCheckServices->execute();
+            $serviceCount = (int)$stmtCheckServices->fetchColumn();
+            
+            // If no services remain, delete the transaction
+            if ($serviceCount === 0) {
+                $sqlDeleteTransaction = "DELETE FROM transactions WHERE id = :transId";
+                $stmtDeleteTransaction = $pdo->prepare($sqlDeleteTransaction);
+                $stmtDeleteTransaction->bindParam(':transId', $transactionId, PDO::PARAM_INT);
+                $stmtDeleteTransaction->execute();
+            }
+        }
+    }
+
+    return $removedServices;
+}
+
 
 // Run status updates if user is logged in and has admin or staff role
 if ($isLoggedIn && isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'staff'])) {
@@ -115,6 +291,33 @@ if ($isLoggedIn && isset($_SESSION['role']) && in_array($_SESSION['role'], ['adm
     }
 }
 
+// --- Check and remove pending transactions for logged-in users ---
+if ($isLoggedIn && isset($database)) {
+    try {
+        $pdo = $database->connect();
+        $removedTransactions = checkAndRemovePendingTransactions($pdo, $_SESSION['user_id']);
+
+        if (!empty($removedTransactions)) {
+            // Prepare a notification message
+            $notificationMessage = "The following pending transactions have been automatically removed because their start date has passed:<br>";
+            $notificationMessage .= "<ul>";
+            foreach ($removedTransactions as $transaction) {
+                $notificationMessage .= "<li><strong>" . htmlspecialchars($transaction['service_name']) . "</strong> (" . htmlspecialchars($transaction['type']) . ") - Supposed Start Date: " . htmlspecialchars($transaction['start_date']) . ", Added On: " . htmlspecialchars($transaction['added_date']) . "</li>";
+            }
+            $notificationMessage .= "</ul>";
+
+            // Store the notification message in the session to be displayed later
+            $_SESSION['transaction_removal_notification'] = $notificationMessage;
+        }
+    } catch (PDOException $e) {
+        // Log the error or handle it appropriately
+        error_log("Database error during pending transaction check: " . $e->getMessage());
+        // Optionally, set a generic error message for the user
+        // $_SESSION['transaction_removal_error'] = "An error occurred while checking your transactions.";
+    }
+}
+
+
 // Check for expired or expiring memberships to show popup
 $showMembershipPopup = false;
 $membershipDetails = null;
@@ -124,16 +327,16 @@ if ($isLoggedIn) {
     // Get expired and expiring memberships for the current user if notification_queries.php is included
     if (function_exists('getMembershipNotifications')) {
         $membershipNotifications = getMembershipNotifications($database, $_SESSION['user_id']);
-        
+
         // First check if user has any active membership
         $hasActiveMembership = false;
-        
+
         // We need to add this function call to check for active memberships
         if (function_exists('getActiveMemberships')) {
             $activeMemberships = getActiveMemberships($database, $_SESSION['user_id']);
             $hasActiveMembership = count($activeMemberships) > 0;
         }
-        
+
         // Only show popup if user doesn't have any active memberships
         if (!$hasActiveMembership) {
             // First check for expired memberships (higher priority)
@@ -146,7 +349,7 @@ if ($isLoggedIn) {
                     break; // Just get the first expired membership
                 }
             }
-            
+
             // If no expired memberships found, check for expiring ones
             if (!$showMembershipPopup) {
                 foreach ($membershipNotifications as $membership) {
@@ -160,7 +363,7 @@ if ($isLoggedIn) {
                 }
             }
         }
-        
+
         // Check if user has dismissed this popup before
         if (isset($_SESSION['dismissed_membership_popup'])) {
             $showMembershipPopup = false;
@@ -207,11 +410,11 @@ if (!function_exists('getFullName')) {
             }
 
             // Fetch first name, last name, and profile photo
-            $sql = "SELECT pd.first_name, pd.last_name, pp.photo_path 
-                   FROM personal_details pd 
-                   LEFT JOIN profile_photos pp ON pd.user_id = pp.user_id 
+            $sql = "SELECT pd.first_name, pd.last_name, pp.photo_path
+                   FROM personal_details pd
+                   LEFT JOIN profile_photos pp ON pd.user_id = pp.user_id
                    WHERE pd.user_id = ? AND (pp.is_active = 1 OR pp.is_active IS NULL)";
-            
+
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $userId);
             $stmt->execute();
@@ -220,10 +423,10 @@ if (!function_exists('getFullName')) {
             if ($row = $result->fetch_assoc()) {
                 $fullName = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
                 $photoPath = $row['photo_path'] ? htmlspecialchars($row['photo_path']) : '../cms_img/user.png';
-                
+
                 // Store both name and photo path
                 $_SESSION['user_photo'] = $photoPath;
-                
+
                 $stmt->close();
                 $conn->close();
                 return $fullName;
@@ -277,7 +480,7 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     .cart-btn {
         position: relative;
     }
-    
+
     .cart-count {
         position: absolute;
         top: -8px;
@@ -294,10 +497,46 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         padding: 0 3px;
         font-weight: bold;
     }
-    
+
     /* Hide the count when it's zero */
     .cart-count.empty {
         display: none;
+    }
+
+    /* Styles for the transaction removal notification popup */
+    .transaction-notification-popup {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #f8d7da; /* Light red background */
+        color: #721c24; /* Dark red text */
+        border: 1px solid #f5c6cb; /* Red border */
+        border-radius: 5px;
+        padding: 15px;
+        z-index: 2000; /* Ensure it's above other content */
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .transaction-notification-popup .close-btn {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        color: #721c24;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .transaction-notification-popup ul {
+        margin-top: 10px;
+        padding-left: 20px;
+    }
+
+    .transaction-notification-popup li {
+        margin-bottom: 5px;
     }
 </style>
 
@@ -305,32 +544,27 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 <body>
 
 <nav class="home-navbar">
-    <!-- This logo shows on desktop only -->
     <div class="home-logo">
     <?php if (!empty($logo['location'])): ?>
         <img src="<?php echo BASE_URL . '/' . htmlspecialchars($logo['location']); ?>" alt="Gym Logo" class="logo-image">
     <?php else: ?>
-        <!-- Fallback logo if none is found in the database -->
         <img src="<?php echo BASE_URL; ?>/assets/images/default-logo.png" alt="Gym Logo" class="logo-image">
     <?php endif; ?>
 </div>
-    
-    <!-- Hamburger menu button -->
+
     <div class="hamburger-menu d-lg-none">
         <span></span>
         <span></span>
         <span></span>
     </div>
-    
-    <!-- Overlay for mobile menu -->
+
     <div class="overlay d-lg-none"></div>
-    
+
     <ul class="nav-links">
-        <!-- Logo at the top of sidebar on mobile -->
         <div class="sidebar-logo">
             <img src="<?php echo $basePath; ?>cms_img/jc_logo1.png" alt="Gym Logo" class="logo-image">
         </div>
-        
+
         <li><a href="<?php echo $isCoachFolder ? '../website.php' : 'website.php'; ?>">Home</a></li>
         <li><a href="<?php echo $isCoachFolder ? '../services.php' : 'services.php'; ?>">Services</a></li>
         <li><a href="<?php echo $isCoachFolder ? '../website.php#S-AboutUs' : 'website.php#S-AboutUs'; ?>">About</a></li>
@@ -339,32 +573,31 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 
     <div class="nav-right">
         <?php if ($isLoggedIn): ?>
-            <?php 
+            <?php
             // Get the current page filename
             $current_page = basename($_SERVER['PHP_SELF']);
-            if ($current_page === 'services.php'): 
+            if ($current_page === 'services.php'):
             ?>
                 <button class="cart-btn" id="showCartBtn" aria-label="Open Shopping Cart" title="Open Shopping Cart">
                     <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-                    <!-- <span class="cart-count" id="cartCount">0</span> -->
-                </button>
+                    </button>
             <?php endif; ?>
-            
+
             <div class="dropdown">
-                <button class="dropbtn" 
-                        aria-label="User Menu" 
+                <button class="dropbtn"
+                        aria-label="User Menu"
                         aria-haspopup="true"
                         aria-expanded="false"
                         aria-controls="user-dropdown"
-                        title="User Menu" 
+                        title="User Menu"
                         style="background-image: url('<?php echo $basePath; ?><?php echo isset($_SESSION['user_photo']) ? $_SESSION['user_photo'] : 'cms_img/user.png'; ?>');">
                     <?php if ($unreadNotificationsCount > 0): ?>
                         <span class="notification-badge2"><?php echo $unreadNotificationsCount; ?></span>
                     <?php endif; ?>
                 </button>
-                <div class="dropdown-content" 
-                    id="user-dropdown" 
-                    role="menu"     
+                <div class="dropdown-content"
+                    id="user-dropdown"
+                    role="menu"
                     aria-label="User menu options">
                     <?php if (isset($_SESSION['personal_details']['role_name']) && ($_SESSION['personal_details']['role_name'] === 'coach' || $_SESSION['personal_details']['role_name'] === 'coach/staff')): ?>
                         <a href="<?php echo $isCoachFolder ? 'programs.php' : './coach/dashboard.php'; ?>" class="username" role="menuitem"><?php echo getFullName(); ?></a>
@@ -372,18 +605,17 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
                         <a href="profile.php" class="username" role="menuitem"><?php echo getFullName(); ?></a>
                     <?php endif; ?>
                     <hr class="dropdown-divider" style="margin: 5px auto; border-top: 1px solid rgba(0,0,0,0.2); width: 90%;">
-                    
-                    <!-- Add Go to Admin button for admin, staff, or coach/staff roles -->
-                    <?php if ((isset($_SESSION['personal_details']['role_name']) && 
-                            ($_SESSION['personal_details']['role_name'] === 'admin' || 
-                            $_SESSION['personal_details']['role_name'] === 'staff' || 
-                            $_SESSION['personal_details']['role_name'] === 'coach/staff')) || 
+
+                    <?php if ((isset($_SESSION['personal_details']['role_name']) &&
+                            ($_SESSION['personal_details']['role_name'] === 'admin' ||
+                            $_SESSION['personal_details']['role_name'] === 'staff' ||
+                            $_SESSION['personal_details']['role_name'] === 'coach/staff')) ||
                             (isset($_SESSION['role']) && $_SESSION['role'] === 'admin')): ?>
                         <a href="<?php echo $basePath; ?>admin" role="menuitem">
                             <i class="fas fa-user-shield pe-3"></i> Go to Admin
                         </a>
                     <?php endif; ?>
-                    
+
                     <a class="notifications-btn" href="<?php echo $isCoachFolder ? '../notifications.php' : 'notifications.php'; ?>">
                         <i class="fas fa-bell pe-3"></i> Notifications
                         <?php if ($unreadNotificationsCount > 0): ?>
@@ -400,7 +632,6 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
     </div>
 </nav>
 
-<!-- Logout Confirmation Modal -->
 <div id="logoutModal" class="modal" style="display: none; position: fixed; z-index: 2500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
     <div class="modal-content" style="background-color: #fff; padding: 20px; border-radius: 5px; width: 300px; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
         <h4>Confirm Logout</h4>
@@ -432,7 +663,6 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
 }
 </style>
 
-<!-- Membership Renewal Popup -->
 <div id="membershipRenewalPopup" class="membership-popup" style="display: none;">
     <div class="membership-popup-content">
         <span class="close-popup"><i class="fas fa-times"></i></span>
@@ -448,6 +678,12 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
         </div>
     </div>
 </div>
+
+<div id="transactionRemovalPopup" class="transaction-notification-popup">
+    <span class="close-btn" onclick="closeTransactionRemovalPopup()">&times;</span>
+    <div id="transactionRemovalMessage"></div>
+</div>
+
 
 <script>
 function showLogoutConfirmation(event) {
@@ -473,20 +709,34 @@ document.addEventListener("DOMContentLoaded", function() {
         if (cartCountElement) {
             cartCountElement.textContent = cartCount;
         }
+
+    // Show transaction removal notification if present in session
+    const transactionRemovalMessage = <?php echo json_encode(isset($_SESSION['transaction_removal_notification']) ? $_SESSION['transaction_removal_notification'] : null); ?>;
+    if (transactionRemovalMessage) {
+        document.getElementById('transactionRemovalMessage').innerHTML = transactionRemovalMessage;
+        document.getElementById('transactionRemovalPopup').style.display = 'block';
+        // Clear the session variable after displaying
+        <?php unset($_SESSION['transaction_removal_notification']); ?>
+    }
 });
+
+function closeTransactionRemovalPopup() {
+    document.getElementById('transactionRemovalPopup').style.display = 'none';
+}
+
 
 document.addEventListener('DOMContentLoaded', function() {
     const hamburger = document.querySelector('.hamburger-menu');
     const navLinks = document.querySelector('.nav-links');
     const overlay = document.querySelector('.overlay');
-  
+
     hamburger.addEventListener('click', function() {
         hamburger.classList.toggle('active');
         navLinks.classList.toggle('active');
         overlay.classList.toggle('active');
         document.body.classList.toggle('no-scroll');
     });
-  
+
     // Close menu when clicking on overlay
     overlay.addEventListener('click', function() {
         hamburger.classList.remove('active');
@@ -494,7 +744,7 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.classList.remove('active');
         document.body.classList.remove('no-scroll');
     });
-  
+
     // Close menu when clicking on a link
     const links = document.querySelectorAll('.nav-links a');
     links.forEach(link => {
@@ -514,12 +764,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const popupTitle = document.getElementById('popupTitle');
     const popupMessage = document.getElementById('popupMessage');
     const popupIcon = document.querySelector('.popup-icon i');
-    
+
     // Set membership details based on status
     const membershipStatus = '<?php echo $membershipStatus; ?>';
     const planName = '<?php echo htmlspecialchars($membershipDetails['plan_name']); ?>';
     const dateFormatted = '<?php echo date('F j, Y', strtotime($membershipDetails['end_date'])); ?>';
-    
+
     if (membershipStatus === 'expired') {
         popupTitle.textContent = 'Membership Expired';
         popupMessage.innerHTML = `Your <strong>${planName}</strong> membership expired on <strong>${dateFormatted}</strong>.`;
@@ -532,17 +782,17 @@ document.addEventListener('DOMContentLoaded', function() {
         popupIcon.className = 'fas fa-clock';
         document.querySelector('.membership-popup-content').classList.add('expiring');
     }
-    
+
     // Show popup with a slight delay for better UX
     setTimeout(() => {
         popup.style.display = 'flex';
     }, 1500);
-    
+
     // Close button functionality
     document.querySelector('.close-popup').addEventListener('click', function() {
         popup.style.display = 'none';
     });
-    
+
     // Dismiss button functionality
     document.getElementById('dismissPopup').addEventListener('click', function() {
         // Send AJAX request to dismiss the popup

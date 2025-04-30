@@ -1,67 +1,66 @@
 <?php
-// Prevent any output before JSON response
-ob_start();
-
-// Error handling
-error_reporting(0);
-ini_set('display_errors', 0);
+// Prevent direct access
+if (!defined('BASEPATH')) {
+    define('BASEPATH', true);
+}
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Function to send JSON response and exit
-function send_json_response($data, $status = true) {
-    // Clear any output buffers
-    while (ob_get_level()) {
-        ob_end_clean();
-    }
-    header('Content-Type: application/json');
-    echo json_encode(['success' => $status, 'data' => $data]);
-    exit;
-}
-
-// Required files
+// Include database connection
 require_once __DIR__ . '/../../config.php';
 
-try {
-    // Check if user is logged in
-    if (!isset($_SESSION['user_id'])) {
-        send_json_response(['hasPendingTransactions' => false], true);
-        exit;
-    }
+// Function to send JSON response
+function send_json_response($data, $status = true) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => $status, 'data' => $data]);
+    exit();
+}
 
-    $user_id = $_SESSION['user_id'];
-    
-    // Database connection
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    send_json_response(['message' => 'Not logged in'], false);
+}
+
+$user_id = $_SESSION['user_id'];
+
+try {
     $db = new Database();
     $conn = $db->connect();
     
-    // Query to check for pending transactions
-    $sql = "SELECT u.username, t.id AS transaction_id, t.status, t.created_at 
-            FROM users u 
-            JOIN transactions t ON u.id = t.user_id 
-            WHERE t.status = 'pending' AND u.id = ?";
-    
+    // Count pending transactions for this user
+    $sql = "SELECT COUNT(*) as pending_count FROM transactions WHERE user_id = ? AND status = 'pending'";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Check if there are any pending transactions
-    $pendingTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $hasPending = !empty($pendingTransactions);
+    $pendingCount = (int)$result['pending_count'];
+    $hasPendingTransactions = $pendingCount > 0;
+    $pendingLimitReached = $pendingCount >= 3;
     
-    echo json_encode([
-        'success' => true,
-        'hasPendingTransactions' => $hasPending,
-        'pendingTransactions' => $hasPending ? $pendingTransactions : []
+    // Get specific details about pending transactions if needed
+    $pendingTransactions = [];
+    if ($hasPendingTransactions) {
+        $sql = "SELECT t.id, t.created_at 
+                FROM transactions t 
+                WHERE t.user_id = ? AND t.status = 'pending'
+                ORDER BY t.created_at DESC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$user_id]);
+        $pendingTransactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    // Return results
+    send_json_response([
+        'hasPendingTransactions' => $hasPendingTransactions,
+        'pendingLimitReached' => $pendingLimitReached,
+        'pendingCount' => $pendingCount,
+        'pendingTransactions' => $pendingTransactions
     ]);
-    
+
 } catch (Exception $e) {
-    echo json_encode([
-        'success' => false,
-        'hasPendingTransactions' => false,
-        'message' => 'Error checking pending transactions: ' . $e->getMessage()
-    ]);
+    send_json_response(['message' => 'Error checking pending transactions: ' . $e->getMessage()], false);
 }
 ?>
