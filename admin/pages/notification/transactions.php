@@ -1,14 +1,62 @@
 <?php
+// --- AJAX handler for mark as read ---
+if (isset($_POST['action']) && $_POST['action'] === 'mark_as_read' && isset($_POST['transaction_id'])) {
+    require_once(__DIR__ . '/../../../config.php');
+    session_start();
+    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+    $transaction_id = $_POST['transaction_id'];
+    header('Content-Type: application/json');
+    if ($user_id && is_numeric($transaction_id)) {
+        // Insert or update notification_reads
+        $stmt = $pdo->prepare("INSERT INTO notification_reads (user_id, notification_id, notification_type, read_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE read_at = NOW()");
+        $success = $stmt->execute([$user_id, $transaction_id, 'transactions']);
+        echo json_encode(['success' => $success]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid user or transaction ID.']);
+    }
+    exit;
+}
+
 // --- AJAX handler for transaction details (must be first!) ---
 if (isset($_POST['action']) && $_POST['action'] === 'pay_transaction' && isset($_POST['transaction_id'])) {
     require_once(__DIR__ . '/../../../config.php');
     require_once(__DIR__ . '/functions/notifications.class.php');
+    require_once(__DIR__ . '/functions/activity_logger.php'); // Include the logger
     $notificationsObj = new Notifications();
     header('Content-Type: application/json');
     $transactionId = $_POST['transaction_id'];
     if (is_numeric($transactionId)) {
         $result = $notificationsObj->markTransactionPaid($transactionId);
         if ($result === true) {
+            // Fetch user_id and full name for logging
+            $stmt = $pdo->prepare("SELECT u.id as user_id, CONCAT(pd.first_name, ' ', COALESCE(pd.middle_name, ''), ' ', pd.last_name) as full_name
+                                   FROM transactions t
+                                   LEFT JOIN users u ON t.user_id = u.id
+                                   LEFT JOIN personal_details pd ON u.id = pd.user_id
+                                   WHERE t.id = ?");
+            $stmt->execute([$transactionId]);
+            $fullName = '';
+            $userId = null;
+            if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $fullName = trim(preg_replace('/\s+/', ' ', $row['full_name']));
+                $userId = $row['user_id'];
+            }
+            // Check if there is a registration record for this transaction
+            $hasRegistration = false;
+            if (!empty($userId)) {
+                $stmtReg = $pdo->prepare("SELECT id FROM registration_records WHERE transaction_id = ? LIMIT 1");
+                $stmtReg->execute([$transactionId]);
+                if ($stmtReg->fetch(PDO::FETCH_ASSOC)) {
+                    $hasRegistration = true;
+                }
+            }
+            // If there is a registration record, update role_id to 3
+            if ($hasRegistration) {
+                $update = $pdo->prepare("UPDATE users SET role_id = 3 WHERE id = ?");
+                $update->execute([$userId]);
+            }
+            // Log staff activity with full name
+            logStaffActivity('Confirm Transaction', 'Confirm pending request and marked as paid - ' . $fullName);
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => $result ?: 'Failed to update payment.']);
@@ -28,7 +76,15 @@ if (isset($_POST['transaction_id'])) {
     if (is_numeric($_POST['transaction_id'])) {
         try {
             $details = $notificationsObj->getTransactionDetails($_POST['transaction_id']);
-            if ($details !== null) {
+            // Check if there are memberships or walk-ins left
+            $hasMemberships = !empty($details['memberships']);
+            $hasWalkins = !empty($details['walkins']);
+            if (!$hasMemberships && !$hasWalkins) {
+                // Delete the transaction
+                $stmtDel = $pdo->prepare("DELETE FROM transactions WHERE id = ?");
+                $stmtDel->execute([$_POST['transaction_id']]);
+                echo json_encode(['success' => false, 'deleted' => true]);
+            } else if ($details !== null) {
                 echo json_encode(['success' => true, 'data' => $details]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Transaction details not found.']);
@@ -68,26 +124,45 @@ $palette = getDynamicPaletteColors($pdo);
 echo '<style>:root { --primary-color: ' . htmlspecialchars($palette['primary']) . '; --secondary-color: ' . htmlspecialchars($palette['secondary']) . '; }</style>';
 require_once(__DIR__ . '/functions/notifications.class.php');
 $notificationsObj = new Notifications();
+session_start();
+$current_user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
 $pendingRequests = $notificationsObj->getAllPendingRequests();
+// Add read status for each transaction
+foreach ($pendingRequests as &$request) {
+    $stmt = $pdo->prepare("SELECT id FROM notification_reads WHERE user_id = ? AND notification_id = ? AND notification_type = ? LIMIT 1");
+    $stmt->execute([$current_user_id, $request['transaction_id'], 'transactions']);
+    $request['is_read'] = $stmt->rowCount() > 0;
+}
+unset($request);
 ?>
 <link rel="stylesheet" href="css/notification.css">
 <div class="container mt-4">
     <h2>Pending Requests</h2>
+    <form class="mb-3" id="searchForm">
+        <div class="input-group">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by name or date...">
+        </div>
+    </form>
     <div class="notification-container">
         <?php if (!empty($pendingRequests)): ?>
             <?php foreach ($pendingRequests as $request): ?>
-                <div class="notification-card mb-3 clickable-card" data-transaction-id="<?= htmlspecialchars($request['transaction_id']) ?>">
-                    <div class="notification-content d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1">
-                                <span class="text-primary">#<?= htmlspecialchars($request['transaction_id']) ?></span>
-                                <?= htmlspecialchars($request['full_name']) ?>
-                            </h5>
-                            <p class="mb-0 text-muted"><small><?= htmlspecialchars($request['created_at']) ?></small></p>
-                        </div>
-
-                    </div>
-                </div>
+                <div class="notification-card mb-3 clickable-card position-relative" data-transaction-id="<?= htmlspecialchars($request['transaction_id']) ?>">
+    <div class="notification-content d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">
+                <?= htmlspecialchars($request['full_name']) ?>
+            </h5>
+            <?php
+    $date = new DateTime($request['created_at']);
+    $formatted = $date->format('F j, Y \a\t h:i A');
+?>
+<p class="mb-0 text-muted"><small><?= htmlspecialchars($formatted) ?></small></p>
+        </div>
+        <?php if (!$request['is_read']): ?>
+            <span class="badge badge-new">NEW</span>
+        <?php endif; ?>
+    </div>
+</div>
             <?php endforeach; ?>
         <?php else: ?>
             <div class="alert alert-info">No pending transaction requests.</div>
@@ -95,7 +170,47 @@ $pendingRequests = $notificationsObj->getAllPendingRequests();
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Real-time search as you type
+    $('#searchInput').on('input', function() {
+        var query = $(this).val().toLowerCase();
+        $('.notification-card').each(function() {
+            var cardText = $(this).text().toLowerCase();
+            if (cardText.indexOf(query) !== -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+    $('#resetBtn').on('click', function() {
+        $('#searchInput').val('');
+        $('.notification-card').show();
+    });
+});
+</script>
+
 <style>
+.badge-new {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    background: var(--primary-color, #4e73df);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 9px 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 1px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    z-index: 2;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+.notification-card { position: relative; }
+
 /* Modern Modal Styles */
 #notificationModal .modal-content {
     border-radius: 1rem;
@@ -395,13 +510,26 @@ $(document).on('click', '.remove-item-btn', function() {
 // Make cards clickable
 $(document).on('click', '.clickable-card', function() {
     var transactionId = $(this).data('transaction-id');
+    var card = $(this);
+    // Mark as read via AJAX
+    $.ajax({
+        type: 'POST',
+        url: BASE_URL + '/transactions.php',
+        data: { action: 'mark_as_read', transaction_id: transactionId },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                card.find('.badge-new').fadeOut(200, function() { $(this).remove(); });
+            }
+        }
+    });
     showNotificationDetailsAjax(transactionId);
 });
 
 function showNotificationDetailsAjax(transactionId) {
     // Clear previous content
     $('#modalName, #modalPhone, #modalSex, #modalBirthdate, #modalAge').text('');
-    $('#modalProfilePic').attr('src', BASE_URL + '/assets/images/default-profile.png');
+    $('#modalProfilePic').attr('src', BASE_URL + '/../../../cms_img/user.png');
     $('#modalServices').empty();
 
     $.ajax({
@@ -410,6 +538,11 @@ function showNotificationDetailsAjax(transactionId) {
         data: { transaction_id: transactionId },
         dataType: 'json',
         success: function(json) {
+            if (json.deleted) {
+                showSuccessToast('Transaction no longer exists and has been removed.');
+                setTimeout(function() { location.reload(); }, 1500);
+                return;
+            }
             if (!json.success) {
                 // Show error in modal body
                 $('#modalServices').html('<div class="alert alert-danger">' + (json.message || 'Failed to load details.') + '</div>');
