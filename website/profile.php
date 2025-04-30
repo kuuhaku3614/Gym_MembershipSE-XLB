@@ -106,32 +106,95 @@
                 <div class="tab-content mt-3" id="serviceTabsContent">
                     <div class="tab-pane fade show active" id="memberships" role="tabpanel" aria-labelledby="memberships-tab">
                         <div class="service-list">
-                            <?php if (!empty($active_services['memberships'])) { ?>
-                                <?php foreach ($active_services['memberships'] as $service) { ?>
-                                    <div class="service-item card mb-2 shadow-sm">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <h6 class="mb-0"><?= htmlspecialchars($service['name']) ?></h6>
-                                                <span class="badge bg-success">Active</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mt-2">
-                                                <div>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar-alt me-1"></i> Expires: <?= htmlspecialchars($service['end_date']) ?>
-                                                    </small>
+                            <?php
+                            // Group memberships by name and check for lapses
+                            function groupMembershipsWithNoLapse($memberships) {
+                                $result = [];
+                                foreach ($memberships as $service) {
+                                    $name = $service['name'];
+                                    if (!isset($result[$name])) {
+                                        $result[$name] = [];
+                                    }
+                                    // Sort each group by start_date ascending
+                                    $result[$name][] = $service;
+                                }
+                                // Now for each group, split into subgroups if there's a lapse
+                                $final = [];
+                                foreach ($result as $name => $services) {
+                                    // Sort by start_date ascending
+                                    usort($services, function($a, $b) {
+                                        return strtotime($a['start_date']) - strtotime($b['start_date']);
+                                    });
+                                    $subgroup = [];
+                                    $last_end = null;
+                                    foreach ($services as $service) {
+                                        $current_start = strtotime($service['start_date']);
+                                        if ($last_end !== null && $current_start > ($last_end + 86400)) { // More than 1 day lapse
+                                            $final[$name][] = $subgroup;
+                                            $subgroup = [];
+                                        }
+                                        $subgroup[] = $service;
+                                        $last_end = strtotime($service['end_date']);
+                                    }
+                                    if (!empty($subgroup)) {
+                                        $final[$name][] = $subgroup;
+                                    }
+                                }
+                                return $final;
+                            }
+                            $grouped_memberships = [];
+                            if (!empty($active_services['memberships'])) {
+                                $grouped_memberships = groupMembershipsWithNoLapse($active_services['memberships']);
+                                foreach ($grouped_memberships as $name => $groups) {
+                                    foreach ($groups as $services) {
+                                        // Find the earliest start date and latest end date
+                                        $earliest_start = null;
+                                        $latest_end = null;
+                                        $amounts = [];
+                                        foreach ($services as $service) {
+                                            $start = strtotime($service['start_date']);
+                                            $end = strtotime($service['end_date']);
+                                            if ($earliest_start === null || $start < $earliest_start) {
+                                                $earliest_start = $start;
+                                                $earliest_start_str = $service['start_date'];
+                                            }
+                                            if ($latest_end === null || $end > $latest_end) {
+                                                $latest_end = $end;
+                                                $latest_end_str = $service['end_date'];
+                                            }
+                                            if (isset($service['amount'])) {
+                                                $amounts[] = $service['amount'];
+                                            }
+                                        }
+                                        ?>
+                                        <div class="service-item card mb-2 shadow-sm">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0"><?= htmlspecialchars($name) ?></h6>
+                                                    <span class="badge bg-success">Active</span>
                                                 </div>
-                                                <?php if (isset($service['amount'])) { ?>
+                                                <div class="d-flex justify-content-between mt-2">
                                                     <div>
                                                         <small class="text-muted">
-                                                            <i class="fas fa-tag me-1"></i> ₱<?= number_format($service['amount'], 2) ?>
+                                                            <i class="fas fa-calendar-alt me-1"></i> <strong>Start:</strong> <?= htmlspecialchars($earliest_start_str) ?>
+                                                        </small><br>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-calendar-alt me-1"></i> <strong>Expires:</strong> <?= htmlspecialchars($latest_end_str) ?>
                                                         </small>
                                                     </div>
-                                                <?php } ?>
+                                                    <?php if (!empty($amounts)) { ?>
+                                                        <div>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-tag me-1"></i> ₱<?= number_format(array_sum($amounts), 2) ?>
+                                                            </small>
+                                                        </div>
+                                                    <?php } ?>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                <?php } ?>
-                            <?php } else { ?>
+                                    <?php }
+                                }
+                            } else { ?>
                                 <div class="alert alert-info" role="alert">
                                     No active memberships found.
                                 </div>
@@ -141,35 +204,98 @@
 
                     <div class="tab-pane fade" id="rentals" role="tabpanel" aria-labelledby="rentals-tab">
                         <div class="service-list">
-                            <?php if (!empty($active_services['rentals'])) { ?>
-                                <?php foreach ($active_services['rentals'] as $service) { ?>
-                                    <div class="service-item card mb-2 shadow-sm">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <h6 class="mb-0"><?= htmlspecialchars($service['name']) ?></h6>
-                                                <span class="badge bg-success">Active</span>
-                                            </div>
-                                            <?php if (!empty($service['description'])) { ?>
-                                                <p class="text-muted small mb-1"><?= htmlspecialchars($service['description']) ?></p>
-                                            <?php } ?>
-                                            <div class="d-flex justify-content-between mt-2">
-                                                <div>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar-alt me-1"></i> Expires: <?= htmlspecialchars($service['end_date']) ?>
-                                                    </small>
+                            <?php
+                            // Group rentals by name and check for lapses
+                            function groupRentalsWithNoLapse($rentals) {
+                                $result = [];
+                                foreach ($rentals as $service) {
+                                    $name = $service['name'];
+                                    if (!isset($result[$name])) {
+                                        $result[$name] = [];
+                                    }
+                                    $result[$name][] = $service;
+                                }
+                                $final = [];
+                                foreach ($result as $name => $services) {
+                                    usort($services, function($a, $b) {
+                                        return strtotime($a['start_date']) - strtotime($b['start_date']);
+                                    });
+                                    $subgroup = [];
+                                    $last_end = null;
+                                    foreach ($services as $service) {
+                                        $current_start = strtotime($service['start_date']);
+                                        if ($last_end !== null && $current_start > ($last_end + 86400)) {
+                                            $final[$name][] = $subgroup;
+                                            $subgroup = [];
+                                        }
+                                        $subgroup[] = $service;
+                                        $last_end = strtotime($service['end_date']);
+                                    }
+                                    if (!empty($subgroup)) {
+                                        $final[$name][] = $subgroup;
+                                    }
+                                }
+                                return $final;
+                            }
+                            if (!empty($active_services['rentals'])) {
+                                $grouped_rentals = groupRentalsWithNoLapse($active_services['rentals']);
+                                foreach ($grouped_rentals as $name => $groups) {
+                                    foreach ($groups as $services) {
+                                        // Find the earliest start date and latest end date
+                                        $earliest_start = null;
+                                        $latest_end = null;
+                                        $amounts = [];
+                                        $description = '';
+                                        foreach ($services as $service) {
+                                            $start = strtotime($service['start_date']);
+                                            $end = strtotime($service['end_date']);
+                                            if ($earliest_start === null || $start < $earliest_start) {
+                                                $earliest_start = $start;
+                                                $earliest_start_str = $service['start_date'];
+                                            }
+                                            if ($latest_end === null || $end > $latest_end) {
+                                                $latest_end = $end;
+                                                $latest_end_str = $service['end_date'];
+                                            }
+                                            if (isset($service['amount'])) {
+                                                $amounts[] = $service['amount'];
+                                            }
+                                            if (!empty($service['description'])) {
+                                                $description = $service['description'];
+                                            }
+                                        }
+                                        ?>
+                                        <div class="service-item card mb-2 shadow-sm">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0"><?= htmlspecialchars($name) ?></h6>
+                                                    <span class="badge bg-success">Active</span>
                                                 </div>
-                                                <?php if (isset($service['amount'])) { ?>
+                                                <?php if (!empty($description)) { ?>
+                                                    <p class="text-muted small mb-1"><?= htmlspecialchars($description) ?></p>
+                                                <?php } ?>
+                                                <div class="d-flex justify-content-between mt-2">
                                                     <div>
                                                         <small class="text-muted">
-                                                            <i class="fas fa-tag me-1"></i> ₱<?= number_format($service['amount'], 2) ?>
+                                                            <i class="fas fa-calendar-alt me-1"></i> <strong>Start:</strong> <?= htmlspecialchars($earliest_start_str) ?>
+                                                        </small><br>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-calendar-alt me-1"></i> <strong>Expires:</strong> <?= htmlspecialchars($latest_end_str) ?>
                                                         </small>
                                                     </div>
-                                                <?php } ?>
+                                                    <?php if (!empty($amounts)) { ?>
+                                                        <div>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-tag me-1"></i> ₱<?= number_format(array_sum($amounts), 2) ?>
+                                                            </small>
+                                                        </div>
+                                                    <?php } ?>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                <?php } ?>
-                            <?php } else { ?>
+                                    <?php }
+                                }
+                            } else { ?>
                                 <div class="alert alert-info" role="alert">
                                     No active rentals found.
                                 </div>
