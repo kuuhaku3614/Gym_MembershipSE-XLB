@@ -887,55 +887,6 @@ function checkActiveMembership() {
     });
 }
 
-// Add this function to show the active membership warning
-function showActiveMembershipWarning(membershipData) {
-  // Create the warning modal HTML
-  const warningModalHTML = `
-    <div class="modal fade" id="activeMembershipModal" tabindex="-1" aria-labelledby="activeMembershipModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content p-0">
-          <div class="modal-header bg-warning text-dark">
-            <h5 class="modal-title" id="activeMembershipModalLabel">Active Membership Found</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="d-flex align-items-center mb-3">
-              <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 2rem;"></i>
-              <div>
-                <p class="mb-1">You already have an active membership that expires on ${formatDate(
-                  membershipData.end_date
-                )}.</p>
-                <p class="mb-0">Purchasing a new membership now will only be valid after your current membership expires.</p>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" id="proceedAnywayBtn">Proceed Anyway</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Add the warning modal HTML to the body
-  document.body.insertAdjacentHTML("beforeend", warningModalHTML);
-
-  // Show the warning modal
-  const warningModal = new bootstrap.Modal(
-    document.getElementById("activeMembershipModal")
-  );
-  warningModal.show();
-
-  // Add event listener to the "Proceed Anyway" button
-  document
-    .getElementById("proceedAnywayBtn")
-    .addEventListener("click", function () {
-      warningModal.hide();
-      validateAndProceed();
-    });
-}
-
 // Function to check for pending transactions
 function checkPendingTransactions() {
   return fetch("services/transaction_check.php", {

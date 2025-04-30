@@ -605,12 +605,12 @@ $secondaryHex = isset($color['longitude']) ? decimalToHex($color['longitude']) :
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-warning" id="appendMembershipBtn">Append After Pending</button>
+        <button type="button" class="btn btn-warning" id="appendMembershipBtn">Add After Pending</button>
         <button type="button" class="btn btn-danger" id="replaceMembershipBtn">Replace Pending / Remove Walk-in</button>
-        <button type="button" class="btn btn-danger" id="replaceInCartBtn">Replace In Cart</button>
-        <button type="button" class="btn btn-primary" id="appendToCartBtn">Append New to Cart</button>
-         <button type="button" class="btn btn-danger" id="replaceInCartWalkinBtn">Replace In Cart Walk-in</button>
-        <button type="button" class="btn btn-primary" id="appendToCartWalkinBtn">Add After In-Cart Walk-in</button>
+        <button type="button" class="btn btn-danger" id="replaceInCartBtn">Replace In list</button>
+        <button type="button" class="btn btn-primary" id="appendToCartBtn">Append New to list</button>
+         <button type="button" class="btn btn-danger" id="replaceInCartWalkinBtn">Replace In list Walk-in</button>
+        <button type="button" class="btn btn-primary" id="appendToCartWalkinBtn">Add After In-list Walk-in</button>
       </div>
     </div>
   </div>
@@ -711,31 +711,18 @@ function formatDisplayDate(dateStr) {
 // Calculate end date based on start date and duration
 function calculateEndDate(startDate) {
     const start = new Date(startDate);
-    // Adjust for potential timezone offset issues
-    const userTimezoneOffset = start.getTimezoneOffset() * 60000;
-    const adjustedStart = new Date(start.getTime() + userTimezoneOffset);
+    const end = new Date(start);
 
-    const end = new Date(adjustedStart);
-
-    // Ensure duration is treated as a number
-    const numDuration = parseInt(duration);
-    if (isNaN(numDuration)) {
-        console.error("Invalid duration:", duration);
-        return start; // Return start date if duration is invalid
-    }
-
-    if (durationType === 'day' || durationType === 'days') {
-        // For rentals, we want a full 24-hour period
-        // So a 1-day rental starting on April 23 ends on April 24
-        end.setDate(end.getDate() + numDuration);
-    } else if (durationType === 'month' || durationType === 'months') {
-        end.setMonth(end.getMonth() + numDuration);
-        // We don't subtract a day to make it inclusive - we want full periods
-    } else if (durationType === 'year' || durationType === 'years') {
-        end.setFullYear(end.getFullYear() + numDuration);
-        // We don't subtract a day to make it inclusive - we want full periods
-    } else {
-        console.error("Unknown duration type:", durationType);
+    if (durationType === 'days') {
+        end.setDate(end.getDate() + parseInt(duration));
+    } else if (durationType === 'months') {
+        end.setMonth(end.getMonth() + parseInt(duration));
+        if (start.getDate() !== end.getDate() &&
+            end.getDate() !== new Date(end.getFullYear(), end.getMonth(), 0).getDate()) {
+            end.setDate(new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate());
+        }
+    } else if (durationType === 'year') {
+        end.setFullYear(end.getFullYear() + parseInt(duration));
     }
 
     return end;

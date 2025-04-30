@@ -2113,3 +2113,21 @@
     [action] => get_profile_data
 )
 
+2025-04-30 09:49:33 - Request received
+2025-04-30 09:49:33 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-30 09:54:21 - Request received
+2025-04-30 09:54:21 - POST data: Array
+(
+    [action] => get_profile_data
+)
+
+2025-04-30 09:54:54 - Request received
+2025-04-30 09:54:54 - POST data: Array
+(
+    [action] => get_profile_data
+)
+

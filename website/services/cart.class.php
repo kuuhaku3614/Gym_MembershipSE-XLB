@@ -266,7 +266,7 @@ class Cart_Class {
             
             return true;
         } catch (Exception $e) {
-            throw new Exception("Failed to clear cart: " . $e->getMessage());
+            throw new Exception("Failed to clear list: " . $e->getMessage());
         }
     }
 
