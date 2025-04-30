@@ -160,6 +160,7 @@ class Profile_class{
             mp.plan_name as name,
             CONCAT(mp.duration, ' ', dt.type_name) as duration,
             DATE_FORMAT(m.end_date, '%M %d, %Y') as end_date,
+            DATE_FORMAT(m.start_date, '%M %d, %Y') as start_date,
             NULL as coach
         FROM transactions t
         JOIN memberships m ON t.id = m.transaction_id
@@ -181,6 +182,7 @@ class Profile_class{
             rs.start_date,
             rs.end_date,
             DATE_FORMAT(rs.end_date, '%M %d, %Y') as end_date,
+            DATE_FORMAT(rs.start_date, '%M %d, %Y') as start_date,
             rs.amount,
             rs.status,
             rs.is_paid,
